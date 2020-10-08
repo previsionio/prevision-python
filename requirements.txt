@@ -1,0 +1,9 @@
+pandas
+requests
+scikit-learn
+numpy
+requests_oauthlib
+oauthlib
+gevent
+pyflakes
+matplotlib
