@@ -1,0 +1,16 @@
+# .coveragerc to control previsionio
+[run]
+branch = True
+source = ../previsionio
+omit =
+    ../previsionio/density_charts.py
+    ../previsionio/deployed_model.py
+    ../previsionio/experiment.py
+    ../previsionio/plotter.py
+    ../previsionio/unsupervised.py
+
+[report]
+ignore_errors = True
+
+[html]
+directory = coverage_html_report
