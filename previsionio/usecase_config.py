@@ -25,7 +25,32 @@ class TypeProblem(object):
 
 
 class Model(object):
-    """ Types of models that can be trained with Prevision.io.
+    """ Types of normal models that can be trained with Prevision.io.
+    The ``Full`` member is a shortcut to get all available models at once.
+    To just drop a single model from a list of models, use:
+
+    .. code-block:: python
+
+        LiteModel.drop(LiteModel.xxx)
+    """
+    LightGBM = 'LGB'
+    """LightGBM"""
+    XGBoost = 'XGB'
+    """XGBoost"""
+    NeuralNet = 'NN'
+    """NeuralNet"""
+    ExtraTrees = 'ET'
+    """ExtraTrees"""
+    LinReg = 'LR'
+    """Linear Regression"""
+    RandomForest = 'RF'
+    """Random Forest"""
+    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF'])
+    """Evaluate all models"""
+
+
+class LiteModel(object):
+    """ Types of lite models that can be trained with Prevision.io.
     The ``Full`` member is a shortcut to get all available models at once.
     To just drop a single model from a list of models, use:
 
@@ -107,7 +132,7 @@ class Profile(object):
 
 class UsecaseConfig(object):
 
-    list_args = {'fe_selected_list', 'drop_list', 'models'}
+    list_args = {'fe_selected_list', 'drop_list', 'normal_models'}
 
     config = {}
 
@@ -171,7 +196,8 @@ class TrainingConfig(UsecaseConfig):
     """
 
     config = {
-        'models': 'models',
+        'normal_models': 'normalModels',
+        'lite_models': 'liteModels',
         'simple_models': 'simpleModels',
         'fe_selected_list': 'featuresEngineeringSelectedList',
         'profile': 'profile',
@@ -180,7 +206,8 @@ class TrainingConfig(UsecaseConfig):
 
     def __init__(self,
                  profile=Profile.Normal,
-                 models=Model.Full,
+                 normal_models=Model.Full,
+                 lite_models=LiteModel.Full,
                  simple_models=SimpleModel.Full,
                  features=Feature.Full,
                  with_blend=False,
@@ -189,7 +216,8 @@ class TrainingConfig(UsecaseConfig):
 
         Args:
             profile:
-            models:
+            normal_models:
+            lite_models:
             simple_models:
             features:
             with_blend:
@@ -201,7 +229,8 @@ class TrainingConfig(UsecaseConfig):
         else:
             self.fe_selected_list = [f for f in Feature.Full if f in features]
 
-        self.models = models
+        self.normal_models = normal_models
+        self.lite_models = lite_models
         self.simple_models = simple_models
 
         self.profile = profile
