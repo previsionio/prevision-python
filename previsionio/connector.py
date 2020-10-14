@@ -40,7 +40,7 @@ class Connector(ApiResource, UniqueResourceMixin):
         self.other_params = kwargs
 
     @classmethod
-    def list(cls):
+    def list(cls, all=False):
         """ List all the available connectors in the current active [client] workspace.
 
         .. warning::
@@ -49,16 +49,16 @@ class Connector(ApiResource, UniqueResourceMixin):
             returns actual :class:`.Connector` objects rather than
             plain dictionaries with the corresponding data.
 
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+
         Returns:
             list(:class:`.Connector`): Fetched connector objects
         """
-        resp = client.request('/{}'.format(cls.resource),
-                              data={'rowsPerPage': -1},
-                              method=requests.get)
-        resp = parse_json(resp)
-        items = resp['items']
-
-        return [cls(**conn_data) for conn_data in items
+        resources = super().list(all=all)
+        return [cls(**conn_data) for conn_data in resources
                 if conn_data['type'] == cls.conn_type or cls.conn_type == 'connector']
 
     @classmethod

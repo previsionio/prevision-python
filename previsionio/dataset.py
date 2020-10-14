@@ -66,7 +66,7 @@ class Dataset(ApiResource):
     data = property(to_pandas)
 
     @classmethod
-    def list(cls):
+    def list(cls, all=all):
         """ List all the available datasets in the current active [client] workspace.
 
         .. warning::
@@ -75,13 +75,16 @@ class Dataset(ApiResource):
             returns actual :class:`.Dataset` objects rather than
             plain dictionaries with the corresponding data.
 
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+
         Returns:
             list(:class:`.Dataset`): Fetched dataset objects
         """
-        resp = client.request('/{}?rowsPerPage=-1'.format(cls.resource),
-                              method=requests.get)
-        resp = parse_json(resp)
-        return [cls(**conn_data) for conn_data in resp['items']]
+        resources = super().list(all=all)
+        return [cls(**conn_data) for conn_data in resources['items']]
 
     @classmethod
     def getid_from_name(cls, name=None, version='last'):

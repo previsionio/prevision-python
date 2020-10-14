@@ -75,3 +75,18 @@ def is_null_value(value):
     is_null = str(value) == 'null'
     is_nan = pd.isnull(value)
     return is_nan or is_null
+
+
+def get_all_results(client, endpoint, method):
+    resources = []
+    batch = client.request(endpoint, method=method)
+    batch = parse_json(batch)
+    resources.extend(batch['items'])
+    meta = batch['metaData']
+    total_items = meta['totalItems']
+    rows_per_page = meta['rowsPerPage']
+    n_pages = int(total_items / rows_per_page)
+    for n in range(1, n_pages):
+        batch = client.request(endpoint, method=method, params={'page': n})
+        resources.extend(parse_json(batch)['items'])
+    return resources
