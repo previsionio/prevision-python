@@ -84,7 +84,7 @@ class Dataset(ApiResource):
             list(:class:`.Dataset`): Fetched dataset objects
         """
         resources = super().list(all=all)
-        return [cls(**conn_data) for conn_data in resources['items']]
+        return [cls(**conn_data) for conn_data in resources]
 
     @classmethod
     def getid_from_name(cls, name=None, version='last'):

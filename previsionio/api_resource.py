@@ -1,8 +1,8 @@
 from typing import Optional
 import datetime
 import requests
-from .utils import parse_json, PrevisionException
-from .prevision_client import client, get_all_results, EventManager
+from .utils import parse_json, PrevisionException, get_all_results
+from .prevision_client import client, EventManager
 from . import logger
 from enum import Enum
 
