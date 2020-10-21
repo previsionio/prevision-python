@@ -70,7 +70,9 @@ class LiteModel(object):
     """Linear Regression"""
     RandomForest = 'RF'
     """Random Forest"""
-    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF'])
+    NaiveBayesClassifier = 'NBC'
+    """Random Forest"""
+    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF', 'NBC'])
     """Evaluate all models"""
 
 
@@ -106,8 +108,12 @@ class Feature(object):
     """Date transformation"""
     Frequency = 'freq'
     """Frequency encoding"""
-    Text = 'text'
-    """Advanced text analysis"""
+    TextTfidf = 'text_tfidf'
+    """Statistical analysis"""
+    TextWord2vect = 'text_word2vec'
+    """Word embedding"""
+    TextEmbedding = 'text_embedding'
+    """Sentence embedding"""
     TargetEncoding = 'tenc'
     """Target encoding"""
     PolynomialFeatures = 'poly'
@@ -116,7 +122,7 @@ class Feature(object):
     """Principal component analysis"""
     KMeans = 'kmean'
     """K-Means clustering"""
-    Full = ParamList(['Counter', 'Date', 'freq', 'text', 'tenc', 'poly', 'pca', 'kmean'])
+    Full = ParamList(['Counter', 'Date', 'freq', 'text_tfidf', 'text_word2vec', 'text_embedding', 'tenc', 'poly', 'pca', 'kmean'])
     """Full feature engineering"""
 
 
@@ -187,7 +193,7 @@ class TrainingConfig(UsecaseConfig):
         simple_models (list(str), optional): Names of the (normal) models to use in the usecase
             (among: "LR" and "DT")
         features (list(str), optional): Names of the feature engineering modules to use (among:
-            "Counter", "Date", "freq", "text", "tenc", "ee", "poly", "pca" and "kmean")
+            "Counter", "Date", "freq", "text_tfidf", "text_word2vec", "text_embedding", "tenc", "ee", "poly", "pca" and "kmean")
         with_blend (bool, optional): If true, Prevision.io's pipeline will add "blend" models
             at the end of the training by cherry-picking already trained models and fine-tuning
             hyperparameters (usually gives even better performance)
