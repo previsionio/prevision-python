@@ -52,7 +52,8 @@ def train_model(uc_name, groups=1, time_window=pio.TimeWindow(-90, -30, 1, 15), 
     dataset = pio.Dataset.new(name=uc_name,
                               dataframe=data)
 
-    uc_config = pio.TrainingConfig(models=[pio.Model.LinReg],
+    uc_config = pio.TrainingConfig(normal_models=[pio.Model.LinReg],
+                                   lite_models=[pio.Model.LinReg],
                                    features=[pio.Feature.Counts],
                                    profile=pio.Profile.Quick)
 

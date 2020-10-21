@@ -42,7 +42,8 @@ class BaseUsecase(ApiResource):
         self.training_config = TrainingConfig(profile=usecase_params.get('profile'),
                                               fe_selected_list=usecase_params.get(
                                                   'featuresEngineeringSelectedList'),
-                                              models=usecase_params.get('models'),
+                                              normal_models=usecase_params.get('normalModels'),
+                                              lite_models=usecase_params.get('liteModels'),
                                               simple_models=usecase_params.get('simpleModels'))
 
         self._id = usecase_info.get('usecaseId')
@@ -369,13 +370,22 @@ class BaseUsecase(ApiResource):
         return self._status['usecaseParameters'].get('featuresEngineeringSelectedList')
 
     @property
-    def models_list(self):
-        """ Get the list of selected models in the usecase.
+    def normal_models_list(self):
+        """ Get the list of selected normal models in the usecase.
 
         Returns:
-            list(str): Names of the models selected for the usecase
+            list(str): Names of the normal models selected for the usecase
         """
-        return self._status['usecaseParameters'].get('models')
+        return self._status['usecaseParameters'].get('normalModels')
+
+    @property
+    def lite_models_list(self):
+        """ Get the list of selected lite models in the usecase.
+
+        Returns:
+            list(str): Names of the lite models selected for the usecase
+        """
+        return self._status['usecaseParameters'].get('liteModels')
 
     @property
     def simple_models_list(self):
