@@ -1,7 +1,7 @@
 from typing import Optional
 import datetime
 import requests
-from .utils import parse_json, PrevisionException
+from .utils import parse_json, PrevisionException, get_all_results
 from .prevision_client import client, EventManager
 from . import logger
 from enum import Enum
@@ -187,16 +187,22 @@ class ApiResource:
         return cls(**resp_json)
 
     @classmethod
-    def list(cls):
+    def list(cls, all=False):
         """List all available instances of this resource type on the platform.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
 
         Returns:
             dict: Fetched resources
         """
-        resources = client.request('/{}?rowsPerPage=-1'.format(cls.resource),
-                                   method=requests.get)
-
-        return parse_json(resources)['items']
+        if all:
+            return get_all_results(client, '/' + cls.resource, method=requests.get)
+        else:
+            resources = client.request('/' + cls.resource, method=requests.get)
+            return parse_json(resources)['items']
 
     def edit(self, **kwargs):
         """Edit a resource on the platform. You simply pass the function a
