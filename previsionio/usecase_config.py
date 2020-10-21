@@ -296,25 +296,29 @@ class ColumnConfig(UsecaseConfig):
 
 
 base_config = TrainingConfig(profile=Profile.Normal,
-                             models=Model.Full,
+                             normal_models=Model.Full,
+                             lite_models=LiteModel.Full,
                              simple_models=SimpleModel.Full,
                              features=Feature.Full.drop(Feature.PCA, Feature.KMeans),
                              with_blend=True)
 
 quick_config = TrainingConfig(profile=Profile.Quick,
-                              models=Model.Full.drop(Model.NeuralNet),
+                              normal_models=Model.Full.drop(Model.NeuralNet),
+                              lite_models=LiteModel.Full.drop(LiteModel.NeuralNet),
                               simple_models=SimpleModel.Full.drop(SimpleModel.LinReg),
                               features=Feature.Full.drop(Feature.PCA, Feature.KMeans),
                               with_blend=False)
 
 ultra_config = TrainingConfig(profile=Profile.Quick,
                               features=Feature.Full.drop(Feature.PCA, Feature.KMeans),
-                              models=[Model.XGBoost],
+                              normal_models=[Model.XGBoost],
+                              lite_models=[LiteModel.XGBoost],
                               simple_models=[SimpleModel.LinReg],
                               with_blend=False)
 
 nano_config = TrainingConfig(profile=Profile.Quick,
-                             models=[Model.LinReg],
+                             normal_models=[Model.LinReg],
+                             lite_models=[LiteModel.LinReg],
                              simple_models=[],
                              features=[],
                              with_blend=False)
