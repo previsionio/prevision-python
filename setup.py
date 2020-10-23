@@ -14,7 +14,7 @@ if python_major == 2:
     install_requires.append('enum')
 
 setup(name='previsionio',
-      version='10.12.0',
+      version='10.13.0',
       description='python wrapper for prevision api',
       url='',
       author='prevision.io',
