@@ -179,15 +179,6 @@ class Model(ApiResource):
             'bestSingle': 'false',  # because we"ll be using the current model
             'confidence': str(confidence).lower(),
         }
-        if self._id:
-            confidence_check = client.request('/usecases/{}/versions/{}/models/{}/confidence'.format(self.uc_id, self.uc_version, self._id),
-                                          requests.get)
-            confidence_check_parsed = parse_json(confidence_check)
-            if confidence_check_parsed and 'confidence' in confidence_check_parsed:
-                if confidence_check_parsed['confidence'] == False:
-                    data['confidence'] == 'false'
-        else:
-            data['confidence'] == 'false'
 
         if dataset_folder_id is not None:
             data['datasetFolderId'] = dataset_folder_id
