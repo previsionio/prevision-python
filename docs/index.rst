@@ -22,25 +22,34 @@ The compatibility version between Prevision.io’s Python SDK and Prevision Plat
 
 
 .. list-table:: Compatibility matrix
-   :widths: 25 25 25 50
+   :widths: auto
    :header-rows: 1
 
    * -
      - Prevision 10.10
      - Prevision 10.11
      - Prevision 10.12
+     - Prevision 10.13
    * - Prevision Python SDK 10.10
      - ✓
      - ✓
      - ✓
+     - ✘
    * - Prevision Python SDK 10.11
      - ✓
      - ✓
      - ✓
+     - ✘
    * - Prevision Python SDK 10.12
      - ✓
      - ✓
      - ✓
+     - ✘
+   * - Prevision Python SDK 10.13
+     - ✘
+     - ✘
+     - ✘
+     - ✘
 
 
 .. toctree::

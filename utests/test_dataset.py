@@ -24,7 +24,7 @@ def setup_module(module):
 
 def teardown_module(module):
     remove_datasets(DATA_PATH)
-    for ds in pio.Dataset.list():
+    for ds in pio.Dataset.list(all=True):
         if TESTING_ID in ds.name:
             ds.delete()
 
@@ -34,8 +34,7 @@ def test_upload_datasets():
         dataset = pio.Dataset.new(name=p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
                                   dataframe=pd.read_csv(p))
         test_datasets[problem_type] = dataset
-
-    datasets = [ds for ds in pio.Dataset.list() if TESTING_ID in ds.name]
+    datasets = [ds for ds in pio.Dataset.list(all=True) if TESTING_ID in ds.name]
     ds_names = [k + str(TESTING_ID) + '.csv' for k in paths]
     assert len(datasets) == len(paths)
     for ds in datasets:

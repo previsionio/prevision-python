@@ -53,7 +53,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
         self.other_params = kwargs
 
     @classmethod
-    def list(cls):
+    def list(cls, all=False):
         """ List all the available datasources in the current active [client] workspace.
 
         .. warning::
@@ -61,14 +61,16 @@ class DataSource(ApiResource, UniqueResourceMixin):
             Contrary to the parent ``list()`` function, this method
             returns actual :class:`.DataSource` objects rather than
             plain dictionaries with the corresponding data.
-
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
         Returns:
             list(:class:`.DataSource`): Fetched datasource objects
         """
         # FIXME : get /resource return type should be consistent
-        resp = client.request('/{}'.format(cls.resource), method=requests.get)
-        resp = parse_json(resp)['items']
-        return [cls(**source_data) for source_data in resp]
+        resources = super().list(all=all)
+        return [cls(**source_data) for source_data in resources]
 
     @classmethod
     def from_id(cls, _id):

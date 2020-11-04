@@ -11,7 +11,8 @@ TESTING_ID = get_testing_id()
 pio.config.zip_files = False
 pio.config.default_timeout = 80
 
-uc_config = pio.TrainingConfig(models=[pio.Model.LinReg],
+uc_config = pio.TrainingConfig(normal_models=[pio.Model.LinReg],
+                               lite_models=[pio.Model.LinReg],
                                simple_models=[pio.SimpleModel.DecisionTree],
                                features=[pio.Feature.Counts],
                                profile=pio.Profile.Quick)
@@ -128,7 +129,7 @@ class TestUCGeneric:
     def test_drop_models(self, setup_usecase_class):
         type_problem, uc = setup_usecase_class
         uc.update_status()
-        assert sorted(uc.models_list) == sorted(uc_config.models)
+        assert sorted(uc.normal_models_list) == sorted(uc_config.normal_models)
         assert sorted(uc.simple_models_list) == sorted(uc_config.simple_models)
 
 

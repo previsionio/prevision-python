@@ -9,7 +9,7 @@ from collections import namedtuple
 import numpy as np
 from . import logger
 import datetime
-
+from math import *
 
 def zip_to_pandas(pred_response: requests.Response) -> pd.DataFrame:
     temp_zip_path = '/tmp/ziptmp{}.zip'.format(str(uuid.uuid4()))
@@ -75,3 +75,17 @@ def is_null_value(value):
     is_null = str(value) == 'null'
     is_nan = pd.isnull(value)
     return is_nan or is_null
+
+
+def get_all_results(client, endpoint, method):
+    resources = []
+    batch = client.request(endpoint, method=method)
+    batch = parse_json(batch)
+    meta = batch['metaData']
+    total_items = meta['totalItems']
+    rows_per_page = meta['rowsPerPage']
+    n_pages = ceil(total_items / rows_per_page)
+    for n in range(1, n_pages+1):
+        batch = client.request(endpoint+ "?page={}".format(n), method=method)
+        resources.extend(parse_json(batch)['items'])
+    return resources
