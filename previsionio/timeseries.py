@@ -63,14 +63,14 @@ class TimeSeries(BaseUsecase):
 
     @classmethod
     def fit(cls, name, dataset, column_config, time_window,
-            metric=None, aln=False, training_config=TrainingConfig()):
+            metric=None, training_config=TrainingConfig()):
         config_args = training_config.to_kwargs()
         column_args = column_config.to_kwargs()
         time_window_args = time_window.to_kwargs()
         training_args = dict(config_args + column_args + time_window_args)
-
-        if aln:
-            training_args['experimentalTimeseries'] = 'true'
+        # TimeSeries experimental (ALN) is no longer available
+        #if aln:
+        #    training_args['experimentalTimeseries'] = 'true'
 
         if not metric:
             metric = cls.default_metric

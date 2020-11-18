@@ -44,7 +44,7 @@ def get_data(path, groups):
     return data, group_list
 
 
-def train_model(uc_name, groups=1, time_window=pio.TimeWindow(-90, -30, 1, 15), aln=False):
+def train_model(uc_name, groups=1, time_window=pio.TimeWindow(-90, -30, 1, 15)):
     path = os.path.join(DATA_PATH, 'ts.csv')
     data, group_list = get_data(path, groups)
     fname = '{}_{}.csv'.format(uc_name, '-'.join(group_list))
@@ -66,8 +66,7 @@ def train_model(uc_name, groups=1, time_window=pio.TimeWindow(-90, -30, 1, 15), 
                             dataset,
                             time_window=time_window,
                             training_config=uc_config,
-                            column_config=col_config,
-                            aln=aln)
+                            column_config=col_config)
     return uc
 
 
@@ -113,8 +112,7 @@ def time_window_test(dws, dwe, fws, fwe, aln=False):
     uc_name_asked = 'ts_time{}_{}'.format(ts_label, TESTING_ID)
 
     uc = train_model(uc_name_asked,
-                     time_window=pio.TimeWindow(dws, dwe, fws, fwe),
-                     aln=aln)
+                     time_window=pio.TimeWindow(dws, dwe, fws, fwe))
     uc_name_returned = uc.name
 
     uc.wait_until(lambda usecase: len(usecase) > 0)
