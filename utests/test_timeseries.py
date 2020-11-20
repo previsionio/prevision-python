@@ -10,7 +10,6 @@ from .utils import get_testing_id
 pio.config.zip_files = True
 
 TESTING_ID = get_testing_id()
-WITH_ALN = False
 
 
 def setup_module():
@@ -72,20 +71,12 @@ def train_model(uc_name, groups=1, time_window=pio.TimeWindow(-90, -30, 1, 15), 
 
 
 windows = [
-    # dws, dwe, fws, fwe, aln
-    (-10, -5, 3, 4, False),
-    (-90, -30, 1, 15, False),
-    (-17, -15, 1, 3, False),
+    # dws, dwe, fws, fwe
+    (-10, -5, 3, 4),
+    (-90, -30, 1, 15),
+    (-17, -15, 1, 3),
 ]
-if WITH_ALN:
-    windows = windows + \
-        [
-            # dws, dwe, fws, fwe, aln
-            (-10, -1, 3, 4, True),
-            (-30, -1, 1, 10, True),
-            (-90, -15, 1, 15, True),
-            (-17, -15, 1, 3, True),
-        ]
+
 
 wrong_windows = [
     (-10, -90, 1, 15),
@@ -108,7 +99,7 @@ def test_ts_groups(groups):
     assert uc.id in [u['usecaseId'] for u in usecases]
 
 
-def time_window_test(dws, dwe, fws, fwe, aln=False):
+def time_window_test(dws, dwe, fws, fwe):
     ts_label = '_'.join(str(s).replace('-', 'm') for s in (dws, dwe, fws, fwe))
     uc_name_asked = 'ts_time{}_{}'.format(ts_label, TESTING_ID)
 
@@ -122,10 +113,10 @@ def time_window_test(dws, dwe, fws, fwe, aln=False):
     return uc_name_returned
 
 
-@pytest.mark.parametrize('dws, dwe, fws, fwe, aln', windows,
-                         ids=['-'.join(str(s) for s in w[0:-1]) + '-aln={}'.format(w[-1]) for w in windows])
-def test_time_window(dws, dwe, fws, fwe, aln):
-    uc_name_returned = time_window_test(dws, dwe, fws, fwe, aln)
+@pytest.mark.parametrize('dws, dwe, fws, fwe', windows,
+                         ids=['-'.join(str(s) for s in w) for w in windows])
+def test_time_window(dws, dwe, fws, fwe):
+    uc_name_returned = time_window_test(dws, dwe, fws, fwe)
     usecases = [uc['name'] for uc in pio.Supervised.list()]
     assert uc_name_returned in usecases
 
@@ -137,17 +128,14 @@ def test_wrong_time_window(dws, dwe, fws, fwe):
         time_window_test(dws, dwe, fws, fwe)
 
 
-if WITH_ALN:
-    ts_params = [(1, True), (1, False), (3, True), (3, False)]
-    ts_ids = ['no groups-aln', 'no groups-legacy', '3 groups-aln', '3 groups-legacy']
-else:
-    ts_params = [(1, False), (3, False)]
-    ts_ids = ['no groups-legacy', '3 groups-legacy']
+
+ts_params = [(1, False), (3, False)]
+ts_ids = ['no groups-legacy', '3 groups-legacy']
 
 
 @pytest.fixture(scope='class', params=ts_params, ids=ts_ids)
 def setup_ts_class(request):
-    groups, aln = request.param
+    groups = request.param
     group_name = '{}_{}'.format(str(groups[0]), str(groups[1])) if isinstance(groups, tuple) else groups
     uc_name = 'ts_{}grp_{}'.format(group_name, TESTING_ID)
     uc = train_model(uc_name, groups)
