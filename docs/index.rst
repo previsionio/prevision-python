@@ -31,10 +31,12 @@ The compatibility version between Prevision.io’s Python SDK and Prevision Plat
      - Prevision 10.12
      - Prevision 10.13
      - Prevision 10.14
+     - Prevision 10.15
    * - Prevision Python SDK 10.10
      - ✓
      - ✓
      - ✓
+     - ✘
      - ✘
      - ✘
    * - Prevision Python SDK 10.11
@@ -43,10 +45,12 @@ The compatibility version between Prevision.io’s Python SDK and Prevision Plat
      - ✓
      - ✘
      - ✘
+     - ✘
    * - Prevision Python SDK 10.12
      - ✓
      - ✓
      - ✓
+     - ✘
      - ✘
      - ✘
    * - Prevision Python SDK 10.13
@@ -55,12 +59,22 @@ The compatibility version between Prevision.io’s Python SDK and Prevision Plat
      - ✘
      - ✘
      - ✓
+     - ✓
    * - Prevision Python SDK 10.14
      - ✘
      - ✘
      - ✘
      - ✓
      - ✓
+     - ✓
+   * - Prevision Python SDK 10.15
+     - ✘
+     - ✘
+     - ✘
+     - ✓
+     - ✓
+     - ✓
+
 
 
 .. toctree::
