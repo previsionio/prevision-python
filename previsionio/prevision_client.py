@@ -96,8 +96,13 @@ class EventManager:
             try:
                 for msg in sse.iter_content(chunk_size=None):
                     event_logger.debug('url: {} -- data: {}'.format(self.event_endpoint, msg))
+                    msg = msg.decode()
+                    # SSE comments can start with ":" character
+                    if msg[0] == ':':
+                        event_logger.debug('sse comment{}'.format(msg))
+                        continue
                     try:
-                        _, event_name, event_data, *rest = msg.decode().split('\n')
+                        _, event_name, event_data, *rest = msg.split('\n')
                         event_name = event_name.replace('event: ', '')
                         event_data = json.loads(event_data.replace('data: ', '').strip())
                     except json.JSONDecodeError as e:

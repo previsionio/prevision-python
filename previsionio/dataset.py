@@ -331,7 +331,7 @@ class Dataset(ApiResource):
         if create_resp.status_code == 200:
             url = '/{}/{}'.format(cls.resource, create_json['_id'])
             event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'ready', 'done',
-                                                       [('ready', 'failed'), ('describe', 'failed'), ('drift', 'failed')])
+                                                       [('ready', 'failed'), ('drift', 'failed')])
             pio.client.event_manager.wait_for_event(create_json['_id'],
                                                     cls.resource,
                                                     event_tuple,
