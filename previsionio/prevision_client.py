@@ -54,6 +54,7 @@ class EventManager:
                 semd.acquire()
                 semi, event_list = event_dict[resource_id]
 
+                remaining_events = []
                 with semi:
                     for event in event_list:
                         if event.get('event') == event_tuple.name:
@@ -68,7 +69,10 @@ class EventManager:
                             if json_response.get(event_tuple.key) == event_tuple.value:
                                 semd.release()
                                 return
+                        else:
+                            remaining_events.append(event)
 
+                event_dict[resource_id] = semi, remaining_events
                 semd.release()
                 time.sleep(0.1)
         else:

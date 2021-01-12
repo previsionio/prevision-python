@@ -145,7 +145,7 @@ class Model(ApiResource):
         Args:
             predict_id (str): Unique id of the prediction to wait for
         """
-        specific_url = 'usecases/{}/versions/{}/predictions/{}'.format(self.uc_id, self.uc_version, predict_id)
+        specific_url = '/usecases/{}/versions/{}/predictions/{}'.format(self.uc_id, self.uc_version, predict_id)
         pio.client.event_manager.wait_for_event(predict_id,
                                                 'usecases/{}/versions/{}/predictions'.format(self.uc_id, self.uc_version),
                                                 EventTuple('PREDICTION_UPDATE', 'status', 'done'),
