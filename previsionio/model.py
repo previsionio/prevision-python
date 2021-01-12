@@ -44,11 +44,11 @@ class Model(ApiResource):
         for k, v in other_params.items():
             self.__setattr__(k, v)
 
-        event_url = '{}/usecases/{}/versions/{}/predictions/events'.format(pio.client.url,
-                                                                           self.uc_id,
-                                                                           self.uc_version)
-        self.prediction_event_manager = EventManager(event_url,
-                                                     auth_headers=pio.client.headers)
+        # event_url = '{}/usecases/{}/versions/{}/predictions/events'.format(pio.client.url,
+        #                                                                    self.uc_id,
+        #                                                                    self.uc_version)
+        # self.prediction_event_manager = EventManager(event_url,
+        #                                              auth_headers=pio.client.headers)
 
     def __repr__(self):
         return str(self._id)
@@ -145,10 +145,11 @@ class Model(ApiResource):
         Args:
             predict_id (str): Unique id of the prediction to wait for
         """
-        self.prediction_event_manager.wait_for_event(predict_id,
-                                                     'usecases/{}/versions/{}/predictions'.format(self.uc_id,
-                                                                                                  self.uc_version),
-                                                     EventTuple('status', 'done'))
+        specific_url = 'usecases/{}/versions/{}/predictions/{}'.format(self.uc_id, self.uc_version, predict_id)
+        pio.client.event_manager.wait_for_event(predict_id,
+                                                'usecases/{}/versions/{}/predictions'.format(self.uc_id, self.uc_version),
+                                                EventTuple('PREDICTION_UPDATE', 'status', 'done'),
+                                                specific_url=specific_url)
 
     def _predict_bulk(self,
                       dataset_id,
