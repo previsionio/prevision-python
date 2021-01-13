@@ -11,7 +11,7 @@ from functools import lru_cache
 from .logger import logger
 from .dataset import Dataset
 from .deployed_model import DeployedModel
-from .prevision_client import client, EventManager
+from .prevision_client import client
 from .api_resource import ApiResource
 from .utils import NpEncoder, parse_json, EventTuple, \
     PrevisionException, zip_to_pandas
@@ -147,7 +147,8 @@ class Model(ApiResource):
         """
         specific_url = '/usecases/{}/versions/{}/predictions/{}'.format(self.uc_id, self.uc_version, predict_id)
         pio.client.event_manager.wait_for_event(predict_id,
-                                                'usecases/{}/versions/{}/predictions'.format(self.uc_id, self.uc_version),
+                                                'usecases/{}/versions/{}/predictions'.format(self.uc_id,
+                                                                                             self.uc_version),
                                                 EventTuple('PREDICTION_UPDATE', 'status', 'done'),
                                                 specific_url=specific_url)
 

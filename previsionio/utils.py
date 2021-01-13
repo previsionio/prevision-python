@@ -9,7 +9,8 @@ from collections import namedtuple
 import numpy as np
 from . import logger
 import datetime
-from math import *
+from math import ceil
+
 
 def zip_to_pandas(pred_response: requests.Response) -> pd.DataFrame:
     temp_zip_path = '/tmp/ziptmp{}.zip'.format(str(uuid.uuid4()))
@@ -86,7 +87,7 @@ def get_all_results(client, endpoint, method):
     total_items = meta['totalItems']
     rows_per_page = meta['rowsPerPage']
     n_pages = ceil(total_items / rows_per_page)
-    for n in range(1, n_pages+1):
-        batch = client.request(endpoint+ "?page={}".format(n), method=method)
+    for n in range(1, n_pages + 1):
+        batch = client.request(endpoint + "?page={}".format(n), method=method)
         resources.extend(parse_json(batch)['items'])
     return resources

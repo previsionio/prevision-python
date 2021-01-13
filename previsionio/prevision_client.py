@@ -66,9 +66,10 @@ class EventManager:
                             for k, v in event_tuple.fail_checks:
                                 if json_response.get(k) == v:
                                     semd.release()
-                                    raise PrevisionException('Error on resource {}: {}\n{}'.format(resource_id,
-                                                                                                   json_response.get('errorMessage', ''),
-                                                                                                   json_response))
+                                    msg = 'Error on resource {}: {}\n{}'.format(resource_id,
+                                                                                json_response.get('errorMessage', ''),
+                                                                                json_response)
+                                    raise PrevisionException(msg)
                             if json_response.get(event_tuple.key) == event_tuple.value:
                                 semd.release()
                                 return
@@ -174,9 +175,6 @@ class Client(object):
         self.url = None
 
         self.event_manager = None
-        # self.dataset_event_manager = None
-        # self.dataset_images_event_manager = None
-        # self.usecase_event_manager = None
 
     def _check_token_url(self):
 
@@ -281,12 +279,6 @@ class Client(object):
 
         logger.debug('subscribing to events manager')
         self.event_manager = EventManager(self.url + '/events', auth_headers=self.headers, client=self)
-        # self.dataset_event_manager = EventManager(self.url + '/datasets/files/events',
-        #                                           auth_headers=self.headers)
-        # self.dataset_images_event_manager = EventManager(self.url + '/datasets/folders/events',
-        #                                                  auth_headers=self.headers)
-        # self.usecase_event_manager = EventManager(self.url + '/usecases/events',
-        #                                           auth_headers=self.headers)
 
 
 client = Client()

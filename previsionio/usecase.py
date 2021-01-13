@@ -11,7 +11,7 @@ from functools import lru_cache
 from . import config
 from .usecase_config import TrainingConfig, ColumnConfig
 from .logger import logger
-from .prevision_client import client, EventManager
+from .prevision_client import client
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas
 from .api_resource import ApiResource
 from .dataset import Dataset
@@ -54,13 +54,6 @@ class BaseUsecase(ApiResource):
 
         self.predictions = {}
         self.predict_token = None
-        # self.prediction_event_manager = EventManager(
-        #     pio.client.url + '/usecases/{}/versions/{}/predictions/events'.format(self._id, self.version),
-        #     auth_headers=pio.client.headers)
-
-        # self.event_manager = EventManager(pio.client.url + '/usecases/{}/versions/{}/events'.format(self._id,
-        #                                                                                             self.version),
-        #                                   auth_headers=pio.client.headers)
 
         self._models = {}
 
@@ -593,7 +586,7 @@ class BaseUsecase(ApiResource):
         response = client.request('/usecases/{}/versions/{}/stop'.format(self.id, self.version),
                                   requests.put)
         events_url = '/usecases/{}/versions/{}'.format(self.id, self.version)
-        pio.client.event_manager.wait_for_event(self.resource_id,
+        pio.client.event_manager.wait_for_event(self._id,
                                                 self.resource,
                                                 EventTuple('USECASE_UPDATE', 'status', 'done'),
                                                 specific_url=events_url)
