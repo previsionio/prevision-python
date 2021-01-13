@@ -435,7 +435,7 @@ class BaseUsecase(ApiResource):
         start_response = parse_json(start)
         usecase = cls.from_id(start_response['_id'], version=start_response['version'])
         events_url = '/usecases/{}/versions/{}'.format(start_response['_id'], start_response['version'])
-        pio.client.event_manager.wait_for_event(usecase.resource_id,
+        pio.client.event_manager.wait_for_event(usecase._id,
                                                 cls.resource,
                                                 EventTuple('USECASE_UPDATE', 'status', 'running'),
                                                 specific_url=events_url)
