@@ -43,6 +43,9 @@ class EventManager:
                        resource_type,
                        event_tuple: previsionio.utils.EventTuple,
                        specific_url=None):
+        # ignore invalid resource ids
+        if not isinstance(resource_id, str):
+            return
         self.register_resource(resource_id)
         t0 = time.time()
 
@@ -113,6 +116,9 @@ class EventManager:
                         return
                     else:
                         resource_id = event_data.get('_id', None)
+                        # ignore invalid resource ids
+                        if not isinstance(resource_id, str):
+                            continue
                         payload = {'event': event_name, 'id': resource_id}
 
                         event_logger.debug('url: {} -- event: {} payload: {}'.format(self.event_endpoint,
