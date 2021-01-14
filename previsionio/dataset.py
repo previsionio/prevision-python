@@ -329,12 +329,15 @@ class Dataset(ApiResource):
         create_json = parse_json(create_resp)
 
         if create_resp.status_code == 200:
-            pio.client.dataset_event_manager.wait_for_event(create_json['_id'],
-                                                            cls.resource,
-                                                            previsionio.utils.EventTuple('ready', 'done'))
+            url = '/{}/{}'.format(cls.resource, create_json['_id'])
+            event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'ready', 'done',
+                                                       [('ready', 'failed'), ('drift', 'failed')])
+            pio.client.event_manager.wait_for_event(create_json['_id'],
+                                                    cls.resource,
+                                                    event_tuple,
+                                                    specific_url=url)
 
-            dset_resp = client.request('/{}/{}'.format(cls.resource, create_json['_id']),
-                                       method=requests.get)
+            dset_resp = client.request(url, method=requests.get)
             dset_json = parse_json(dset_resp)
 
             return cls(**dset_json)
@@ -400,12 +403,13 @@ class DatasetImages(Dataset):
         create_json = parse_json(create_resp)
 
         if create_resp.status_code == 200:
-            pio.client.dataset_images_event_manager.wait_for_event(create_json['_id'],
-                                                                   cls.resource,
-                                                                   previsionio.utils.EventTuple('ready', 'done'))
+            url = '/{}/{}'.format(cls.resource, create_json['_id'])
+            pio.client.event_manager.wait_for_event(create_json['_id'],
+                                                    cls.resource,
+                                                    previsionio.utils.EventTuple('FOLDER_UPDATE', 'ready', 'done'),
+                                                    specific_url=url)
 
-            dset_resp = client.request('/{}/{}'.format(cls.resource, create_json['_id']),
-                                       method=requests.get)
+            dset_resp = client.request(url, method=requests.get)
             dset_json = parse_json(dset_resp)
 
             return cls(**dset_json)

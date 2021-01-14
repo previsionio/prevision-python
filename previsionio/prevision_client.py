@@ -16,10 +16,11 @@ EVENT_TIMEOUT = int(os.environ.get('EVENT_TIMEOUT', 600))
 
 
 class EventManager:
-    def __init__(self, event_endpoint, auth_headers):
+    def __init__(self, event_endpoint, auth_headers, client):
         self.event_endpoint = event_endpoint
         auth_headers = copy.deepcopy(auth_headers)
         self.headers = auth_headers
+        self.client = client
         self.t = threading.Thread(target=self.update_events, daemon=True)
         self.t.start()
 
@@ -42,52 +43,51 @@ class EventManager:
                        resource_type,
                        event_tuple: previsionio.utils.EventTuple,
                        specific_url=None):
+        # ignore invalid resource ids
+        if not isinstance(resource_id, str):
+            return
+        self.register_resource(resource_id)
         t0 = time.time()
 
         while time.time() < t0 + config.default_timeout:
             reconnect_start = time.time()
             while time.time() < reconnect_start + 60:
                 semd, event_dict = self._events
-                if resource_id not in event_dict:
-                    self.register_resource(resource_id, resource_type, specific_url=specific_url)
 
                 semd.acquire()
                 semi, event_list = event_dict[resource_id]
 
+                remaining_events = []
                 with semi:
                     for event in event_list:
-                        if event.get('status') == 'failed':
-                            semd.release()
-                            raise PrevisionException('Error on resource {}: {}'.format(resource_id,
-                                                                                       event))
+                        if event.get('event') == event_tuple.name:
+                            resp = self.client.request(endpoint=specific_url, method=requests.get)
+                            json_response = parse_json(resp)
+                            for k, v in event_tuple.fail_checks:
+                                if json_response.get(k) == v:
+                                    semd.release()
+                                    msg = 'Error on resource {}: {}\n{}'.format(resource_id,
+                                                                                json_response.get('errorMessage', ''),
+                                                                                json_response)
+                                    raise PrevisionException(msg)
+                            if json_response.get(event_tuple.key) == event_tuple.value:
+                                semd.release()
+                                return
+                        else:
+                            remaining_events.append(event)
 
-                        if event.get(event_tuple.key) == event_tuple.value:
-                            semd.release()
-                            return
-
+                event_dict[resource_id] = semi, remaining_events
                 semd.release()
                 time.sleep(0.1)
-
-            self.register_resource(resource_id, resource_type, specific_url=specific_url)
         else:
             raise TimeoutError('Failed to get status {} on {} {}'.format(event_tuple,
                                                                          resource_type,
                                                                          resource_id))
 
-    def register_resource(self, resource_id, resource_type, specific_url=None):
-        if specific_url is None:
-            url = '/{}/{}'.format(resource_type, resource_id)
-        else:
-            url = specific_url
-        resource_status = client.request(url, method=requests.get)
-        if resource_status.status_code != 200:
-            raise PrevisionException('No such resource: {} -- {}'.format(resource_id, resource_status.text))
-
-        resource_status_dict = parse_json(resource_status)
-        resource_status_dict['event_type'] = 'register'
-        resource_status_dict['event_name'] = 'register'
-
-        self.add_event(resource_id, resource_status_dict)
+    def register_resource(self, resource_id):
+        event_logger.debug('Registering resource with id {}'.format(resource_id))
+        payload = {'event': 'REGISTER', '_id': resource_id}
+        self.add_event(resource_id, payload)
 
     def update_events(self):
         sse_timeout = 300
@@ -100,8 +100,15 @@ class EventManager:
             try:
                 for msg in sse.iter_content(chunk_size=None):
                     event_logger.debug('url: {} -- data: {}'.format(self.event_endpoint, msg))
+                    msg = msg.decode()
+                    # SSE comments can start with ":" character
+                    if msg[0] == ':':
+                        event_logger.debug('sse comment{}'.format(msg))
+                        continue
                     try:
-                        event_data = json.loads(msg.decode().replace('data: ', '').strip())
+                        _, event_name, event_data, *rest = msg.split('\n')
+                        event_name = event_name.replace('event: ', '')
+                        event_data = json.loads(event_data.replace('data: ', '').strip())
                     except json.JSONDecodeError as e:
                         event_logger.warning('failed to parse json: "{}" -- error: {}'.format(msg, e.__repr__()))
                     except requests.exceptions.ChunkedEncodingError:
@@ -109,42 +116,11 @@ class EventManager:
                         sse.close()
                         return
                     else:
-                        # check if we're parsing dataset, usecase / predictions, or garbage events
-                        if not event_data or event_data == ' ':
-                            event_logger.warning('failed to parse json: "{}"'.format(msg))
+                        resource_id = event_data.get('_id', None)
+                        # ignore invalid resource ids
+                        if not isinstance(resource_id, str):
                             continue
-
-                        if event_data.get('type'):
-                            event_name = event_data.get('originalEventName')
-                            event_type = event_data.get('type')
-                            payload = event_data.get('payload')
-
-                            if not isinstance(payload, dict):
-                                continue
-
-                            resource_id = payload.get('_id')
-                            payload['event_name'] = event_name
-                            payload['event_type'] = event_type
-
-                        elif event_data.get('_id'):
-                            payload = event_data
-                            resource_id = payload.get('_id')
-                            event_name = 'dataset'
-                            event_type = 'CREATE'
-                            payload['event_name'] = event_name
-                            payload['event_type'] = event_type
-
-                        else:
-                            # unregister (stop polling on) if error
-                            status = event_data.get('status', None)
-                            event_logger.warning('[{}] {}'.format(status, event_data.get('message', 'Unknown error')))
-                            if status == 401 or status == 403 or status == 404:
-                                event_logger.warning('closing connection to endpoint: "{}"'.format(self.event_endpoint))
-                                sse.close()
-                                return
-
-                            event_logger.warning('not parsing json: {}'.format(msg))
-                            continue
+                        payload = {'event': event_name, 'id': resource_id}
 
                         event_logger.debug('url: {} -- event: {} payload: {}'.format(self.event_endpoint,
                                                                                      event_name,
@@ -162,7 +138,7 @@ class EventManager:
                 sse.close()
 
     def add_event(self, resource_id, payload):
-        event_logger.debug('adding event for {}'.format(resource_id))
+        event_logger.debug('adding event for {}:\npayload = {}'.format(resource_id, payload))
         semd, event_dict = self._events
 
         if payload and isinstance(payload, dict):
@@ -198,9 +174,7 @@ class Client(object):
 
         self.url = None
 
-        self.dataset_event_manager = None
-        self.dataset_images_event_manager = None
-        self.usecase_event_manager = None
+        self.event_manager = None
 
     def _check_token_url(self):
 
@@ -304,12 +278,7 @@ class Client(object):
             raise PrevisionException(msg)
 
         logger.debug('subscribing to events manager')
-        self.dataset_event_manager = EventManager(self.url + '/datasets/files/events',
-                                                  auth_headers=self.headers)
-        self.dataset_images_event_manager = EventManager(self.url + '/datasets/folders/events',
-                                                         auth_headers=self.headers)
-        self.usecase_event_manager = EventManager(self.url + '/usecases/events',
-                                                  auth_headers=self.headers)
+        self.event_manager = EventManager(self.url + '/events', auth_headers=self.headers, client=self)
 
 
 client = Client()

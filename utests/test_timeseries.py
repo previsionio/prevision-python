@@ -12,7 +12,6 @@ pio.config.zip_files = True
 TESTING_ID = get_testing_id()
 
 
-
 def setup_module():
     remove_datasets(DATA_PATH)
     make_supervised_datasets(DATA_PATH)
@@ -112,7 +111,7 @@ def time_window_test(dws, dwe, fws, fwe):
 
 
 @pytest.mark.parametrize('dws, dwe, fws, fwe', windows,
-                         ids=['-'.join(str(s) for s in w) + for w in windows])
+                         ids=['-'.join(str(s) for s in w) for w in windows])
 def test_time_window(dws, dwe, fws, fwe):
     uc_name_returned = time_window_test(dws, dwe, fws, fwe)
     usecases = [uc['name'] for uc in pio.Supervised.list()]
@@ -124,7 +123,6 @@ def test_time_window(dws, dwe, fws, fwe):
 def test_wrong_time_window(dws, dwe, fws, fwe):
     with pytest.raises(pio.TimeWindowException):
         time_window_test(dws, dwe, fws, fwe)
-
 
 
 ts_params = [(1, False), (3, False)]
