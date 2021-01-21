@@ -34,10 +34,14 @@ The compatibility version between Prevision.io’s Python SDK and Prevision Plat
      - Prevision 10.15
      - Prevision 10.16
      - Prevision 10.17
+     - Prevision 10.18
+     - Prevision 10.19
    * - Prevision Python SDK 10.10
      - ✓
      - ✓
      - ✓
+     - ✘
+     - ✘
      - ✘
      - ✘
      - ✘
@@ -52,10 +56,14 @@ The compatibility version between Prevision.io’s Python SDK and Prevision Plat
      - ✘
      - ✘
      - ✘
+     - ✘
+     - ✘
    * - Prevision Python SDK 10.12
      - ✓
      - ✓
      - ✓
+     - ✘
+     - ✘
      - ✘
      - ✘
      - ✘
@@ -70,6 +78,8 @@ The compatibility version between Prevision.io’s Python SDK and Prevision Plat
      - ✓
      - ✓
      - ✓
+     - ✓
+     - ✘
    * - Prevision Python SDK 10.14
      - ✘
      - ✘
@@ -79,6 +89,8 @@ The compatibility version between Prevision.io’s Python SDK and Prevision Plat
      - ✓
      - ✓
      - ✓
+     - ✓
+     - ✘
    * - Prevision Python SDK 10.15
      - ✘
      - ✘
@@ -88,6 +100,8 @@ The compatibility version between Prevision.io’s Python SDK and Prevision Plat
      - ✓
      - ✓
      - ✓
+     - ✓
+     - ✘
    * - Prevision Python SDK 10.16
      - ✘
      - ✘
@@ -97,6 +111,8 @@ The compatibility version between Prevision.io’s Python SDK and Prevision Plat
      - ✓
      - ✓
      - ✓
+     - ✓
+     - ✘
    * - Prevision Python SDK 10.17
      - ✘
      - ✘
@@ -105,6 +121,30 @@ The compatibility version between Prevision.io’s Python SDK and Prevision Plat
      - ✓
      - ✓
      - ✓
+     - ✓
+     - ✓
+     - ✘
+   * - Prevision Python SDK 10.18
+     - ✘
+     - ✘
+     - ✘
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✘
+   * - Prevision Python SDK 10.19
+     - ✘
+     - ✘
+     - ✘
+     - ✘
+     - ✘
+     - ✘
+     - ✘
+     - ✘
+     - ✘
      - ✓
 
 
