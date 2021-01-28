@@ -8,7 +8,9 @@ TESTING_ID = get_testing_id()
 pio.config.default_timeout = 120
 
 col_config = pio.ColumnConfig(target_column='class', filename_column='filename')
-uc_config = pio.TrainingConfig(models=[pio.Model.LinReg],
+uc_config = pio.TrainingConfig(normal_models=[pio.Model.LinReg],
+                               lite_models=[],
+                               simple_models=[],
                                features=[pio.Feature.Counts],
                                profile=pio.Profile.Quick)
 
