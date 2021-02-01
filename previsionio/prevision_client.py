@@ -222,7 +222,7 @@ class Client(object):
                              headers=headers,
                              files=files,
                              allow_redirects=allow_redirects,
-                             data=data,
+                             json=data,
                              **requests_kwargs)
             except Exception as e:
                 logger.warning('failed to request ' + url + ' retrying ' + str(retries - i) + ' times: ' + e.__repr__())
