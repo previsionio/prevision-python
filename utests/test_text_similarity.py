@@ -1,4 +1,5 @@
 import os
+import time
 import pandas as pd
 import pytest
 import unittest
@@ -50,9 +51,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
                                      metric=pio.metrics.TextSimilarity.accuracy_at_k)
 
         uc.wait_until(lambda usecase: usecase._status['status'] == 'done')
-        len_models = 0
-        while len_model==0:
-            len_models = len(uc.models)
+        time.sleep(40)
         uc.stop()
         uc.update_status()
         assert not uc.running
