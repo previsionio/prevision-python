@@ -45,7 +45,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
     def test_train_stop_delete_text_similarity(self):
 
         description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
-        uc = pio.TextSimilarity.fit('test_sdk_text_similarity_{}'.format(TESTING_ID),
+        uc = pio.TextSimilarity.fit('test_sdk_1_text_similarity_{}'.format(TESTING_ID),
                                      test_datasets['description'],
                                      description_column_config,
                                      metric=pio.metrics.TextSimilarity.accuracy_at_k)
@@ -61,7 +61,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
 
         description_column_config = pio.DescriptionsColumnConfig(content_column='item_desc', id_column='item_id')
         queries_column_config = pio.QueriesColumnConfig(queries_dataset_content_column='query', queries_dataset_matching_id_description_column='true_item_id')
-        uc = pio.TextSimilarity.fit('test_sdk__2__text_similarity_{}'.format(TESTING_ID),
+        uc = pio.TextSimilarity.fit('test_sdk_2_text_similarity_{}'.format(TESTING_ID),
                                      test_datasets['description'],
                                      description_column_config,
                                      metric=pio.metrics.TextSimilarity.accuracy_at_k,
@@ -76,7 +76,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
         nb_model = len(uc.models)
         nb_prediction = 0
         for model in uc.models:
-            preds = model.predict_from_dataset(test_datasets['queries'], 'query', 'true_item_id', 10)
+            preds = model.predict_from_dataset(test_datasets['queries'], 'query',top_k=10, queries_dataset_matching_id_description_column='true_item_id')
             nb_prediction += 1
         assert nb_prediction == nb_model
         uc.delete()
@@ -86,11 +86,11 @@ class BaseTrainSearchDelete(unittest.TestCase):
 
         description_column_config = pio.DescriptionsColumnConfig(content_column='item_desc', id_column='item_id')
         queries_column_config = pio.QueriesColumnConfig(queries_dataset_content_column='query', queries_dataset_matching_id_description_column='true_item_id')
-        usecase_config = [{'modelEmbedding': 'tf_idf', 'preprocessing': {'word_stemming': 'yes', 'ignore_stop_word': 'auto', 'ignore_punctuation': 'no'}, 'models': ['brute_force', 'cluster_pruning']},
-                          {'modelEmbedding': 'transformer', 'preprocessing': {}, 'models': ['brute_force', 'lsh', 'hkm']},
-                          {'modelEmbedding': 'transformer_fine_tuned', 'preprocessing': {}, 'models': ['brute_force', 'lsh', 'hkm']}]
+        usecase_config = [{'model_embedding': 'tf_idf', 'preprocessing': {'word_stemming': 'yes', 'ignore_stop_word': 'auto', 'ignore_punctuation': 'no'}, 'models': ['brute_force', 'cluster_pruning', 'lsh']},
+                          {'model_embedding': 'transformer', 'preprocessing': {}, 'models': ['brute_force', 'lsh', 'hkm']},
+                          {'model_embedding': 'transformer_fine_tuned', 'preprocessing': {}, 'models': ['brute_force', 'lsh', 'hkm']}]
         models_parameters = pio.ListModelsParameters(usecase_config)
-        uc = pio.TextSimilarity.fit('test_sdk_text_similarity_{}'.format(TESTING_ID),
+        uc = pio.TextSimilarity.fit('test_sdk_3_text_similarity_{}'.format(TESTING_ID),
                                      test_datasets['description'],
                                      description_column_config,
                                      metric=pio.metrics.TextSimilarity.accuracy_at_k,

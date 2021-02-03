@@ -660,8 +660,8 @@ class TextSimilarityModel(Model):
     def _predict_bulk(self,
                       queries_dataset_id,
                       queries_dataset_content_column,
-                      queries_dataset_matching_id_description_column,
-                      top_k):
+                      top_k,
+                      queries_dataset_matching_id_description_column=None):
         """ (Util method) Private method used to handle bulk predict.
 
         .. note::
@@ -684,9 +684,10 @@ class TextSimilarityModel(Model):
             'modelId': self._id,
             'queriesDatasetId': queries_dataset_id,
             'queriesDatasetContentColumn': queries_dataset_content_column,  # because we"ll be using the current model
-            'queriesDatasetMatchingIdDescriptionColumn': queries_dataset_matching_id_description_column,
             'topK': top_k
         }
+        if queries_dataset_matching_id_description_column:
+            data['queriesDatasetMatchingIdDescriptionColumn'] = queries_dataset_matching_id_description_column
 
         predict_start = client.request('/usecases/{}/versions/{}/predictions'.format(self.uc_id, self.uc_version),
                                        requests.post, data=data)
@@ -700,7 +701,7 @@ class TextSimilarityModel(Model):
 
         return predict_start_parsed['_id']
 
-    def predict_from_dataset(self, queries_dataset, queries_dataset_content_column, queries_dataset_matching_id_description_column, top_k) -> pd.DataFrame:
+    def predict_from_dataset(self, queries_dataset, queries_dataset_content_column, top_k=10, queries_dataset_matching_id_description_column=None) -> pd.DataFrame:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
@@ -715,8 +716,8 @@ class TextSimilarityModel(Model):
         """
         predict_id = self._predict_bulk(queries_dataset.id,
                                         queries_dataset_content_column,
-                                        queries_dataset_matching_id_description_column,
-                                        top_k)
+                                        top_k=top_k,
+                                        queries_dataset_matching_id_description_column=queries_dataset_matching_id_description_column)
 
         self.wait_for_prediction(predict_id)
 

@@ -19,7 +19,7 @@ class ModelEmbedding(object):
     TransformerFineTuned = 'transformer_fine_tuned'
 
 
-class Models(object):
+class TextSimilarityModels(object):
     BruteForce = 'brute_force'
     ClusterPruning = 'cluster_pruning'
     IVFOPQ = 'ivfopq'
@@ -48,15 +48,14 @@ class ListModelsParameters(UsecaseConfig):
 
             models_parameters_1 = ModelsParameters(ModelEmbedding.TFIDF,
                                                    Preprocessing(),
-                                                   [Models.BruteForce, Models.ClusterPruning])
+                                                   [TextSimilarityModels.BruteForce, TextSimilarityModels.ClusterPruning])
             models_parameters_2 = ModelsParameters(ModelEmbedding.Transformer,
                                                    {},
-                                                   [Models.BruteForce])
-            #models_parameters_3 = ModelsParameters(ModelEmbedding.TransformerFineTuned,
-            #                                       {},
-            #                                       [Models.BruteForce])
-            #models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
-            models_parameters = [models_parameters_1, models_parameters_2]
+                                                   [TextSimilarityModels.BruteForce])
+            models_parameters_3 = ModelsParameters(ModelEmbedding.TransformerFineTuned,
+                                                   {},
+                                                   [TextSimilarityModels.BruteForce])
+            models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
         self.models_parameters = []
         for element in models_parameters:
             if isinstance(element, ModelsParameters):
