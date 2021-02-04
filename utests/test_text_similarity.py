@@ -1,7 +1,6 @@
 import os
 import time
 import pandas as pd
-import pytest
 import unittest
 import previsionio as pio
 from .utils import get_testing_id
@@ -13,6 +12,7 @@ describe_dataset_file_name = 'manutan_items_100'
 description_dataset_name = TESTING_ID + '-' + describe_dataset_file_name
 queries_dataset_file_name = 'manutan_queries_100'
 queries_dataset_name = TESTING_ID + '-' + queries_dataset_file_name
+
 
 def upload_datasets():
     datapath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data_text_similarity')
@@ -29,8 +29,10 @@ def upload_datasets():
     test_datasets['description'] = description_dataset_csv
     test_datasets['queries'] = queries_dataset_csv
 
+
 def setup_module(module):
     upload_datasets()
+
 
 class BaseTrainSearchDelete(unittest.TestCase):
     @classmethod
@@ -46,9 +48,9 @@ class BaseTrainSearchDelete(unittest.TestCase):
 
         description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
         uc = pio.TextSimilarity.fit('test_sdk_1_text_similarity_{}'.format(TESTING_ID),
-                                     test_datasets['description'],
-                                     description_column_config,
-                                     metric=pio.metrics.TextSimilarity.accuracy_at_k)
+                                    test_datasets['description'],
+                                    description_column_config,
+                                    metric=pio.metrics.TextSimilarity.accuracy_at_k)
 
         uc.wait_until(lambda usecase: usecase._status['status'] == 'done')
         time.sleep(40)
@@ -60,15 +62,16 @@ class BaseTrainSearchDelete(unittest.TestCase):
     def test_train_search_delete_text_similarity_with_queries_dataset(self):
 
         description_column_config = pio.DescriptionsColumnConfig(content_column='item_desc', id_column='item_id')
-        queries_column_config = pio.QueriesColumnConfig(queries_dataset_content_column='query', queries_dataset_matching_id_description_column='true_item_id')
+        queries_column_config = pio.QueriesColumnConfig(queries_dataset_content_column='query',
+                                                        queries_dataset_matching_id_description_column='true_item_id')
         uc = pio.TextSimilarity.fit('test_sdk_2_text_similarity_{}'.format(TESTING_ID),
-                                     test_datasets['description'],
-                                     description_column_config,
-                                     metric=pio.metrics.TextSimilarity.accuracy_at_k,
-                                     top_k=10,
-                                     lang='auto',
-                                     queries_dataset=test_datasets['queries'],
-                                     queries_column_config=queries_column_config)
+                                    test_datasets['description'],
+                                    description_column_config,
+                                    metric=pio.metrics.TextSimilarity.accuracy_at_k,
+                                    top_k=10,
+                                    lang='auto',
+                                    queries_dataset=test_datasets['queries'],
+                                    queries_column_config=queries_column_config)
 
         uc.wait_until(lambda usecase: usecase._status['status'] == 'done')
         assert not uc.running
@@ -76,28 +79,39 @@ class BaseTrainSearchDelete(unittest.TestCase):
         nb_model = len(uc.models)
         nb_prediction = 0
         for model in uc.models:
-            preds = model.predict_from_dataset(test_datasets['queries'], 'query',top_k=10, queries_dataset_matching_id_description_column='true_item_id')
+            model.predict_from_dataset(test_datasets['queries'],
+                                       'query',
+                                       top_k=10,
+                                       queries_dataset_matching_id_description_column='true_item_id')
             nb_prediction += 1
         assert nb_prediction == nb_model
         uc.delete()
 
-
     def test_train_delete_text_similarity_with_queries_dataset_all_models(self):
-
         description_column_config = pio.DescriptionsColumnConfig(content_column='item_desc', id_column='item_id')
-        queries_column_config = pio.QueriesColumnConfig(queries_dataset_content_column='query', queries_dataset_matching_id_description_column='true_item_id')
-        usecase_config = [{'model_embedding': 'tf_idf', 'preprocessing': {'word_stemming': 'yes', 'ignore_stop_word': 'auto', 'ignore_punctuation': 'no'}, 'models': ['brute_force', 'cluster_pruning', 'lsh']},
-                          {'model_embedding': 'transformer', 'preprocessing': {}, 'models': ['brute_force', 'lsh', 'hkm']},
-                          {'model_embedding': 'transformer_fine_tuned', 'preprocessing': {}, 'models': ['brute_force', 'lsh', 'hkm']}]
+        queries_column_config = pio.QueriesColumnConfig(queries_dataset_content_column='query',
+                                                        queries_dataset_matching_id_description_column='true_item_id')
+        usecase_config = [{'model_embedding': 'tf_idf',
+                           'preprocessing': {'word_stemming': 'yes',
+                                             'ignore_stop_word': 'auto',
+                                             'ignore_punctuation': 'no'},
+                           'models': ['brute_force', 'cluster_pruning']},
+                          {'model_embedding': 'transformer',
+                           'preprocessing': {},
+                           'models': ['brute_force', 'lsh', 'hkm']},
+                          {'model_embedding': 'transformer_fine_tuned',
+                           'preprocessing': {},
+                           'models': ['brute_force', 'lsh', 'hkm']}]
         models_parameters = pio.ListModelsParameters(usecase_config)
         uc = pio.TextSimilarity.fit('test_sdk_3_text_similarity_{}'.format(TESTING_ID),
-                                     test_datasets['description'],
-                                     description_column_config,
-                                     metric=pio.metrics.TextSimilarity.accuracy_at_k,
-                                     top_k=10,
-                                     lang='auto',
-                                     queries_dataset=test_datasets['queries'],
-                                     queries_column_config=queries_column_config)
+                                    test_datasets['description'],
+                                    description_column_config,
+                                    metric=pio.metrics.TextSimilarity.accuracy_at_k,
+                                    top_k=10,
+                                    lang='auto',
+                                    queries_dataset=test_datasets['queries'],
+                                    queries_column_config=queries_column_config,
+                                    models_parameters=models_parameters)
 
         uc.wait_until(lambda usecase: usecase._status['status'] == 'done')
         assert not uc.running

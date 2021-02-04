@@ -1,7 +1,6 @@
 import requests
 from functools import lru_cache
 import time
-import pandas as pd
 
 from .logger import logger
 from .api_resource import ApiResource
@@ -10,6 +9,7 @@ from .prevision_client import client
 from .utils import PrevisionException, parse_json, EventTuple
 from . import config
 from .model import TextSimilarityModel
+from .dataset import Dataset
 import previsionio as pio
 
 
@@ -29,8 +29,8 @@ class TextSimilarityModels(object):
 
 class Preprocessing(object):
     config = {}
-    def __init__(self,
-                 word_stemming='yes', ignore_stop_word='auto', ignore_punctuation='no'):
+
+    def __init__(self, word_stemming='yes', ignore_stop_word='auto', ignore_punctuation='no'):
         self.word_stemming = word_stemming
         self.ignore_stop_word = ignore_stop_word
         self.ignore_punctuation = ignore_punctuation
@@ -48,7 +48,8 @@ class ListModelsParameters(UsecaseConfig):
 
             models_parameters_1 = ModelsParameters(ModelEmbedding.TFIDF,
                                                    Preprocessing(),
-                                                   [TextSimilarityModels.BruteForce, TextSimilarityModels.ClusterPruning])
+                                                   [TextSimilarityModels.BruteForce,
+                                                    TextSimilarityModels.ClusterPruning])
             models_parameters_2 = ModelsParameters(ModelEmbedding.Transformer,
                                                    {},
                                                    [TextSimilarityModels.BruteForce])
@@ -80,7 +81,7 @@ class ModelsParameters(UsecaseConfig):
 
     def __init__(self,
                  model_embedding='tf_idf',
-                 preprocessing= Preprocessing(),
+                 preprocessing=Preprocessing(),
                  models=['brute_force']):
         self.model_embedding = model_embedding
         if isinstance(preprocessing, Preprocessing):
@@ -109,12 +110,15 @@ class TextSimilarity(ApiResource):
         self.dataset = usecase_info.get('datasetId')
         usecase_params = usecase_info['usecaseParameters']
         self.description_column_config = DescriptionsColumnConfig(content_column=usecase_params.get('contentColumn'),
-                                                                 id_column=usecase_params.get('idColumn'))
+                                                                  id_column=usecase_params.get('idColumn'))
         if usecase_info.get('queriesDatasetId'):
             self.queries_dataset = usecase_info.get('queriesDatasetId')
-            self.queries_column_config = QueriesColumnConfig(queries_dataset_content_column=usecase_params.get('queriesDatasetContentColumn'),
-                                                                 queries_dataset_matching_id_description_column=usecase_params.get('queriesDatasetMatchingIdDescriptionColumn'),
-                                                                 queries_dataset_id_column=usecase_params.get('queriesDatasetIdColumn', None))
+            content_column = usecase_params.get('queriesDatasetContentColumn')
+            matching_id = usecase_params.get('queriesDatasetMatchingIdDescriptionColumn')
+            queries_dataset_id_column = usecase_params.get('queriesDatasetIdColumn', None)
+            self.queries_column_config = QueriesColumnConfig(queries_dataset_content_column=content_column,
+                                                             queries_dataset_matching_id_description_column=matching_id,
+                                                             queries_dataset_id_column=queries_dataset_id_column)
         else:
             self.queries_dataset = None
             self.queries_column_config = None
@@ -134,7 +138,8 @@ class TextSimilarity(ApiResource):
         self._models = {}
 
     @classmethod
-    def fit(self, name, dataset, description_column_config, metric=None, top_k=None, lang='auto', queries_dataset=None, queries_column_config=None,
+    def fit(self, name, dataset, description_column_config, metric=None, top_k=None, lang='auto',
+            queries_dataset=None, queries_column_config=None,
             models_parameters=ListModelsParameters(), **kwargs):
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
@@ -143,7 +148,7 @@ class TextSimilarity(ApiResource):
             name (str): Name of the usecase to create
             dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the dataset
                 object to use for as training dataset
-            description_column_config (:class:`.DescriptionsColumnConfig`): Description column configuration for the usecase
+            description_column_config (:class:`.DescriptionsColumnConfig`): Description column configuration
                 (see the documentation of the :class:`.DescriptionsColumnConfig` resource for more details
                 on each possible column types)
             metric (str, optional): Specific metric to use for the usecase (default: ``None``)
@@ -203,7 +208,6 @@ class TextSimilarity(ApiResource):
                                                 EventTuple('USECASE_UPDATE', 'status', 'running'),
                                                 specific_url=events_url)
         return usecase
-
 
     def update_status(self):
         return super().update_status(specific_url='/{}/{}/versions/{}'.format(self.resource,
@@ -401,84 +405,6 @@ class TextSimilarity(ApiResource):
         logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                       for k, v in parse_json(response).items()))
 
-    def _get_predictions(self, predict_id) -> pd.DataFrame:
-        """ Get the result prediction dataframe from a given predict id.
-
-        Args:
-            predict_id (str): Prediction job ID
-
-        Returns:
-            ``pd.DataFrame``: Prediction dataframe.
-        """
-        pred_response = pio.client.request('/usecases/{}/versions/{}/predictions/{}/download'.format(self.uc_id,
-                                                                                                     self.uc_version,
-                                                                                                     predict_id),
-                                           requests.get)
-
-        logger.debug('[Predict {0}] Downloading prediction file'.format(predict_id))
-
-        return zip_to_pandas(pred_response)
-
-    def predict_bulk(self,
-                      queries_dataset_id,
-                      queries_dataset_content_column,
-                      queries_dataset_matching_id_description_column,
-                      top_k):
-        """ (Util method) Private method used to handle bulk predict.
-
-        .. note::
-
-            This function should not be used directly. Use predict_from_* methods instead.
-
-        Args:
-            queries_dataset_id (str): Unique id of the quries dataset to predict with
-            queries_dataset_content_column (str): Content queries column name
-            queries_dataset_matching_id_description_column (str): Matching id description column name
-            top_k (integer): Number of the nearest description to predict
-        Returns:
-            str: A prediction job ID
-
-        Raises:
-            PrevisionException: Any error while starting the prediction on the platform or parsing the result
-        """
-        data = {
-            'usecaseId': self._id,
-            'modelId': self._id,
-            'queriesDatasetId': queries_dataset_id,
-            'queriesDatasetContentColumn': queries_dataset_content_column,  # because we"ll be using the current model
-            'queriesDatasetMatchingIdDescriptionColumn': queries_dataset_matching_id_description_column,
-            'topK': top_k
-        }
-
-        if dataset_folder_id is not None:
-            data['datasetFolderId'] = dataset_folder_id
-        predict_start = client.request('/usecases/{}/versions/{}/predictions'.format(self.uc_id, self.uc_version),
-                                       requests.post, data=data)
-
-        predict_start_parsed = parse_json(predict_start)
-
-        if '_id' not in predict_start_parsed:
-            err = 'Error starting prediction: {}'.format(predict_start_parsed)
-            logger.error(err)
-            raise PrevisionException(err)
-
-        self.wait_for_prediction(predict_start_parsed['_id'])
-
-        # FIXME : wait_for_prediction() seems to be broken...
-        retry_count = 60
-        retry = 0
-        while retry < retry_count:
-            retry += 1
-            try:
-                preds = self._get_predictions(predict_id)
-                return preds
-            except Exception:
-                # FIXME:
-                # sometimes I observed error 500, with prediction on image usecase
-                logger.warning('wait_for_prediction has prolly exited {} seconds too early'
-                               .format(retry))
-                time.sleep(1)
-        return None
 
 class DescriptionsColumnConfig(UsecaseConfig):
     """ Description Column configuration for starting a usecase: this object defines
