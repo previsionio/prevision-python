@@ -51,3 +51,13 @@ class Clustering(Enum):
     """Clustering silhouette metric"""
     calinski_harabaz = 'calinski_harabaz'
     """Clustering calinski_harabaz metric"""
+
+
+class TextSimilarity(Enum):
+    """
+    Metrics for text similarity projects
+    """
+    accuracy_at_k = 'accuracy_at_k'
+    """Accuracy At K"""
+    mrr_at_k = 'mrr_at_k'
+    """MRR At K"""

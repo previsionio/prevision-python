@@ -149,7 +149,6 @@ class UsecaseConfig(object):
         for key, value in self.__dict__.items():
             if not value:
                 continue
-
             if isinstance(value, list):
                 kwargs.append((self.config[key], value))
             elif isinstance(value, bool):

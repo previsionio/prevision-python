@@ -653,3 +653,87 @@ class MultiClassificationModel(Model):
         """
         return self._format_predictions(self._predict_sklearn(df, confidence), confidence,
                                         apply_threshold=True)
+
+
+class TextSimilarityModel(Model):
+
+    def _predict_bulk(self,
+                      queries_dataset_id,
+                      queries_dataset_content_column,
+                      top_k,
+                      matching_id_description_column=None):
+        """ (Util method) Private method used to handle bulk predict.
+
+        .. note::
+
+            This function should not be used directly. Use predict_from_* methods instead.
+
+        Args:
+            queries_dataset_id (str): Unique id of the quries dataset to predict with
+            queries_dataset_content_column (str): Content queries column name
+            queries_dataset_matching_id_description_column (str): Matching id description column name
+            top_k (integer): Number of the nearest description to predict
+        Returns:
+            str: A prediction job ID
+
+        Raises:
+            PrevisionException: Any error while starting the prediction on the platform or parsing the result
+        """
+        data = {
+            'usecaseId': self._id,
+            'modelId': self._id,
+            'queriesDatasetId': queries_dataset_id,
+            'queriesDatasetContentColumn': queries_dataset_content_column,  # because we"ll be using the current model
+            'topK': top_k
+        }
+        if matching_id_description_column:
+            data['queriesDatasetMatchingIdDescriptionColumn'] = matching_id_description_column
+
+        predict_start = client.request('/usecases/{}/versions/{}/predictions'.format(self.uc_id, self.uc_version),
+                                       requests.post, data=data)
+
+        predict_start_parsed = parse_json(predict_start)
+
+        if '_id' not in predict_start_parsed:
+            err = 'Error starting prediction: {}'.format(predict_start_parsed)
+            logger.error(err)
+            raise PrevisionException(err)
+
+        return predict_start_parsed['_id']
+
+    def predict_from_dataset(self, queries_dataset, queries_dataset_content_column, top_k=10,
+                             queries_dataset_matching_id_description_column=None) -> pd.DataFrame:
+        """ Make a prediction for a dataset stored in the current active [client]
+        workspace (using the current SDK dataset object).
+
+        Args:
+            dataset (:class:`.Dataset`): Dataset resource to make a prediction for
+            confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
+            dataset_folder (:class:`.Dataset`, None): Matching folder dataset resource for the prediction,
+                if necessary
+
+        Returns:
+            ``pd.DataFrame``: Prediction results dataframe
+        """
+        predict_id = self._predict_bulk(queries_dataset.id,
+                                        queries_dataset_content_column,
+                                        top_k=top_k,
+                                        matching_id_description_column=queries_dataset_matching_id_description_column)
+
+        self.wait_for_prediction(predict_id)
+
+        # FIXME : wait_for_prediction() seems to be broken...
+        retry_count = 60
+        retry = 0
+        while retry < retry_count:
+            retry += 1
+            try:
+                preds = self._get_predictions(predict_id)
+                return preds
+            except Exception:
+                # FIXME:
+                # sometimes I observed error 500, with prediction on image usecase
+                logger.warning('wait_for_prediction has prolly exited {} seconds too early'
+                               .format(retry))
+                time.sleep(1)
+        return None
