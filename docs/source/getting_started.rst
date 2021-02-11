@@ -106,6 +106,7 @@ which transformations are applied, and how the models are optimized.
 
 For a full details on training config and training parameters, see the training config documentation.
 
+
 Starting training
 ~~~~~~~~~~~~~~~~~
 
@@ -128,6 +129,61 @@ You can then create a new usecase based on :
 
     For more complex usecase setups (for example with an image dataset), refer to the :ref:`starting_usecase`
     guide.
+
+
+Configuring a text similarity usecase
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want, you can also specify some training parameters, such as which models are used,
+which embedding and preprocessing are applied.
+
+.. code-block:: python
+
+    models_parameters_1 = pio.ModelsParameters(pio.ModelEmbedding.TFIDF,
+                                               pio.Preprocessing(),
+                                               [pio.TextSimilarityModels.BruteForce, pio.TextSimilarityModels.ClusterPruning])
+    models_parameters_2 = pio.ModelsParameters(pio.ModelEmbedding.Transformer,
+                                               {},
+                                               [pio.TextSimilarityModels.BruteForce])
+    models_parameters_3 = pio.ModelsParameters(pio.ModelEmbedding.TransformerFineTuned,
+                                               {},
+                                               [pio.TextSimilarityModels.BruteForce])
+    models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
+    models_parameters = pio.ListModelsParameters(models_parameters=models_parameters)
+
+
+.. note::
+
+    If you want the default configuration of text similarity models, simply use:
+
+    .. code-block:: python
+
+        models_parameters = pio.ListModelsParameters()
+
+
+Starting text similarity training
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can then create a new text similarity usecase based on :
+
+ - a usecase name
+ - a dataset
+ - a description column config
+ - (optional) a queries dataset
+ - (optional) a qeries column config
+ - (optional) a metric type
+ - (optional) a top k
+ - (optional) a language
+ - (optional) a models parameters list
+
+.. code-block:: python
+
+    uc = pio.TextSimilarity.fit('helloworld_text_similarity',
+                                 dataset,
+                                 description_column_config,
+                                 metric=pio.metrics.TextSimilarity.accuracy_at_k,
+                                 top_k=10,
+                                 models_parameters=models_parameters)
 
 Monitoring training
 ~~~~~~~~~~~~~~~~~~~
@@ -191,6 +247,22 @@ process is done, and we'll always have access to the best model trained so far.
     df = pd.read_csv(data_path)
     preds = uc.predict(df)
 
+For text similarity, you can create a new prediction based on :
+  - a dataset queries
+  - a query colmun name
+  - (optional) topK
+  - (optional) description id column name
+
+.. code-block:: python
+
+    # we have some test data here:
+    data_path = 'data/queries_test.csv'
+    test_dataset = pio.Dataset.new(name='helloworld_test', file_name=data_path)
+
+    preds = model.predict_from_dataset(test_dataset,
+                                       'query',
+                                       top_k=10,
+                                       queries_dataset_matching_id_description_column='true_item_id')
 
 Additional util methods
 -----------------------

@@ -68,6 +68,8 @@ from previsionio.supervised import Supervised, SupervisedImages, \
     RegressionImages, ClassificationImages, MultiClassificationImages
 from previsionio.timeseries import TimeSeries, TimeWindow, TimeWindowException
 
+from previsionio.text_similarity import TextSimilarity, DescriptionsColumnConfig, \
+    QueriesColumnConfig, ListModelsParameters, ModelsParameters, TextSimilarityModels, ModelEmbedding, Preprocessing
 from previsionio.dataset import Dataset, DatasetImages
 # from previsionio.experiment import Experiment
 from previsionio.plotter import PrevisionioPlotter, PlotlyPlotter, MatplotlibPlotter
@@ -108,5 +110,13 @@ __all__ = ['client',
            'PlotlyPlotter',
            'MatplotlibPlotter',
            'cv_classif_analysis',
-           'DeployedModel'
+           'DeployedModel',
+           'TextSimilarity',
+           'DescriptionsColumnConfig',
+           'QueriesColumnConfig',
+           'ListModelsParameters',
+           'ModelsParameters',
+           'TextSimilarityModels',
+           'ModelEmbedding',
+           'Preprocessing'
            ]
