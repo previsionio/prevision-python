@@ -149,7 +149,9 @@ class UsecaseConfig(object):
         for key, value in self.__dict__.items():
             if not value:
                 continue
-            if isinstance(value, list):
+            if key not in self.config:
+                kwargs.append((key, value))
+            elif isinstance(value, list):
                 kwargs.append((self.config[key], value))
             elif isinstance(value, bool):
                 kwargs.append((self.config[key], str(value).lower()))
@@ -204,12 +206,7 @@ class TrainingConfig(UsecaseConfig):
     """
 
     config = {
-        'normal_models': 'normalModels',
-        'lite_models': 'liteModels',
-        'simple_models': 'simpleModels',
-        'fe_selected_list': 'featuresEngineeringSelectedList',
-        'profile': 'profile',
-        'with_blend': 'withBlend',
+        'fe_selected_list': 'features_engineering_selected_list'
     }
 
     def __init__(self,
@@ -271,15 +268,9 @@ class ColumnConfig(UsecaseConfig):
     """
 
     config = {
-        'id_column': 'idColumn',
-        'weight_column': 'weightColumn',
-        'target_column': 'targetColumn',
-        'filename_column': 'filenameColumn',
-        'fold_column': 'foldColumn',
-        'time_column': 'timeColumn',
-        'group_columns': 'groupList',
-        'apriori_columns': 'aprioriList',
-        'drop_list': 'dropList',
+        'group_columns': 'group_list',
+        'apriori_columns': 'apriori_list',
+        'drop_list': 'drop_list',
     }
 
     def __init__(self,

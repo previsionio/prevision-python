@@ -27,14 +27,14 @@ class Supervised(BaseUsecase):
     # model_class = Model
 
     def __init__(self, **usecase_info):
-        self.dataset = usecase_info.get('datasetId')
-        if usecase_info.get('holdoutDatasetId'):
-            self.holdout_dataset = usecase_info.get('holdoutDatasetId')
+        self.dataset = usecase_info.get('dataset_id')
+        if usecase_info.get('holdout_dataset_id'):
+            self.holdout_dataset = usecase_info.get('holdout_dataset_id')
         else:
             self.holdout_dataset = None
 
         super().__init__(**usecase_info)
-        self.model_class = MODEL_CLASS_DICT.get(self._status['trainingType'], Model)
+        self.model_class = MODEL_CLASS_DICT.get(self._status['training_type'], Model)
 
     @classmethod
     def from_name(cls, name, raise_if_non_unique=False, partial_match=False):
@@ -56,7 +56,7 @@ class Supervised(BaseUsecase):
             :class:`.Supervised`: Fetched usecase
         """
         instance = super(BaseUsecase, cls).from_name(name, raise_if_non_unique, partial_match)
-        type_problem = instance._status['trainingType']
+        type_problem = instance._status['training_type']
         if cls.type_problem != 'nan' and type_problem != cls.type_problem:
             raise PrevisionException('Invalid problem type: should be "{}" but is "{}".'.format(cls.type_problem,
                                                                                                 type_problem))
@@ -79,7 +79,7 @@ class Supervised(BaseUsecase):
                 data from the platform or parsing result
         """
         instance = super().from_id(_id, version=version)
-        type_problem = instance._status['trainingType']
+        type_problem = instance._status['training_type']
         if cls.type_problem != 'nan' and type_problem != cls.type_problem:
             raise PrevisionException('Invalid problem type: should be "{}" but is "{}".'.format(cls.type_problem,
                                                                                                 type_problem))
@@ -117,9 +117,9 @@ class Supervised(BaseUsecase):
 
         if holdout_dataset:
             if isinstance(holdout_dataset, str):
-                training_args['holdoutDatasetId'] = holdout_dataset
+                training_args['holdout_dataset_id'] = holdout_dataset
             else:
-                training_args['holdoutDatasetId'] = holdout_dataset.id
+                training_args['holdout_dataset_id'] = holdout_dataset.id
 
         if not metric:
             metric = cls.default_metric
@@ -157,9 +157,9 @@ class Supervised(BaseUsecase):
                   'metric': self.metric,
                   'holdout_dataset': self.holdout_dataset,
                   'training_config': self.training_config,
-                  'type_problem': self._status['trainingType'],
-                  'usecaseId': self._id,
-                  'parentVersion': self.version,
+                  'type_problem': self._status['training_type'],
+                  'usecase_id': self._id,
+                  'parent_version': self.version,
                   'nextVersion': max([v['version'] for v in self.versions]) + 1}
 
         params.update(fit_params)
@@ -168,13 +168,13 @@ class Supervised(BaseUsecase):
     def _save_json(self):
         json_dict = {
             '_id': self.id,
-            'usecaseParameters': self._status.get('usecaseParameters', {}),
-            'datasetId': self._status['datasetId'],
+            'usecase_version_params': self._status.get('usecase_version_params', {}),
+            'dataset_id': self._status['dataset_id'],
             'type_problem': self.type_problem,
             'data_type': self.data_type,
         }
         if self.holdout_dataset:
-            json_dict['holdoutId'] = self.holdout_dataset
+            json_dict['holdout_id'] = self.holdout_dataset
         return json_dict
 
 

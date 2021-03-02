@@ -23,7 +23,7 @@ class BaseUsecase(ApiResource):
 
     training_config: TrainingConfig
     column_config: ColumnConfig
-    id_key = 'usecaseId'
+    id_key = 'usecase_id'
 
     resource = 'usecases'
     type_problem = 'nan'
@@ -33,23 +33,23 @@ class BaseUsecase(ApiResource):
         super().__init__()
         self.name: str = usecase_info.get('name')
         self.metric = usecase_info.get('metric')
-        usecase_params = usecase_info['usecaseParameters']
-        self.column_config = ColumnConfig(target_column=usecase_params.get('targetColumn'),
-                                          fold_column=usecase_params.get('foldColumn'),
-                                          id_column=usecase_params.get('idColumn'),
-                                          weight_column=usecase_params.get('weightColumn'))
+        usecase_params = usecase_info['usecase_version_params']
+        self.column_config = ColumnConfig(target_column=usecase_params.get('target_column'),
+                                          fold_column=usecase_params.get('fold_column'),
+                                          id_column=usecase_params.get('id_column'),
+                                          weight_column=usecase_params.get('weight_column'))
 
         self.training_config = TrainingConfig(profile=usecase_params.get('profile'),
                                               fe_selected_list=usecase_params.get(
-                                                  'featuresEngineeringSelectedList'),
-                                              normal_models=usecase_params.get('normalModels'),
-                                              lite_models=usecase_params.get('liteModels'),
-                                              simple_models=usecase_params.get('simpleModels'))
+                                                  'features_engineering_selected_list'),
+                                              normal_models=usecase_params.get('normal_models'),
+                                              lite_models=usecase_params.get('lite_models'),
+                                              simple_models=usecase_params.get('simple_models'))
 
-        self._id = usecase_info.get('usecaseId')
+        self._id = usecase_info.get('usecase_id')
         self.resource_id = usecase_info.get('_id')
         self.version = usecase_info.get('version', 1)
-        self.shared_users = usecase_info.get('shareList', [])
+        self.shared_users = usecase_info.get('share_list', [])
         self._usecase_info = usecase_info
 
         self.predictions = {}
@@ -58,7 +58,7 @@ class BaseUsecase(ApiResource):
         self._models = {}
 
     def __len__(self):
-        return len([m for m in self._status['modelsList']
+        return len([m for m in self._status['models_list']
                     if m['status'] == 'done'
                     # Ignoring simple models for now since we can't predict with them
                     ])
@@ -94,7 +94,7 @@ class BaseUsecase(ApiResource):
         Returns:
             list(:class:`.Model`): List of models found by the platform for the usecase
         """
-        done = [m for m in self._status['modelsList'] if (m['status'] == 'done')]
+        done = [m for m in self._status['models_list'] if (m['status'] == 'done')]
 
         for done_model in done:
             if done_model['_id'] not in self._models:
@@ -125,7 +125,7 @@ class BaseUsecase(ApiResource):
         Returns:
             :class:`.Dataset`: Associated training dataset
         """
-        return Dataset.from_id(_id=self._status['datasetId'])
+        return Dataset.from_id(_id=self._status['dataset_id'])
 
     @property
     @lru_cache()
@@ -300,7 +300,7 @@ class BaseUsecase(ApiResource):
             ``None`` if no model matched the search filter.
         """
         filter_list = list(filter(lambda m: not (m['tags'].get('simple')),
-                                  self._status['modelsList'])
+                                  self._status['models_list'])
                            )
 
         return self._get_best(models_list=filter_list)
@@ -318,7 +318,7 @@ class BaseUsecase(ApiResource):
         filter_list = list(filter(lambda m: not (m['tags'].get('simple') or
                                                  m['tags'].get('blend') or
                                                  m['tags'].get('mean')),
-                                  self._status['modelsList'])
+                                  self._status['models_list'])
                            )
         return self._get_best(models_list=filter_list)
 
@@ -329,7 +329,7 @@ class BaseUsecase(ApiResource):
         Returns:
             Model object -- corresponding to the fastest model
         """
-        models = self._status['modelsList']
+        models = self._status['models_list']
         fastest_model = [m for m in models if m['tags'].get('fastest')]
         fastest_model = self.model_class(uc_id=self._id, uc_version=self.version, **fastest_model[0])
         return fastest_model
@@ -342,7 +342,7 @@ class BaseUsecase(ApiResource):
             bool: Running status
         """
         status = self._status
-        return status['status'] == 'running'
+        return status['state'] == 'running'
 
     @property
     def drop_list(self):
@@ -351,7 +351,7 @@ class BaseUsecase(ApiResource):
         Returns:
             list(str): Names of the columns dropped from the dataset
         """
-        return self._status['usecaseParameters'].get('dropList')
+        return self._status['usecase_version_params'].get('drop_list')
 
     @property
     def fe_selected_list(self):
@@ -360,7 +360,7 @@ class BaseUsecase(ApiResource):
         Returns:
             list(str): Names of the feature engineering modules selected for the usecase
         """
-        return self._status['usecaseParameters'].get('featuresEngineeringSelectedList')
+        return self._status['usecase_version_params'].get('features_engineering_selected_list')
 
     @property
     def normal_models_list(self):
@@ -369,7 +369,7 @@ class BaseUsecase(ApiResource):
         Returns:
             list(str): Names of the normal models selected for the usecase
         """
-        return self._status['usecaseParameters'].get('normalModels')
+        return self._status['usecase_version_params'].get('normal_models')
 
     @property
     def lite_models_list(self):
@@ -378,7 +378,7 @@ class BaseUsecase(ApiResource):
         Returns:
             list(str): Names of the lite models selected for the usecase
         """
-        return self._status['usecaseParameters'].get('liteModels')
+        return self._status['usecase_version_params'].get('lite_models')
 
     @property
     def simple_models_list(self):
@@ -387,7 +387,7 @@ class BaseUsecase(ApiResource):
         Returns:
             list(str): Names of the simple models selected for the usecase
         """
-        return self._status['usecaseParameters'].get('simpleModels')
+        return self._status['usecase_version_params'].get('simple_models')
 
     @classmethod
     def _start_usecase(cls, name, dataset_id, data_type, type_problem, **kwargs):
@@ -409,10 +409,10 @@ class BaseUsecase(ApiResource):
         logger.info('[Usecase] Starting usecase')
 
         if data_type == 'tabular' or data_type == 'timeseries':
-            data = dict(name=name, datasetId=dataset_id, **kwargs)
+            data = dict(name=name, dataset_id=dataset_id, **kwargs)
         elif data_type == 'images':
             csv_id, folder_id = dataset_id
-            data = dict(name=name, datasetId=csv_id, datasetFolderId=folder_id, **kwargs)
+            data = dict(name=name, dataset_id=csv_id, folder_dataset_id=folder_id, **kwargs)
         else:
             raise PrevisionException('invalid data type: {}'.format(data_type))
 
@@ -430,7 +430,7 @@ class BaseUsecase(ApiResource):
         events_url = '/usecases/{}/versions/{}'.format(start_response['_id'], start_response['version'])
         pio.client.event_manager.wait_for_event(usecase._id,
                                                 cls.resource,
-                                                EventTuple('USECASE_UPDATE', 'status', 'running'),
+                                                EventTuple('USECASE_UPDATE', 'state', 'running'),
                                                 specific_url=events_url)
         return usecase
 
@@ -571,7 +571,7 @@ class BaseUsecase(ApiResource):
             try:
                 if condition(self):
                     break
-                elif self._status['status'] == 'failed':
+                elif self._status['state'] == 'failed':
                     raise PrevisionException('Resource failed while waiting')
             except PrevisionException as e:
                 logger.warning(e.__repr__())
@@ -588,7 +588,7 @@ class BaseUsecase(ApiResource):
         events_url = '/usecases/{}/versions/{}'.format(self.id, self.version)
         pio.client.event_manager.wait_for_event(self._id,
                                                 self.resource,
-                                                EventTuple('USECASE_UPDATE', 'status', 'done'),
+                                                EventTuple('USECASE_UPDATE', 'state', 'done'),
                                                 specific_url=events_url)
         logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                       for k, v in parse_json(response).items()))
@@ -731,7 +731,7 @@ class BaseUsecase(ApiResource):
         with open(pio_file, 'r') as f:
             mdl = json.load(f)
         uc = cls.from_id(mdl['_id'])
-        if mdl['usecaseParameters'].get('datasetsHoldout'):
-            uc.holdout_dataset = mdl['usecaseParameters'].get('datasetsHoldout')[0]
+        if mdl['usecase_version_params'].get('holdout_dataset_id'):
+            uc.holdout_dataset = mdl['usecase_version_params'].get('holdout_dataset_id')[0]
 
         return uc

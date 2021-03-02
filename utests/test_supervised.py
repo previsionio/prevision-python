@@ -44,7 +44,7 @@ def teardown_module(module):
         if TESTING_ID in ds.name:
             ds.delete()
     for uc_dict in pio.Supervised.list():
-        uc = pio.Supervised.from_id(uc_dict['usecaseId'])
+        uc = pio.Supervised.from_id(uc_dict['usecase_id'])
         if TESTING_ID in uc.name:
             uc.delete()
 
@@ -94,7 +94,7 @@ def setup_usecase_class(request):
     # uc.wait_until(lambda usecase: len(usecase) > 0)
     # time.sleep(30)
     # uc.stop()
-    uc.wait_until(lambda usecase: usecase._status['status'] == 'done')
+    uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
     yield request.param, uc
     uc.delete()
 

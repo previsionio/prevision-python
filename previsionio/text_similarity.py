@@ -39,7 +39,7 @@ class Preprocessing(object):
 class ListModelsParameters(UsecaseConfig):
 
     config = {
-        'models_parameters': 'modelsParameters'
+        'models_parameters': 'models_params'
     }
 
     def __init__(self, models_parameters=None):
@@ -74,7 +74,7 @@ class ModelsParameters(UsecaseConfig):
     """
 
     config = {
-        'model_embedding': 'modelEmbedding',
+        'model_embedding': 'model_embedding',
         'preprocessing': 'preprocessing',
         'models': 'models'
     }
@@ -105,26 +105,30 @@ class TextSimilarity(ApiResource):
         super().__init__()
         self.name: str = usecase_info.get('name')
         self.metric = usecase_info.get('metric')
-        self.top_k = usecase_info.get('topK')
+        self.top_k = usecase_info.get('top_K')
         self.lang = usecase_info.get('lang')
-        self.dataset = usecase_info.get('datasetId')
-        usecase_params = usecase_info['usecaseParameters']
+        self.dataset = usecase_info.get('dataset_id')
+        usecase_params = usecase_info['usecase_version_params']
         self.description_column_config = DescriptionsColumnConfig(content_column=usecase_params.get('contentColumn'),
                                                                   id_column=usecase_params.get('idColumn'))
-        if usecase_info.get('queriesDatasetId'):
-            self.queries_dataset = usecase_info.get('queriesDatasetId')
-            content_column = usecase_params.get('queriesDatasetContentColumn')
-            matching_id = usecase_params.get('queriesDatasetMatchingIdDescriptionColumn')
-            queries_dataset_id_column = usecase_params.get('queriesDatasetIdColumn', None)
+        if usecase_info.get('queries_dataset_id'):
+            self.queries_dataset = usecase_info.get('queries_dataset_id')
+            content_column = usecase_params.get('queries_dataset_content_column')
+            matching_id = usecase_params.get('queries_dataset_matching_id_description_column')
+            queries_dataset_id_column = usecase_params.get('queries_dataset_id_column', None)
             self.queries_column_config = QueriesColumnConfig(queries_dataset_content_column=content_column,
                                                              queries_dataset_matching_id_description_column=matching_id,
                                                              queries_dataset_id_column=queries_dataset_id_column)
         else:
             self.queries_dataset = None
             self.queries_column_config = None
-        self.models_parameters = ListModelsParameters(models_parameters=usecase_params.get('modelsParameters'))
+        models_parameters = usecase_params.get('models_params')
+        # FIXME wait for backend to remove useless_id
+        for param in models_parameters:
+            param.pop('_id')
+        self.models_parameters = ListModelsParameters(models_parameters=models_parameters)
 
-        self._id = usecase_info.get('usecaseId')
+        self._id = usecase_info.get('usecase_id')
         self.resource_id = usecase_info.get('_id')
         self.version = usecase_info.get('version', 1)
         self.shared_users = usecase_info.get('shareList', [])
@@ -170,16 +174,16 @@ class TextSimilarity(ApiResource):
 
         if queries_dataset:
             if isinstance(queries_dataset, str):
-                training_args['queries_dataset'] = queries_dataset
+                training_args['queries_dataset_id'] = queries_dataset
             else:
-                training_args['queries_dataset'] = queries_dataset.id
+                training_args['queries_dataset_id'] = queries_dataset.id
 
         if not metric:
             metric = self.default_metric
         if not top_k:
             top_k = self.default_top_k
         training_args['metric'] = metric if isinstance(metric, str) else metric.value
-        training_args['topK'] = top_k
+        training_args['top_k'] = top_k
         training_args['lang'] = lang if isinstance(lang, str) else self.lang
         if isinstance(dataset, str):
             dataset_id = dataset
@@ -188,7 +192,7 @@ class TextSimilarity(ApiResource):
         else:
             dataset_id = dataset.id
 
-        data = dict(name=name, datasetId=dataset_id, **training_args)
+        data = dict(name=name, dataset_id=dataset_id, **training_args)
 
         endpoint = '/usecases/{}/{}'.format(self.data_type, self.type_problem)
         start = client.request(endpoint, requests.post, data=data, content_type='application/json')
@@ -205,7 +209,7 @@ class TextSimilarity(ApiResource):
         events_url = '/usecases/{}/versions/{}'.format(start_response['_id'], start_response['version'])
         pio.client.event_manager.wait_for_event(usecase._id,
                                                 self.resource,
-                                                EventTuple('USECASE_UPDATE', 'status', 'running'),
+                                                EventTuple('USECASE_UPDATE', 'state', 'running'),
                                                 specific_url=events_url)
         return usecase
 
@@ -253,7 +257,7 @@ class TextSimilarity(ApiResource):
         Returns:
             list(:class:`.Model`): List of models found by the platform for the usecase
         """
-        done = [m for m in self._status['modelsList'] if (m['status'] == 'done')]
+        done = [m for m in self._status['models_list'] if (m['status'] == 'done')]
 
         for done_model in done:
             if done_model['_id'] not in self._models:
@@ -322,7 +326,7 @@ class TextSimilarity(ApiResource):
             ``None`` the list was empty.
         """
         if len(models_list) == 0:
-            models_list = self._status['modelsList']
+            models_list = self._status['models_list']
         for m in models_list:
             if m[by] is None:
                 m[by] = default_cost_value
@@ -338,7 +342,7 @@ class TextSimilarity(ApiResource):
         Returns:
             Model object -- corresponding to the fastest model
         """
-        models = self._status['modelsList']
+        models = self._status['models_list']
         fastest_model = [m for m in models if m['tags'].get('fastest')]
         fastest_model = self.model_class(uc_id=self._id, uc_version=self.version, **fastest_model[0])
         return fastest_model
@@ -351,7 +355,7 @@ class TextSimilarity(ApiResource):
             bool: Running status
         """
         status = self._status
-        return status['status'] == 'running'
+        return status['state'] == 'running'
 
     def print_info(self):
         """ Print all info on the usecase. """
@@ -383,7 +387,7 @@ class TextSimilarity(ApiResource):
             try:
                 if condition(self):
                     break
-                elif self._status['status'] == 'failed':
+                elif self._status['state'] == 'failed':
                     raise PrevisionException('Resource failed while waiting')
             except PrevisionException as e:
                 logger.warning(e.__repr__())
@@ -400,7 +404,7 @@ class TextSimilarity(ApiResource):
         events_url = '/usecases/{}/versions/{}'.format(self.id, self.version)
         pio.client.event_manager.wait_for_event(self._id,
                                                 self.resource,
-                                                EventTuple('USECASE_UPDATE', 'status', 'done'),
+                                                EventTuple('USECASE_UPDATE', 'state', 'done'),
                                                 specific_url=events_url)
         logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                       for k, v in parse_json(response).items()))
@@ -416,8 +420,6 @@ class DescriptionsColumnConfig(UsecaseConfig):
     """
 
     config = {
-        'id_column': 'idColumn',
-        'content_column': 'contentColumn',
     }
 
     def __init__(self,
@@ -436,11 +438,11 @@ class QueriesColumnConfig(UsecaseConfig):
         id_column (str, optional): Name of the id column in the description dataset
     """
 
-    config = {
-        'queries_dataset_content_column': 'queriesDatasetContentColumn',
-        'queries_dataset_matching_id_description_column': 'queriesDatasetMatchingIdDescriptionColumn',
-        'queries_dataset_id_column': 'queriesDatasetIdColumn',
-    }
+    # config = {
+    #     'queries_dataset_content_column': 'queriesDatasetContentColumn',
+    #     'queries_dataset_matching_id_description_column': 'queriesDatasetMatchingIdDescriptionColumn',
+    #     'queries_dataset_id_column': 'queriesDatasetIdColumn',
+    # }
 
     def __init__(self,
                  queries_dataset_content_column,

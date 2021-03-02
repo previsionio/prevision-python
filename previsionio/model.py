@@ -149,7 +149,7 @@ class Model(ApiResource):
         pio.client.event_manager.wait_for_event(predict_id,
                                                 'usecases/{}/versions/{}/predictions'.format(self.uc_id,
                                                                                              self.uc_version),
-                                                EventTuple('PREDICTION_UPDATE', 'status', 'done'),
+                                                EventTuple('PREDICTION_UPDATE', 'state', 'done'),
                                                 specific_url=specific_url)
 
     def _predict_bulk(self,
@@ -175,15 +175,14 @@ class Model(ApiResource):
             PrevisionException: Any error while starting the prediction on the platform or parsing the result
         """
         data = {
-            'usecaseId': self.uc_id,
-            'datasetId': dataset_id,
-            'modelId': self._id,
-            'bestSingle': 'false',  # because we"ll be using the current model
+            'usecase_id': self.uc_id,
+            'dataset_id': dataset_id,
+            'model_id': self._id,
             'confidence': str(confidence).lower(),
         }
 
         if dataset_folder_id is not None:
-            data['datasetFolderId'] = dataset_folder_id
+            data['folder_dataset_id'] = dataset_folder_id
         predict_start = client.request('/usecases/{}/versions/{}/predictions'.format(self.uc_id, self.uc_version),
                                        requests.post, data=data)
 
@@ -371,7 +370,6 @@ class Model(ApiResource):
         cv_response = client.request(
             '/usecases/{}/versions/{}/models/{}/download/cv'.format(self.uc_id, self.uc_version, self._id),
             requests.get)
-
         df_cv = zip_to_pandas(cv_response)
 
         return df_cv
@@ -424,7 +422,6 @@ class ClassificationModel(Model):
 
         if apply_threshold:
             preds['predictions'] = (preds[pred_col] > self._predict_threshold)
-            preds[pred_col] = preds['predictions'].astype(int)
             preds[pred_col] = preds['predictions'].astype(int)
             preds = preds.drop('predictions', axis=1)
 
@@ -604,18 +601,7 @@ class MultiClassificationModel(Model):
         Returns:
             ``pd.DataFrame``: Formatted predictions dataframe.
         """
-        # TODO check with web team for a more consistent return format
-        if 'pred_' in preds.columns[1]:
-            pred_col = preds.columns[1]
-        else:
-            pred_col = preds.columns[2]
-
-        preds[pred_col] = preds[pred_col].astype(int)
-
-        if apply_threshold:
-            return preds[['ID', pred_col]]
-        else:
-            return preds[['ID'] + [c for c in preds.columns if pred_col + '_' in c]]
+        return preds
 
     def predict_proba(self, df, confidence=False):
         """ Make a prediction in a Scikit-learn blocking style and return probabilities.
@@ -680,14 +666,13 @@ class TextSimilarityModel(Model):
             PrevisionException: Any error while starting the prediction on the platform or parsing the result
         """
         data = {
-            'usecaseId': self._id,
-            'modelId': self._id,
-            'queriesDatasetId': queries_dataset_id,
-            'queriesDatasetContentColumn': queries_dataset_content_column,  # because we"ll be using the current model
-            'topK': top_k
+            'model_id': self._id,
+            'queries_dataset_id': queries_dataset_id,
+            'queries_dataset_content_column': queries_dataset_content_column,  # because we"ll be using the current model
+            'top_k': top_k
         }
         if matching_id_description_column:
-            data['queriesDatasetMatchingIdDescriptionColumn'] = matching_id_description_column
+            data['queries_dataset_matching_id_description_column'] = matching_id_description_column
 
         predict_start = client.request('/usecases/{}/versions/{}/predictions'.format(self.uc_id, self.uc_version),
                                        requests.post, data=data)
@@ -719,9 +704,7 @@ class TextSimilarityModel(Model):
                                         queries_dataset_content_column,
                                         top_k=top_k,
                                         matching_id_description_column=queries_dataset_matching_id_description_column)
-
         self.wait_for_prediction(predict_id)
-
         # FIXME : wait_for_prediction() seems to be broken...
         retry_count = 60
         retry = 0
