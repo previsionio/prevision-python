@@ -94,7 +94,7 @@ def test_ts_groups(groups):
     uc.wait_until(lambda usecase: len(usecase) > 0)
     uc.stop()
     usecases = pio.Supervised.list()
-    assert uc.id in [u['usecaseId'] for u in usecases]
+    assert uc.id in [u['usecase_id'] for u in usecases]
 
 
 def time_window_test(dws, dwe, fws, fwe):

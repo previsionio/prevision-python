@@ -106,9 +106,11 @@ class EventManager:
                         event_logger.debug('sse comment{}'.format(msg))
                         continue
                     try:
-                        _, event_name, event_data, *rest = msg.split('\n')
-                        event_name = event_name.replace('event: ', '')
-                        event_data = json.loads(event_data.replace('data: ', '').strip())
+                        # FIXME backend send prediction event without data (need check from backend)
+                        if len(msg.split('\n'))>=3:
+                            _, event_name, event_data, *rest = msg.split('\n')
+                            event_name = event_name.replace('event: ', '')
+                            event_data = json.loads(event_data.replace('data: ', '').strip())
                     except json.JSONDecodeError as e:
                         event_logger.warning('failed to parse json: "{}" -- error: {}'.format(msg, e.__repr__()))
                     except requests.exceptions.ChunkedEncodingError:
@@ -121,7 +123,6 @@ class EventManager:
                         if not isinstance(resource_id, str):
                             continue
                         payload = {'event': event_name, 'id': resource_id}
-
                         event_logger.debug('url: {} -- event: {} payload: {}'.format(self.event_endpoint,
                                                                                      event_name,
                                                                                      payload))

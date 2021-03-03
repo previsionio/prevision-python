@@ -137,11 +137,9 @@ class TestPredict:
     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
     def test_predict(self, setup_usecase_class, options):
         type_problem, uc = setup_usecase_class
-
         data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
         preds = uc.predict(data, **options)
         assert len(preds) == len(data)
-
         if options['confidence']:
             if type_problem == 'regression':
                 conf_cols = ['_quantile={}'.format(q) for q in [1, 5, 10, 25, 50, 75, 95, 99]]
