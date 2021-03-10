@@ -5,6 +5,7 @@ python_major = sys.version_info[0]
 
 install_requires = ['pandas',
                     'requests',
+                    'requests-oauthlib',
                     'apscheduler',
                     'seaborn',
                     'scikit-learn',
