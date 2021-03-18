@@ -38,5 +38,4 @@ jobs:
           PREVISION_URL: ${{ secrets.PREVISION_URL }} 
           PREVISION_MASTER_TOKEN: ${{ secrets.PREVISION_MASTER_TOKEN }} 
         run: |
-          echo $PREVISION_URL
           pytest utests
