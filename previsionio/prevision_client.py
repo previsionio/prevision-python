@@ -60,7 +60,10 @@ class EventManager:
                 remaining_events = []
                 with semi:
                     for event in event_list:
+                        if event.get('event') != 'REGISTER':
+                            print("event==", event)
                         if event.get('event') == event_tuple.name:
+
                             resp = self.client.request(endpoint=specific_url, method=requests.get)
                             json_response = parse_json(resp)
                             for k, v in event_tuple.fail_checks:
@@ -92,6 +95,7 @@ class EventManager:
     def update_events(self):
         sse_timeout = 300
         while True:
+            print("self.event_endpoint",self.event_endpoint)
             sse = requests.get(self.event_endpoint,
                                stream=True,
                                headers=self.headers,
@@ -100,15 +104,18 @@ class EventManager:
             try:
                 for msg in sse.iter_content(chunk_size=None):
                     event_logger.debug('url: {} -- data: {}'.format(self.event_endpoint, msg))
+                    print("self.event_endpoint",self.event_endpoint)
+                    print("msg=========", msg)
                     msg = msg.decode()
                     # SSE comments can start with ":" character
                     if msg[0] == ':':
                         event_logger.debug('sse comment{}'.format(msg))
                         continue
                     try:
-                        _, event_name, event_data, *rest = msg.split('\n')
-                        event_name = event_name.replace('event: ', '')
-                        event_data = json.loads(event_data.replace('data: ', '').strip())
+                        if len(msg.split('\n'))>=3:
+                            _, event_name, event_data, *rest = msg.split('\n')
+                            event_name = event_name.replace('event: ', '')
+                            event_data = json.loads(event_data.replace('data: ', '').strip())
                     except json.JSONDecodeError as e:
                         event_logger.warning('failed to parse json: "{}" -- error: {}'.format(msg, e.__repr__()))
                     except requests.exceptions.ChunkedEncodingError:
