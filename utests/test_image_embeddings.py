@@ -5,7 +5,7 @@ from .utils import get_testing_id
 
 TESTING_ID = get_testing_id()
 
-pio.config.default_timeout = 120
+pio.config.default_timeout = 1000000
 
 col_config = pio.ColumnConfig(target_column='class', filename_column='filename')
 uc_config = pio.TrainingConfig(normal_models=[pio.Model.LinReg],

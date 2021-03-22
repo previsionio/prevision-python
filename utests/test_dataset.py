@@ -11,7 +11,7 @@ from .utils import get_testing_id
 TESTING_ID = get_testing_id()
 
 pio.config.zip_files = False
-pio.config.default_timeout = 80
+pio.config.default_timeout = 1000000
 
 test_datasets = {}
 paths = {}
