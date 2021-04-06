@@ -35,9 +35,13 @@ class BaseUsecase(ApiResource):
         self.metric = usecase_info.get('metric')
         usecase_params = usecase_info['usecaseParameters']
         self.column_config = ColumnConfig(target_column=usecase_params.get('targetColumn'),
-                                          fold_column=usecase_params.get('foldColumn'),
                                           id_column=usecase_params.get('idColumn'),
-                                          weight_column=usecase_params.get('weightColumn'))
+                                          fold_column=usecase_params.get('foldColumn'),
+                                          weight_column=usecase_params.get('weightColumn'),
+                                          time_column=usecase_params.get('time_column', None),
+                                          group_columns=usecase_params.get('group_columns'),
+                                          apriori_columns=usecase_params.get('apriori_columns'),
+                                          drop_list=usecase_params.get('dropList'))
 
         self.training_config = TrainingConfig(profile=usecase_params.get('profile'),
                                               fe_selected_list=usecase_params.get(

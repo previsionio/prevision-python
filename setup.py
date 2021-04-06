@@ -5,6 +5,7 @@ python_major = sys.version_info[0]
 
 install_requires = ['pandas',
                     'requests',
+                    'requests-oauthlib',
                     'apscheduler',
                     'seaborn',
                     'scikit-learn',
@@ -14,7 +15,7 @@ if python_major == 2:
     install_requires.append('enum')
 
 setup(name='previsionio',
-      version='10.22.0',
+      version='10.23.0',
       description='python wrapper for prevision api',
       url='',
       author='prevision.io',
