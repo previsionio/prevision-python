@@ -9,7 +9,7 @@ from .utils import train_model, get_testing_id, DROP_COLS
 TESTING_ID = get_testing_id()
 
 pio.config.zip_files = False
-pio.config.default_timeout = 80
+pio.config.default_timeout = 1000
 
 uc_config = pio.TrainingConfig(normal_models=[pio.Model.LinReg],
                                lite_models=[pio.Model.LinReg],
