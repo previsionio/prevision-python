@@ -42,7 +42,7 @@ class Project(ApiResource, UniqueResourceMixin):
         self.pipelines_count = pipelines_count
         self.usecases_count = usecases_count
         self.dataset_count = dataset_count
-        self.users = users
+        #self.users = users
 
     @classmethod
     def list(cls, all=False):
@@ -61,13 +61,13 @@ class Project(ApiResource, UniqueResourceMixin):
 
     @classmethod
     def from_id(cls, _id):
-        """Get a datasource from the instance by its unique id.
+        """Get a project from the instance by its unique id.
 
         Args:
             _id (str): Unique id of the resource to retrieve
 
         Returns:
-            :class:`.DataSource`: The fetched datasource
+            :class:`.Project`: The fetched datasource
 
         Raises:
             PrevisionException: Any error while fetching data from the platform
@@ -83,6 +83,59 @@ class Project(ApiResource, UniqueResourceMixin):
 
         return cls(**resp_json)
 
+    def get_id(self):
+        return self._id
+
+    def users(self):
+        """Get a project from the instance by its unique id.
+
+        Args:
+            _id (str): Unique id of the resource to retrieve
+
+        Returns:
+            :class:`.Project`: The fetched datasource
+
+        Raises:
+            PrevisionException: Any error while fetching data from the platform
+                or parsing the result
+        """
+
+        end_point = '/{}/{}/users'.format(self.resource, self._id)
+        response = client.request(endpoint=end_point, method=requests.get)
+        if response.status_code != 200:
+            logger.error('cannot get users for project id {}'.format(self._id))
+            raise PrevisionException('[{}] {}'.format(self.resource, response.status_code))
+
+        res = parse_json(response)
+        return res
+
+
+    def add_user(self, email, project_role):
+        """Get a project from the instance by its unique id.
+
+        Args:
+            email (str): new user email
+            project_role (str): user project role. Possible project role: admin, contributor, viewer
+        Returns:
+            :class:`.Project`: The fetched project
+
+        Raises:
+            PrevisionException: Any error while fetching data from the platform
+                or parsing the result
+        """
+        if project_role not in ['admin', 'contributor', 'viewer']:
+            PrevisionException("Possible project role: admin, contributor, viewer ")
+        data = {"email": email, "projectRole": project_role}
+        end_point = '/{}/{}/users'.format(self.resource, self._id)
+        print("data=======", data)
+        print("end_point=======", end_point)
+        response = client.request(endpoint=end_point, data=data, method=requests.post)
+        if response.status_code != 200:
+            logger.error('cannot get users for project id {}'.format(self._id))
+            raise PrevisionException('[{}] {}'.format(self.resource, response.status_code))
+
+        res = parse_json(response)
+        return res
 
     def info(self):
         """Get a datasource from the instance by its unique id.
@@ -110,7 +163,6 @@ class Project(ApiResource, UniqueResourceMixin):
                         "dataset_count": self.dataset_count,
                         "users": self.users}
         return project_info
-
 
 
     @classmethod
@@ -152,6 +204,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 raise Exception('unknown error: {}'.format(json))
 
         return cls(json['_id'], name, description, color, json['created_by'], json['admins'], json['contributors'], json['pipelines_count'])
+
 
     def delete(self):
         """Delete a project from the actual [client] workspace.

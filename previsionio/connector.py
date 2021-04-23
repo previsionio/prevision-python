@@ -40,7 +40,7 @@ class Connector(ApiResource, UniqueResourceMixin):
         self.other_params = kwargs
 
     @classmethod
-    def list(cls, all=False):
+    def list(cls, project_id, all=False):
         """ List all the available connectors in the current active [client] workspace.
 
         .. warning::
@@ -57,12 +57,12 @@ class Connector(ApiResource, UniqueResourceMixin):
         Returns:
             list(:class:`.Connector`): Fetched connector objects
         """
-        resources = super().list(all=all)
+        resources = super().list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources
                 if conn_data['type'] == cls.conn_type or cls.conn_type == 'connector']
 
     @classmethod
-    def _new(cls, name, host, port, conn_type, username=None, password=None, googleCredentials=None):
+    def _new(cls, project_id, name, host, port, conn_type, username=None, password=None, googleCredentials=None):
         """ Create a new connector object on the platform.
 
         Args:
@@ -90,10 +90,10 @@ class Connector(ApiResource, UniqueResourceMixin):
         if googleCredentials:
             data['googleCredentials'] = googleCredentials
             content_type = 'application/json'
-            resp = client.request('/{}'.format(cls.resource), data=json.dumps(data),
+            resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=json.dumps(data),
                                   method=requests.post, content_type=content_type)
         else:
-            resp = client.request('/{}'.format(cls.resource), data=data, method=requests.post)
+            resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=data, method=requests.post)
 
         resp_json = parse_json(resp)
         if '_id' not in resp_json:
@@ -153,8 +153,8 @@ class FTPConnector(Connector):
     conn_type = 'FTP'
 
     @classmethod
-    def new(cls, name, host, port=21, username='', password=''):
-        return cls._new(name=name, host=host, conn_type='FTP', port=port, username=username, password=password)
+    def new(cls, project_id, name, host, port=21, username='', password=''):
+        return cls._new(project_id=project_id, name=name, host=host, conn_type='FTP', port=port, username=username, password=password)
 
 
 class SFTPConnector(Connector):
@@ -164,8 +164,8 @@ class SFTPConnector(Connector):
     conn_type = 'SFTP'
 
     @classmethod
-    def new(cls, name, host, port=23, username='', password=''):
-        return cls._new(name=name, host=host, conn_type='SFTP', port=port, username=username, password=password)
+    def new(cls, project_id, name, host, port=23, username='', password=''):
+        return cls._new(project_id=project_id, name=name, host=host, conn_type='SFTP', port=port, username=username, password=password)
 
 
 class SQLConnector(DataBaseConnector):
@@ -175,8 +175,8 @@ class SQLConnector(DataBaseConnector):
     conn_type = 'SQL'
 
     @classmethod
-    def new(cls, name, host, port=3306, username='', password=''):
-        return cls._new(name=name, host=host, conn_type='SQL', port=port, username=username, password=password)
+    def new(cls, project_id, name, host, port=3306, username='', password=''):
+        return cls._new(project_id=project_id, name=name, host=host, conn_type='SQL', port=port, username=username, password=password)
 
 
 class HiveConnector(DataBaseConnector):
@@ -186,8 +186,8 @@ class HiveConnector(DataBaseConnector):
     conn_type = 'HIVE'
 
     @classmethod
-    def new(cls, name, host, port=10000, username='', password=''):
-        return cls._new(name=name, host=host, conn_type='HIVE', port=port, username=username, password=password)
+    def new(cls, project_id, name, host, port=10000, username='', password=''):
+        return cls._new(project_id=project_id, name=name, host=host, conn_type='HIVE', port=port, username=username, password=password)
 
 
 # class HBaseConnector(DataBaseConnector):
@@ -208,8 +208,8 @@ class S3Connector(Connector):
     conn_type = 'S3'
 
     @classmethod
-    def new(cls, name, host='', port='', username='', password=''):
-        return cls._new(name=name, host=host, conn_type='S3', port=port, username=username, password=password)
+    def new(cls, project_id, name, host='', port='', username='', password=''):
+        return cls._new(project_id=project_id, name=name, host=host, conn_type='S3', port=port, username=username, password=password)
 
 
 class GCPConnector(Connector):
@@ -220,8 +220,8 @@ class GCPConnector(Connector):
     conn_type = 'GCP'
 
     @classmethod
-    def new(cls, name, host='', port='', username='', password='', googleCredentials=''):
-        return cls._new(name=name, host=host, conn_type='GCP', port=port,
+    def new(cls, project_id, name, host='', port='', username='', password='', googleCredentials=''):
+        return cls._new(project_id=project_id, name=name, host=host, conn_type='GCP', port=port,
                         username=username, password=password, googleCredentials=googleCredentials)
 
 #

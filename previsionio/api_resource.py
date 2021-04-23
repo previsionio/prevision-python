@@ -188,7 +188,7 @@ class ApiResource:
         return cls(**resp_json)
 
     @classmethod
-    def list(cls, all=False):
+    def list(cls, all=False, project_id=None):
         """List all available instances of this resource type on the platform.
 
         Args:
@@ -199,10 +199,14 @@ class ApiResource:
         Returns:
             dict: Fetched resources
         """
-        if all:
-            return get_all_results(client, '/' + cls.resource, method=requests.get)
+        if project_id:
+            url = '/projects/{}/{}'.format(project_id, cls.resource)
         else:
-            resources = client.request('/' + cls.resource, method=requests.get)
+            url = '/{}'.format(cls.resource)
+        if all:
+            return get_all_results(client, url, method=requests.get)
+        else:
+            resources = client.request(url, method=requests.get)
             return parse_json(resources)['items']
 
     def edit(self, **kwargs):

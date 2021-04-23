@@ -28,14 +28,18 @@ class Dataset(ApiResource):
         - from files (CSV, ZIP)
         - or from a Data Source at a given time (snapshot) """
 
-    resource = 'datasets/files'
+    resource = 'datasets'
 
-    def __init__(self, _id, name, datasource=None, _data=None, **kwargs):
+    def __init__(self, _id, name, datasource=None, _data=None, describe_state=None,
+                 drift_state=None, embeddings_state=None, **kwargs):
         super().__init__(_id, datasource)
         self.name = name
         self._id = _id
 
         self.datasource = datasource
+        self.describe_state = describe_state
+        self.drift_state = drift_state
+        self.embeddings_state = embeddings_state
         self.other_params = kwargs
         self._data = _data
 
@@ -66,7 +70,7 @@ class Dataset(ApiResource):
     data = property(to_pandas)
 
     @classmethod
-    def list(cls, all=all):
+    def list(cls, project_id, all=all):
         """ List all the available datasets in the current active [client] workspace.
 
         .. warning::
@@ -83,11 +87,11 @@ class Dataset(ApiResource):
         Returns:
             list(:class:`.Dataset`): Fetched dataset objects
         """
-        resources = super().list(all=all)
+        resources = super().list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources]
 
     @classmethod
-    def getid_from_name(cls, name=None, version='last'):
+    def getid_from_name(cls, project_id, name, version='last'):
         """ Return the dataset id corresponding to a given name.
 
         Args:
@@ -102,13 +106,13 @@ class Dataset(ApiResource):
                 fetching or parsing data
         """
         # use prevision api to search by name
-        if not name:
-            return None
+        # FIXME useless version
+
         if version != 'last':
             if not isinstance(version, type(7)):
                 raise TypeError("version argument takes as values positive int or 'last' ")
 
-        datasets = cls.list()
+        datasets = cls.list(all=True, project_id=project_id)
         datasets = list(filter(lambda d: d.name == name, datasets))
         if len(datasets) > 0:
             # get the corresponding id
@@ -121,6 +125,23 @@ class Dataset(ApiResource):
         msg_error = 'DatasetNotFoundError: No such dataset name : {}'.format(name)
         raise PrevisionException(msg_error)
 
+    def update_status(self):
+        url = '/{}/{}'.format(self.resource, self._id)
+        dset_resp = client.request(url, method=requests.get)
+        dset_json = parse_json(dset_resp)
+        self.describe_state = dset_json['describe_state']
+        self.drift_state = dset_json['drift_state']
+        self.embeddings_state = dset_json['embeddings_state']
+
+    def get_describe_status(self):
+        return self.describe_state
+
+    def get_drift_status(self):
+        return self.drift_state
+
+    def get_embedding_status(self):
+        return self.embeddings_state
+
     def delete(self):
         """Delete a dataset from the actual [client] workspace.
 
@@ -128,12 +149,9 @@ class Dataset(ApiResource):
             PrevisionException: If the dataset does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-
         resp = client.request(endpoint='/{}/{}'
                               .format(self.resource, self.id),
                               method=requests.delete)
-
-        resp = parse_json(resp)
         return resp
 
     def start_embedding(self):
@@ -144,7 +162,7 @@ class Dataset(ApiResource):
             requests.exceptions.ConnectionError: request error
         """
 
-        resp = client.request(endpoint='/{}/{}/start-embedding'
+        resp = client.request(endpoint='/{}/{}/analysis'
                               .format(self.resource, self.id),
                               method=requests.post)
 
@@ -217,7 +235,7 @@ class Dataset(ApiResource):
             raise PrevisionException(e)
 
     @classmethod
-    def get_by_name(cls, name=None, version='last'):
+    def get_by_name(cls, project_id, name, version='last'):
         """Get an already registered dataset from the platform (using its registration
         name).
 
@@ -235,17 +253,11 @@ class Dataset(ApiResource):
         Returns:
             :class:`.Dataset`: Fetched dataset
         """
-        # input control : name param required
-        if not name:
-            logger.error("name argument REQUIRED")
-            raise AttributeError("get_by_name missing 1 required \
-                                positional argument: 'name'")
-
-        dataset_id = cls.getid_from_name(name=name, version=version)
+        dataset_id = cls.getid_from_name(project_id, name, version=version)
         return cls.from_id(dataset_id)
 
     @classmethod
-    def new(cls, name, datasource=None, file_name=None, dataframe=None):
+    def new(cls, project_id, name, datasource=None, file_name=None, dataframe=None):
         """ Register a new dataset in the workspace for further processing.
         You need to provide either a datasource, a file name or a dataframe
         (only one can be specified).
@@ -286,10 +298,10 @@ class Dataset(ApiResource):
         files = {
 
         }
-
-        request_url = '/{}'.format(cls.resource)
+        request_url = '/projects/{}/{}/file'.format(project_id, cls.resource)
 
         if datasource is not None:
+            request_url = '/projects/{}/{}/data-sources'.format(project_id, cls.resource)
             data['datasource_id'] = datasource.id
             create_resp = client.request(request_url,
                                          data=data,
@@ -310,8 +322,8 @@ class Dataset(ApiResource):
 
                 for k, v in data.items():
                     files[k] = (None, v)
-
                 create_resp = client.request(request_url,
+                                             data=data,
                                              files=files,
                                              method=requests.post)
 
@@ -323,14 +335,14 @@ class Dataset(ApiResource):
                     files[k] = (None, v)
 
                 create_resp = client.request(request_url,
+                                             data=data,
                                              files=files,
                                              method=requests.post)
 
         create_json = parse_json(create_resp)
-
         if create_resp.status_code == 200:
             url = '/{}/{}'.format(cls.resource, create_json['_id'])
-            event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'ready', 'done',
+            event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'describe_state', 'done',
                                                        [('ready', 'failed'), ('drift', 'failed')])
             pio.client.event_manager.wait_for_event(create_json['_id'],
                                                     cls.resource,
@@ -339,7 +351,6 @@ class Dataset(ApiResource):
 
             dset_resp = client.request(url, method=requests.get)
             dset_json = parse_json(dset_resp)
-
             return cls(**dset_json)
 
         else:
@@ -357,7 +368,7 @@ class DatasetImages(Dataset):
         Within the platform, image folder datasets are stored as ZIP files and are copied from
         ZIP files. """
 
-    resource = 'datasets/folders'
+    resource = 'image-folders'
 
     def to_pandas(self) -> pd.DataFrame:
         """ Invalid method for a :class:`.DatasetImages` object.
@@ -368,7 +379,7 @@ class DatasetImages(Dataset):
         raise ValueError("Cannot convert a folder dataset to pandas.")
 
     @classmethod
-    def new(cls, name, file_name):
+    def new(cls, project_id, name, file_name):
         """ Register a new image dataset in the workspace for further processing
         (in the image folders group).
 
@@ -387,7 +398,7 @@ class DatasetImages(Dataset):
         Returns:
             :class:`.Dataset`: The registered dataset object in the current workspace.
         """
-        request_url = '/{}'.format(cls.resource)
+        request_url = '/projects/{}/{}'.format(project_id, cls.resource)
         source = open(file_name, 'rb')
 
         files = {
