@@ -17,10 +17,10 @@ class TimeWindow(UsecaseConfig):
     forecast window periods
     """
     config = {
-        'derivation_start': 'startDW',
-        'derivation_end': 'endDW',
-        'forecast_start': 'startFW',
-        'forecast_end': 'endFW',
+        'derivation_start': 'start_dw',
+        'derivation_end': 'end_dw',
+        'forecast_start': 'start_fw',
+        'forecast_end': 'end_fw',
     }
 
     def __init__(self, derivation_start, derivation_end, forecast_start, forecast_end):

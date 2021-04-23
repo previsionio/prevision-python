@@ -10,10 +10,6 @@ class UnSupervised(BaseUsecase):
         'type_problem': 'clustering',
     }
 
-    specific_optional_params = {
-        'fold_column': 'foldColumn',
-    }
-
     start_command = 'focus'
 
     def __init__(self, usecase_params):

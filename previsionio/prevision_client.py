@@ -129,7 +129,6 @@ class EventManager:
                         if not isinstance(resource_id, str):
                             continue
                         payload = {'event': event_name, 'id': resource_id}
-
                         event_logger.debug('url: {} -- event: {} payload: {}'.format(self.event_endpoint,
                                                                                      event_name,
                                                                                      payload))

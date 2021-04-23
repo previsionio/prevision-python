@@ -52,7 +52,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
                                     description_column_config,
                                     metric=pio.metrics.TextSimilarity.accuracy_at_k)
 
-        uc.wait_until(lambda usecase: usecase._status['status'] == 'done')
+        uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
         time.sleep(40)
         uc.stop()
         uc.update_status()
@@ -73,7 +73,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
                                     queries_dataset=test_datasets['queries'],
                                     queries_column_config=queries_column_config)
 
-        uc.wait_until(lambda usecase: usecase._status['status'] == 'done')
+        uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
         assert not uc.running
         assert uc.score is not None
         nb_model = len(uc.models)
@@ -113,7 +113,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
                                     queries_column_config=queries_column_config,
                                     models_parameters=models_parameters)
 
-        uc.wait_until(lambda usecase: usecase._status['status'] == 'done')
+        uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
         assert not uc.running
         assert uc.score is not None
         uc.stop()

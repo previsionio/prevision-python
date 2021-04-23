@@ -70,7 +70,7 @@ def get_pred_from_multiclassification(row, pred_prefix='pred_'):
 
 
 EventTuple = namedtuple('EventTuple', 'name key value fail_checks')
-EventTuple.__new__.__defaults__ = ((('status', 'failed'),),)
+EventTuple.__new__.__defaults__ = ((('state', 'failed'),),)
 
 
 def is_null_value(value):

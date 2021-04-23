@@ -43,7 +43,7 @@ def teardown_module(module):
     pio.Dataset.get_by_name(dataset_test_name).delete()
     pio.DatasetImages.get_by_name(dataset_test_name).delete()
     for uc_dict in pio.Supervised.list():
-        uc = pio.Supervised.from_id(uc_dict['usecaseId'])
+        uc = pio.Supervised.from_id(uc_dict['usecase_id'])
         if TESTING_ID in uc.name:
             uc.delete()
 
