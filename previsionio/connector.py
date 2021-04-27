@@ -97,7 +97,6 @@ class Connector(ApiResource, UniqueResourceMixin):
 
         resp_json = parse_json(resp)
         if '_id' not in resp_json:
-            print("resp_json===========", resp_json)
             if 'message' in resp_json:
                 raise Exception('Prevision.io error: {}'.format(' '.join(resp_json['message'])))
             else:
@@ -113,8 +112,10 @@ class Connector(ApiResource, UniqueResourceMixin):
             dict: Test results
         """
         resp = client.request('/connectors/{}/test'.format(self.id), method=requests.post)
-        resp_json = parse_json(resp)
-        return resp_json['message'] == 'Connection successful'
+        if resp.status_code == 200:
+            return True
+        else:
+             return False
 
 
 class DataBaseConnector(Connector):

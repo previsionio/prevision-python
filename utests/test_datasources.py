@@ -101,10 +101,10 @@ def test_connector_new(setup_connector_class, options):
     conn = setup_connector_class(options)
     assert conn is not None
 
-# @pytest.mark.parametrize(*connectors_options, ids=connector_test_ids)
-# def test_connector_new_test(setup_connector_class, options):
-#     conn = setup_connector_class(options)
-#     assert conn.test()
+@pytest.mark.parametrize(*connectors_options, ids=connector_test_ids)
+def test_connector_new_test(setup_connector_class, options):
+    conn = setup_connector_class(options)
+    assert conn.test()
 
 
 @pytest.mark.parametrize(*connectors_sql_options, ids=connector_sql_test_ids)
@@ -151,9 +151,8 @@ def test_datasource_new(setup_connector_class, options):
         example_datasource_id = datasource._id
     assert datasource is not None
 
-# bug web api manquante GET /data-sources/{datasourceId}
-# def test_datasource_from_id():
-#     global example_datasource_id
-#     assert example_datasource_id is not None
-#     datasource = pio.DataSource.from_id(example_datasource_id)
-#     assert datasource is not None
+def test_datasource_from_id():
+    global example_datasource_id
+    assert example_datasource_id is not None
+    datasource = pio.DataSource.from_id(example_datasource_id)
+    assert datasource is not None
