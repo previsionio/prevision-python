@@ -2,7 +2,7 @@
 from __future__ import print_function
 from . import TrainingConfig
 from .usecase_config import UsecaseConfig
-from .usecase import BaseUsecase
+from .usecase import BaseUsecaseVersion
 from .metrics import Regression
 from .model import RegressionModel
 
@@ -52,7 +52,7 @@ class TimeWindow(UsecaseConfig):
         self.forecast_end = forecast_end
 
 
-class TimeSeries(BaseUsecase):
+class TimeSeries(BaseUsecaseVersion):
     """
     A TimeSeries usecase.
     """

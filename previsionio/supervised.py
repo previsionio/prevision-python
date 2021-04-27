@@ -3,7 +3,7 @@ from __future__ import print_function
 import pandas as pd
 from . import TrainingConfig
 from . import metrics
-from .usecase import BaseUsecase
+from .usecase import BaseUsecaseVersion
 from .model import Model, RegressionModel, \
     ClassificationModel, MultiClassificationModel
 from .utils import PrevisionException
@@ -15,7 +15,7 @@ MODEL_CLASS_DICT = {
 }
 
 
-class Supervised(BaseUsecase):
+class Supervised(BaseUsecaseVersion):
 
     """ A supervised usecase. """
 
@@ -54,7 +54,7 @@ class Supervised(BaseUsecase):
         Returns:
             :class:`.Supervised`: Fetched usecase
         """
-        instance = super(BaseUsecase, cls).from_name(name, raise_if_non_unique, partial_match)
+        instance = super(BaseUsecaseVersion, cls).from_name(name, raise_if_non_unique, partial_match)
         type_problem = instance.training_type
         if cls.type_problem != 'nan' and type_problem != cls.type_problem:
             raise PrevisionException('Invalid problem type: should be "{}" but is "{}".'.format(cls.type_problem,
@@ -77,7 +77,7 @@ class Supervised(BaseUsecase):
             PrevisionException: Invalid problem type or any error while fetching
                 data from the platform or parsing result
         """
-        instance = super().from_id(_id)   
+        instance = super().from_id(_id)
         return instance
 
     @classmethod

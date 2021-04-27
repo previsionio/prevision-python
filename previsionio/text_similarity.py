@@ -228,7 +228,7 @@ class TextSimilarity(ApiResource):
                 (default: 1)
 
         Returns:
-            :class:`.BaseUsecase`: Fetched usecase
+            :class:`.BaseUsecaseVersion`: Fetched usecase
 
         Raises:
             PrevisionException: Any error while fetching data from the platform
@@ -366,7 +366,7 @@ class TextSimilarity(ApiResource):
         """ Wait until condition is fulfilled, then break.
 
         Args:
-            condition (func: (:class:`.BaseUsecase`) -> bool.): Function to use to check the
+            condition (func: (:class:`.BaseUsecaseVersion`) -> bool.): Function to use to check the
                 break condition
             raise_on_error (bool, optional): If true then the function will stop on error,
                 otherwise it will continue waiting (default: ``True``)
