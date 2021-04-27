@@ -26,13 +26,13 @@ class DataSource(ApiResource, UniqueResourceMixin):
         request (str, optional): Direct SQL request to use with the connector to fetch data
     """
 
-    resource = 'datasources'
+    resource = 'data-sources'
 
-    def __init__(self, _id, connector, name, path=None, database=None, table=None, request=None, gCloud=None, **kwargs):
+    def __init__(self, _id, connector_id, name, path=None, database=None, table=None, request=None, gCloud=None, **kwargs):
         """ Instantiate a new :class:`.DataSource` object to manipulate a datasource resource
         on the platform. """
         super().__init__(_id, name,
-                         connector=connector,
+                         connector=connector_id,
                          name=name,
                          path=path,
                          database=database,
@@ -41,7 +41,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
                          gCloud=gCloud)
 
         self._id = _id
-        self.connector = connector
+        self.connector = connector_id
 
         self.name = name
         self.path = path
@@ -53,7 +53,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
         self.other_params = kwargs
 
     @classmethod
-    def list(cls, all=False):
+    def list(cls, project_id, all=False):
         """ List all the available datasources in the current active [client] workspace.
 
         .. warning::
@@ -69,7 +69,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
             list(:class:`.DataSource`): Fetched datasource objects
         """
         # FIXME : get /resource return type should be consistent
-        resources = super().list(all=all)
+        resources = super().list(all=all, project_id=project_id)
         return [cls(**source_data) for source_data in resources]
 
     @classmethod
@@ -97,7 +97,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
         return cls(**resp_json)
 
     @classmethod
-    def new(cls, connector, name, path=None, database=None, table=None, bucket=None, request=None, gCloud=None):
+    def new(cls, project_id, connector, name, path=None, database=None, table=None, bucket=None, request=None, gCloud=None):
         """ Create a new datasource object on the platform.
 
         Args:
@@ -120,7 +120,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
         """
 
         data = {
-            'connectorId': connector._id,
+            'connector_id': connector._id,
             'name': name,
             'path': path,
             'database': database,
@@ -129,9 +129,9 @@ class DataSource(ApiResource, UniqueResourceMixin):
             'request': request
         }
         if gCloud:
-            data['gCloud'] = gCloud
+            data['g_cloud'] = gCloud
 
-        resp = client.request('/{}'.format(cls.resource),
+        resp = client.request('/projects/{}/{}'.format(project_id, cls.resource),
                               data=data,
                               method=requests.post)
 

@@ -90,13 +90,14 @@ class Connector(ApiResource, UniqueResourceMixin):
         if googleCredentials:
             data['googleCredentials'] = googleCredentials
             content_type = 'application/json'
-            resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=json.dumps(data),
+            resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=data,
                                   method=requests.post, content_type=content_type)
         else:
             resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=data, method=requests.post)
 
         resp_json = parse_json(resp)
         if '_id' not in resp_json:
+            print("resp_json===========", resp_json)
             if 'message' in resp_json:
                 raise Exception('Prevision.io error: {}'.format(' '.join(resp_json['message'])))
             else:
@@ -126,11 +127,9 @@ class DataBaseConnector(Connector):
         Returns:
             dict: Databases information
         """
-        print("self.resource", self.resource)
-        print("self._id", self._id)
-        resp = client.request('/{}/{}/data-bases'.format(self.resource, self._id), requests.get)
+        resp = client.request('/{}/{}/databases'.format(self.resource, self._id), requests.get)
         resp_json = parse_json(resp)
-        return resp_json
+        return resp_json['items']
 
     def list_tables(self, database):
         """ List all available tables in a specific database for the client.
@@ -141,9 +140,22 @@ class DataBaseConnector(Connector):
         Returns:
             dict: Tables information
         """
-        resp = client.request('/{}/{}/data-bases/{}'.format(self.resource, self._id, database), requests.get)
+        resp = client.request('/{}/{}/databases/{}/tables'.format(self.resource, self._id, database), requests.get)
         resp_json = parse_json(resp)
-        return resp_json
+        return resp_json['items']
+
+    def list_files(self):
+        """ List all available tables in a specific database for the client.
+
+        Args:
+            database (str): Name of the database to find tables for
+
+        Returns:
+            dict: files information
+        """
+        resp = client.request('/{}/{}/paths'.format(self.resource, self._id), requests.get)
+        resp_json = parse_json(resp)
+        return resp_json['items']
 
 
 class FTPConnector(Connector):

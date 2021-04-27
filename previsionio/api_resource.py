@@ -59,7 +59,6 @@ class ApiResource:
             url = '/{}/{}'.format(self.resource, self._id)
         else:
             url = specific_url
-
         # call api, add event to eventmanager events if available and return
         resource_status = client.request(url, method=requests.get)
         resource_status_dict = parse_json(resource_status)
@@ -144,12 +143,12 @@ class ApiResource:
             PrevisionException: Any error while deleting data from the platform
         """
         resp = client.request('/{}/{}'.format(self.resource, self._id), method=requests.delete)
-        resp_json = parse_json(resp)
-        if resp.status_code == 200:
-            logger.info('[Delete {} OK] {}'.format(self.resource, str(resp_json)))
+        #resp_json = parse_json(resp)
+        if resp.status_code in [200, 204]:
+            logger.info('[Delete {} OK]'.format(self.resource))
             return
         else:
-            raise PrevisionException('[Delete {}] {} Error'.format(self.resource, str(resp_json)))
+            raise PrevisionException('[Delete {}] Error'.format(self.resource))
 
     @classmethod
     def from_id(cls, _id=None, specific_url=None):
@@ -185,10 +184,11 @@ class ApiResource:
             logger.info('[Fetch {} OK] by id: "{}"'.format(cls.__name__, _id))
         else:
             logger.info('[Fetch {} OK] by url: "{}"'.format(cls.__name__, specific_url))
+
         return cls(**resp_json)
 
     @classmethod
-    def list(cls, all=False, project_id=None):
+    def list(cls, all=True, project_id=None):
         """List all available instances of this resource type on the platform.
 
         Args:

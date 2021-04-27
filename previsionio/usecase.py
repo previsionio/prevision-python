@@ -12,7 +12,7 @@ from . import config
 from .usecase_config import TrainingConfig, ColumnConfig
 from .logger import logger
 from .prevision_client import client
-from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas
+from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
 from .api_resource import ApiResource
 from .dataset import Dataset
 
@@ -25,13 +25,14 @@ class BaseUsecase(ApiResource):
     column_config: ColumnConfig
     id_key = 'usecase_id'
 
+    _resource = 'usecase-versions'
     resource = 'usecases'
     type_problem = 'nan'
     data_type = 'nan'
 
     def __init__(self, **usecase_info):
         super().__init__()
-        self.name: str = usecase_info.get('name')
+        self.name: str = usecase_info['usecase'].get('name')
         self.metric = usecase_info.get('metric')
         usecase_params = usecase_info['usecase_version_params']
         self.column_config = ColumnConfig(target_column=usecase_params.get('target_column'),
@@ -41,7 +42,7 @@ class BaseUsecase(ApiResource):
                                           time_column=usecase_params.get('time_column', None),
                                           group_columns=usecase_params.get('group_columns'),
                                           apriori_columns=usecase_params.get('apriori_columns'),
-                                          drop_list=usecase_params.get('dropList'))
+                                          drop_list=usecase_params.get('drop_list'))
 
         self.training_config = TrainingConfig(profile=usecase_params.get('profile'),
                                               fe_selected_list=usecase_params.get(
@@ -50,36 +51,32 @@ class BaseUsecase(ApiResource):
                                               lite_models=usecase_params.get('lite_models'),
                                               simple_models=usecase_params.get('simple_models'))
 
-        self._id = usecase_info.get('usecase_id')
-        self.resource_id = usecase_info.get('_id')
-        self.version = usecase_info.get('version', 1)
-        self.shared_users = usecase_info.get('share_list', [])
-        self._usecase_info = usecase_info
+        self._id = usecase_info.get('_id')
 
+        self.usecase_id = usecase_info.get('usecase_id')
+        self.usecase_version_id = usecase_info.get('_id')
+
+        self.version = usecase_info.get('version', 1)
+        self._usecase_info = usecase_info
+        self.data_type = usecase_info['usecase'].get('data_type')
+        self.training_type = usecase_info['usecase'].get('training_type')
+        self.dataset_id = usecase_info.get('dataset_id')
         self.predictions = {}
         self.predict_token = None
-
         self._models = {}
 
     def __len__(self):
-        return len([m for m in self._status['models_list']
-                    if m['status'] == 'done'
-                    # Ignoring simple models for now since we can't predict with them
-                    ])
+        return len(self.models)
 
     def update_status(self):
-        return super().update_status(specific_url='/{}/{}/versions/{}'.format(self.resource,
-                                                                              self._id,
-                                                                              self.version))
-
+        return super().update_status(specific_url='/{}/{}'.format(self._resource,
+                                                                  self._id))
     @classmethod
-    def from_id(cls, _id, version=1):
+    def from_id(cls, _id):
         """Get a usecase from the platform by its unique id.
 
         Args:
-            _id (str): Unique id of the usecase to retrieve
-            version (int, optional): Specific version of the usecase to retrieve
-                (default: 1)
+            _id (str): Unique id of the usecase version to retrieve
 
         Returns:
             :class:`.BaseUsecase`: Fetched usecase
@@ -88,7 +85,31 @@ class BaseUsecase(ApiResource):
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
         """
-        return super().from_id(specific_url='/{}/{}/versions/{}'.format(cls.resource, _id, version))
+        return super().from_id(specific_url='/{}/{}'.format(cls._resource, _id))
+
+    @classmethod
+    def list(cls, project_id, all=all):
+        """ List all the available usecase in the current active [client] workspace.
+
+        .. warning::
+
+            Contrary to the parent ``list()`` function, this method
+            returns actual :class:`.Dataset` objects rather than
+            plain dictionaries with the corresponding data.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+
+        Returns:
+            list(:class:`.Dataset`): Fetched dataset objects
+        """
+        resources = super().list(all=all, project_id=project_id)
+        usecase_ids = []
+        for uc in resources:
+            usecase_ids.extend(uc['version_ids'])
+        return [cls.from_id(id) for id in usecase_ids]
 
     @property
     def models(self):
@@ -98,14 +119,15 @@ class BaseUsecase(ApiResource):
         Returns:
             list(:class:`.Model`): List of models found by the platform for the usecase
         """
-        done = [m for m in self._status['models_list'] if (m['status'] == 'done')]
+        end_point = '/{}/{}/models'.format(self._resource, self._id)
+        response = client.request(endpoint=end_point,
+                                  method=requests.get)
+        models = json.loads(response.content.decode('utf-8'))['items']
 
-        for done_model in done:
-            if done_model['_id'] not in self._models:
-                self._models[done_model['_id']] = self.model_class(uc_id=self._id,
-                                                                   uc_version=self.version,
-                                                                   **done_model)
-
+        for model in models:
+            if model['_id'] not in self._models:
+                self._models[model['_id']] = self.model_class(usecase_id=self._id,
+                                                               **model)
         return list(self._models.values())
 
     @property
@@ -115,7 +137,7 @@ class BaseUsecase(ApiResource):
         Returns:
             list(dict): List of the usecase versions (as JSON metadata)
         """
-        end_point = '/usecases/{}/versions'.format(self._id)
+        end_point = '/{}/{}/versions'.format(self.resource, self.usecase_id)
         response = client.request(endpoint=end_point, method=requests.get)
         res = parse_json(response)
         return res['items']
@@ -129,7 +151,7 @@ class BaseUsecase(ApiResource):
         Returns:
             :class:`.Dataset`: Associated training dataset
         """
-        return Dataset.from_id(_id=self._status['dataset_id'])
+        return Dataset.from_id(_id=self.dataset_id)
 
     @property
     @lru_cache()
@@ -140,9 +162,12 @@ class BaseUsecase(ApiResource):
         Returns:
             ``pd.DataFrame``: Correlation matrix as a ``pandas`` dataframe
         """
-        end_point = '/usecases/{}/versions/{}/correlation-matrix'.format(self._id, self.version)
+        end_point = '/{}/{}/correlation-matrix'.format(self._resource, self._id)
         response = client.request(endpoint=end_point,
                                   method=requests.get)
+        if response.status_code != 200:
+            logger.error(response.text)
+            raise PrevisionException('get correlation matrix with error msg : {}'.format(response.text))
         corr = json.loads(response.content.decode('utf-8'))
         var_names = [d['name'] for d in corr]
         matrix = pd.DataFrame(0, index=var_names, columns=var_names)
@@ -156,17 +181,17 @@ class BaseUsecase(ApiResource):
         """ Get the data schema of the usecase.
 
         Returns:
-            ``pd.DataFrame``: Usecase schema
+            dict: Usecase schema
         """
-        end_point = '/usecases/{}/versions/{}/schema'.format(self._id, self.version)
+        end_point = '/{}/{}/graph'.format(self._resource, self._id)
         response = client.request(endpoint=end_point,
                                   method=requests.get)
         uc_schema = json.loads(response.content.decode('utf-8'))
-        return pd.DataFrame(uc_schema)
+        return uc_schema
 
     @property
     @lru_cache()
-    def feature_stats(self):
+    def features(self):
         """ Get the general description of the usecase's features, such as:
 
         - feature types distribution
@@ -176,12 +201,29 @@ class BaseUsecase(ApiResource):
         Returns:
             dict: General features information
         """
-        end_point = '/usecases/{}/versions/{}/features'.format(self._id, self.version)
+        # todo pagination
+        url = '/{}/{}/features'.format(self._resource, self._id)
+        return get_all_results(client, url, method=requests.get)
+
+    @property
+    @lru_cache()
+    def features_stats(self):
+        """ Get the general description of the usecase's features, such as:
+
+        - feature types distribution
+        - feature information list
+        - list of dropped features
+
+        Returns:
+            dict: General features information
+        """
+        # todo pagination
+        end_point = '/{}/{}/features-stats'.format(self._resource, self._id)
         response = client.request(endpoint=end_point,
                                   method=requests.get)
         return (json.loads(response.content.decode('utf-8')))
 
-    def get_feature_info(self, feature_name=None):
+    def get_feature_info(self, feature_name):
         """ Return some information about the given feature, such as:
 
         - name: the name of the feature as it was given in the ``feature_name`` parameter
@@ -214,7 +256,7 @@ class BaseUsecase(ApiResource):
             PrevisionException: If the given feature name does not match any feaure
         """
         response = client.request(
-            endpoint='/usecases/{}/versions/{}/features/{}'.format(self._id, self.version, feature_name),
+            endpoint='/{}/{}/features/{}'.format(self._resource, self._id, feature_name),
             method=requests.get)
         result = (json.loads(response.content.decode('utf-8')))
         if result.get('status', 200) != 200:
@@ -225,7 +267,6 @@ class BaseUsecase(ApiResource):
         keep_list = list(filter(lambda x: 'chart' not in x.lower(),
                                 result.keys())
                          )
-
         return {k: result[k] for k in keep_list}
 
     def get_model_from_id(self, id):
@@ -291,7 +332,7 @@ class BaseUsecase(ApiResource):
                 m[by] = default_cost_value
 
         best = min(models_list, key=lambda m: m[by])
-        best = self.model_class(uc_id=self._id, uc_version=self.version, **best)
+        best = self.model_class(usecase_id=self._id, **best)
         return best
 
     @property
@@ -335,7 +376,7 @@ class BaseUsecase(ApiResource):
         """
         models = self._status['models_list']
         fastest_model = [m for m in models if m['tags'].get('fastest')]
-        fastest_model = self.model_class(uc_id=self._id, uc_version=self.version, **fastest_model[0])
+        fastest_model = self.model_class(usecase_id=self._id, **fastest_model[0])
         return fastest_model
 
     @property
@@ -349,13 +390,23 @@ class BaseUsecase(ApiResource):
         return status['state'] == 'running'
 
     @property
+    def status(self):
+        """ Get a flag indicating whether or not the usecase is currently running.
+
+        Returns:
+            bool: Running status
+        """
+        status = self._status
+        return status['state']
+
+    @property
     def drop_list(self):
         """ Get the list of drop columns in the usecase.
 
         Returns:
             list(str): Names of the columns dropped from the dataset
         """
-        return self._status['usecase_version_params'].get('drop_list')
+        return self._status['usecase_version_params'].get('drop_list', [])
 
     @property
     def fe_selected_list(self):
@@ -364,7 +415,7 @@ class BaseUsecase(ApiResource):
         Returns:
             list(str): Names of the feature engineering modules selected for the usecase
         """
-        return self._status['usecase_version_params'].get('features_engineering_selected_list')
+        return self._status['usecase_version_params'].get('features_engineering_selected_list', [])
 
     @property
     def normal_models_list(self):
@@ -373,7 +424,7 @@ class BaseUsecase(ApiResource):
         Returns:
             list(str): Names of the normal models selected for the usecase
         """
-        return self._status['usecase_version_params'].get('normal_models')
+        return self._status['usecase_version_params'].get('normal_models', [])
 
     @property
     def lite_models_list(self):
@@ -382,7 +433,7 @@ class BaseUsecase(ApiResource):
         Returns:
             list(str): Names of the lite models selected for the usecase
         """
-        return self._status['usecase_version_params'].get('lite_models')
+        return self._status['usecase_version_params'].get('lite_models', [])
 
     @property
     def simple_models_list(self):
@@ -391,10 +442,10 @@ class BaseUsecase(ApiResource):
         Returns:
             list(str): Names of the simple models selected for the usecase
         """
-        return self._status['usecase_version_params'].get('simple_models')
+        return self._status['usecase_version_params'].get('simple_models', [])
 
     @classmethod
-    def _start_usecase(cls, name, dataset_id, data_type, type_problem, **kwargs):
+    def _start_usecase(cls, project_id, name, dataset_id, data_type, type_problem, **kwargs):
         """ Start a usecase of the given data type and problem type with a specific
         training configuration (on the platform).
 
@@ -420,23 +471,45 @@ class BaseUsecase(ApiResource):
         else:
             raise PrevisionException('invalid data type: {}'.format(data_type))
 
-        endpoint = '/usecases/{}/{}'.format(data_type, type_problem)
+        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, cls.resource, data_type, type_problem)
         start = client.request(endpoint, requests.post, data=data)
-
-        if start.status_code != 202:
+        if start.status_code != 200:
             logger.error(data)
             logger.error('response:')
             logger.error(start.text)
             raise PrevisionException('usecase failed to start')
 
         start_response = parse_json(start)
-        usecase = cls.from_id(start_response['_id'], version=start_response['version'])
-        events_url = '/usecases/{}/versions/{}'.format(start_response['_id'], start_response['version'])
-        pio.client.event_manager.wait_for_event(usecase._id,
-                                                cls.resource,
+        usecase = cls.from_id(start_response['_id'])
+        events_url = '/{}/{}'.format(cls._resource, start_response['_id'])
+        pio.client.event_manager.wait_for_event(usecase.resource_id,
+                                                cls._resource,
                                                 EventTuple('USECASE_UPDATE', 'state', 'running'),
                                                 specific_url=events_url)
         return usecase
+
+    def stop(self):
+        """ Stop a usecase (stopping all nodes currently in progress). """
+        logger.info('[Usecase] stopping usecase')
+        response = client.request('/usecase-versions/{}/stop'.format(self.id),
+                                  requests.put)
+        events_url = '/usecase-versions/{}'.format(self.id)
+        pio.client.event_manager.wait_for_event(self._id,
+                                                self._resource,
+                                                EventTuple('USECASE_UPDATE', 'state', 'done'),
+                                                specific_url=events_url)
+        logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
+                                                      for k, v in parse_json(response).items()))
+
+    def delete(self):
+        """ Delete a usecase from the actual [client] workspace.
+
+        Returns:
+            dict: Deletion process results
+        """
+        response = client.request(endpoint='/usecases/{}'.format(self._id),
+                                  method=requests.delete)
+        return (json.loads(response.content.decode('utf-8')))
 
     def predict_single(self,
                        use_best_single=False,
@@ -584,28 +657,6 @@ class BaseUsecase(ApiResource):
 
             time.sleep(config.scheduler_refresh_rate)
 
-    def stop(self):
-        """ Stop a usecase (stopping all nodes currently in progress). """
-        logger.info('[Usecase] stopping usecase')
-        response = client.request('/usecases/{}/versions/{}/stop'.format(self.id, self.version),
-                                  requests.put)
-        events_url = '/usecases/{}/versions/{}'.format(self.id, self.version)
-        pio.client.event_manager.wait_for_event(self._id,
-                                                self.resource,
-                                                EventTuple('USECASE_UPDATE', 'state', 'done'),
-                                                specific_url=events_url)
-        logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
-                                                      for k, v in parse_json(response).items()))
-
-    def delete(self):
-        """ Delete a usecase from the actual [client] workspace.
-
-        Returns:
-            dict: Deletion process results
-        """
-        response = client.request(endpoint='/usecases/{}'.format(self._id),
-                                  method=requests.delete)
-        return (json.loads(response.content.decode('utf-8')))
 
     def get_predictions(self, full=False):
         """

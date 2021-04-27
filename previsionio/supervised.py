@@ -27,14 +27,13 @@ class Supervised(BaseUsecase):
     # model_class = Model
 
     def __init__(self, **usecase_info):
-        self.dataset = usecase_info.get('dataset_id')
         if usecase_info.get('holdout_dataset_id'):
             self.holdout_dataset = usecase_info.get('holdout_dataset_id')
         else:
             self.holdout_dataset = None
 
         super().__init__(**usecase_info)
-        self.model_class = MODEL_CLASS_DICT.get(self._status['training_type'], Model)
+        self.model_class = MODEL_CLASS_DICT.get(self.training_type, Model)
 
     @classmethod
     def from_name(cls, name, raise_if_non_unique=False, partial_match=False):
@@ -56,14 +55,14 @@ class Supervised(BaseUsecase):
             :class:`.Supervised`: Fetched usecase
         """
         instance = super(BaseUsecase, cls).from_name(name, raise_if_non_unique, partial_match)
-        type_problem = instance._status['training_type']
+        type_problem = instance.training_type
         if cls.type_problem != 'nan' and type_problem != cls.type_problem:
             raise PrevisionException('Invalid problem type: should be "{}" but is "{}".'.format(cls.type_problem,
                                                                                                 type_problem))
         return instance
 
     @classmethod
-    def from_id(cls, _id, version=1):
+    def from_id(cls, _id):
         """Get a supervised usecase from the platform by its unique id.
 
         Args:
@@ -78,15 +77,11 @@ class Supervised(BaseUsecase):
             PrevisionException: Invalid problem type or any error while fetching
                 data from the platform or parsing result
         """
-        instance = super().from_id(_id, version=version)
-        type_problem = instance._status['training_type']
-        if cls.type_problem != 'nan' and type_problem != cls.type_problem:
-            raise PrevisionException('Invalid problem type: should be "{}" but is "{}".'.format(cls.type_problem,
-                                                                                                type_problem))
+        instance = super().from_id(_id)   
         return instance
 
     @classmethod
-    def fit(cls, name, dataset, column_config, metric=None, holdout_dataset=None,
+    def fit(cls, project_id, name, dataset, column_config, metric=None, holdout_dataset=None,
             training_config=TrainingConfig(), type_problem=None, **kwargs):
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
@@ -109,7 +104,6 @@ class Supervised(BaseUsecase):
         Returns:
             :class:`.Supervised`: Newly created supervised usecase object
         """
-
         config_args = training_config.to_kwargs()
         column_args = column_config.to_kwargs()
         training_args = dict(config_args + column_args)
@@ -130,8 +124,8 @@ class Supervised(BaseUsecase):
             dataset_id = [d.id for d in dataset]
         else:
             dataset_id = dataset.id
-
-        return cls._start_usecase(name,
+        return cls._start_usecase(project_id,
+                                  name,
                                   dataset_id=dataset_id,
                                   data_type=cls.data_type,
                                   type_problem=type_problem if type_problem else cls.type_problem,

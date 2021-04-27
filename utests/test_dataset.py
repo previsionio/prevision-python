@@ -11,6 +11,7 @@ from .utils import get_testing_id
 TESTING_ID = get_testing_id()
 
 PROJECT_NAME = "sdk_test_dataset_" + str(TESTING_ID)
+#PROJECT_ID = "6082fb73b153a8001c3052df"
 PROJECT_ID = ""
 pio.config.zip_files = False
 pio.config.default_timeout = 1000
@@ -68,11 +69,12 @@ def test_get_by_name():
     assert ds.name == ds_name
 
 
-# def test_download():
-#     ds_name = 'regression' + str(TESTING_ID) + '.csv'
-#     csv_path = pio.dataset.Dataset.download(dataset_name=ds_name)
-#     assert os.path.isfile(csv_path)
-#     os.remove(csv_path)
+def test_download():
+    ds_name = 'regression' + str(TESTING_ID) + '.csv'
+    ds = pio.dataset.Dataset.get_by_name(PROJECT_ID, ds_name)
+    path = ds.download()
+    assert os.path.isfile(path)
+    os.remove(path)
 
 
 def test_embedding():

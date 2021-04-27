@@ -48,10 +48,6 @@ class EventManager:
             return
         self.register_resource(resource_id)
         t0 = time.time()
-        print("event_tuple.name======", event_tuple.name)
-        print("event_tuple.fail_checks====", event_tuple.fail_checks)
-        print("event_tuple.value=====", event_tuple.value)
-        print("event_tuple.key========", event_tuple.key)
         while time.time() < t0 + config.default_timeout:
             reconnect_start = time.time()
             while time.time() < reconnect_start + 60:
@@ -64,11 +60,8 @@ class EventManager:
                 with semi:
                     for event in event_list:
                         if event.get('event') == event_tuple.name:
-                            print("event======", event)
-                            print("specific_url===", specific_url)
                             resp = self.client.request(endpoint=specific_url, method=requests.get)
                             json_response = parse_json(resp)
-                            print("json_response===", json_response)
                             for k, v in event_tuple.fail_checks:
                                 if json_response.get(k) == v:
                                     semd.release()

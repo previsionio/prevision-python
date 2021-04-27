@@ -199,12 +199,10 @@ class Dataset(ApiResource):
                                     dtype="float32").reshape(*tensors_shape)
             return {'labels': labels, 'tensors': tensors}
 
-    @classmethod
-    def download(cls, dataset_name=None, download_path=None):
+    def download(self, download_path=None):
         """Download the dataset from the platform locally.
 
         Args:
-            dataset_name (str): Name of the dataset to download
             download_path (str, optional): Target local directory path
                 (if none is provided, the current working directory is
                 used)
@@ -216,23 +214,18 @@ class Dataset(ApiResource):
             PrevisionException: If dataset does not exist or if there
                 was another error fetching or parsing data
         """
-        if not dataset_name:
-            raise AttributeError("download missing 1 required \
-            positional argument: 'dataset_name' ")
-
-        try:
-            dataset_id = cls.getid_from_name(name=dataset_name)
-            dataset = cls.from_id(dataset_id)
+        endpoint='/{}/{}/download'.format(self.resource, self.id)
+        resp = client.request(endpoint='/{}/{}/download'.format(self.resource, self.id),
+                              method=requests.get)
+        if resp.status_code == 200:
             if not download_path:
                 download_path = os.getcwd()
-            df = dataset.data
-            csv_path = os.path.join(download_path, dataset.name)
-            df.to_csv(csv_path)
-            logger.info('{} saved in {}'.format(dataset_name, download_path))
-            return csv_path
-        except Exception as e:
-            logger.error('could not download dataset {}: {}'.format(dataset_name, e))
-            raise PrevisionException(e)
+            path = os.path.join(download_path, self.name + ".zip")
+            with open(path, "wb") as file:
+                file.write(resp._content)
+            return path
+        else:
+            raise PrevisionException('could not download dataset')
 
     @classmethod
     def get_by_name(cls, project_id, name, version='last'):
@@ -357,7 +350,7 @@ class Dataset(ApiResource):
             raise PrevisionException('[Dataset] Error: {}'.format(create_json))
 
 
-class DatasetImages(Dataset):
+class DatasetImages(ApiResource):
 
     """ DatasetImages objects represent image data resources that will be used by
         Prevision.io's platform.
@@ -370,6 +363,16 @@ class DatasetImages(Dataset):
 
     resource = 'image-folders'
 
+    def __init__(self, _id, name, project_id, copy_state, **kwargs):
+        super().__init__(_id)
+        self.name = name
+        self._id = _id
+        self.project_id = project_id
+        self.copy_state = copy_state
+
+        self.other_params = kwargs
+
+
     def to_pandas(self) -> pd.DataFrame:
         """ Invalid method for a :class:`.DatasetImages` object.
 
@@ -378,6 +381,39 @@ class DatasetImages(Dataset):
         """
         raise ValueError("Cannot convert a folder dataset to pandas.")
 
+    def delete(self):
+        """Delete a DatasetImages from the actual [client] workspace.
+
+        Raises:
+            PrevisionException: If the dataset images does not exist
+            requests.exceptions.ConnectionError: Error processing the request
+        """
+        resp = client.request(endpoint='/{}/{}'
+                              .format(self.resource, self.id),
+                              method=requests.delete)
+        return resp
+
+    @classmethod
+    def list(cls, project_id, all=all):
+        """ List all the available dataset image in the current active [client] workspace.
+
+        .. warning::
+
+            Contrary to the parent ``list()`` function, this method
+            returns actual :class:`.DatasetImages` objects rather than
+            plain dictionaries with the corresponding data.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+
+        Returns:
+            list(:class:`.DatasetImages`): Fetched dataset objects
+        """
+        resources = super().list(all=all, project_id=project_id)
+        return [cls(**conn_data) for conn_data in resources]
+
     @classmethod
     def new(cls, project_id, name, file_name):
         """ Register a new image dataset in the workspace for further processing
@@ -385,7 +421,7 @@ class DatasetImages(Dataset):
 
         .. note::
 
-            To start a new use case on a dataset, it has to be already
+            To start a new use case on a dataset image, it has to be already
             registred in your workspace.
 
         Args:
@@ -396,7 +432,7 @@ class DatasetImages(Dataset):
             PrevisionException: Error while creating the dataset on the platform
 
         Returns:
-            :class:`.Dataset`: The registered dataset object in the current workspace.
+            :class:`.DatasetImages`: The registered dataset object in the current workspace.
         """
         request_url = '/projects/{}/{}'.format(project_id, cls.resource)
         source = open(file_name, 'rb')
@@ -417,13 +453,40 @@ class DatasetImages(Dataset):
             url = '/{}/{}'.format(cls.resource, create_json['_id'])
             pio.client.event_manager.wait_for_event(create_json['_id'],
                                                     cls.resource,
-                                                    previsionio.utils.EventTuple('FOLDER_UPDATE', 'ready', 'done'),
+                                                    previsionio.utils.EventTuple('FOLDER_UPDATE', 'copy_state', 'done'),
                                                     specific_url=url)
 
             dset_resp = client.request(url, method=requests.get)
             dset_json = parse_json(dset_resp)
-
             return cls(**dset_json)
 
         else:
             raise PrevisionException('[Dataset] Error: {}'.format(create_json))
+
+    def download(self, download_path=None):
+        """Download the dataset from the platform locally.
+
+        Args:
+            download_path (str, optional): Target local directory path
+                (if none is provided, the current working directory is
+                used)
+
+        Returns:
+            str: Path the data was downloaded to
+
+        Raises:
+            PrevisionException: If dataset does not exist or if there
+                was another error fetching or parsing data
+        """
+        endpoint='/{}/{}/download'.format(self.resource, self.id)
+        resp = client.request(endpoint='/{}/{}/download'.format(self.resource, self.id),
+                              method=requests.get)
+        if resp.status_code == 200:
+            if not download_path:
+                download_path = os.getcwd()
+            path = os.path.join(download_path, self.name + ".zip")
+            with open(path, "wb") as file:
+                file.write(resp._content)
+            return path
+        else:
+            raise PrevisionException('could not download dataset')

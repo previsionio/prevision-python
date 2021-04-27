@@ -27,28 +27,19 @@ class Model(ApiResource):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the usecase of the model
-        uc_version (str, int): Version of the usecase of the model (either an integer for a specific
-            version, or "last")
+        usecase_id (str): Unique id of the usecase of the model
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id, uc_id, uc_version, name=None, **other_params):
+    def __init__(self, _id, usecase_id, name=None, **other_params):
         """ Instantiate a new :class:`.Model` object to manipulate a model resource on the platform. """
         super().__init__()
         self._id = _id
-        self.uc_id = uc_id
-        self.uc_version = uc_version
+        self.usecase_id = usecase_id
         self.name = name
 
         for k, v in other_params.items():
             self.__setattr__(k, v)
-
-        # event_url = '{}/usecases/{}/versions/{}/predictions/events'.format(pio.client.url,
-        #                                                                    self.uc_id,
-        #                                                                    self.uc_version)
-        # self.prediction_event_manager = EventManager(event_url,
-        #                                              auth_headers=pio.client.headers)
 
     def __repr__(self):
         return str(self._id)
@@ -77,9 +68,7 @@ class Model(ApiResource):
             dict: Hyperparameters of the model
         """
         response = client.request(
-            endpoint='/usecases/{}/versions/{}/models/{}/download/hyperparameters'.format(self.uc_id,
-                                                                                          self.uc_version,
-                                                                                          self._id),
+            endpoint='/models/{}/hyperparameters/download'.format(self._id),
             method=requests.get)
         return (json.loads(response.content.decode('utf-8')))
 
@@ -96,9 +85,7 @@ class Model(ApiResource):
             PrevisionException: Any error while fetching data from the platform or parsing the result
         """
         response = client.request(
-            endpoint='/usecases/{}/versions/{}/models/{}/download/features-importance'.format(self.uc_id,
-                                                                                              self.uc_version,
-                                                                                              self._id),
+            endpoint='/models/{}/features-importances/download'.format(self._id),
             method=requests.get)
         if response.ok:
             df_feat_importance = zip_to_pandas(response)
@@ -107,6 +94,21 @@ class Model(ApiResource):
                 'Failed to download feature importance table: {}'.format(response.text))
 
         return df_feat_importance.sort_values(by="importance", ascending=False)
+
+    @property
+    def cross_validation(self) -> pd.DataFrame:
+        """ Get model's cross validation dataframe.
+
+        Returns:
+            ``pd.Dataframe``: Cross-validation dataframe
+        """
+        logger.debug('getting cv, model_id: {}'.format(self.id))
+        cv_response = client.request(
+            '/models/{}/cross-validation/download'.format(self._id),
+            requests.get)
+        df_cv = zip_to_pandas(cv_response)
+
+        return df_cv
 
     def chart(self):
         """ Return chart analysis information for a model.
@@ -118,7 +120,7 @@ class Model(ApiResource):
             PrevisionException: Any error while fetching data from the platform or parsing the result
         """
         response = client.request(
-            endpoint='/usecases/{}/versions/{}/models/{}/analysis'.format(self.uc_id, self.uc_version, self._id),
+            endpoint='/models/{}/analysis'.format(self._id),
             method=requests.get)
         result = (json.loads(response.content.decode('utf-8')))
         if result.get('status', 200) != 200:
@@ -128,27 +130,27 @@ class Model(ApiResource):
         # drop chart-related information
         return result
 
-    def _get_uc_info(self):
-        """ Return the corresponding usecase summary.
+    # def _get_uc_info(self):
+    #     """ Return the corresponding usecase summary.
+    #
+    #     Returns:
+    #         dict: Usecase summary
+    #     """
+    #     response = client.request(endpoint='/usecases/{}/versions/{}'.format(self.uc_id, self.uc_version),
+    #                               method=requests.get)
+    #
+    #     return json.loads(response.content.decode('utf-8'))
 
-        Returns:
-            dict: Usecase summary
-        """
-        response = client.request(endpoint='/usecases/{}/versions/{}'.format(self.uc_id, self.uc_version),
-                                  method=requests.get)
-
-        return json.loads(response.content.decode('utf-8'))
-
-    def wait_for_prediction(self, predict_id):
+    def wait_for_prediction(self, prediction_id):
         """ Wait for a specific prediction to finish.
 
         Args:
             predict_id (str): Unique id of the prediction to wait for
         """
-        specific_url = '/usecases/{}/versions/{}/predictions/{}'.format(self.uc_id, self.uc_version, predict_id)
-        pio.client.event_manager.wait_for_event(predict_id,
-                                                'usecases/{}/versions/{}/predictions'.format(self.uc_id,
-                                                                                             self.uc_version),
+        specific_url = 'predictions/{}'.format(prediction_id)
+        #fixme
+        pio.client.event_manager.wait_for_event(prediction_id,
+                                                specific_url,
                                                 EventTuple('PREDICTION_UPDATE', 'state', 'done'),
                                                 specific_url=specific_url)
 
@@ -183,7 +185,8 @@ class Model(ApiResource):
 
         if dataset_folder_id is not None:
             data['folder_dataset_id'] = dataset_folder_id
-        predict_start = client.request('/usecases/{}/versions/{}/predictions'.format(self.uc_id, self.uc_version),
+
+        predict_start = client.request('/usecase-versions/{}/predictions'.format(self.usecase_id),
                                        requests.post, data=data)
 
         predict_start_parsed = parse_json(predict_start)
@@ -255,9 +258,7 @@ class Model(ApiResource):
         Returns:
             ``pd.DataFrame``: Prediction dataframe.
         """
-        pred_response = pio.client.request('/usecases/{}/versions/{}/predictions/{}/download'.format(self.uc_id,
-                                                                                                     self.uc_version,
-                                                                                                     predict_id),
+        pred_response = pio.client.request('/predictions/{}/download'.format(predict_id),
                                            requests.get)
 
         logger.debug('[Predict {0}] Downloading prediction file'.format(predict_id))
@@ -284,26 +285,6 @@ class Model(ApiResource):
 
         self.wait_for_prediction(predict_id)
         dataset.delete()
-
-        return self._get_predictions(predict_id)
-
-    def predict_from_dataset_name(self, dataset_name, confidence=False) -> pd.DataFrame:
-        """ Make a prediction for a dataset stored in the current active [client]
-        workspace (referenced by name).
-
-        Args:
-            dataset_name (str): Name of the dataset to make a prediction for (if there is
-                more than one dataset having the given name, the first one will be used)
-            confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
-
-        Returns:
-            ``pd.DataFrame``: Prediction results dataframe
-        """
-        dataset_id = Dataset.getid_from_name(name=dataset_name)
-        predict_id = self._predict_bulk(dataset_id,
-                                        confidence=confidence)
-
-        self.wait_for_prediction(predict_id)
 
         return self._get_predictions(predict_id)
 
@@ -359,21 +340,6 @@ class Model(ApiResource):
         """
         return self._format_predictions(self._predict_sklearn(df, confidence))
 
-    @property
-    def cross_validation(self) -> pd.DataFrame:
-        """ Get model's cross validation dataframe.
-
-        Returns:
-            ``pd.Dataframe``: Cross-validation dataframe
-        """
-        logger.debug('getting cv, model_id: {}'.format(self.id))
-        cv_response = client.request(
-            '/usecases/{}/versions/{}/models/{}/download/cv'.format(self.uc_id, self.uc_version, self._id),
-            requests.get)
-        df_cv = zip_to_pandas(cv_response)
-
-        return df_cv
-
     def deploy(self) -> DeployedModel:
         """ (Not Implemented yet) Deploy the model as a REST API app.
 
@@ -398,10 +364,10 @@ class ClassificationModel(Model):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id, uc_id, name=None, **other_params):
+    def __init__(self, _id, usecase_id, name=None, **other_params):
         """ Instantiate a new :class:`.ClassificationModel` object to manipulate a classification model
         resource on the platform. """
-        super().__init__(_id, uc_id, name=name, **other_params)
+        super().__init__(_id, usecase_id, name=name, **other_params)
         self._predict_threshold = 0.5
 
     def _format_predictions(self, preds, confidence=False, apply_threshold=True):

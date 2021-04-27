@@ -127,8 +127,6 @@ class Project(ApiResource, UniqueResourceMixin):
             PrevisionException("Possible project role: admin, contributor, viewer ")
         data = {"email": email, "projectRole": project_role}
         end_point = '/{}/{}/users'.format(self.resource, self._id)
-        print("data=======", data)
-        print("end_point=======", end_point)
         response = client.request(endpoint=end_point, data=data, method=requests.post)
         if response.status_code != 200:
             logger.error('cannot get users for project id {}'.format(self._id))
