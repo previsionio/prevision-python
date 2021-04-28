@@ -26,7 +26,7 @@ class Connector(ApiResource, UniqueResourceMixin):
 
     def __init__(self, _id, name, host=None, port=None, type=None,
                  username='', password='', googleCredentials=None, **kwargs):
-        super().__init__(_id, name, host=host, port=port, conn_type=type,
+        super().__init__(_id=_id, name=name, host=host, port=port, conn_type=type,
                          username=username, password=password, googleCredentials=googleCredentials)
         self._id = _id
         self.name = name

@@ -32,7 +32,7 @@ class Dataset(ApiResource):
 
     def __init__(self, _id, name, datasource=None, _data=None, describe_state=None,
                  drift_state=None, embeddings_state=None, **kwargs):
-        super().__init__(_id, datasource)
+        super().__init__(_id=_id, datasource=datasource)
         self.name = name
         self._id = _id
 
@@ -364,7 +364,7 @@ class DatasetImages(ApiResource):
     resource = 'image-folders'
 
     def __init__(self, _id, name, project_id, copy_state, **kwargs):
-        super().__init__(_id)
+        super().__init__(_id=_id)
         self.name = name
         self._id = _id
         self.project_id = project_id

@@ -39,7 +39,7 @@ class ApiResource:
     resource_params = []
     id_key = '_id'
 
-    def __init__(self, *args, **params):
+    def __init__(self, **params):
         self._id: str = params.get('_id', "")
         if self._id == "":
             raise RuntimeError("Invalid _id received from {}".format(str(params)))

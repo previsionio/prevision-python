@@ -30,7 +30,7 @@ class BaseUsecaseVersion(ApiResource):
     data_type = 'nan'
 
     def __init__(self, **usecase_info):
-        super().__init__()
+        super().__init__(**usecase_info)
         self.name: str = usecase_info['usecase'].get('name')
         self.metric = usecase_info.get('metric')
         usecase_params = usecase_info['usecase_version_params']
@@ -737,7 +737,7 @@ class Usecase(ApiResource):
     resource = 'usecases'
 
     def __init__(self, **usecase_info):
-        super().__init__()
+        super().__init__(**usecase_info)
         self._id = usecase_info.get('_id')
         self.name: str = usecase_info.get('name')
         self.project_id: str = usecase_info.get('project_id')

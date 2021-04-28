@@ -33,7 +33,7 @@ class Model(ApiResource):
 
     def __init__(self, _id, usecase_id, name=None, **other_params):
         """ Instantiate a new :class:`.Model` object to manipulate a model resource on the platform. """
-        super().__init__()
+        super().__init__(_id=_id)
         self._id = _id
         self.usecase_id = usecase_id
         self.name = name
