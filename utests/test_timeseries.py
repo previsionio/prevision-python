@@ -1,9 +1,7 @@
 import os
 from typing import List, Tuple
 
-from pandas.core.frame import DataFrame
 from pandas._typing import FrameOrSeriesUnion
-from previsionio.project import Project
 import pandas as pd
 import numpy as np
 import pytest
