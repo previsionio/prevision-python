@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import json
+from typing import List
 import pandas as pd
 import requests
 import time
@@ -420,7 +421,7 @@ class BaseUsecaseVersion(ApiResource):
         return self._status['usecase_version_params'].get('simple_models', [])
 
     @classmethod
-    def _start_usecase(cls, project_id: str, name: str, dataset_id: str, data_type: str, type_problem: str, **kwargs):
+    def _start_usecase(cls, project_id: str, name: str, dataset_id: str | List[str], data_type: str, type_problem: str, **kwargs):
         """ Start a usecase of the given data type and problem type with a specific
         training configuration (on the platform).
 
