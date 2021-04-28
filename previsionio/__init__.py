@@ -64,6 +64,7 @@ import previsionio.metrics as metrics
 from previsionio.connector import Connector
 from previsionio.datasource import DataSource
 from previsionio.project import Project
+from previsionio.usecase import Usecase
 from previsionio.supervised import Supervised, SupervisedImages, \
     Regression, Classification, MultiClassification, \
     RegressionImages, ClassificationImages, MultiClassificationImages

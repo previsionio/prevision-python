@@ -21,7 +21,7 @@ def setup_module(module):
                               description="description test sdk")
     global PROJECT_ID
     PROJECT_ID = project._id
-
+"""
 def teardown_module(module):
     for ds in pio.DataSource.list(PROJECT_ID, all=True):
         if TESTING_ID_DATASOURCE in ds.name:
@@ -29,7 +29,7 @@ def teardown_module(module):
     for conn in pio.Connector.list(PROJECT_ID, all=True):
         if TESTING_ID_CONNECTOR in conn.name:
             conn.delete()
-
+"""
 
 connectors = {
     'FTP': ftp_config,
