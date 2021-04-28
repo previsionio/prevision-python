@@ -34,6 +34,7 @@ class Model(ApiResource):
     def __init__(self, _id, usecase_version_id, name=None, **other_params):
         """ Instantiate a new :class:`.Model` object to manipulate a model resource on the platform. """
         super().__init__(_id=_id)
+        print("usecase_version_id======", usecase_version_id)
         self._id = _id
         self.usecase_version_id = usecase_version_id
         self.name = name
@@ -188,7 +189,9 @@ class Model(ApiResource):
 
         predict_start = client.request('/usecase-versions/{}/predictions'.format(self.usecase_version_id),
                                        requests.post, data=data)
-
+        print("url===========", '/usecase-versions/{}/predictions'.format(self.usecase_version_id))
+        print("data======", data)
+        print("predict_start=========", predict_start)
         predict_start_parsed = parse_json(predict_start)
 
         if '_id' not in predict_start_parsed:
@@ -265,29 +268,6 @@ class Model(ApiResource):
 
         return zip_to_pandas(pred_response)
 
-    def _format_predictions(self, preds, confidence=False):
-        raise NotImplementedError
-
-    def _predict_sklearn(self, df, confidence):
-        """ Make a prediction for a dataframe with a Scikit-learn style blocking prediction mode.
-
-        Args:
-            df (``pd.DataFrame``): Dataframe to predict from
-            confidence (bool): Whether to predict with confidence estimator
-
-        Returns:
-            ``pd.DataFrame``: Predictions result dataframe
-        """
-        dataset = Dataset.new('test_{}_{}'.format(self.name, str(uuid.uuid4())[-6:]), dataframe=df)
-
-        predict_id = self._predict_bulk(dataset.id,
-                                        confidence=confidence)
-
-        self.wait_for_prediction(predict_id)
-        dataset.delete()
-
-        return self._get_predictions(predict_id)
-
     def predict_from_dataset(self, dataset, confidence=False, dataset_folder=None) -> pd.DataFrame:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
@@ -338,7 +318,15 @@ class Model(ApiResource):
         Returns:
             ``pd.DataFrame``: Prediction results dataframe
         """
-        return self._format_predictions(self._predict_sklearn(df, confidence))
+        dataset = Dataset.new('test_{}_{}'.format(self.name, str(uuid.uuid4())[-6:]), dataframe=df)
+
+        predict_id = self._predict_bulk(dataset.id,
+                                        confidence=confidence)
+
+        self.wait_for_prediction(predict_id)
+        dataset.delete()
+
+        return self._get_predictions(predict_id)
 
     def deploy(self) -> DeployedModel:
         """ (Not Implemented yet) Deploy the model as a REST API app.
@@ -369,47 +357,6 @@ class ClassificationModel(Model):
         resource on the platform. """
         super().__init__(_id, usecase_version_id, name=name, **other_params)
         self._predict_threshold = 0.5
-
-    def _format_predictions(self, preds, confidence=False, apply_threshold=True):
-        """ Format predictions dataframe. In particular, you can apply a threshold on the predictions
-        probability.
-
-        Args:
-            preds (``pd.DataFrame``): Predictions dataframe
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-            apply_threshold (bool, optional): Whether to apply a threshold on the predicted probabilities
-                (default: ``True``)
-
-        Returns:
-            ``pd.DataFrame``: Formatted predictions dataframe.
-        """
-        pred_col = preds.columns[-1]
-        preds[pred_col] = preds[pred_col].astype(float)
-
-        if apply_threshold:
-            preds['predictions'] = (preds[pred_col] > self._predict_threshold)
-            preds[pred_col] = preds['predictions'].astype(int)
-            preds = preds.drop('predictions', axis=1)
-
-        return preds
-
-    def predict_proba(self, df, confidence=False):
-        """ Make a prediction in a Scikit-learn blocking style and return probabilities.
-
-        .. warning::
-
-            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours). Prefer using
-            this for simple models and small dataframes or use option ``use_best_single = True``.
-
-        Args:
-            df (``pd.DataFrame``): A ``pandas`` dataframe containing the testing data
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-
-        Returns:
-            ``pd.DataFrame``: (Formatted) prediction results dataframe
-        """
-        return self._format_predictions(self._predict_sklearn(df, confidence=confidence),
-                                        confidence=confidence, apply_threshold=False)
 
     def predict_single(self, confidence=False, explain=False, **predict_data):
         """ Make a prediction for a single instance.
@@ -446,13 +393,13 @@ class ClassificationModel(Model):
         Raises:
             PrevisionException: Any error while fetching data from the platform or parsing the result
         """
-        endpoint = '/usecases/{}/versions/{}/models/{}/analysis/dynamic'.format(self.uc_id, self.uc_version, self._id)
+        endpoint = '/models/{}/analysis'.format(self._id)
         response = client.request(endpoint=endpoint,
                                   method=requests.get)
 
         resp = json.loads(response.content.decode('utf-8'))
         if response.ok:
-            return resp["optimalProba"]
+            return resp["optimal_proba"]
         raise PrevisionException('Request Error : {}'.format(response.content['message']))
 
     def get_dynamic_performances(self, threshold=0.5):
@@ -481,8 +428,7 @@ class ClassificationModel(Model):
 
         result = dict()
         query = '?threshold={}'.format(str(threshold))
-        endpoint = '/usecases/{}/versions/{}/models/{}/analysis/dynamic{}'.format(self.uc_id, self.uc_version,
-                                                                                  self._id, query)
+        endpoint = '/models/{}/dynamic-analysis{}'.format(self._id, query)
 
         response = client.request(endpoint=endpoint,
                                   method=requests.get)
@@ -490,7 +436,7 @@ class ClassificationModel(Model):
         resp = json.loads(response.content.decode('utf-8'))
 
         if response.ok:
-            result['confusion_matrix'] = resp["confusionMatrix"]
+            result['confusion_matrix'] = resp["confusion_matrix"]
             for metric in ['accuracy', 'precision', 'recall', 'f1Score']:
                 result[metric] = resp["score"][metric]
 
@@ -509,37 +455,6 @@ class RegressionModel(Model):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def _format_predictions(self, preds, confidence=False, explain=False):
-        """ Format predictions dataframe (returns the dataframe as is).
-
-        Args:
-            preds (``pd.DataFrame``): Predictions dataframe
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-            apply_threshold (bool, optional): Whether to apply a threshold on the predicted probabilities
-                (default: ``True``)
-
-        Returns:
-            ``pd.DataFrame``: Formatted predictions dataframe.
-        """
-        return preds
-
-    def predict(self, df, confidence=False):
-        """ Make a prediction in a Scikit-learn blocking style.
-
-        .. warning::
-
-            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours). Prefer using
-            this for simple models and small dataframes or use option ``use_best_single = True``.
-
-        Args:
-            df (``pd.DataFrame``): A ``pandas`` dataframe containing the testing data
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-
-        Returns:
-            ``pd.DataFrame``: Prediction results dataframe
-        """
-        return self._predict_sklearn(df, confidence=confidence)
-
 
 class MultiClassificationModel(Model):
     """ A model object for a multi-classification usecase, i.e. a usecase where the target
@@ -552,59 +467,6 @@ class MultiClassificationModel(Model):
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
-
-    def _format_predictions(self, preds, confidence=False, explain=False, apply_threshold=True):
-        """ Format predictions dataframe. In particular, you can apply a threshold on the predictions
-        probability.
-
-        Args:
-            preds (``pd.DataFrame``): Predictions dataframe
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-            explain (bool, optional): Whether to explain prediction (default: ``False``)
-            apply_threshold (bool, optional): Whether to apply a threshold on the predicted probabilities
-                (default: ``True``)
-
-        Returns:
-            ``pd.DataFrame``: Formatted predictions dataframe.
-        """
-        return preds
-
-    def predict_proba(self, df, confidence=False):
-        """ Make a prediction in a Scikit-learn blocking style and return probabilities.
-
-        .. warning::
-
-            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours). Prefer using
-            this for simple models and small dataframes or use option ``use_best_single = True``.
-
-        Args:
-            df (``pd.DataFrame``): A ``pandas`` dataframe containing the testing data
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-
-        Returns:
-            ``pd.DataFrame``: (Formatted) prediction results dataframe
-        """
-        return self._format_predictions(self._predict_sklearn(df, confidence=confidence),
-                                        confidence=confidence,
-                                        apply_threshold=False)
-
-    def predict(self, df, confidence=False):
-        """ Make a prediction in a Scikit-learn blocking style.
-
-        .. warning::
-
-            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours). Prefer using
-            this for simple models and small dataframes or use option ``use_best_single = True``.
-
-        Args:
-            df (``pd.DataFrame``): A ``pandas`` dataframe containing the testing data
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-
-        Returns:
-            ``pd.DataFrame``: (Formatted) prediction results dataframe
-        """
-        return self._format_predictions(self._predict_sklearn(df, confidence), confidence,
-                                        apply_threshold=True)
 
 
 class TextSimilarityModel(Model):

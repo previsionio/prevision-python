@@ -113,8 +113,7 @@ class BaseUsecaseVersion(ApiResource):
 
         for model in models:
             if model['_id'] not in self._models:
-                self._models[model['_id']] = self.model_class(usecase_version_id=self._id,
-                                                               **model)
+                self._models[model['_id']] = self.model_class(**model)
         return list(self._models.values())
 
     @property
