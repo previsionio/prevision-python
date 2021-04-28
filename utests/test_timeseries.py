@@ -1,7 +1,6 @@
 import os
 from typing import List, Tuple
 
-from pandas._typing import FrameOrSeriesUnion
 import pandas as pd
 import numpy as np
 import pytest
@@ -9,6 +8,11 @@ import previsionio as pio
 from .datasets import make_supervised_datasets, remove_datasets
 from . import DATA_PATH
 from .utils import get_testing_id
+
+from typing import Union
+from pandas import DataFrame, Series
+FrameOrSeriesUnion = Union["DataFrame", "Series"]
+
 
 pio.config.zip_files = True
 
@@ -50,7 +54,7 @@ def get_data(path, groups) -> Tuple[FrameOrSeriesUnion, List[str]]:
     else:
         data = pd.concat([pd.read_csv(path).assign(group=i) for i in range(groups)])
         group_list = ['group']
-        
+
     return data, group_list
 
 

@@ -4,7 +4,6 @@ from itertools import combinations
 from io import BytesIO, StringIO
 import numpy as np
 import pandas as pd
-from pandas._typing import FrameOrSeriesUnion
 import os
 import tempfile
 from zipfile import ZipFile
@@ -16,6 +15,10 @@ from . import logger
 import previsionio as pio
 import requests
 from .datasource import DataSource
+
+from typing import Union
+from pandas import DataFrame, Series
+FrameOrSeriesUnion = Union["DataFrame", "Series"]
 
 
 class Dataset(ApiResource):
@@ -252,7 +255,7 @@ class Dataset(ApiResource):
         return cls.from_id(dataset_id)
 
     @classmethod
-    def new(cls, project_id: str, name: str, datasource: DataSource = None, file_name: str = None, dataframe: FrameOrSeriesUnion = None):
+    def new(cls, project_id: str, name: str, datasource: DataSource = None, file_name: str = None, dataframe=None):
         """ Register a new dataset in the workspace for further processing.
         You need to provide either a datasource, a file name or a dataframe
         (only one can be specified).
@@ -318,9 +321,9 @@ class Dataset(ApiResource):
                     for k, v in data.items():
                         files[k] = (None, v)
                     create_resp = client.request(request_url,
-                                                data=data,
-                                                files=files,
-                                                method=requests.post)
+                                                 data=data,
+                                                 files=files,
+                                                 method=requests.post)
 
         elif file_name is not None:
             with open(file_name, 'r') as f:
@@ -336,7 +339,7 @@ class Dataset(ApiResource):
 
         if create_resp is None:
             raise PrevisionException('[Dataset] Uexpected case in dataset creation')
-            
+
         create_json = parse_json(create_resp)
         if create_resp.status_code == 200:
             url = '/{}/{}'.format(cls.resource, create_json['_id'])
