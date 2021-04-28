@@ -40,11 +40,13 @@ class ApiResource:
     id_key = '_id'
 
     def __init__(self, *args, **params):
-        self._id = params.get('_id')
+        self._id: str = params.get('_id', "")
+        if self._id is "":
+            raise RuntimeError("Invalid _id received from {}".format(str(params)))
         self.resource_id = self._id
         self.event_manager: Optional[EventManager] = None
 
-    def update_status(self, specific_url=None):
+    def update_status(self, specific_url: str = None):
         """Get an update on the status of a resource.
 
         Args:
@@ -82,11 +84,11 @@ class ApiResource:
         return resource_status_dict
 
     @property
-    def id(self):
+    def id(self) -> str:
         return self._id
 
     @classmethod
-    def from_name(cls, name, raise_if_non_unique=False, partial_match=False):
+    def from_name(cls, name: str, raise_if_non_unique: bool = False, partial_match: bool = False):
         """Get a resource from the platform by its name.
 
         Args:

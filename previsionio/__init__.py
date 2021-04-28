@@ -1,6 +1,6 @@
 from __future__ import print_function
 import logging
-from .logger import logger, event_logger
+from previsionio.logger import logger, event_logger
 
 
 __version__ = '10.24.0'

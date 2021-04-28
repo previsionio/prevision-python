@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 from . import TrainingConfig
-from .usecase_config import UsecaseConfig
+from .usecase_config import UsecaseConfig, ColumnConfig
 from .usecase import BaseUsecaseVersion
 from .metrics import Regression
 from .model import RegressionModel
+from .dataset import Dataset
 
 
 class TimeWindowException(Exception):
@@ -23,7 +24,7 @@ class TimeWindow(UsecaseConfig):
         'forecast_end': 'end_fw',
     }
 
-    def __init__(self, derivation_start, derivation_end, forecast_start, forecast_end):
+    def __init__(self, derivation_start: int, derivation_end: int, forecast_start: int, forecast_end: int):
         """Instantiate a new :class:`.TimeWindow` util object.
 
         Args:
@@ -62,15 +63,12 @@ class TimeSeries(BaseUsecaseVersion):
     model_class = RegressionModel
 
     @classmethod
-    def fit(cls, name, dataset, column_config, time_window,
-            metric=None, training_config=TrainingConfig()):
+    def fit(cls, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow,
+            metric: Regression = None, training_config: TrainingConfig = TrainingConfig()):
         config_args = training_config.to_kwargs()
         column_args = column_config.to_kwargs()
         time_window_args = time_window.to_kwargs()
         training_args = dict(config_args + column_args + time_window_args)
-        # TimeSeries experimental (ALN) is no longer available
-        # if aln:
-        #    training_args['experimentalTimeseries'] = 'true'
 
         if not metric:
             metric = cls.default_metric
