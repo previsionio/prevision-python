@@ -112,10 +112,9 @@ class BaseUsecaseVersion(ApiResource):
 
         for model in models:
             if model['_id'] not in self._models:
-                self._models[model['_id']] = self.model_class(usecase_id=self._id,
+                self._models[model['_id']] = self.model_class(usecase_version_id=self._id,
                                                                **model)
         return list(self._models.values())
-
 
     @property
     @lru_cache()
@@ -285,31 +284,6 @@ class BaseUsecaseVersion(ApiResource):
                     return m
         return None
 
-    def _get_best(self, models_list=[], by='loss', default_cost_value=1):
-        """ (Util function) Find out the element having the minimal value
-        of the attribute defined by the parameter 'by'.
-
-        Args:
-            models_list (list(:class:`.Model`)): List of models to search through
-            by (str, optional): Key to sort by - the function will return the item
-                with the minimal value for this key (default: "loss")
-            default_cost_value (_any_, optional): Default value to input for a model
-                if the sorting key was not found
-
-        Returns:
-            (:class:`.Model`, None): Model with the minimal cost in the given list, or
-            ``None`` the list was empty.
-        """
-        if len(models_list) == 0:
-            return None
-        for m in models_list:
-            if m[by] is None:
-                m[by] = default_cost_value
-
-        best = min(models_list, key=lambda m: m[by])
-        best = self.model_class(usecase_id=self._id, **best)
-        return best
-
     @property
     def best_model(self):
         """ Get the model with the best predictive performance over all models (including
@@ -319,28 +293,14 @@ class BaseUsecaseVersion(ApiResource):
             (:class:`.Model`, None): Model with the best performance in the usecase, or
             ``None`` if no model matched the search filter.
         """
-        filter_list = list(filter(lambda m: not (m['tags'].get('simple')),
-                                  self._status['models_list'])
-                           )
+        best_model = None
+        for model in self.models:
+            if 'best' in model.tags:
+                best_model = model
 
-        return self._get_best(models_list=filter_list)
-
-    @property
-    def best_single(self):
-        """ Get the model with the best predictive performance (the minimal loss)
-        over single models (excluding Blend models), where the best performance
-        corresponds to a minimal loss.
-
-        Returns:
-            :class:`.Model`: Single (non-blend) model with the best performance in the
-            usecase, or ``None`` if no model matched the search filter.
-        """
-        filter_list = list(filter(lambda m: not (m['tags'].get('simple') or
-                                                 m['tags'].get('blend') or
-                                                 m['tags'].get('mean')),
-                                  self._status['models_list'])
-                           )
-        return self._get_best(models_list=filter_list)
+        if best_model is None:
+            best_model = self.models[0]
+        return best_model
 
     @property
     def fastest_model(self):
@@ -349,9 +309,14 @@ class BaseUsecaseVersion(ApiResource):
         Returns:
             Model object -- corresponding to the fastest model
         """
-        models = self._status['models_list']
-        fastest_model = [m for m in models if m['tags'].get('fastest')]
-        fastest_model = self.model_class(usecase_id=self._id, **fastest_model[0])
+        fastest_model = None
+        for model in self.models:
+            if 'fastest' in model.tags:
+                fastest_model = model
+
+        if fastest_model is None:
+            fastest_model = self.models[0]
+
         return fastest_model
 
     @property
@@ -476,7 +441,6 @@ class BaseUsecaseVersion(ApiResource):
         logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                       for k, v in parse_json(response).items()))
 
-
     def delete(self):
         """ Delete a usecase from the actual [client] workspace.
 
@@ -488,7 +452,6 @@ class BaseUsecaseVersion(ApiResource):
         return (json.loads(response.content.decode('utf-8')))
 
     def predict_single(self,
-                       use_best_single=False,
                        confidence=False,
                        explain=False,
                        **predict_data):
@@ -509,17 +472,14 @@ class BaseUsecaseVersion(ApiResource):
                 The format of the predictions dictionary depends on the problem type
                 (regression, classification...)
         """
-        if use_best_single:
-            best = self.best_single
-        else:
-            best = self.best_model
+
+        best = self.best_model
         return best.predict_single(confidence=confidence,
                                    explain=explain,
                                    **predict_data)
 
     def predict_from_dataset(self,
                              dataset,
-                             use_best_single=False,
                              confidence=False,
                              dataset_folder=None) -> pd.DataFrame:
         """ Get the predictions for a dataset stored in the current active [client]
@@ -528,8 +488,6 @@ class BaseUsecaseVersion(ApiResource):
         Arguments:
             dataset (:class:`.Dataset`): Reference to the dataset object to make
                 predictions for
-            use_best_single (bool, optional): Whether to use the best single model
-                instead of the best model overall (default: ``False``)
             confidence (bool, optional): Whether to predict with confidence values
                 (default: ``False``)
             dataset_folder (:class:`.Dataset`): Matching folder dataset for the
@@ -538,15 +496,12 @@ class BaseUsecaseVersion(ApiResource):
         Returns:
             ``pd.DataFrame``: Predictions as a ``pandas`` dataframe
         """
-        if use_best_single:
-            best = self.best_single
-        else:
-            best = self.best_model
+
+        best = self.best_model
 
         return best.predict_from_dataset(dataset, confidence=confidence, dataset_folder=dataset_folder)
 
-    def predict(self, df, confidence=False,
-                use_best_single=False) -> pd.DataFrame:
+    def predict(self, df, confidence=False) -> pd.DataFrame:
         """ Get the predictions for a dataset stored in the current active [client]
         workspace using the best model of the usecase with a Scikit-learn style blocking prediction mode.
 
@@ -559,16 +514,12 @@ class BaseUsecaseVersion(ApiResource):
             df (``pd.DataFrame``): ``pandas`` DataFrame containing the test data
             confidence (bool, optional): Whether to predict with confidence values
                 (default: ``False``)
-            use_best_single (bool, optional): Whether to use the best single model
-                instead of the best model overall (default: ``False``)
 
         Returns:
             tuple(pd.DataFrame, str): Prediction data (as ``pandas`` dataframe) and prediction job ID.
         """
-        if use_best_single:
-            best = self.best_single
-        else:
-            best = self.best_model
+
+        best = self.best_model
 
         return best.predict(df=df, confidence=confidence)
 
@@ -692,20 +643,14 @@ class BaseUsecaseVersion(ApiResource):
         except KeyError:
             return float('inf')
 
-    def get_cv(self, use_best_single=False) -> pd.DataFrame:
+    def get_cv(self) -> pd.DataFrame:
         """ Get the cross validation dataset from the best model of the usecase.
-
-        Args:
-            use_best_single (bool, optional): Whether to use the best single model
-                instead of the best model overall (default: ``False``)
 
         Returns:
             ``pd.DataFrame``: Cross validation dataset
         """
-        if use_best_single:
-            best = self.best_single
-        else:
-            best = self.best_model
+
+        best = self.best_model
 
         return best.cross_validation
 

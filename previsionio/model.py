@@ -27,16 +27,17 @@ class Model(ApiResource):
 
     Args:
         _id (str): Unique id of the model
-        usecase_id (str): Unique id of the usecase of the model
+        usecase_version_id (str): Unique id of the usecase version of the model
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id, usecase_id, name=None, **other_params):
+    def __init__(self, _id, usecase_version_id, name=None, **other_params):
         """ Instantiate a new :class:`.Model` object to manipulate a model resource on the platform. """
         super().__init__()
         self._id = _id
-        self.usecase_id = usecase_id
+        self.usecase_version_id = usecase_version_id
         self.name = name
+        self.tags = {}
 
         for k, v in other_params.items():
             self.__setattr__(k, v)
@@ -177,7 +178,6 @@ class Model(ApiResource):
             PrevisionException: Any error while starting the prediction on the platform or parsing the result
         """
         data = {
-            'usecase_id': self.uc_id,
             'dataset_id': dataset_id,
             'model_id': self._id,
             'confidence': str(confidence).lower(),
@@ -186,7 +186,7 @@ class Model(ApiResource):
         if dataset_folder_id is not None:
             data['folder_dataset_id'] = dataset_folder_id
 
-        predict_start = client.request('/usecase-versions/{}/predictions'.format(self.usecase_id),
+        predict_start = client.request('/usecase-versions/{}/predictions'.format(self.usecase_version_id),
                                        requests.post, data=data)
 
         predict_start_parsed = parse_json(predict_start)
@@ -364,10 +364,10 @@ class ClassificationModel(Model):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id, usecase_id, name=None, **other_params):
+    def __init__(self, _id, usecase_version_id, name=None, **other_params):
         """ Instantiate a new :class:`.ClassificationModel` object to manipulate a classification model
         resource on the platform. """
-        super().__init__(_id, usecase_id, name=name, **other_params)
+        super().__init__(_id, usecase_version_id, name=name, **other_params)
         self._predict_threshold = 0.5
 
     def _format_predictions(self, preds, confidence=False, apply_threshold=True):

@@ -109,7 +109,7 @@ class Project(ApiResource, UniqueResourceMixin):
         res = parse_json(response)
         return res
 
-
+    # check 
     def add_user(self, email, project_role):
         """Get a project from the instance by its unique id.
 
@@ -161,7 +161,6 @@ class Project(ApiResource, UniqueResourceMixin):
                         "dataset_count": self.dataset_count,
                         "users": self.users}
         return project_info
-
 
     @classmethod
     def new(cls, name, description=None, color=None):

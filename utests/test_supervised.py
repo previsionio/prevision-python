@@ -216,64 +216,37 @@ class TestUCGeneric:
 #     #         assert k in uc_info_keys
 #
 #
-# class TestInfos:
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_nb_models(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#         nb_models = len(uc)
-#         assert isinstance(nb_models, int)
-#         assert nb_models > 0
-#
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_score(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#         assert uc.score is not None
-#
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_cv(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#         df_cv = uc.get_cv()
-#         assert isinstance(df_cv, pd.DataFrame)
-#
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_get_hyperparameters(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#         hyper_params = uc.best_model.hyperparameters
-#         assert hyper_params is not None
-#
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_get_feature_importance(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#         feat_importance = uc.best_model.feature_importance
-#         assert list(feat_importance.columns) == ['feature', 'importance']
-#
-#     # @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     # def test_get_correlation_matrix(self, setup_usecase_class, options):
-#     #     type_problem, uc = setup_usecase_class
-#     #     matrix = uc.correlation_matrix
-#     #     assert isinstance(matrix, pd.DataFrame)
-#
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_get_schema(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#         schema = uc.schema
-#         assert isinstance(schema, pd.DataFrame)
-#
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_get_feature_stats(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#         stats = uc.feature_stats
-#         assert stats is not None
-#
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_get_fastest_model(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#         model = uc.fastest_model
-#         assert model.uc_id == uc._id
-#         assert model.uc_version == uc.version
-#         assert model.tags['fastest']
-
-    # @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-    # def test_print_infos(self, setup_usecase_class, options):
-    #     type_problem, uc = setup_usecase_class
-    #     uc.print_info()
+class TestInfos:
+    @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
+    def test_info(self, setup_usecase_class, options):
+        type_problem, uc = setup_usecase_class
+        # test models
+        nb_models = len(uc)
+        assert isinstance(nb_models, int)
+        assert nb_models > 0
+        # test Score
+        assert uc.score is not None
+        # test cv
+        df_cv = uc.get_cv()
+        assert isinstance(df_cv, pd.DataFrame)
+        # test hyper parameters
+        hyper_params = uc.best_model.hyperparameters
+        assert hyper_params is not None
+        # test feature importance
+        feat_importance = uc.best_model.feature_importance
+        assert list(feat_importance.columns) == ['feature', 'importance']
+        # test correlation matrix
+        matrix = uc.correlation_matrix
+        assert isinstance(matrix, pd.DataFrame)
+        # test schema
+        schema = uc.schema
+        assert schema is not None
+        # test features stats
+        stats = uc.features_stats
+        assert stats is not None
+        # test fastest model
+        model = uc.fastest_model
+        # test usecase version id
+        assert model.usecase_version_id == uc._id
+        # test print info
+        uc.print_info()
