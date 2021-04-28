@@ -421,13 +421,13 @@ class BaseUsecaseVersion(ApiResource):
         return self._status['usecase_version_params'].get('simple_models', [])
 
     @classmethod
-    def _start_usecase(cls, project_id: str, name: str, dataset_id: str | List[str], data_type: str, type_problem: str, **kwargs):
+    def _start_usecase(cls, project_id: str, name: str, dataset_id, data_type: str, type_problem: str, **kwargs):
         """ Start a usecase of the given data type and problem type with a specific
         training configuration (on the platform).
 
         Args:
             name (str): Registration name for the usecase to create
-            dataset_id (str): Unique id of the training dataset resource
+            dataset_id (str|tuple(str, str)): Unique id of the training dataset resource or a tuple of csv and folder id
             data_type (str): Type of data used in the usecase (among "tabular", "images"
                 and "timeseries")
             type_problem: Type of problem to compute with the usecase (among "regression",
