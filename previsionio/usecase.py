@@ -153,7 +153,7 @@ class BaseUsecaseVersion(ApiResource):
 
     @property
     @lru_cache()
-    def schema(self):
+    def schema(self) -> dict:
         """ Get the data schema of the usecase.
 
         Returns:
@@ -167,7 +167,7 @@ class BaseUsecaseVersion(ApiResource):
 
     @property
     @lru_cache()
-    def features(self):
+    def features(self) -> List[dict]:
         """ Get the general description of the usecase's features, such as:
 
         - feature types distribution
@@ -245,7 +245,7 @@ class BaseUsecaseVersion(ApiResource):
                          )
         return {k: result[k] for k in keep_list}
 
-    def get_model_from_id(self, id):
+    def get_model_from_id(self, id: str):
         """ Get a model of the usecase by its unique id.
 
         .. note::

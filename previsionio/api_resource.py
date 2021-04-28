@@ -187,6 +187,8 @@ class ApiResource:
         else:
             logger.info('[Fetch {} OK] by url: "{}"'.format(cls.__name__, specific_url))
 
+        print(type(cls))
+
         return cls(**resp_json)
 
     @classmethod

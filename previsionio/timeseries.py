@@ -64,7 +64,7 @@ class TimeSeries(BaseUsecaseVersion):
 
     @classmethod
     def fit(cls, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow,
-            metric: Regression = None, training_config: TrainingConfig = TrainingConfig()):
+            metric: Regression = None, training_config: TrainingConfig = TrainingConfig()) -> 'TimeSeries':
         config_args = training_config.to_kwargs()
         column_args = column_config.to_kwargs()
         time_window_args = time_window.to_kwargs()

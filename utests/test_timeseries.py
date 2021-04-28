@@ -1,4 +1,9 @@
 import os
+from typing import List, Tuple
+
+from pandas.core.frame import DataFrame
+from pandas._typing import FrameOrSeriesUnion
+from previsionio.project import Project
 import pandas as pd
 import numpy as np
 import pytest
@@ -10,16 +15,24 @@ from .utils import get_testing_id
 pio.config.zip_files = True
 
 TESTING_ID = get_testing_id()
+PROJECT_NAME = "sdk_test_usecase_timeseries_" + str(TESTING_ID)
+PROJECT_ID = ""
+pio.config.zip_files = False
+pio.config.default_timeout = 1000
 
 
 def setup_module():
+    project = pio.Project.new(name=PROJECT_NAME,
+                              description="description test sdk")
+    global PROJECT_ID
+    PROJECT_ID = project._id
     remove_datasets(DATA_PATH)
     make_supervised_datasets(DATA_PATH)
 
 
 def teardown_module(module):
     remove_datasets(DATA_PATH)
-    for ds in pio.Dataset.list():
+    for ds in pio.Dataset.list(PROJECT_ID):
         if TESTING_ID in ds.name:
             ds.delete()
     for uc_dict in pio.Supervised.list():
@@ -28,7 +41,7 @@ def teardown_module(module):
             uc.delete()
 
 
-def get_data(path, groups):
+def get_data(path, groups) -> Tuple[FrameOrSeriesUnion, List[str]]:
     if isinstance(groups, tuple):
         a, b = groups
         data = pd.concat([pd.read_csv(path).assign(group1=i, group2=j) for i in range(a) for j in range(b)])
@@ -39,7 +52,7 @@ def get_data(path, groups):
     else:
         data = pd.concat([pd.read_csv(path).assign(group=i) for i in range(groups)])
         group_list = ['group']
-
+        
     return data, group_list
 
 
@@ -48,7 +61,8 @@ def train_model(uc_name, groups=1, time_window=pio.TimeWindow(-90, -30, 1, 15)):
     data, group_list = get_data(path, groups)
     fname = '{}_{}.csv'.format(uc_name, '-'.join(group_list))
     data.to_csv(fname, index=False)
-    dataset = pio.Dataset.new(name=uc_name,
+    dataset = pio.Dataset.new(PROJECT_ID,
+                              name=uc_name,
                               dataframe=data)
 
     uc_config = pio.TrainingConfig(normal_models=[pio.Model.LinReg],
