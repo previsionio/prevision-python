@@ -1,10 +1,10 @@
-from typing import Optional
 import datetime
 import requests
 from .utils import parse_json, PrevisionException, get_all_results
-from .prevision_client import client, EventManager
+from .prevision_client import client
 from . import logger
 from enum import Enum
+import previsionio as pio
 
 
 class ApiResourceType(Enum):
@@ -44,7 +44,6 @@ class ApiResource:
         if self._id == "":
             raise RuntimeError("Invalid _id received from {}".format(str(params)))
         self.resource_id = self._id
-        self.event_manager: Optional[EventManager] = None
 
     def update_status(self, specific_url: str = None):
         """Get an update on the status of a resource.
@@ -67,15 +66,15 @@ class ApiResource:
         resource_status_dict['event_type'] = 'update'
         resource_status_dict['event_name'] = 'update'
 
-        if self.event_manager:
-            self.event_manager.add_event(self.resource_id, resource_status_dict)
+        if pio.client.event_manager:
+            pio.client.event_manager.add_event(self.resource_id, resource_status_dict)
 
         return resource_status_dict
 
     @property
     def _status(self):
-        if self.event_manager:
-            events = self.event_manager.events
+        if pio.client.event_manager:
+            events = pio.client.event_manager.events
             if self.resource_id in events:
                 return sorted(events[self.resource_id],
                               key=lambda k: datetime.datetime.strptime(k['end'], '%Y-%m-%dT%H:%M:%S.%fZ'))[-1]
