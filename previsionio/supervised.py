@@ -62,7 +62,7 @@ class Supervised(BaseUsecaseVersion):
         return instance
 
     @classmethod
-    def from_id(cls, _id):
+    def from_id(cls, _id) -> 'Supervised':
         """Get a supervised usecase from the platform by its unique id.
 
         Args:

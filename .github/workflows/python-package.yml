@@ -38,4 +38,4 @@ jobs:
           PREVISION_URL: ${{ secrets.PREVISION_URL }} 
           PREVISION_MASTER_TOKEN: ${{ secrets.PREVISION_MASTER_TOKEN }} 
         run: |
-          pytest utests
+          pytest utests --ignore=utests/test_datasources.py

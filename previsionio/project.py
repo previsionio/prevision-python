@@ -22,11 +22,11 @@ class Project(ApiResource, UniqueResourceMixin):
 
     resource = '/projects'
 
-    def __init__(self, _id, name, description=None, color=None, created_by=None, admins=[], contributors=[], viewers=[],
-                 pipelines_count=0, usecases_count=0, dataset_count=0, users=[], **kwargs):
+    def __init__(self, _id: str, name: str, description: str = None, color: str = None, created_by: str = None, admins=[], contributors=[], viewers=[],
+                 pipelines_count: int = 0, usecases_count: int = 0, dataset_count: int = 0, users=[], **kwargs):
         """ Instantiate a new :class:`.DataSource` object to manipulate a datasource resource
         on the platform. """
-        super().__init__(_id, name,
+        super().__init__(_id=_id,
                          name=name,
                          description=description,
                          color=color)
@@ -109,7 +109,7 @@ class Project(ApiResource, UniqueResourceMixin):
         res = parse_json(response)
         return res
 
-    # check 
+    # check
     def add_user(self, email, project_role):
         """Get a project from the instance by its unique id.
 
@@ -201,7 +201,6 @@ class Project(ApiResource, UniqueResourceMixin):
                 raise Exception('unknown error: {}'.format(json))
 
         return cls(json['_id'], name, description, color, json['created_by'], json['admins'], json['contributors'], json['pipelines_count'])
-
 
     def delete(self):
         """Delete a project from the actual [client] workspace.

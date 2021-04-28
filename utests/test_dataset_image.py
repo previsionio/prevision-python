@@ -1,11 +1,5 @@
 import os
-import time
-import pandas as pd
-import pytest
 import previsionio as pio
-from previsionio.utils import PrevisionException
-from .datasets import make_supervised_datasets, remove_datasets
-from . import DATA_PATH
 from .utils import get_testing_id
 
 TESTING_ID = get_testing_id()

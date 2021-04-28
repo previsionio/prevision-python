@@ -31,7 +31,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
     def __init__(self, _id, connector_id, name, path=None, database=None, table=None, request=None, gCloud=None, **kwargs):
         """ Instantiate a new :class:`.DataSource` object to manipulate a datasource resource
         on the platform. """
-        super().__init__(_id, name,
+        super().__init__(_id=_id,
                          connector=connector_id,
                          name=name,
                          path=path,

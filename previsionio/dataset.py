@@ -4,6 +4,7 @@ from itertools import combinations
 from io import BytesIO, StringIO
 import numpy as np
 import pandas as pd
+from pandas._typing import FrameOrSeriesUnion
 import os
 import tempfile
 from zipfile import ZipFile
@@ -14,6 +15,7 @@ from .api_resource import ApiResource
 from . import logger
 import previsionio as pio
 import requests
+from .datasource import DataSource
 
 
 class Dataset(ApiResource):
@@ -30,9 +32,9 @@ class Dataset(ApiResource):
 
     resource = 'datasets'
 
-    def __init__(self, _id, name, datasource=None, _data=None, describe_state=None,
+    def __init__(self, _id: str, name: str, datasource: DataSource = None, _data=None, describe_state=None,
                  drift_state=None, embeddings_state=None, **kwargs):
-        super().__init__(_id, datasource)
+        super().__init__(_id=_id, datasource=datasource)
         self.name = name
         self._id = _id
 
@@ -214,10 +216,10 @@ class Dataset(ApiResource):
             PrevisionException: If dataset does not exist or if there
                 was another error fetching or parsing data
         """
-        endpoint='/{}/{}/download'.format(self.resource, self.id)
+        endpoint = '/{}/{}/download'.format(self.resource, self.id)
         resp = client.request(endpoint='/{}/{}/download'.format(self.resource, self.id),
                               method=requests.get)
-        if resp.status_code == 200:
+        if resp.status_code == 200 and resp._content is not None:
             if not download_path:
                 download_path = os.getcwd()
             path = os.path.join(download_path, self.name + ".zip")
@@ -250,7 +252,7 @@ class Dataset(ApiResource):
         return cls.from_id(dataset_id)
 
     @classmethod
-    def new(cls, project_id, name, datasource=None, file_name=None, dataframe=None):
+    def new(cls, project_id: str, name: str, datasource: DataSource = None, file_name: str = None, dataframe: FrameOrSeriesUnion = None):
         """ Register a new dataset in the workspace for further processing.
         You need to provide either a datasource, a file name or a dataframe
         (only one can be specified).
@@ -292,7 +294,7 @@ class Dataset(ApiResource):
 
         }
         request_url = '/projects/{}/{}/file'.format(project_id, cls.resource)
-
+        create_resp = None
         if datasource is not None:
             request_url = '/projects/{}/{}/data-sources'.format(project_id, cls.resource)
             data['datasource_id'] = datasource.id
@@ -310,15 +312,15 @@ class Dataset(ApiResource):
                 with ZipFile(file_name, 'w') as zip_file:
                     zip_file.write(temp.name, arcname=name + '.csv')
 
-            with open(zip_file.filename, 'rb') as f:
-                files['file'] = (os.path.basename(file_name), f)
+                with open(temp.name, 'rb') as f:
+                    files['file'] = (os.path.basename(file_name), f)
 
-                for k, v in data.items():
-                    files[k] = (None, v)
-                create_resp = client.request(request_url,
-                                             data=data,
-                                             files=files,
-                                             method=requests.post)
+                    for k, v in data.items():
+                        files[k] = (None, v)
+                    create_resp = client.request(request_url,
+                                                data=data,
+                                                files=files,
+                                                method=requests.post)
 
         elif file_name is not None:
             with open(file_name, 'r') as f:
@@ -332,6 +334,9 @@ class Dataset(ApiResource):
                                              files=files,
                                              method=requests.post)
 
+        if create_resp is None:
+            raise PrevisionException('[Dataset] Uexpected case in dataset creation')
+            
         create_json = parse_json(create_resp)
         if create_resp.status_code == 200:
             url = '/{}/{}'.format(cls.resource, create_json['_id'])
@@ -364,14 +369,13 @@ class DatasetImages(ApiResource):
     resource = 'image-folders'
 
     def __init__(self, _id, name, project_id, copy_state, **kwargs):
-        super().__init__(_id)
+        super().__init__(_id=_id)
         self.name = name
         self._id = _id
         self.project_id = project_id
         self.copy_state = copy_state
 
         self.other_params = kwargs
-
 
     def to_pandas(self) -> pd.DataFrame:
         """ Invalid method for a :class:`.DatasetImages` object.
@@ -478,10 +482,10 @@ class DatasetImages(ApiResource):
             PrevisionException: If dataset does not exist or if there
                 was another error fetching or parsing data
         """
-        endpoint='/{}/{}/download'.format(self.resource, self.id)
+        endpoint = '/{}/{}/download'.format(self.resource, self.id)
         resp = client.request(endpoint='/{}/{}/download'.format(self.resource, self.id),
                               method=requests.get)
-        if resp.status_code == 200:
+        if resp.status_code == 200 and resp._content is not None:
             if not download_path:
                 download_path = os.getcwd()
             path = os.path.join(download_path, self.name + ".zip")

@@ -102,7 +102,7 @@ class TextSimilarity(ApiResource):
     resource = 'usecases'
 
     def __init__(self, **usecase_info):
-        super().__init__()
+        super().__init__(**usecase_info)
         self.name: str = usecase_info.get('name')
         self.metric = usecase_info.get('metric')
         self.top_k = usecase_info.get('top_K')
