@@ -109,6 +109,7 @@ class Project(ApiResource, UniqueResourceMixin):
         res = parse_json(response)
         return res
 
+    # check
     def add_user(self, email, project_role):
         """Get a project from the instance by its unique id.
 
