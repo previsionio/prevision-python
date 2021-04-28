@@ -26,7 +26,7 @@ class Project(ApiResource, UniqueResourceMixin):
                  pipelines_count=0, usecases_count=0, dataset_count=0, users=[], **kwargs):
         """ Instantiate a new :class:`.DataSource` object to manipulate a datasource resource
         on the platform. """
-        super().__init__(_id, name,
+        super().__init__(_id=_id,
                          name=name,
                          description=description,
                          color=color)
