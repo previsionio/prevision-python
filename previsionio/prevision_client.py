@@ -60,6 +60,7 @@ class EventManager:
                 with semi:
                     for event in event_list:
                         if event.get('event') == event_tuple.name:
+                            print("event========", event)
                             resp = self.client.request(endpoint=specific_url, method=requests.get)
                             json_response = parse_json(resp)
                             for k, v in event_tuple.fail_checks:

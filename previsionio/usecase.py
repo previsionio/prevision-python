@@ -97,7 +97,6 @@ class BaseUsecaseVersion(ApiResource):
         """
         return Usecase.from_id(self.usecase_id)
 
-
     @property
     def models(self):
         """Get the list of models generated for the current use case. Only the models that
@@ -117,17 +116,6 @@ class BaseUsecaseVersion(ApiResource):
                                                                **model)
         return list(self._models.values())
 
-    @property
-    def versions(self):
-        """Get the list of all versions for the current use case.
-
-        Returns:
-            list(dict): List of the usecase versions (as JSON metadata)
-        """
-        end_point = '/{}/{}/versions'.format(self.resource, self.usecase_id)
-        response = client.request(endpoint=end_point, method=requests.get)
-        res = parse_json(response)
-        return res['items']
 
     @property
     @lru_cache()
@@ -481,12 +469,13 @@ class BaseUsecaseVersion(ApiResource):
         response = client.request('/{}/{}/stop'.format(self.resource, self.id),
                                   requests.put)
         events_url = '/{}/{}'.format(self.resource, self.id)
-        pio.client.event_manager.wait_for_event(self._id,
+        pio.client.event_manager.wait_for_event(self.resource_id,
                                                 self.resource,
                                                 EventTuple('USECASE_UPDATE', 'state', 'done'),
                                                 specific_url=events_url)
         logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                       for k, v in parse_json(response).items()))
+
 
     def delete(self):
         """ Delete a usecase from the actual [client] workspace.
@@ -689,40 +678,6 @@ class BaseUsecaseVersion(ApiResource):
                                   method=requests.delete)
         return (json.loads(response.content.decode('utf-8')))
 
-    def share(self, with_users):
-        """ Share a usecase in the actual [client] workspace with other users (specified
-        via their emails).
-
-        Args:
-            with_users (list(str)): List of emails of the users to share the usecase with
-        """
-        endpoint = '/usecases/{}/sharing'.format(self._id)
-        for user in with_users:
-            response = client.request(endpoint=endpoint, method=requests.post, data={'email': user})
-            sharing_result = json.loads(response.content.decode('utf-8'))
-            if sharing_result.get('status', 200) != 200:
-                logger.error(sharing_result)
-                raise PrevisionException(sharing_result['message'])
-            self.shared_users.append(sharing_result['email'])
-
-    def unshare(self, from_users):
-        """ Unshare a usecase in the actual [client] workspace from other users (specified
-        via their emails).
-
-        Args:
-            from_users (list(str)): List of emails of the users to unshare the usecase from
-        """
-        for user in from_users:
-            endpoint = '/usecases/{}/sharing/{}'.format(self._id, user)
-            response = client.request(endpoint=endpoint, method=requests.delete)
-            sharing_result = json.loads(response.content.decode('utf-8'))
-            if sharing_result.get('status', 200) != 200:
-                if sharing_result['status'] == 400:
-                    logger.warning(sharing_result)
-                else:
-                    logger.error(sharing_result)
-                    raise PrevisionException(sharing_result['message'])
-            self.shared_users.remove(user)
 
     @property
     def score(self):
@@ -806,6 +761,27 @@ class Usecase(ApiResource):
         """
         return super().from_id(specific_url='/{}/{}'.format(cls.resource, _id))
 
+    @classmethod
+    def list(cls, project_id, all=all):
+        """ List all the available usecase in the current active [client] workspace.
+
+        .. warning::
+
+            Contrary to the parent ``list()`` function, this method
+            returns actual :class:`.Usecase` objects rather than
+            plain dictionaries with the corresponding data.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+
+        Returns:
+            list(:class:`.Usecase`): Fetched dataset objects
+        """
+        resources = super().list(all=all, project_id=project_id)
+        return [cls(**conn_data) for conn_data in resources]
+
     @property
     def versions(self):
         """Get the list of all versions for the current use case.
@@ -827,4 +803,4 @@ class Usecase(ApiResource):
         """
         response = client.request(endpoint='/usecases/{}'.format(self._id),
                                   method=requests.delete)
-        return (json.loads(response.content.decode('utf-8')))
+        return response
