@@ -26,7 +26,7 @@ def test_create_delete_project():
     assert project_info['name'] == "sdk_test_project_" + str(TESTING_ID)
 
     assert type(project.users()) == list
-    project.add_user('david.fradel@prevision.io', 'admin')
+    # project.add_user('david.fradel@prevision.io', 'admin')
     project_copy = pio.Project.from_id(project._id)
     assert project_copy.info()['_id'] == project_info['_id']
 

@@ -21,13 +21,15 @@ def setup_module(module):
 
 
 def test_upload_dataset_image():
-    datapath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data_img/{}'.format(dataset_name))
+    datapath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data_img/{}.zip'.format(dataset_name))
+
+    assert os.path.exists(datapath)
 
     # upload ZIP images folder
     dataset_zip = pio.DatasetImages.new(
         PROJECT_ID,
         dataset_test_name,
-        file_name=os.path.join(datapath, '{}.zip'.format(dataset_name))
+        file_name=datapath
     )
     test_datasets['zip'] = dataset_zip
     # bug web metaData without rowsPerPage
