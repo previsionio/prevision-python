@@ -45,7 +45,9 @@ class Model(object):
     """Linear Regression"""
     RandomForest = 'RF'
     """Random Forest"""
-    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF'])
+    CatBoost = 'CB'
+    """CatBoost"""
+    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF', 'CB'])
     """Evaluate all models"""
 
 
@@ -72,7 +74,9 @@ class LiteModel(object):
     """Random Forest"""
     NaiveBayesClassifier = 'NBC'
     """Random Forest"""
-    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF', 'NBC'])
+    CatBoost = 'CB'
+    """CatBoost"""
+    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF', 'NBC', 'CB'])
     """Evaluate all models"""
 
 
@@ -210,11 +214,11 @@ class TrainingConfig(UsecaseConfig):
     }
 
     def __init__(self,
-                 profile=Profile.Normal,
-                 normal_models=Model.Full,
-                 lite_models=LiteModel.Full,
+                 profile=Profile.Quick,
+                 normal_models=[Model.XGBoost, Model.LinReg],
+                 lite_models=[LiteModel.XGBoost, LiteModel.LinReg],
                  simple_models=SimpleModel.Full,
-                 features=Feature.Full,
+                 features=[Feature.Frequency, Feature.TargetEncoding, Feature.Counts],
                  with_blend=False,
                  fe_selected_list=[]):
         """
@@ -321,28 +325,3 @@ nano_config = TrainingConfig(profile=Profile.Quick,
                              simple_models=[],
                              features=[],
                              with_blend=False)
-
-
-class ClusterMagnitude(object):
-    """
-    Training cluster magnitude type.
-    """
-    Few = 'FEW'
-    Some = 'SOME'
-    Many = 'MANY'
-
-
-class ClusteringTrainingConfig(object):
-    """
-    Holds a Clustering training configuration. (cluster_magnitude, feature engineering, training speed)
-    """
-
-    def __init__(self, cluster_magnitude, features, profile):
-        self.cluster_magnitude = cluster_magnitude
-        self.features = features
-        self.profile = profile
-
-
-clustering_base_config = ClusteringTrainingConfig(ClusterMagnitude.Some,
-                                                  Feature.Full.drop(Feature.PCA, Feature.KMeans),
-                                                  Profile.Normal)
