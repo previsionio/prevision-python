@@ -21,9 +21,9 @@ uc_config = pio.TrainingConfig(normal_models=[pio.Model.LinReg],
 test_datasets = {}
 
 type_problem_2_pio_class = {
-    'regression': pio.Regression,
-    'classification': pio.Classification,
-    'multiclassification': pio.MultiClassification,
+    'regression': "fit_regression",
+    'classification': "fit_classification",
+    'multiclassification': "fit_multiclassification",
 }
 type_problems = type_problem_2_pio_class.keys()
 
@@ -61,10 +61,9 @@ def supervised_from_filename(type_problem, uc_name):
 def test_delete_usecase():
     uc_name = TESTING_ID + '_file_del'
     usecase_version = supervised_from_filename('regression', uc_name)
-    usecase = usecase_version.get_usecase()
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name in [u.name for u in usecases]
-    usecase.delete()
+    usecase_version.usecase.delete()
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name not in [u.name for u in usecases]
 
@@ -77,8 +76,7 @@ def test_stop_running_usecase():
     usecase_version.stop()
     usecase_version.update_status()
     assert not usecase_version.running
-    usecase = usecase_version.get_usecase()
-    usecase.delete()
+    usecase_version.usecase.delete()
 
 
 @pytest.fixture(scope='module', params=type_problems)

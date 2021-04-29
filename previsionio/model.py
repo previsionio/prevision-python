@@ -353,57 +353,6 @@ class ClassificationModel(ClassicModel):
         super().__init__(_id, usecase_version_id, name=name, **other_params)
         self._predict_threshold = 0.5
 
-    def predict_single(self, data, confidence=False, explain=False):
-        """ Make a prediction for a single instance. Use :py:func:`predict_from_dataset_name` or predict methods
-        to predict multiple instances at the same time (it's faster).
-
-        Args:
-            data (dict): Features names and values (without target feature) - missing feature keys
-                will be replaced by nans
-            confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
-            explain (bool, optional): Whether to explain prediction (default: ``False``)
-
-
-        .. note::
-
-            You can set both ``confidence`` and ``explain`` to true.
-
-        Returns:
-            dict: Dictionary containing the prediction result
-
-            .. note::
-
-                The prediction format depends on the problem type (regression, classification, etc...)
-        """
-        payload = {
-            'features': {
-                str(k): v for k, v in data.items() if str(v) != 'nan'
-            },
-            'explain': explain,
-            'confidence': confidence,
-            'best': False,
-            'specific_model': self._id
-        }
-
-        logger.debug('[Predict Unit] sending payload ' + str(payload))
-
-        response = client.request('/usecase-versions/{}/unit-prediction'.format(self.usecase_version_id),
-                                  requests.post,
-                                  data=json.dumps(payload, cls=NpEncoder),
-                                  content_type='application/json')
-
-        if response.status_code != 200:
-            raise PrevisionException('error getting response data: ' + response.text)
-        try:
-            response_json = parse_json(response)
-        except PrevisionException as e:
-            logger.error('error getting response data: ' + str(e) + ' -- ' + response.text[0:250])
-            raise e
-        else:
-            if 'prediction' not in response_json:
-                raise PrevisionException('error getting response data: ' + response_json.__repr__())
-            else:
-                return response_json['prediction']
 
     @property
     @lru_cache()

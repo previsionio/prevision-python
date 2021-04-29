@@ -5,11 +5,12 @@ import requests
 from . import client
 from .utils import parse_json, PrevisionException
 from . import logger
+from . import TrainingConfig
 from .api_resource import ApiResource, UniqueResourceMixin
 from .datasource import DataSource
 from .dataset import Dataset, DatasetImages
 from .connector import Connector, SQLConnector, FTPConnector, SFTPConnector, S3Connector, HiveConnector, GCPConnector
-
+from .supervised import Regression, Classification, MultiClassification
 
 class Project(ApiResource, UniqueResourceMixin):
 
@@ -278,6 +279,20 @@ class Project(ApiResource, UniqueResourceMixin):
     def list_datasource(self, all=all):
         return DataSource.list(self._id, all=all)
 
+    def fit_regression(self, name, dataset, column_config, metric=None, holdout_dataset=None,
+                       training_config=TrainingConfig(), type_problem=None, **kwargs):
+        Regression.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
+                       training_config=training_config, type_problem=type_problem, **kwargs)
+
+    def fit_classification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
+                           training_config=TrainingConfig(), type_problem=None, **kwargs):
+        Classification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
+                           training_config=training_config, type_problem=type_problem, **kwargs)
+
+    def fit_multiclassification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
+                                training_config=TrainingConfig(), type_problem=None, **kwargs):
+        MultiClassification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
+                                training_config=training_config, type_problem=type_problem, **kwargs)
 
 connectors_names = {
     'SQL': "create_sql_connector",
