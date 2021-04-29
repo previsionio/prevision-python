@@ -7,7 +7,7 @@ from .utils import parse_json, PrevisionException
 from . import logger
 from .api_resource import ApiResource, UniqueResourceMixin
 from .datasource import DataSource
-from .dataset import Dataset
+from .dataset import Dataset, DatasetImages
 from .connector import Connector, SQLConnector, FTPConnector, SFTPConnector, S3Connector, HiveConnector, GCPConnector
 
 
@@ -240,6 +240,12 @@ class Project(ApiResource, UniqueResourceMixin):
             list(:class:`.Dataset`): Fetched dataset objects
         """
         return Dataset.list(self._id, all=all)
+
+    def create_image_folder(self, name, file_name):
+        return DatasetImages._new(self._id, name, file_name)
+
+    def list_image_folders(self, all=all):
+        return DatasetImages.list(self._id, all=all)
 
     def create_sql_connector(self, name, host, port=3306, username='', password=''):
         return SQLConnector._new(self._id, name, host, port, 'SQL', username=username, password=password)

@@ -322,14 +322,6 @@ class DatasetImages(ApiResource):
 
         self.other_params = kwargs
 
-    def to_pandas(self) -> pd.DataFrame:
-        """ Invalid method for a :class:`.DatasetImages` object.
-
-        Raises:
-            ValueError: Folder datasets cannot be converted to a ``pandas`` dataframe
-        """
-        raise ValueError("Cannot convert a folder dataset to pandas.")
-
     def delete(self):
         """Delete a DatasetImages from the actual [client] workspace.
 

@@ -28,20 +28,21 @@ def setup_module(module):
 
 def teardown_module(module):
     remove_datasets(DATA_PATH)
-    for ds in pio.Dataset.list(PROJECT_ID, all=True):
+    project = pio.Project.from_id(PROJECT_ID)
+    for ds in project.list_datasets(all=True):
         if TESTING_ID in ds.name:
             ds.delete()
-    project = pio.Project.from_id(PROJECT_ID)
     project.delete()
 
 
 def test_upload_datasets():
+    project = pio.Project.from_id(PROJECT_ID)
     for problem_type, p in paths.items():
-        dataset = pio.Dataset._new(PROJECT_ID, p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
-                                   dataframe=pd.read_csv(p))
+        dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
+                                         dataframe=pd.read_csv(p))
         test_datasets[problem_type] = dataset
 
-    datasets = [ds for ds in pio.Dataset.list(PROJECT_ID, all=True) if TESTING_ID in ds.name]
+    datasets = [ds for ds in project.list_datasets(all=True) if TESTING_ID in ds.name]
     ds_names = [k + str(TESTING_ID) + '.csv' for k in paths]
     assert len(datasets) == len(paths)
     for ds in datasets:

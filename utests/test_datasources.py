@@ -11,7 +11,7 @@ TESTING_ID_CONNECTOR = get_testing_id()
 TESTING_ID_DATASOURCE = get_testing_id()
 SQL_CONNECTORS = ['SQL', 'HIVE']
 OBJECT_CONNECTORS = ['FTP', 'SFTP']
-PROJECT_NAME = "sdk_test_dataset_" + str(TESTING_ID)
+PROJECT_NAME = "sdk_test_datasource_" + str(TESTING_ID)
 PROJECT_ID = ""
 
 pio.config.default_timeout = 120
@@ -25,12 +25,14 @@ def setup_module(module):
 
 
 def teardown_module(module):
-    for ds in pio.DataSource.list(PROJECT_ID, all=True):
+    project = pio.Project.from_id(PROJECT_ID)
+    for ds in project.list_datasource(all=True):
         if TESTING_ID_DATASOURCE in ds.name:
             ds.delete()
-    for conn in pio.Connector.list(PROJECT_ID, all=True):
+    for conn in project.list_connectors(all=True):
         if TESTING_ID_CONNECTOR in conn.name:
             conn.delete()
+    project.delete()
 
 
 connectors = {
