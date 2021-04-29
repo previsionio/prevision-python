@@ -45,15 +45,10 @@ def setup_module(module):
     make_pio_datasets(paths)
 
 
-# def teardown_module(module):
-#     remove_datasets(DATA_PATH)
-#     for ds in pio.Dataset.list():
-#         if TESTING_ID in ds.name:
-#             ds.delete()
-#     for uc_dict in pio.Supervised.list():
-#         uc = pio.Supervised.from_id(uc_dict['usecase_id'])
-#         if TESTING_ID in uc.name:
-#             uc.delete()
+def teardown_module(module):
+    remove_datasets(DATA_PATH)
+    project = pio.Project.from_id(PROJECT_ID)
+    project.delete()
 
 
 def supervised_from_filename(type_problem, uc_name):
@@ -105,12 +100,10 @@ options_parameters = ('options',
 
 predict_u_options_parameters = ('options',
                                 [{'confidence': False, 'explain': True},
-                                 {'confidence': False},
                                  {'confidence': True}])
 
 predict_test_ids = [('confidence-' if opt['confidence'] else 'normal-')
                     for opt in predict_u_options_parameters[1]]
-
 
 class TestUCGeneric:
     def test_check_config(self, setup_usecase_class):

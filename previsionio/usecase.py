@@ -503,7 +503,7 @@ class BaseUsecaseVersion(ApiResource):
 
         return best.predict_from_dataset(dataset, confidence=confidence, dataset_folder=dataset_folder)
 
-    def predict(self, df, confidence=False) -> pd.DataFrame:
+    def predict(self, df, confidence=False, prediction_dataset_name=None) -> pd.DataFrame:
         """ Get the predictions for a dataset stored in the current active [client]
         workspace using the best model of the usecase with a Scikit-learn style blocking prediction mode.
 
@@ -523,7 +523,7 @@ class BaseUsecaseVersion(ApiResource):
 
         best = self.best_model
 
-        return best.predict(df=df, confidence=confidence)
+        return best.predict(df=df, confidence=confidence, prediction_dataset_name=prediction_dataset_name)
 
     def predict_proba(self, df, confidence=False, use_best_single=False) -> pd.DataFrame:
         """ Get the predictions for a dataset stored in the current active [client]

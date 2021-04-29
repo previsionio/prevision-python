@@ -31,11 +31,12 @@ class Model(ApiResource):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id, usecase_version_id, name=None, **other_params):
+    def __init__(self, _id, usecase_version_id, project_id, name=None, **other_params):
         """ Instantiate a new :class:`.Model` object to manipulate a model resource on the platform. """
         super().__init__(_id=_id)
         self._id = _id
         self.usecase_version_id = usecase_version_id
+        self.project_id = project_id
         self.name = name
         self.tags = {}
 
@@ -191,7 +192,7 @@ class Model(ApiResource):
                 time.sleep(1)
         return None
 
-    def predict(self, df, confidence=False) -> pd.DataFrame:
+    def predict(self, df, confidence=False, prediction_dataset_name=None) -> pd.DataFrame:
         """ Make a prediction in a Scikit-learn blocking style.
 
         .. warning::
@@ -206,9 +207,10 @@ class Model(ApiResource):
         Returns:
             ``pd.DataFrame``: Prediction results dataframe
         """
+        if prediction_dataset_name is None:
+            prediction_dataset_name = 'test_{}_{}'.format(self.name, str(uuid.uuid4())[-6:])
 
-
-        dataset = Dataset.new('test_{}_{}'.format(self.name, str(uuid.uuid4())[-6:]), dataframe=df)
+        dataset = Dataset._new(self.project_id, prediction_dataset_name, dataframe=df)
 
         predict_id = self._predict_bulk(dataset.id,
                                         confidence=confidence)
@@ -321,7 +323,7 @@ class ClassicModel(Model):
 
         logger.debug('[Predict Unit] sending payload ' + str(payload))
 
-        response = client.request('usecase-versions/{}/unit-prediction'.format(self.usecase_version_id),
+        response = client.request('/usecase-versions/{}/unit-prediction'.format(self.usecase_version_id),
                                   requests.post,
                                   data=json.dumps(payload, cls=NpEncoder),
                                   content_type='application/json')
@@ -392,7 +394,7 @@ class ClassificationModel(ClassicModel):
 
         logger.debug('[Predict Unit] sending payload ' + str(payload))
 
-        response = client.request('usecase-versions/{}/unit-prediction'.format(self.usecase_version_id),
+        response = client.request('/usecase-versions/{}/unit-prediction'.format(self.usecase_version_id),
                                   requests.post,
                                   data=json.dumps(payload, cls=NpEncoder),
                                   content_type='application/json')
