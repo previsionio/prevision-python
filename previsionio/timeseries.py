@@ -63,8 +63,8 @@ class TimeSeries(BaseUsecaseVersion):
     model_class = RegressionModel
 
     @classmethod
-    def fit(cls, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow,
-            metric: Regression = None, training_config: TrainingConfig = TrainingConfig()) -> 'TimeSeries':
+    def fit(cls, project_id: str, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow,
+            metric: Regression = None, training_config: TrainingConfig = TrainingConfig()):
         config_args = training_config.to_kwargs()
         column_args = column_config.to_kwargs()
         time_window_args = time_window.to_kwargs()
@@ -73,7 +73,8 @@ class TimeSeries(BaseUsecaseVersion):
         if not metric:
             metric = cls.default_metric
 
-        return cls._start_usecase(name,
+        return cls._start_usecase(project_id=project_id,
+                                  name=name,
                                   dataset_id=dataset.id,
                                   data_type=cls.data_type,
                                   type_problem=cls.type_problem,

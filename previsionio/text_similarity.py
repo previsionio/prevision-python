@@ -142,7 +142,7 @@ class TextSimilarity(ApiResource):
         self._models = {}
 
     @classmethod
-    def fit(self, name, dataset, description_column_config, metric=None, top_k=None, lang='auto',
+    def fit(self, project_id, name, dataset, description_column_config, metric=None, top_k=None, lang='auto',
             queries_dataset=None, queries_column_config=None,
             models_parameters=ListModelsParameters(), **kwargs):
         """ Start a supervised usecase training with a specific training configuration

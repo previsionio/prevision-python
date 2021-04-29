@@ -77,7 +77,8 @@ def train_model(uc_name, groups=1, time_window=pio.TimeWindow(-90, -30, 1, 15)):
                                   # group_columns=group_list
                                   )
 
-    uc = pio.TimeSeries.fit(uc_name,
+    uc = pio.TimeSeries.fit(PROJECT_ID,
+                            uc_name,
                             dataset,
                             time_window=time_window,
                             training_config=uc_config,
