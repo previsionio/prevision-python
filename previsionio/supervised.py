@@ -3,7 +3,7 @@ from __future__ import print_function
 import pandas as pd
 from . import TrainingConfig
 from . import metrics
-from .usecase import BaseUsecaseVersion
+from .usecase import ClassicUsecaseVersion
 from .model import Model, RegressionModel, \
     ClassificationModel, MultiClassificationModel
 from .utils import PrevisionException
@@ -15,7 +15,7 @@ MODEL_CLASS_DICT = {
 }
 
 
-class Supervised(BaseUsecaseVersion):
+class Supervised(ClassicUsecaseVersion):
 
     """ A supervised usecase. """
 

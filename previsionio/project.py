@@ -23,7 +23,7 @@ class Project(ApiResource, UniqueResourceMixin):
 
     """
 
-    resource = '/projects'
+    resource = 'projects'
 
     def __init__(self, _id: str, name: str, description: str = None, color: str = None, created_by: str = None,
                  admins=[], contributors=[], viewers=[], pipelines_count: int = 0, usecases_count: int = 0,
@@ -86,7 +86,8 @@ class Project(ApiResource, UniqueResourceMixin):
 
         return cls(**resp_json)
 
-    def get_id(self):
+    @property
+    def id(self):
         return self._id
 
     def users(self):

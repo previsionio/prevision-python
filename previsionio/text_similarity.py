@@ -11,6 +11,7 @@ from . import config
 from .model import TextSimilarityModel
 from .dataset import Dataset
 from .usecase import Usecase
+from .usecase import ClassicUsecaseVersion
 import previsionio as pio
 
 
@@ -94,7 +95,7 @@ class ModelsParameters(UsecaseConfig):
         self.models = models
 
 
-class TextSimilarity(ApiResource):
+class TextSimilarity(ClassicUsecaseVersion):
 
     default_metric = 'accuracy_at_k'
     default_top_k = 10
@@ -211,200 +212,6 @@ class TextSimilarity(ApiResource):
                                                 EventTuple('USECASE_VERSION_UPDATE', 'state', 'running'),
                                                 specific_url=events_url)
         return usecase
-
-    def update_status(self):
-        return super().update_status(specific_url='/{}/{}'.format(self.resource,
-                                                                  self._id))
-
-    @classmethod
-    def from_id(cls, _id):
-        """Get a usecase from the platform by its unique id.
-
-        Args:
-            _id (str): Unique id of the usecase to retrieve
-            version (int, optional): Specific version of the usecase to retrieve
-                (default: 1)
-
-        Returns:
-            :class:`.BaseUsecaseVersion`: Fetched usecase
-
-        Raises:
-            PrevisionException: Any error while fetching data from the platform
-                or parsing result
-        """
-        return super().from_id(specific_url='/{}/{}'.format(cls.resource, _id))
-
-    @property
-    def usecase(self):
-        """Get a usecase of current usecase version.
-
-        Returns:
-            :class:`.Usecase`: Fetched usecase
-
-        Raises:
-            PrevisionException: Any error while fetching data from the platform
-                or parsing result
-        """
-        return Usecase.from_id(self.usecase_id)
-
-    @property
-    def score(self):
-        """ Get the current score of the usecase (i.e. the score of the model that is
-        currently considered the best performance-wise for this usecase).
-
-        Returns:
-            float: Usecase score (or infinity if not available).
-        """
-        try:
-            return self._status['score']
-        except KeyError:
-            return float('inf')
-
-    @property
-    def models(self):
-        """Get the list of models generated for the current use case. Only the models that
-        are done training are retrieved.
-
-        Returns:
-            list(:class:`.Model`): List of models found by the platform for the usecase
-        """
-        end_point = '/{}/{}/models'.format(self.resource, self._id)
-        response = client.request(endpoint=end_point,
-                                  method=requests.get)
-        models = json.loads(response.content.decode('utf-8'))['items']
-
-        for model in models:
-            if model['_id'] not in self._models:
-                self._models[model['_id']] = self.model_class(**model)
-        return list(self._models.values())
-
-    @property
-    @lru_cache()
-    def train_dataset(self):
-        """ Get the :class:`.Dataset` object corresponding to the training dataset
-        of the usecase.
-
-        Returns:
-            :class:`.Dataset`: Associated training dataset
-        """
-        return Dataset.from_id(_id=self.dataset_id)
-
-    def best_model(self):
-        """ (Util function) Find out the element having the minimal value
-        of the attribute defined by the parameter 'by'.
-
-        Args:
-            models_list (list(:class:`.Model`)): List of models to search through
-            by (str, optional): Key to sort by - the function will return the item
-                with the minimal value for this key (default: "loss")
-            default_cost_value (_any_, optional): Default value to input for a model
-                if the sorting key was not found
-
-        Returns:
-            (:class:`.Model`, None): Model with the minimal cost in the given list, or
-            ``None`` the list was empty.
-        """
-        best_model = None
-        if len(self.models) == 0:
-            raise PrevisionException('models not ready yet')
-        for model in self.models:
-            if 'best' in model.tags:
-                best_model = model
-
-        if best_model is None:
-            best_model = self.models[0]
-        return best_model
-
-    @property
-    def fastest_model(self):
-        """Returns the model that predicts with the lowest response time
-
-        Returns:
-            Model object -- corresponding to the fastest model
-        """
-        fastest_model = None
-        if len(self.models) == 0:
-            raise PrevisionException('models not ready yet')
-        for model in self.models:
-            if 'fastest' in model.tags:
-                fastest_model = model
-
-        if fastest_model is None:
-            fastest_model = self.models[0]
-
-        return fastest_model
-
-    @property
-    def running(self):
-        """ Get a flag indicating whether or not the usecase is currently running.
-
-        Returns:
-            bool: Running status
-        """
-        status = self._status
-        return status['state'] == 'running'
-
-    @property
-    def status(self):
-        """ Get a flag indicating whether or not the usecase is currently running.
-
-        Returns:
-            bool: Running status
-        """
-        status = self._status
-        return status['state']
-
-    def print_info(self):
-        """ Print all info on the usecase. """
-        for k, v in self._usecase_info.items():
-            print(str(k) + ': ' + str(v))
-
-    def wait_until(self, condition, raise_on_error=True, timeout=config.default_timeout):
-        """ Wait until condition is fulfilled, then break.
-
-        Args:
-            condition (func: (:class:`.BaseUsecaseVersion`) -> bool.): Function to use to check the
-                break condition
-            raise_on_error (bool, optional): If true then the function will stop on error,
-                otherwise it will continue waiting (default: ``True``)
-            timeout (float, optional): Maximal amount of time to wait before forcing exit
-
-        .. example::
-
-            usecase.wait_until(lambda usecase: len(usecase) > 3)
-
-        Raises:
-            PrevisionException: If the resource could not be fetched or there was a timeout.
-        """
-        t0 = time.time()
-        while True:
-            if timeout is not None and time.time() - t0 > timeout:
-                raise PrevisionException('timeout while waiting on {}'.format(condition))
-
-            try:
-                if condition(self):
-                    break
-                elif self._status['state'] == 'failed':
-                    raise PrevisionException('Resource failed while waiting')
-            except PrevisionException as e:
-                logger.warning(e.__repr__())
-                if raise_on_error:
-                    raise
-
-            time.sleep(config.scheduler_refresh_rate)
-
-    def stop(self):
-        """ Stop a usecase (stopping all nodes currently in progress). """
-        logger.info('[Usecase] stopping usecase')
-        response = client.request('/{}/{}/stop'.format(self.resource, self.id),
-                                  requests.put)
-        events_url = '/{}/{}'.format(self.resource, self.id)
-        pio.client.event_manager.wait_for_event(self.resource_id,
-                                                self.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'done'),
-                                                specific_url=events_url)
-        logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
-                                                      for k, v in parse_json(response).items()))
 
 
 class DescriptionsColumnConfig(UsecaseConfig):
