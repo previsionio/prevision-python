@@ -317,28 +317,22 @@ class ClassicModel(Model):
             'explain': explain,
             'confidence': confidence,
             'best': False,
-            'specific_model': self._id
+            'model_id': self._id
         }
 
         logger.debug('[Predict Unit] sending payload ' + str(payload))
-
         response = client.request('/usecase-versions/{}/unit-prediction'.format(self.usecase_version_id),
                                   requests.post,
-                                  data=json.dumps(payload, cls=NpEncoder),
+                                  data=payload,
                                   content_type='application/json')
-
         if response.status_code != 200:
             raise PrevisionException('error getting response data: ' + response.text)
         try:
             response_json = parse_json(response)
+            return response_json
         except PrevisionException as e:
             logger.error('error getting response data: ' + str(e) + ' -- ' + response.text[0:250])
             raise e
-        else:
-            if 'prediction' not in response_json:
-                raise PrevisionException('error getting response data: ' + response_json.__repr__())
-            else:
-                return response_json['prediction']
 
 
 class ClassificationModel(ClassicModel):
