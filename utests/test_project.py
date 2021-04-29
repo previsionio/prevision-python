@@ -1,11 +1,4 @@
-import os
-import time
-import pandas as pd
-import pytest
 import previsionio as pio
-from previsionio.utils import PrevisionException
-from .datasets import make_supervised_datasets, remove_datasets
-from . import DATA_PATH
 from .utils import get_testing_id
 
 TESTING_ID = get_testing_id()
@@ -19,7 +12,7 @@ paths = {}
 
 def test_create_delete_project():
     project = pio.Project.new(name="sdk_test_project_" + str(TESTING_ID),
-                                  description="description test sdk")
+                              description="description test sdk")
     projects_names = [proj.name for proj in pio.Project.list(all=True) if TESTING_ID in proj.name]
     assert project.name in projects_names
     project_info = project.info()

@@ -1,9 +1,7 @@
 import os
 import time
 import pandas as pd
-import pytest
 import previsionio as pio
-from previsionio.utils import PrevisionException
 from .datasets import make_supervised_datasets, remove_datasets
 from . import DATA_PATH
 from .utils import get_testing_id
@@ -11,7 +9,6 @@ from .utils import get_testing_id
 TESTING_ID = get_testing_id()
 
 PROJECT_NAME = "sdk_test_dataset_" + str(TESTING_ID)
-#PROJECT_ID = "6082fb73b153a8001c3052df"
 PROJECT_ID = ""
 pio.config.zip_files = False
 pio.config.default_timeout = 1000
@@ -28,6 +25,7 @@ def setup_module(module):
     global PROJECT_ID
     PROJECT_ID = project._id
 
+
 def teardown_module(module):
     remove_datasets(DATA_PATH)
     for ds in pio.Dataset.list(PROJECT_ID, all=True):
@@ -36,10 +34,11 @@ def teardown_module(module):
     project = pio.Project.from_id(PROJECT_ID)
     project.delete()
 
+
 def test_upload_datasets():
     for problem_type, p in paths.items():
         dataset = pio.Dataset._new(PROJECT_ID, p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
-                                  dataframe=pd.read_csv(p))
+                                   dataframe=pd.read_csv(p))
         test_datasets[problem_type] = dataset
 
     datasets = [ds for ds in pio.Dataset.list(PROJECT_ID, all=True) if TESTING_ID in ds.name]

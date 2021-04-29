@@ -118,5 +118,6 @@ __all__ = ['client',
            'TextSimilarityModels',
            'ModelEmbedding',
            'Preprocessing',
-           'Project'
+           'Project',
+           'Usecase'
            ]

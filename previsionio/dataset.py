@@ -95,7 +95,6 @@ class Dataset(ApiResource):
         resources = super().list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources]
 
-
     def update_status(self):
         url = '/{}/{}'.format(self.resource, self._id)
         dset_resp = client.request(url, method=requests.get)
@@ -186,7 +185,7 @@ class Dataset(ApiResource):
                 was another error fetching or parsing data
         """
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
-        resp = client.request(endpoint='/{}/{}/download'.format(self.resource, self.id),
+        resp = client.request(endpoint=endpoint,
                               method=requests.get)
         if resp.status_code == 200 and resp._content is not None:
             if not download_path:
@@ -197,7 +196,6 @@ class Dataset(ApiResource):
             return path
         else:
             raise PrevisionException('could not download dataset')
-
 
     @classmethod
     def _new(cls, project_id: str, name: str, datasource: DataSource = None, file_name: str = None, dataframe=None):
@@ -430,7 +428,7 @@ class DatasetImages(ApiResource):
                 was another error fetching or parsing data
         """
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
-        resp = client.request(endpoint='/{}/{}/download'.format(self.resource, self.id),
+        resp = client.request(endpoint=endpoint,
                               method=requests.get)
         if resp.status_code == 200 and resp._content is not None:
             if not download_path:

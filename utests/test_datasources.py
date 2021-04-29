@@ -16,12 +16,14 @@ PROJECT_ID = ""
 
 pio.config.default_timeout = 120
 
+
 def setup_module(module):
     project = pio.Project.new(name=PROJECT_NAME,
                               description="description test sdk")
     global PROJECT_ID
     PROJECT_ID = project._id
-"""
+
+
 def teardown_module(module):
     for ds in pio.DataSource.list(PROJECT_ID, all=True):
         if TESTING_ID_DATASOURCE in ds.name:
@@ -29,7 +31,7 @@ def teardown_module(module):
     for conn in pio.Connector.list(PROJECT_ID, all=True):
         if TESTING_ID_CONNECTOR in conn.name:
             conn.delete()
-"""
+
 
 connectors = {
     'FTP': ftp_config,
@@ -72,7 +74,6 @@ datasource_test_ids = ['datasource-' + opt['connector'] for opt in datasources_o
 def prepare_connector_options(base_options):
     options = copy.deepcopy(base_options)
     connector_type = options.pop('type')
-    #options['project_id'] = PROJECT_ID
     options['name'] = connector_type + TESTING_ID_CONNECTOR
     for key in ['database', 'table', 'file', 'bucket']:
         if key in options:
@@ -101,6 +102,7 @@ example_datasource_id = None
 def test_connector_new(setup_connector_class, options):
     conn = setup_connector_class(options)
     assert conn is not None
+
 
 @pytest.mark.parametrize(*connectors_options, ids=connector_test_ids)
 def test_connector_new_test(setup_connector_class, options):
@@ -134,6 +136,7 @@ def test_sql_connector_list_tables(setup_connector_class, options):
 #     assert len(files) > 0
 #     assert options['file'] in files
 
+
 @pytest.mark.parametrize(*datasources_options, ids=datasource_test_ids)
 def test_datasource_new(setup_connector_class, options):
     datasource_options = copy.deepcopy(options)
@@ -145,13 +148,12 @@ def test_datasource_new(setup_connector_class, options):
     datasource_options['connector'] = conn
     datasource_options['name'] = 'datasource_{}_{}'.format(TESTING_ID_DATASOURCE, connector_type)
     datasource = project.create_datasource(**datasource_options)
-    print("datasource======", type(datasource))
-    print("datasource._id=========" , datasource._id)
 
     global example_datasource_id
     if example_datasource_id is None:
         example_datasource_id = datasource._id
     assert datasource is not None
+
 
 def test_datasource_from_id():
     global example_datasource_id

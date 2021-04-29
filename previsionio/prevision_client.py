@@ -65,7 +65,7 @@ class EventManager:
                             print("specific_url=======", specific_url)
                             resp = self.client.request(endpoint=specific_url, method=requests.get)
                             print("resp=====", resp)
-                            print("resp.text==========",resp.text)
+                            print("resp.text==========", resp.text)
                             json_response = parse_json(resp)
                             for k, v in event_tuple.fail_checks:
                                 if json_response.get(k) == v:
@@ -96,7 +96,7 @@ class EventManager:
     def update_events(self):
         sse_timeout = 300
         while True:
-            print("self.event_endpoint",self.event_endpoint)
+            print("self.event_endpoint", self.event_endpoint)
             sse = requests.get(self.event_endpoint,
                                stream=True,
                                headers=self.headers,
@@ -111,7 +111,7 @@ class EventManager:
                         event_logger.debug('sse comment{}'.format(msg))
                         continue
                     try:
-                        if len(msg.split('\n'))>=3:
+                        if len(msg.split('\n')) >= 3:
                             _, event_name, event_data, *rest = msg.split('\n')
                             event_name = event_name.replace('event: ', '')
                             event_data = json.loads(event_data.replace('data: ', '').strip())

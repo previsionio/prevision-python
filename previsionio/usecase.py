@@ -69,6 +69,7 @@ class BaseUsecaseVersion(ApiResource):
     def update_status(self):
         return super().update_status(specific_url='/{}/{}'.format(self.resource,
                                                                   self._id))
+
     @classmethod
     def from_id(cls, _id):
         """Get a usecase from the platform by its unique id.
@@ -631,7 +632,6 @@ class BaseUsecaseVersion(ApiResource):
                                   method=requests.delete)
         return (json.loads(response.content.decode('utf-8')))
 
-
     @property
     def score(self):
         """ Get the current score of the usecase (i.e. the score of the model that is
@@ -678,6 +678,7 @@ class BaseUsecaseVersion(ApiResource):
             uc.holdout_dataset = mdl['usecase_version_params'].get('holdout_dataset_id')[0]
 
         return uc
+
 
 class Usecase(ApiResource):
 

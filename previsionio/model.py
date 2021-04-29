@@ -92,7 +92,6 @@ class Model(ApiResource):
             predict_id (str): Unique id of the prediction to wait for
         """
         specific_url = '/predictions/{}'.format(prediction_id)
-        #fixme
         pio.client.event_manager.wait_for_event(prediction_id,
                                                 specific_url,
                                                 EventTuple('PREDICTION_UPDATE', 'state', 'done'),
@@ -139,7 +138,6 @@ class Model(ApiResource):
             raise PrevisionException(err)
 
         return predict_start_parsed['_id']
-
 
     def _get_predictions(self, predict_id) -> pd.DataFrame:
         """ Get the result prediction dataframe from a given predict id.
@@ -228,6 +226,7 @@ class Model(ApiResource):
             str: Path of the deployed application
         """
         raise NotImplementedError
+
 
 class ClassicModel(Model):
 
@@ -485,6 +484,7 @@ class RegressionModel(ClassicModel):
         name (str, optional): Name of the model (default: ``None``)
     """
 
+
 class MultiClassificationModel(ClassicModel):
     """ A model object for a multi-classification usecase, i.e. a usecase where the target
     is categorical with strictly more than 2 modalities.
@@ -496,6 +496,7 @@ class MultiClassificationModel(ClassicModel):
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
+
 
 class TextSimilarityModel(Model):
 
@@ -524,7 +525,7 @@ class TextSimilarityModel(Model):
         data = {
             'model_id': self._id,
             'queries_dataset_id': queries_dataset_id,
-            'queries_dataset_content_column': queries_dataset_content_column,  # because we"ll be using the current model
+            'queries_dataset_content_column': queries_dataset_content_column,
             'top_k': top_k
         }
         if matching_id_description_column:

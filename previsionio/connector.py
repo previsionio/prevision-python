@@ -2,7 +2,6 @@ import requests
 from . import client
 from .utils import parse_json
 from .api_resource import ApiResource, UniqueResourceMixin
-import json
 
 
 class Connector(ApiResource, UniqueResourceMixin):
@@ -115,7 +114,7 @@ class Connector(ApiResource, UniqueResourceMixin):
         if resp.status_code == 200:
             return True
         else:
-             return False
+            return False
 
 
 class DataTableBaseConnector(Connector):
@@ -175,6 +174,7 @@ class SFTPConnector(DataFileBaseConnector):
     """ A specific type of connector to interact with a secured FTP client (containing files). """
 
     conn_type = 'SFTP'
+
 
 class SQLConnector(DataTableBaseConnector):
 

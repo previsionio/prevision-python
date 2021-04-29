@@ -10,6 +10,7 @@ from .datasource import DataSource
 from .dataset import Dataset
 from .connector import Connector, SQLConnector, FTPConnector, SFTPConnector, S3Connector, HiveConnector, GCPConnector
 
+
 class Project(ApiResource, UniqueResourceMixin):
 
     """ A Project
@@ -24,8 +25,9 @@ class Project(ApiResource, UniqueResourceMixin):
 
     resource = '/projects'
 
-    def __init__(self, _id: str, name: str, description: str = None, color: str = None, created_by: str = None, admins=[], contributors=[], viewers=[],
-                 pipelines_count: int = 0, usecases_count: int = 0, dataset_count: int = 0, users=[], **kwargs):
+    def __init__(self, _id: str, name: str, description: str = None, color: str = None, created_by: str = None,
+                 admins=[], contributors=[], viewers=[], pipelines_count: int = 0, usecases_count: int = 0,
+                 dataset_count: int = 0, **kwargs):
         """ Instantiate a new :class:`.DataSource` object to manipulate a datasource resource
         on the platform. """
         super().__init__(_id=_id,
@@ -44,7 +46,6 @@ class Project(ApiResource, UniqueResourceMixin):
         self.pipelines_count = pipelines_count
         self.usecases_count = usecases_count
         self.dataset_count = dataset_count
-        #self.users = users
 
     @classmethod
     def list(cls, all=False):
@@ -176,7 +177,8 @@ class Project(ApiResource, UniqueResourceMixin):
             else:
                 raise Exception('unknown error: {}'.format(json))
 
-        return cls(json['_id'], name, description, color, json['created_by'], json['admins'], json['contributors'], json['pipelines_count'])
+        return cls(json['_id'], name, description, color, json['created_by'],
+                   json['admins'], json['contributors'], json['pipelines_count'])
 
     def delete(self):
         """Delete a project from the actual [client] workspace.
@@ -254,17 +256,19 @@ class Project(ApiResource, UniqueResourceMixin):
     def create_hive_connector(self, name, host, port=10000, username='', password=''):
         return HiveConnector._new(self._id, name, host, port, 'HIVE', username=username, password=password)
 
-    def create_gcp_connector(self, name, host= '', port='', username='', password='', googleCredentials=''):
+    def create_gcp_connector(self, name, host='', port='', username='', password='', googleCredentials=''):
         return GCPConnector._new(self._id, name, host, port, 'GCP', username=username, password=password,
-                                     googleCredentials=googleCredentials)
+                                 googleCredentials=googleCredentials)
 
     def list_connectors(self, all=all):
         return Connector.list(self._id, all=all)
 
-    def create_datasource(self, connector, name, path=None, database=None, table=None, bucket=None, request=None, gCloud=None):
-        return DataSource._new(self._id, connector, name, path=path, database=database, table=table, bucket=bucket, request=request, gCloud=gCloud)
+    def create_datasource(self, connector, name, path=None, database=None,
+                          table=None, bucket=None, request=None, gCloud=None):
+        return DataSource._new(self._id, connector, name, path=path, database=database,
+                               table=table, bucket=bucket, request=request, gCloud=gCloud)
 
-    def list_connectors(self, all=all):
+    def list_datasource(self, all=all):
         return DataSource.list(self._id, all=all)
 
 

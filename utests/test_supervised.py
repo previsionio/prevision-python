@@ -31,7 +31,8 @@ type_problems = type_problem_2_pio_class.keys()
 def make_pio_datasets(paths):
     for problem_type, p in paths.items():
         project = pio.Project.from_id(PROJECT_ID)
-        dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'), dataframe=pd.read_csv(p))
+        dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
+                                         dataframe=pd.read_csv(p))
         test_datasets[problem_type] = dataset
 
 
@@ -53,7 +54,6 @@ def teardown_module(module):
 
 def supervised_from_filename(type_problem, uc_name):
     dataset = test_datasets[type_problem]
-    #dataset = pio.Dataset.from_id(PROJECT_ID, "6082fb73b153a8001c3052e0")
     type_problem_class = type_problem_2_pio_class[type_problem]
     return train_model(PROJECT_ID, uc_name, dataset, type_problem, type_problem_class, uc_config)
 
@@ -93,7 +93,6 @@ def setup_usecase_class(request):
     usecase.delete()
 
 
-
 options_parameters = ('options',
                       [{'confidence': False},
                        {'confidence': True}])
@@ -105,6 +104,7 @@ predict_u_options_parameters = ('options',
 predict_test_ids = [('confidence-' if opt['confidence'] else 'normal-')
                     for opt in predict_u_options_parameters[1]]
 
+
 class TestUCGeneric:
     def test_check_config(self, setup_usecase_class):
         type_problem, uc = setup_usecase_class
@@ -113,7 +113,6 @@ class TestUCGeneric:
         assert sorted(uc.fe_selected_list) == sorted(uc_config.fe_selected_list)
         assert sorted(uc.normal_models_list) == sorted(uc_config.normal_models)
         assert sorted(uc.simple_models_list) == sorted(uc_config.simple_models)
-
 
 
 class TestPredict:
@@ -192,6 +191,8 @@ class TestPredict:
 #     #         assert k in uc_info_keys
 #
 #
+
+
 class TestInfos:
     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
     def test_info(self, setup_usecase_class, options):
