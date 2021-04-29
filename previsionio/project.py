@@ -281,18 +281,18 @@ class Project(ApiResource, UniqueResourceMixin):
 
     def fit_regression(self, name, dataset, column_config, metric=None, holdout_dataset=None,
                        training_config=TrainingConfig(), type_problem=None, **kwargs):
-        Regression.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                       training_config=training_config, type_problem=type_problem, **kwargs)
+        return Regression.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
+                              training_config=training_config, type_problem=type_problem, **kwargs)
 
     def fit_classification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
                            training_config=TrainingConfig(), type_problem=None, **kwargs):
-        Classification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                           training_config=training_config, type_problem=type_problem, **kwargs)
+        return Classification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
+                                  training_config=training_config, type_problem=type_problem, **kwargs)
 
     def fit_multiclassification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
                                 training_config=TrainingConfig(), type_problem=None, **kwargs):
-        MultiClassification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                                training_config=training_config, type_problem=type_problem, **kwargs)
+        return MultiClassification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
+                                       training_config=training_config, type_problem=type_problem, **kwargs)
 
 connectors_names = {
     'SQL': "create_sql_connector",
