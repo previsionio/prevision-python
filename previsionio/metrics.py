@@ -19,8 +19,6 @@ class Regression(Enum):
     """Mean squared Error"""
     RMSPE = 'rmspe'
     """Root Mean Squared Percentage Error"""
-    MAPE = 'mape'
-    """Mean Absolute Percentage Error"""
     MER = 'mer'
     """Median Absolute Error"""
     R2 = 'R2'

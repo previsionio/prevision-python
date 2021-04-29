@@ -48,6 +48,7 @@ class EventManager:
             return
         self.register_resource(resource_id)
         t0 = time.time()
+        print("event_tuple.name", event_tuple.name)
         while time.time() < t0 + config.default_timeout:
             reconnect_start = time.time()
             while time.time() < reconnect_start + 60:
@@ -61,7 +62,10 @@ class EventManager:
                     for event in event_list:
                         if event.get('event') == event_tuple.name:
                             print("event========", event)
+                            print("specific_url=======", specific_url)
                             resp = self.client.request(endpoint=specific_url, method=requests.get)
+                            print("resp=====", resp)
+                            print("resp.text==========",resp.text)
                             json_response = parse_json(resp)
                             for k, v in event_tuple.fail_checks:
                                 if json_response.get(k) == v:

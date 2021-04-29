@@ -256,7 +256,6 @@ class Dataset(ApiResource):
 
             with tempfile.NamedTemporaryFile(prefix=name, suffix='.csv') as temp:
                 dataframe.to_csv(temp.name, index=False)
-
                 file_name = temp.name.replace('.csv', file_ext)
                 with ZipFile(file_name, 'w') as zip_file:
                     zip_file.write(temp.name, arcname=name + '.csv')
@@ -282,7 +281,6 @@ class Dataset(ApiResource):
                                              data=data,
                                              files=files,
                                              method=requests.post)
-
         if create_resp is None:
             raise PrevisionException('[Dataset] Uexpected case in dataset creation')
 

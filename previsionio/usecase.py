@@ -52,9 +52,8 @@ class BaseUsecaseVersion(ApiResource):
                                               simple_models=usecase_params.get('simple_models'))
 
         self._id = usecase_info.get('_id')
-
         self.usecase_id = usecase_info.get('usecase_id')
-
+        self.project_id = usecase_info.get('project_id')
         self.version = usecase_info.get('version', 1)
         self._usecase_info = usecase_info
         self.data_type = usecase_info['usecase'].get('data_type')
@@ -294,6 +293,8 @@ class BaseUsecaseVersion(ApiResource):
             ``None`` if no model matched the search filter.
         """
         best_model = None
+        if len(self.models) == 0:
+            raise PrevisionException('models not ready yet')
         for model in self.models:
             if 'best' in model.tags:
                 best_model = model
@@ -310,6 +311,8 @@ class BaseUsecaseVersion(ApiResource):
             Model object -- corresponding to the fastest model
         """
         fastest_model = None
+        if len(self.models) == 0:
+            raise PrevisionException('models not ready yet')
         for model in self.models:
             if 'fastest' in model.tags:
                 fastest_model = model
@@ -418,13 +421,12 @@ class BaseUsecaseVersion(ApiResource):
             logger.error('response:')
             logger.error(start.text)
             raise PrevisionException('usecase failed to start')
-
         start_response = parse_json(start)
         usecase = cls.from_id(start_response['_id'])
         events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
         pio.client.event_manager.wait_for_event(usecase.resource_id,
                                                 cls.resource,
-                                                EventTuple('USECASE_UPDATE', 'state', 'running'),
+                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running'),
                                                 specific_url=events_url)
         return usecase
 
@@ -436,7 +438,7 @@ class BaseUsecaseVersion(ApiResource):
         events_url = '/{}/{}'.format(self.resource, self.id)
         pio.client.event_manager.wait_for_event(self.resource_id,
                                                 self.resource,
-                                                EventTuple('USECASE_UPDATE', 'state', 'done'),
+                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'done'),
                                                 specific_url=events_url)
         logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                       for k, v in parse_json(response).items()))
@@ -452,9 +454,9 @@ class BaseUsecaseVersion(ApiResource):
         return (json.loads(response.content.decode('utf-8')))
 
     def predict_single(self,
+                       data,
                        confidence=False,
-                       explain=False,
-                       **predict_data):
+                       explain=False):
         """ Get a prediction on a single instance using the best model of the usecase.
 
         Args:
@@ -474,9 +476,9 @@ class BaseUsecaseVersion(ApiResource):
         """
 
         best = self.best_model
-        return best.predict_single(confidence=confidence,
-                                   explain=explain,
-                                   **predict_data)
+        return best.predict_single(data,
+                                   confidence=confidence,
+                                   explain=explain)
 
     def predict_from_dataset(self,
                              dataset,

@@ -30,7 +30,8 @@ type_problems = type_problem_2_pio_class.keys()
 
 def make_pio_datasets(paths):
     for problem_type, p in paths.items():
-        dataset = pio.Dataset.new(PROJECT_ID, p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'), dataframe=pd.read_csv(p))
+        project = pio.Project.from_id(PROJECT_ID)
+        dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'), dataframe=pd.read_csv(p))
         test_datasets[problem_type] = dataset
 
 
@@ -89,37 +90,25 @@ def test_stop_running_usecase():
 def setup_usecase_class(request):
     usecase_name = '{}_{}'.format(request.param[0:5], TESTING_ID)
     uc = supervised_from_filename(request.param, usecase_name)
-    print("1")
     uc.wait_until(lambda usecase: len(usecase.models) > 0)
-    print("2")
-    print("3")
     uc.stop()
-    print("4")
     uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
-    print("5")
     yield request.param, uc
-    print("6")
     usecase = uc.get_usecase()
-    print("7")
     usecase.delete()
-    print("8")
 
 
 
 options_parameters = ('options',
-                      [{'confidence': False, 'use_best_single': False},
-                       {'confidence': False, 'use_best_single': True},
-                       pytest.param({'confidence': True, 'use_best_single': False}),
-                       {'confidence': True, 'use_best_single': True}])
+                      [{'confidence': False},
+                       {'confidence': True}])
 
 predict_u_options_parameters = ('options',
-                                [{'confidence': False, 'use_best_single': False, 'explain': True},
-                                 {'confidence': False, 'use_best_single': True},
-                                 {'confidence': True, 'use_best_single': False},
-                                 {'confidence': True, 'use_best_single': True}])
+                                [{'confidence': False, 'explain': True},
+                                 {'confidence': False},
+                                 {'confidence': True}])
 
-predict_test_ids = [('confidence-' if opt['confidence'] else 'normal-') +
-                    ('best_single' if opt['use_best_single'] else 'best_model')
+predict_test_ids = [('confidence-' if opt['confidence'] else 'normal-')
                     for opt in predict_u_options_parameters[1]]
 
 
@@ -149,6 +138,10 @@ class TestPredict:
             elif type_problem == 'classification':
                 assert 'confidence' in preds
                 assert 'credibility' in preds
+        # test_predict_unit
+        data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
+        pred = uc.predict_single(data.iloc[0].to_dict(), **options)
+        assert pred is not None
 #
 #     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
 #     def test_predict_unit(self, setup_usecase_class, options):

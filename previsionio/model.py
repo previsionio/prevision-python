@@ -34,7 +34,6 @@ class Model(ApiResource):
     def __init__(self, _id, usecase_version_id, name=None, **other_params):
         """ Instantiate a new :class:`.Model` object to manipulate a model resource on the platform. """
         super().__init__(_id=_id)
-        print("usecase_version_id======", usecase_version_id)
         self._id = _id
         self.usecase_version_id = usecase_version_id
         self.name = name
@@ -91,7 +90,7 @@ class Model(ApiResource):
         Args:
             predict_id (str): Unique id of the prediction to wait for
         """
-        specific_url = 'predictions/{}'.format(prediction_id)
+        specific_url = '/predictions/{}'.format(prediction_id)
         #fixme
         pio.client.event_manager.wait_for_event(prediction_id,
                                                 specific_url,
@@ -131,9 +130,6 @@ class Model(ApiResource):
 
         predict_start = client.request('/usecase-versions/{}/predictions'.format(self.usecase_version_id),
                                        requests.post, data=data)
-        print("url===========", '/usecase-versions/{}/predictions'.format(self.usecase_version_id))
-        print("data======", data)
-        print("predict_start=========", predict_start)
         predict_start_parsed = parse_json(predict_start)
 
         if '_id' not in predict_start_parsed:
@@ -155,7 +151,6 @@ class Model(ApiResource):
         """
         pred_response = pio.client.request('/predictions/{}/download'.format(predict_id),
                                            requests.get)
-
         logger.debug('[Predict {0}] Downloading prediction file'.format(predict_id))
 
         return zip_to_pandas(pred_response)
@@ -173,6 +168,7 @@ class Model(ApiResource):
         Returns:
             ``pd.DataFrame``: Prediction results dataframe
         """
+
         predict_id = self._predict_bulk(dataset.id,
                                         confidence=confidence,
                                         dataset_folder_id=dataset_folder.id if dataset_folder else None)
@@ -210,13 +206,13 @@ class Model(ApiResource):
         Returns:
             ``pd.DataFrame``: Prediction results dataframe
         """
+
+
         dataset = Dataset.new('test_{}_{}'.format(self.name, str(uuid.uuid4())[-6:]), dataframe=df)
 
         predict_id = self._predict_bulk(dataset.id,
                                         confidence=confidence)
-
         self.wait_for_prediction(predict_id)
-        dataset.delete()
 
         return self._get_predictions(predict_id)
 
