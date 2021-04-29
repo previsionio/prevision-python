@@ -74,64 +74,6 @@ class Model(ApiResource):
             method=requests.get)
         return (json.loads(response.content.decode('utf-8')))
 
-    @property
-    @lru_cache()
-    def feature_importance(self) -> pd.DataFrame:
-        """ Return a dataframe of feature importances for the given model features, with their corresponding
-        scores (sorted by descending feature importance scores).
-
-        Returns:
-            ``pd.DataFrame``: Dataframe of feature importances
-
-        Raises:
-            PrevisionException: Any error while fetching data from the platform or parsing the result
-        """
-        response = client.request(
-            endpoint='/models/{}/features-importances/download'.format(self._id),
-            method=requests.get)
-        if response.ok:
-            df_feat_importance = zip_to_pandas(response)
-        else:
-            raise PrevisionException(
-                'Failed to download feature importance table: {}'.format(response.text))
-
-        return df_feat_importance.sort_values(by="importance", ascending=False)
-
-    @property
-    def cross_validation(self) -> pd.DataFrame:
-        """ Get model's cross validation dataframe.
-
-        Returns:
-            ``pd.Dataframe``: Cross-validation dataframe
-        """
-        logger.debug('getting cv, model_id: {}'.format(self.id))
-        cv_response = client.request(
-            '/models/{}/cross-validation/download'.format(self._id),
-            requests.get)
-        df_cv = zip_to_pandas(cv_response)
-
-        return df_cv
-
-    def chart(self):
-        """ Return chart analysis information for a model.
-
-        Returns:
-            dict: Chart analysis results
-
-        Raises:
-            PrevisionException: Any error while fetching data from the platform or parsing the result
-        """
-        response = client.request(
-            endpoint='/models/{}/analysis'.format(self._id),
-            method=requests.get)
-        result = (json.loads(response.content.decode('utf-8')))
-        if result.get('status', 200) != 200:
-            msg = result['message']
-            logger.error(msg)
-            raise PrevisionException(msg)
-        # drop chart-related information
-        return result
-
     # def _get_uc_info(self):
     #     """ Return the corresponding usecase summary.
     #
@@ -201,56 +143,6 @@ class Model(ApiResource):
 
         return predict_start_parsed['_id']
 
-    def predict_single(self, confidence=False, explain=False, **predict_data):
-        """ Make a prediction for a single instance. Use :py:func:`predict_from_dataset_name` or predict methods
-        to predict multiple instances at the same time (it's faster).
-
-        Args:
-            confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
-            explain (bool, optional): Whether to explain prediction (default: ``False``)
-            **predict_data: Features names and values (without target feature) - missing feature keys
-                will be replaced by nans
-
-        .. note::
-
-            You can set both ``confidence`` and ``explain`` to true.
-
-        Returns:
-            dict: Dictionary containing the prediction result
-
-            .. note::
-
-                The prediction format depends on the problem type (regression, classification, etc...)
-        """
-        payload = {
-            'features': {
-                str(k): v for k, v in predict_data.items() if str(v) != 'nan'
-            },
-            'explain': explain,
-            'confidence': confidence,
-            'best': False,
-            'specific_model': self._id
-        }
-
-        logger.debug('[Predict Unit] sending payload ' + str(payload))
-
-        response = client.request('/usecases/{}/versions/{}/predictions/unit'.format(self.uc_id, self.uc_version),
-                                  requests.post,
-                                  data=json.dumps(payload, cls=NpEncoder),
-                                  content_type='application/json')
-
-        if response.status_code != 200:
-            raise PrevisionException('error getting response data: ' + response.text)
-        try:
-            response_json = parse_json(response)
-        except PrevisionException as e:
-            logger.error('error getting response data: ' + str(e) + ' -- ' + response.text[0:250])
-            raise e
-        else:
-            if 'prediction' not in response_json:
-                raise PrevisionException('error getting response data: ' + response_json.__repr__())
-            else:
-                return response_json['prediction']
 
     def _get_predictions(self, predict_id) -> pd.DataFrame:
         """ Get the result prediction dataframe from a given predict id.
@@ -339,8 +231,120 @@ class Model(ApiResource):
         """
         raise NotImplementedError
 
+class ClassicModel(Model):
 
-class ClassificationModel(Model):
+    @property
+    @lru_cache()
+    def feature_importance(self) -> pd.DataFrame:
+        """ Return a dataframe of feature importances for the given model features, with their corresponding
+        scores (sorted by descending feature importance scores).
+
+        Returns:
+            ``pd.DataFrame``: Dataframe of feature importances
+
+        Raises:
+            PrevisionException: Any error while fetching data from the platform or parsing the result
+        """
+        response = client.request(
+            endpoint='/models/{}/features-importances/download'.format(self._id),
+            method=requests.get)
+        if response.ok:
+            df_feat_importance = zip_to_pandas(response)
+        else:
+            raise PrevisionException(
+                'Failed to download feature importance table: {}'.format(response.text))
+
+        return df_feat_importance.sort_values(by="importance", ascending=False)
+
+    @property
+    def cross_validation(self) -> pd.DataFrame:
+        """ Get model's cross validation dataframe.
+
+        Returns:
+            ``pd.Dataframe``: Cross-validation dataframe
+        """
+        logger.debug('getting cv, model_id: {}'.format(self.id))
+        cv_response = client.request(
+            '/models/{}/cross-validation/download'.format(self._id),
+            requests.get)
+        df_cv = zip_to_pandas(cv_response)
+
+        return df_cv
+
+    def chart(self):
+        """ Return chart analysis information for a model.
+
+        Returns:
+            dict: Chart analysis results
+
+        Raises:
+            PrevisionException: Any error while fetching data from the platform or parsing the result
+        """
+        response = client.request(
+            endpoint='/models/{}/analysis'.format(self._id),
+            method=requests.get)
+        result = (json.loads(response.content.decode('utf-8')))
+        if result.get('status', 200) != 200:
+            msg = result['message']
+            logger.error(msg)
+            raise PrevisionException(msg)
+        # drop chart-related information
+        return result
+
+    def predict_single(self, data, confidence=False, explain=False):
+        """ Make a prediction for a single instance. Use :py:func:`predict_from_dataset_name` or predict methods
+        to predict multiple instances at the same time (it's faster).
+
+        Args:
+            data (dict): Features names and values (without target feature) - missing feature keys
+                will be replaced by nans
+            confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
+            explain (bool, optional): Whether to explain prediction (default: ``False``)
+
+
+        .. note::
+
+            You can set both ``confidence`` and ``explain`` to true.
+
+        Returns:
+            dict: Dictionary containing the prediction result
+
+            .. note::
+
+                The prediction format depends on the problem type (regression, classification, etc...)
+        """
+        payload = {
+            'features': {
+                str(k): v for k, v in data.items() if str(v) != 'nan'
+            },
+            'explain': explain,
+            'confidence': confidence,
+            'best': False,
+            'specific_model': self._id
+        }
+
+        logger.debug('[Predict Unit] sending payload ' + str(payload))
+
+        response = client.request('usecase-versions/{}/unit-prediction'.format(self.usecase_version_id),
+                                  requests.post,
+                                  data=json.dumps(payload, cls=NpEncoder),
+                                  content_type='application/json')
+
+        if response.status_code != 200:
+            raise PrevisionException('error getting response data: ' + response.text)
+        try:
+            response_json = parse_json(response)
+        except PrevisionException as e:
+            logger.error('error getting response data: ' + str(e) + ' -- ' + response.text[0:250])
+            raise e
+        else:
+            if 'prediction' not in response_json:
+                raise PrevisionException('error getting response data: ' + response_json.__repr__())
+            else:
+                return response_json['prediction']
+
+
+class ClassificationModel(ClassicModel):
     """ A model object for a (binary) classification usecase, i.e. a usecase where the target
     is categorical with exactly 2 modalities.
 
@@ -358,29 +362,57 @@ class ClassificationModel(Model):
         super().__init__(_id, usecase_version_id, name=name, **other_params)
         self._predict_threshold = 0.5
 
-    def predict_single(self, confidence=False, explain=False, **predict_data):
-        """ Make a prediction for a single instance.
+    def predict_single(self, data, confidence=False, explain=False):
+        """ Make a prediction for a single instance. Use :py:func:`predict_from_dataset_name` or predict methods
+        to predict multiple instances at the same time (it's faster).
 
         Args:
+            data (dict): Features names and values (without target feature) - missing feature keys
+                will be replaced by nans
             confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
             explain (bool, optional): Whether to explain prediction (default: ``False``)
-            **predict_data: Features names and values (without target feature) - missing feature keys
-                will be replaced by nans
+
 
         .. note::
 
             You can set both ``confidence`` and ``explain`` to true.
 
         Returns:
-            tuple: Predictions probability, predictions class, predictions confidence and predictions explanation
+            dict: Dictionary containing the prediction result
+
+            .. note::
+
+                The prediction format depends on the problem type (regression, classification, etc...)
         """
-        single_pred = super().predict_single(confidence=confidence, explain=explain, **predict_data)
+        payload = {
+            'features': {
+                str(k): v for k, v in data.items() if str(v) != 'nan'
+            },
+            'explain': explain,
+            'confidence': confidence,
+            'best': False,
+            'specific_model': self._id
+        }
 
-        pred_index = list(filter(lambda x: 'pred' in x,
-                                 single_pred.keys()))[0]
-        res = single_pred[pred_index]
+        logger.debug('[Predict Unit] sending payload ' + str(payload))
 
-        return res, int(res > self._predict_threshold), single_pred.get('confidence'), single_pred.get('explanation')
+        response = client.request('usecase-versions/{}/unit-prediction'.format(self.usecase_version_id),
+                                  requests.post,
+                                  data=json.dumps(payload, cls=NpEncoder),
+                                  content_type='application/json')
+
+        if response.status_code != 200:
+            raise PrevisionException('error getting response data: ' + response.text)
+        try:
+            response_json = parse_json(response)
+        except PrevisionException as e:
+            logger.error('error getting response data: ' + str(e) + ' -- ' + response.text[0:250])
+            raise e
+        else:
+            if 'prediction' not in response_json:
+                raise PrevisionException('error getting response data: ' + response_json.__repr__())
+            else:
+                return response_json['prediction']
 
     @property
     @lru_cache()
@@ -444,7 +476,7 @@ class ClassificationModel(Model):
         raise PrevisionException('Request Error : {}'.format(response.content['message']))
 
 
-class RegressionModel(Model):
+class RegressionModel(ClassicModel):
     """ A model object for a regression usecase, i.e. a usecase where the target is numerical.
 
     Args:
@@ -455,8 +487,7 @@ class RegressionModel(Model):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-
-class MultiClassificationModel(Model):
+class MultiClassificationModel(ClassicModel):
     """ A model object for a multi-classification usecase, i.e. a usecase where the target
     is categorical with strictly more than 2 modalities.
 
@@ -467,7 +498,6 @@ class MultiClassificationModel(Model):
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
-
 
 class TextSimilarityModel(Model):
 

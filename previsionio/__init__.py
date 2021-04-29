@@ -54,9 +54,6 @@ from previsionio.usecase_config import \
     base_config, \
     quick_config, \
     ultra_config, \
-    ClusterMagnitude, \
-    ClusteringTrainingConfig, \
-    clustering_base_config, \
     ColumnConfig
 
 import previsionio.metrics as metrics

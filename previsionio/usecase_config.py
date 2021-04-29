@@ -20,8 +20,8 @@ class TypeProblem(object):
     """Regression"""
     MultiClassification = 'multiclassification'
     """Multi Classification"""
-    Clustering = 'clustering'
-    """Clustering"""
+    TextSimilarity = 'text-similarity'
+    """Text Similarity"""
 
 
 class Model(object):
