@@ -76,7 +76,6 @@ class ApiResource:
         # if self.event_manager:
         #     events = self.event_manager.events
         #     if self.resource_id in events:
-        #         print('events[self.resource_id]', events[self.resource_id])
         #         return sorted(events[self.resource_id],
         #                       key=lambda k: datetime.datetime.strptime(k['end'], '%Y-%m-%dT%H:%M:%S.%fZ'))[-1]
         #

@@ -99,6 +99,19 @@ class BaseUsecaseVersion(ApiResource):
         return Usecase.from_id(self.usecase_id)
 
     @property
+    def usecase(self):
+        """Get a usecase of current usecase version.
+
+        Returns:
+            :class:`.Usecase`: Fetched usecase
+
+        Raises:
+            PrevisionException: Any error while fetching data from the platform
+                or parsing result
+        """
+        return Usecase.from_id(self.usecase_id)
+
+    @property
     def models(self):
         """Get the list of models generated for the current use case. Only the models that
         are done training are retrieved.
@@ -444,15 +457,15 @@ class BaseUsecaseVersion(ApiResource):
         logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                       for k, v in parse_json(response).items()))
 
-    def delete(self):
-        """ Delete a usecase from the actual [client] workspace.
-
-        Returns:
-            dict: Deletion process results
-        """
-        response = client.request(endpoint='/usecases/{}'.format(self._id),
-                                  method=requests.delete)
-        return (json.loads(response.content.decode('utf-8')))
+    # def delete(self):
+    #     """ Delete a usecase from the actual [client] workspace.
+    #
+    #     Returns:
+    #         dict: Deletion process results
+    #     """
+    #     response = client.request(endpoint='/usecases/{}'.format(self._id),
+    #                               method=requests.delete)
+    #     return (json.loads(response.content.decode('utf-8')))
 
     def predict_single(self,
                        data,

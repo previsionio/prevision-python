@@ -96,7 +96,6 @@ class EventManager:
     def update_events(self):
         sse_timeout = 300
         while True:
-            print("self.event_endpoint", self.event_endpoint)
             sse = requests.get(self.event_endpoint,
                                stream=True,
                                headers=self.headers,

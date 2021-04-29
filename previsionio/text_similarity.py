@@ -1,7 +1,7 @@
 import requests
 from functools import lru_cache
 import time
-
+import json
 from .logger import logger
 from .api_resource import ApiResource
 from .usecase_config import UsecaseConfig
@@ -10,6 +10,7 @@ from .utils import PrevisionException, parse_json, EventTuple
 from . import config
 from .model import TextSimilarityModel
 from .dataset import Dataset
+from .usecase import Usecase
 import previsionio as pio
 
 
@@ -99,7 +100,7 @@ class TextSimilarity(ApiResource):
     default_top_k = 10
     data_type = 'tabular'
     type_problem = 'text-similarity'
-    resource = 'usecases'
+    resource = 'usecase-versions'
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
@@ -108,32 +109,30 @@ class TextSimilarity(ApiResource):
         self.top_k = usecase_info.get('top_K')
         self.lang = usecase_info.get('lang')
         self.dataset = usecase_info.get('dataset_id')
-        usecase_params = usecase_info['usecase_version_params']
-        self.description_column_config = DescriptionsColumnConfig(content_column=usecase_params.get('contentColumn'),
-                                                                  id_column=usecase_params.get('idColumn'))
+        usecase_version_params = usecase_info['usecase_version_params']
+        self.description_column_config = DescriptionsColumnConfig(
+            content_column=usecase_version_params.get('content_column'),
+            id_column=usecase_version_params.get('id_column'))
         if usecase_info.get('queries_dataset_id'):
             self.queries_dataset = usecase_info.get('queries_dataset_id')
-            content_column = usecase_params.get('queries_dataset_content_column')
-            matching_id = usecase_params.get('queries_dataset_matching_id_description_column')
-            queries_dataset_id_column = usecase_params.get('queries_dataset_id_column', None)
+            content_column = usecase_version_params.get('queries_dataset_content_column')
+            matching_id = usecase_version_params.get('queries_dataset_matching_id_description_column')
+            queries_dataset_id_column = usecase_version_params.get('queries_dataset_id_column', None)
             self.queries_column_config = QueriesColumnConfig(queries_dataset_content_column=content_column,
                                                              queries_dataset_matching_id_description_column=matching_id,
                                                              queries_dataset_id_column=queries_dataset_id_column)
         else:
             self.queries_dataset = None
             self.queries_column_config = None
-        models_parameters = usecase_params.get('models_params')
-        # FIXME wait for backend to remove useless_id
-        for param in models_parameters:
-            param.pop('_id')
+        models_parameters = usecase_version_params.get('models_params')
         self.models_parameters = ListModelsParameters(models_parameters=models_parameters)
 
-        self._id = usecase_info.get('usecase_id')
-        self.resource_id = usecase_info.get('_id')
+        self._id = usecase_info.get('_id')
+        self.usecase_id = usecase_info.get('usecase_id')
+        self.project_id = usecase_info.get('project_id')
         self.version = usecase_info.get('version', 1)
-        self.shared_users = usecase_info.get('shareList', [])
         self._usecase_info = usecase_info
-
+        self.dataset_id = usecase_info.get('dataset_id')
         self.predictions = {}
         self.predict_token = None
 
@@ -142,7 +141,7 @@ class TextSimilarity(ApiResource):
         self._models = {}
 
     @classmethod
-    def fit(self, name, dataset, description_column_config, metric=None, top_k=None, lang='auto',
+    def fit(self, project_id, name, dataset, description_column_config, metric=None, top_k=None, lang='auto',
             queries_dataset=None, queries_column_config=None,
             models_parameters=ListModelsParameters(), **kwargs):
         """ Start a supervised usecase training with a specific training configuration
@@ -194,10 +193,10 @@ class TextSimilarity(ApiResource):
 
         data = dict(name=name, dataset_id=dataset_id, **training_args)
 
-        endpoint = '/usecases/{}/{}'.format(self.data_type, self.type_problem)
+        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', self.data_type, self.type_problem)
         start = client.request(endpoint, requests.post, data=data, content_type='application/json')
 
-        if start.status_code != 202:
+        if start.status_code != 200:
             logger.error(data)
             logger.error('response:')
             logger.error(start.text)
@@ -205,21 +204,20 @@ class TextSimilarity(ApiResource):
             raise PrevisionException('usecase failed to start')
 
         start_response = parse_json(start)
-        usecase = self.from_id(start_response['_id'], version=start_response['version'])
-        events_url = '/usecases/{}/versions/{}'.format(start_response['_id'], start_response['version'])
+        usecase = self.from_id(start_response['_id'])
+        events_url = '/{}/{}'.format(self.resource, start_response['_id'])
         pio.client.event_manager.wait_for_event(usecase._id,
                                                 self.resource,
-                                                EventTuple('USECASE_UPDATE', 'state', 'running'),
+                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running'),
                                                 specific_url=events_url)
         return usecase
 
     def update_status(self):
-        return super().update_status(specific_url='/{}/{}/versions/{}'.format(self.resource,
-                                                                              self._id,
-                                                                              self.version))
+        return super().update_status(specific_url='/{}/{}'.format(self.resource,
+                                                                  self._id))
 
     @classmethod
-    def from_id(cls, _id, version=1):
+    def from_id(cls, _id):
         """Get a usecase from the platform by its unique id.
 
         Args:
@@ -234,7 +232,20 @@ class TextSimilarity(ApiResource):
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
         """
-        return super().from_id(specific_url='/{}/{}/versions/{}'.format(cls.resource, _id, version))
+        return super().from_id(specific_url='/{}/{}'.format(cls.resource, _id))
+
+    @property
+    def usecase(self):
+        """Get a usecase of current usecase version.
+
+        Returns:
+            :class:`.Usecase`: Fetched usecase
+
+        Raises:
+            PrevisionException: Any error while fetching data from the platform
+                or parsing result
+        """
+        return Usecase.from_id(self.usecase_id)
 
     @property
     def score(self):
@@ -257,27 +268,15 @@ class TextSimilarity(ApiResource):
         Returns:
             list(:class:`.Model`): List of models found by the platform for the usecase
         """
-        done = [m for m in self._status['models_list'] if (m['status'] == 'done')]
+        end_point = '/{}/{}/models'.format(self.resource, self._id)
+        response = client.request(endpoint=end_point,
+                                  method=requests.get)
+        models = json.loads(response.content.decode('utf-8'))['items']
 
-        for done_model in done:
-            if done_model['_id'] not in self._models:
-                self._models[done_model['_id']] = self.model_class(uc_id=self._id,
-                                                                   uc_version=self.version,
-                                                                   **done_model)
-
+        for model in models:
+            if model['_id'] not in self._models:
+                self._models[model['_id']] = self.model_class(**model)
         return list(self._models.values())
-
-    @property
-    def versions(self):
-        """Get the list of all versions for the current use case.
-
-        Returns:
-            list(dict): List of the usecase versions (as JSON metadata)
-        """
-        end_point = '/usecases/{}/versions'.format(self._id)
-        response = client.request(endpoint=end_point, method=requests.get)
-        res = parse_json(response)
-        return res['items']
 
     @property
     @lru_cache()
@@ -288,29 +287,9 @@ class TextSimilarity(ApiResource):
         Returns:
             :class:`.Dataset`: Associated training dataset
         """
-        return Dataset.from_id(_id=self._status['datasetId'])
+        return Dataset.from_id(_id=self.dataset_id)
 
-    def get_model_from_id(self, id):
-        """ Get a model of the usecase by its unique id.
-
-        .. note::
-
-            The model is only searched through the models that are
-            done training.
-
-        Args:
-            id (str): Unique id of the model resource to search for
-
-        Returns:
-            (:class:`.Model`, None): Matching model resource, or ``None``
-            if none with the given id could be found
-        """
-        for m in self.models:
-            if m._id == id:
-                return m
-        return None
-
-    def best_model(self, models_list=[], by='score', default_cost_value=1):
+    def best_model(self):
         """ (Util function) Find out the element having the minimal value
         of the attribute defined by the parameter 'by'.
 
@@ -325,15 +304,16 @@ class TextSimilarity(ApiResource):
             (:class:`.Model`, None): Model with the minimal cost in the given list, or
             ``None`` the list was empty.
         """
-        if len(models_list) == 0:
-            models_list = self._status['models_list']
-        for m in models_list:
-            if m[by] is None:
-                m[by] = default_cost_value
+        best_model = None
+        if len(self.models) == 0:
+            raise PrevisionException('models not ready yet')
+        for model in self.models:
+            if 'best' in model.tags:
+                best_model = model
 
-        best = max(models_list, key=lambda m: m[by])
-        best = self.model_class(uc_id=self._id, uc_version=self.version, **best)
-        return best
+        if best_model is None:
+            best_model = self.models[0]
+        return best_model
 
     @property
     def fastest_model(self):
@@ -342,9 +322,16 @@ class TextSimilarity(ApiResource):
         Returns:
             Model object -- corresponding to the fastest model
         """
-        models = self._status['models_list']
-        fastest_model = [m for m in models if m['tags'].get('fastest')]
-        fastest_model = self.model_class(uc_id=self._id, uc_version=self.version, **fastest_model[0])
+        fastest_model = None
+        if len(self.models) == 0:
+            raise PrevisionException('models not ready yet')
+        for model in self.models:
+            if 'fastest' in model.tags:
+                fastest_model = model
+
+        if fastest_model is None:
+            fastest_model = self.models[0]
+
         return fastest_model
 
     @property
@@ -356,6 +343,16 @@ class TextSimilarity(ApiResource):
         """
         status = self._status
         return status['state'] == 'running'
+
+    @property
+    def status(self):
+        """ Get a flag indicating whether or not the usecase is currently running.
+
+        Returns:
+            bool: Running status
+        """
+        status = self._status
+        return status['state']
 
     def print_info(self):
         """ Print all info on the usecase. """
@@ -399,12 +396,12 @@ class TextSimilarity(ApiResource):
     def stop(self):
         """ Stop a usecase (stopping all nodes currently in progress). """
         logger.info('[Usecase] stopping usecase')
-        response = client.request('/usecases/{}/versions/{}/stop'.format(self.id, self.version),
+        response = client.request('/{}/{}/stop'.format(self.resource, self.id),
                                   requests.put)
-        events_url = '/usecases/{}/versions/{}'.format(self.id, self.version)
-        pio.client.event_manager.wait_for_event(self._id,
+        events_url = '/{}/{}'.format(self.resource, self.id)
+        pio.client.event_manager.wait_for_event(self.resource_id,
                                                 self.resource,
-                                                EventTuple('USECASE_UPDATE', 'state', 'done'),
+                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'done'),
                                                 specific_url=events_url)
         logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                       for k, v in parse_json(response).items()))

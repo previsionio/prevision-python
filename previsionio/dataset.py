@@ -364,7 +364,7 @@ class DatasetImages(ApiResource):
         return [cls(**conn_data) for conn_data in resources]
 
     @classmethod
-    def new(cls, project_id, name, file_name):
+    def _new(cls, project_id, name, file_name):
         """ Register a new image dataset in the workspace for further processing
         (in the image folders group).
 
