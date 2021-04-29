@@ -97,7 +97,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
         return cls(**resp_json)
 
     @classmethod
-    def new(cls, project_id, connector, name, path=None, database=None, table=None, bucket=None, request=None, gCloud=None):
+    def _new(cls, project_id, connector, name, path=None, database=None, table=None, bucket=None, request=None, gCloud=None):
         """ Create a new datasource object on the platform.
 
         Args:

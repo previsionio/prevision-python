@@ -6,7 +6,9 @@ from . import client
 from .utils import parse_json, PrevisionException
 from . import logger
 from .api_resource import ApiResource, UniqueResourceMixin
-
+from .datasource import DataSource
+from .dataset import Dataset
+from .connector import Connector, SQLConnector, FTPConnector, SFTPConnector, S3Connector, HiveConnector, GCPConnector
 
 class Project(ApiResource, UniqueResourceMixin):
 
@@ -109,32 +111,6 @@ class Project(ApiResource, UniqueResourceMixin):
         res = parse_json(response)
         return res
 
-    # check
-    def add_user(self, email, project_role):
-        """Get a project from the instance by its unique id.
-
-        Args:
-            email (str): new user email
-            project_role (str): user project role. Possible project role: admin, contributor, viewer
-        Returns:
-            :class:`.Project`: The fetched project
-
-        Raises:
-            PrevisionException: Any error while fetching data from the platform
-                or parsing the result
-        """
-        if project_role not in ['admin', 'contributor', 'viewer']:
-            PrevisionException("Possible project role: admin, contributor, viewer ")
-        data = {"email": email, "projectRole": project_role}
-        end_point = '/{}/{}/users'.format(self.resource, self._id)
-        response = client.request(endpoint=end_point, data=data, method=requests.post)
-        if response.status_code != 200:
-            logger.error('cannot get users for project id {}'.format(self._id))
-            raise PrevisionException('[{}] {}'.format(self.resource, response.status_code))
-
-        res = parse_json(response)
-        return res
-
     def info(self):
         """Get a datasource from the instance by its unique id.
 
@@ -213,3 +189,90 @@ class Project(ApiResource, UniqueResourceMixin):
                               .format(self.resource, self.id),
                               method=requests.delete)
         return resp
+
+    def create_dataset(self, name: str, datasource: DataSource = None, file_name: str = None, dataframe=None):
+        """ Register a new dataset in the workspace for further processing.
+        You need to provide either a datasource, a file name or a dataframe
+        (only one can be specified).
+
+        .. note::
+
+            To start a new use case on a dataset, it has to be already
+            registred in your workspace.
+
+        Args:
+            name (str): Registration name for the dataset
+            datasource (:class:`.DataSource`, optional): A DataSource object used
+                to import a remote dataset (if you want to import a specific dataset
+                from an existent database, you need a datasource connector
+                (:class:`.Connector` object) designed to point to the related data source)
+            file_name (str, optional): Path to a file to upload as dataset
+            dataframe (pd.DataFrame, optional): A ``pandas`` dataframe containing the
+                data to upload
+
+        Raises:
+            Exception: If more than one of the keyword arguments ``datasource``, ``file_name``,
+                ``dataframe`` was specified
+            PrevisionException: Error while creating the dataset on the platform
+
+        Returns:
+            :class:`.Dataset`: The registered dataset object in the current workspace.
+        """
+        return Dataset._new(self._id, name, datasource=datasource, file_name=file_name, dataframe=dataframe)
+
+    def list_datasets(self, all=all):
+        """ List all the available datasets in the current active [client] workspace.
+
+        .. warning::
+
+            Contrary to the parent ``list()`` function, this method
+            returns actual :class:`.Dataset` objects rather than
+            plain dictionaries with the corresponding data.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+
+        Returns:
+            list(:class:`.Dataset`): Fetched dataset objects
+        """
+        return Dataset.list(self._id, all=all)
+
+    def create_sql_connector(self, name, host, port=3306, username='', password=''):
+        return SQLConnector._new(self._id, name, host, port, 'SQL', username=username, password=password)
+
+    def create_ftp_connector(self, name, host, port=21, username='', password=''):
+        return FTPConnector._new(self._id, name, host, port, 'FTP', username=username, password=password)
+
+    def create_sftp_connector(self, name, host, port=23, username='', password=''):
+        return SFTPConnector._new(self._id, name, host, port, 'SFTP', username=username, password=password)
+
+    def create_s3_connector(self, name, host='', port='', username='', password=''):
+        return S3Connector._new(self._id, name, host, port, 'S3', username=username, password=password)
+
+    def create_hive_connector(self, name, host, port=10000, username='', password=''):
+        return HiveConnector._new(self._id, name, host, port, 'HIVE', username=username, password=password)
+
+    def create_gcp_connector(self, name, host= '', port='', username='', password='', googleCredentials=''):
+        return GCPConnector._new(self._id, name, host, port, 'GCP', username=username, password=password,
+                                     googleCredentials=googleCredentials)
+
+    def list_connectors(self, all=all):
+        return Connector.list(self._id, all=all)
+
+    def create_datasource(self, connector, name, path=None, database=None, table=None, bucket=None, request=None, gCloud=None):
+        return DataSource._new(self._id, connector, name, path=path, database=database, table=table, bucket=bucket, request=request, gCloud=gCloud)
+
+    def list_connectors(self, all=all):
+        return DataSource.list(self._id, all=all)
+
+
+connectors_names = {
+    'SQL': "create_sql_connector",
+    'FTP': "create_ftp_connector",
+    'SFTP': "create_sftp_connector",
+    'S3': "create_s3_connector",
+    'HIVE': "create_hive_connector",
+    'GCP': "create_gcp_connector"
+}

@@ -118,7 +118,7 @@ class Connector(ApiResource, UniqueResourceMixin):
              return False
 
 
-class DataBaseConnector(Connector):
+class DataTableBaseConnector(Connector):
 
     """ A specific type of connector to interact with a database client (containing databases and tables). """
 
@@ -145,6 +145,10 @@ class DataBaseConnector(Connector):
         resp_json = parse_json(resp)
         return resp_json['items']
 
+
+class DataFileBaseConnector(Connector):
+    """ A specific type of connector to interact with a database client (containing files). """
+
     def list_files(self):
         """ List all available tables in a specific database for the client.
 
@@ -159,48 +163,31 @@ class DataBaseConnector(Connector):
         return resp_json['items']
 
 
-class FTPConnector(Connector):
+class FTPConnector(DataFileBaseConnector):
 
     """ A specific type of connector to interact with a FTP client (containing files). """
 
     conn_type = 'FTP'
 
-    @classmethod
-    def new(cls, project_id, name, host, port=21, username='', password=''):
-        return cls._new(project_id=project_id, name=name, host=host, conn_type='FTP', port=port, username=username, password=password)
 
-
-class SFTPConnector(Connector):
+class SFTPConnector(DataFileBaseConnector):
 
     """ A specific type of connector to interact with a secured FTP client (containing files). """
 
     conn_type = 'SFTP'
 
-    @classmethod
-    def new(cls, project_id, name, host, port=23, username='', password=''):
-        return cls._new(project_id=project_id, name=name, host=host, conn_type='SFTP', port=port, username=username, password=password)
-
-
-class SQLConnector(DataBaseConnector):
+class SQLConnector(DataTableBaseConnector):
 
     """ A specific type of connector to interact with a SQL database client (containing databases and tables). """
 
     conn_type = 'SQL'
 
-    @classmethod
-    def new(cls, project_id, name, host, port=3306, username='', password=''):
-        return cls._new(project_id=project_id, name=name, host=host, conn_type='SQL', port=port, username=username, password=password)
 
-
-class HiveConnector(DataBaseConnector):
+class HiveConnector(DataTableBaseConnector):
 
     """ A specific type of connector to interact with a Hive database client (containing databases and tables). """
 
     conn_type = 'HIVE'
-
-    @classmethod
-    def new(cls, project_id, name, host, port=10000, username='', password=''):
-        return cls._new(project_id=project_id, name=name, host=host, conn_type='HIVE', port=port, username=username, password=password)
 
 
 # class HBaseConnector(DataBaseConnector):
@@ -220,10 +207,6 @@ class S3Connector(Connector):
 
     conn_type = 'S3'
 
-    @classmethod
-    def new(cls, project_id, name, host='', port='', username='', password=''):
-        return cls._new(project_id=project_id, name=name, host=host, conn_type='S3', port=port, username=username, password=password)
-
 
 class GCPConnector(Connector):
 
@@ -231,11 +214,6 @@ class GCPConnector(Connector):
         (containing databases and tables or buckets)."""
 
     conn_type = 'GCP'
-
-    @classmethod
-    def new(cls, project_id, name, host='', port='', username='', password='', googleCredentials=''):
-        return cls._new(project_id=project_id, name=name, host=host, conn_type='GCP', port=port,
-                        username=username, password=password, googleCredentials=googleCredentials)
 
 #
 # class HDFSConnector(Connector):

@@ -85,16 +85,6 @@ def test_stop_running_usecase():
     usecase.delete()
 
 
-# def test_uc_from_name():
-#     uc_name_asked = TESTING_ID + '_df_name'
-#     uc = supervised_from_filename('regression', uc_name_asked)
-#     uc_name_returned = uc.name
-#     uc2 = pio.Regression.from_name(uc_name_returned)
-#     uc.wait_until(lambda usecase: usecase.get_nb_models() > 0)
-#     assert uc2.name == uc_name_returned
-#     uc.delete()
-
-
 @pytest.fixture(scope='module', params=type_problems)
 def setup_usecase_class(request):
     usecase_name = '{}_{}'.format(request.param[0:5], TESTING_ID)
@@ -143,22 +133,22 @@ class TestUCGeneric:
         assert sorted(uc.simple_models_list) == sorted(uc_config.simple_models)
 
 
-#
-# class TestPredict:
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_predict(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#         data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
-#         preds = uc.predict(data, **options)
-#         assert len(preds) == len(data)
-#         if options['confidence']:
-#             if type_problem == 'regression':
-#                 conf_cols = ['_quantile={}'.format(q) for q in [1, 5, 10, 25, 50, 75, 95, 99]]
-#                 for q in conf_cols:
-#                     assert any([q in col for col in preds])
-#             elif type_problem == 'classification':
-#                 assert 'confidence' in preds
-#                 assert 'credibility' in preds
+
+class TestPredict:
+    @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
+    def test_predict(self, setup_usecase_class, options):
+        type_problem, uc = setup_usecase_class
+        data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
+        preds = uc.predict(data, **options)
+        assert len(preds) == len(data)
+        if options['confidence']:
+            if type_problem == 'regression':
+                conf_cols = ['_quantile={}'.format(q) for q in [1, 5, 10, 25, 50, 75, 95, 99]]
+                for q in conf_cols:
+                    assert any([q in col for col in preds])
+            elif type_problem == 'classification':
+                assert 'confidence' in preds
+                assert 'credibility' in preds
 #
 #     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
 #     def test_predict_unit(self, setup_usecase_class, options):
