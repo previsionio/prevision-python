@@ -83,6 +83,7 @@ def get_all_results(client, endpoint, method):
     resources = []
     batch = client.request(endpoint, method=method)
     batch = parse_json(batch)
+    print(batch)
     meta = batch['metaData']
     total_items = meta['totalItems']
     rows_per_page = meta['rowsPerPage']

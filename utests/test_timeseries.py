@@ -43,7 +43,7 @@ def teardown_module(module):
             uc.delete()
 
 
-def get_data(path, groups) -> Tuple[FrameOrSeriesUnion, List[str]]:
+def get_data(path, groups):
     if isinstance(groups, tuple):
         a, b = groups
         data = pd.concat([pd.read_csv(path).assign(group1=i, group2=j) for i in range(a) for j in range(b)])
