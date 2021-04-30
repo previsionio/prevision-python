@@ -23,7 +23,7 @@ def setup_module(module):
 def teardown_module(module):
     project = pio.Project.from_id(PROJECT_ID)
     for image_folder in project.list_image_folders(all=True):
-        if TESTING_ID in ds.name:
+        if TESTING_ID in image_folder.name:
             image_folder.delete()
     project.delete()
 

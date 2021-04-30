@@ -7,6 +7,7 @@ from .usecase import ClassicUsecaseVersion
 from .model import Model, RegressionModel, \
     ClassificationModel, MultiClassificationModel
 from .utils import PrevisionException
+from .usecase import BaseUsecaseVersion
 
 MODEL_CLASS_DICT = {
     'regression': RegressionModel,
