@@ -31,11 +31,12 @@ class Model(ApiResource):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id, usecase_version_id, name=None, **other_params):
+    def __init__(self, _id, usecase_version_id, project_id, name=None, **other_params):
         """ Instantiate a new :class:`.Model` object to manipulate a model resource on the platform. """
         super().__init__(_id=_id)
         self._id = _id
         self.usecase_version_id = usecase_version_id
+        self.project_id = project_id
         self.name = name
         self.tags = {}
 
@@ -72,6 +73,162 @@ class Model(ApiResource):
             endpoint='/models/{}/hyperparameters/download'.format(self._id),
             method=requests.get)
         return (json.loads(response.content.decode('utf-8')))
+
+    # def _get_uc_info(self):
+    #     """ Return the corresponding usecase summary.
+    #
+    #     Returns:
+    #         dict: Usecase summary
+    #     """
+    #     response = client.request(endpoint='/usecases/{}/versions/{}'.format(self.uc_id, self.uc_version),
+    #                               method=requests.get)
+    #
+    #     return json.loads(response.content.decode('utf-8'))
+
+    def wait_for_prediction(self, prediction_id):
+        """ Wait for a specific prediction to finish.
+
+        Args:
+            predict_id (str): Unique id of the prediction to wait for
+        """
+        specific_url = '/predictions/{}'.format(prediction_id)
+        pio.client.event_manager.wait_for_event(prediction_id,
+                                                specific_url,
+                                                EventTuple('PREDICTION_UPDATE', 'state', 'done'),
+                                                specific_url=specific_url)
+
+    def _predict_bulk(self,
+                      dataset_id,
+                      confidence=False,
+                      dataset_folder_id=None):
+        """ (Util method) Private method used to handle bulk predict.
+
+        .. note::
+
+            This function should not be used directly. Use predict_from_* methods instead.
+
+        Args:
+            dataset_id (str): Unique id of the dataset to predict with
+            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
+            dataset_folder_id (str, optional): Unique id of the associated folder dataset to predict with,
+                if need be (default: ``None``)
+
+        Returns:
+            str: A prediction job ID
+
+        Raises:
+            PrevisionException: Any error while starting the prediction on the platform or parsing the result
+        """
+        data = {
+            'dataset_id': dataset_id,
+            'model_id': self._id,
+            'confidence': str(confidence).lower(),
+        }
+
+        if dataset_folder_id is not None:
+            data['folder_dataset_id'] = dataset_folder_id
+
+        predict_start = client.request('/usecase-versions/{}/predictions'.format(self.usecase_version_id),
+                                       requests.post, data=data)
+        predict_start_parsed = parse_json(predict_start)
+
+        if '_id' not in predict_start_parsed:
+            err = 'Error starting prediction: {}'.format(predict_start_parsed)
+            logger.error(err)
+            raise PrevisionException(err)
+
+        return predict_start_parsed['_id']
+
+    def _get_predictions(self, predict_id) -> pd.DataFrame:
+        """ Get the result prediction dataframe from a given predict id.
+
+        Args:
+            predict_id (str): Prediction job ID
+
+        Returns:
+            ``pd.DataFrame``: Prediction dataframe.
+        """
+        pred_response = pio.client.request('/predictions/{}/download'.format(predict_id),
+                                           requests.get)
+        logger.debug('[Predict {0}] Downloading prediction file'.format(predict_id))
+
+        return zip_to_pandas(pred_response)
+
+    def predict_from_dataset(self, dataset, confidence=False, dataset_folder=None) -> pd.DataFrame:
+        """ Make a prediction for a dataset stored in the current active [client]
+        workspace (using the current SDK dataset object).
+
+        Args:
+            dataset (:class:`.Dataset`): Dataset resource to make a prediction for
+            confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
+            dataset_folder (:class:`.Dataset`, None): Matching folder dataset resource for the prediction,
+                if necessary
+
+        Returns:
+            ``pd.DataFrame``: Prediction results dataframe
+        """
+
+        predict_id = self._predict_bulk(dataset.id,
+                                        confidence=confidence,
+                                        dataset_folder_id=dataset_folder.id if dataset_folder else None)
+
+        self.wait_for_prediction(predict_id)
+
+        # FIXME : wait_for_prediction() seems to be broken...
+        retry_count = 60
+        retry = 0
+        while retry < retry_count:
+            retry += 1
+            try:
+                preds = self._get_predictions(predict_id)
+                return preds
+            except Exception:
+                # FIXME:
+                # sometimes I observed error 500, with prediction on image usecase
+                logger.warning('wait_for_prediction has prolly exited {} seconds too early'
+                               .format(retry))
+                time.sleep(1)
+        return None
+
+    def predict(self, df, confidence=False, prediction_dataset_name=None) -> pd.DataFrame:
+        """ Make a prediction in a Scikit-learn blocking style.
+
+        .. warning::
+
+            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours). Prefer using
+            this for simple models and small dataframes or use option ``use_best_single = True``.
+
+        Args:
+            df (``pd.DataFrame``): A ``pandas`` dataframe containing the testing data
+            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
+
+        Returns:
+            ``pd.DataFrame``: Prediction results dataframe
+        """
+        if prediction_dataset_name is None:
+            prediction_dataset_name = 'test_{}_{}'.format(self.name, str(uuid.uuid4())[-6:])
+
+        dataset = Dataset._new(self.project_id, prediction_dataset_name, dataframe=df)
+
+        predict_id = self._predict_bulk(dataset.id,
+                                        confidence=confidence)
+        self.wait_for_prediction(predict_id)
+
+        return self._get_predictions(predict_id)
+
+    def deploy(self) -> DeployedModel:
+        """ (Not Implemented yet) Deploy the model as a REST API app.
+
+        Keyword Arguments:
+            app_type {enum} -- it can be 'model', 'notebook', 'shiny', 'dash' or 'node' application
+
+        Returns:
+            str: Path of the deployed application
+        """
+        raise NotImplementedError
+
+
+class ClassicModel(Model):
 
     @property
     @lru_cache()
@@ -131,82 +288,16 @@ class Model(ApiResource):
         # drop chart-related information
         return result
 
-    # def _get_uc_info(self):
-    #     """ Return the corresponding usecase summary.
-    #
-    #     Returns:
-    #         dict: Usecase summary
-    #     """
-    #     response = client.request(endpoint='/usecases/{}/versions/{}'.format(self.uc_id, self.uc_version),
-    #                               method=requests.get)
-    #
-    #     return json.loads(response.content.decode('utf-8'))
-
-    def wait_for_prediction(self, prediction_id):
-        """ Wait for a specific prediction to finish.
-
-        Args:
-            predict_id (str): Unique id of the prediction to wait for
-        """
-        specific_url = 'predictions/{}'.format(prediction_id)
-        #fixme
-        pio.client.event_manager.wait_for_event(prediction_id,
-                                                specific_url,
-                                                EventTuple('PREDICTION_UPDATE', 'state', 'done'),
-                                                specific_url=specific_url)
-
-    def _predict_bulk(self,
-                      dataset_id,
-                      confidence=False,
-                      dataset_folder_id=None):
-        """ (Util method) Private method used to handle bulk predict.
-
-        .. note::
-
-            This function should not be used directly. Use predict_from_* methods instead.
-
-        Args:
-            dataset_id (str): Unique id of the dataset to predict with
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-            dataset_folder_id (str, optional): Unique id of the associated folder dataset to predict with,
-                if need be (default: ``None``)
-
-        Returns:
-            str: A prediction job ID
-
-        Raises:
-            PrevisionException: Any error while starting the prediction on the platform or parsing the result
-        """
-        data = {
-            'dataset_id': dataset_id,
-            'model_id': self._id,
-            'confidence': str(confidence).lower(),
-        }
-
-        if dataset_folder_id is not None:
-            data['folder_dataset_id'] = dataset_folder_id
-
-        predict_start = client.request('/usecase-versions/{}/predictions'.format(self.usecase_version_id),
-                                       requests.post, data=data)
-
-        predict_start_parsed = parse_json(predict_start)
-
-        if '_id' not in predict_start_parsed:
-            err = 'Error starting prediction: {}'.format(predict_start_parsed)
-            logger.error(err)
-            raise PrevisionException(err)
-
-        return predict_start_parsed['_id']
-
-    def predict_single(self, confidence=False, explain=False, **predict_data):
+    def predict_single(self, data, confidence=False, explain=False):
         """ Make a prediction for a single instance. Use :py:func:`predict_from_dataset_name` or predict methods
         to predict multiple instances at the same time (it's faster).
 
         Args:
+            data (dict): Features names and values (without target feature) - missing feature keys
+                will be replaced by nans
             confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
             explain (bool, optional): Whether to explain prediction (default: ``False``)
-            **predict_data: Features names and values (without target feature) - missing feature keys
-                will be replaced by nans
+
 
         .. note::
 
@@ -221,138 +312,30 @@ class Model(ApiResource):
         """
         payload = {
             'features': {
-                str(k): v for k, v in predict_data.items() if str(v) != 'nan'
+                str(k): v for k, v in data.items() if str(v) != 'nan'
             },
             'explain': explain,
             'confidence': confidence,
             'best': False,
-            'specific_model': self._id
+            'model_id': self._id
         }
 
         logger.debug('[Predict Unit] sending payload ' + str(payload))
-
-        response = client.request('/usecases/{}/versions/{}/predictions/unit'.format(self.uc_id, self.uc_version),
+        response = client.request('/usecase-versions/{}/unit-prediction'.format(self.usecase_version_id),
                                   requests.post,
-                                  data=json.dumps(payload, cls=NpEncoder),
+                                  data=payload,
                                   content_type='application/json')
-
         if response.status_code != 200:
             raise PrevisionException('error getting response data: ' + response.text)
         try:
             response_json = parse_json(response)
+            return response_json
         except PrevisionException as e:
             logger.error('error getting response data: ' + str(e) + ' -- ' + response.text[0:250])
             raise e
-        else:
-            if 'prediction' not in response_json:
-                raise PrevisionException('error getting response data: ' + response_json.__repr__())
-            else:
-                return response_json['prediction']
-
-    def _get_predictions(self, predict_id) -> pd.DataFrame:
-        """ Get the result prediction dataframe from a given predict id.
-
-        Args:
-            predict_id (str): Prediction job ID
-
-        Returns:
-            ``pd.DataFrame``: Prediction dataframe.
-        """
-        pred_response = pio.client.request('/predictions/{}/download'.format(predict_id),
-                                           requests.get)
-
-        logger.debug('[Predict {0}] Downloading prediction file'.format(predict_id))
-
-        return zip_to_pandas(pred_response)
-
-    def _format_predictions(self, preds, confidence=False):
-        raise NotImplementedError
-
-    def _predict_sklearn(self, df, confidence):
-        """ Make a prediction for a dataframe with a Scikit-learn style blocking prediction mode.
-
-        Args:
-            df (``pd.DataFrame``): Dataframe to predict from
-            confidence (bool): Whether to predict with confidence estimator
-
-        Returns:
-            ``pd.DataFrame``: Predictions result dataframe
-        """
-        dataset = Dataset.new('test_{}_{}'.format(self.name, str(uuid.uuid4())[-6:]), dataframe=df)
-
-        predict_id = self._predict_bulk(dataset.id,
-                                        confidence=confidence)
-
-        self.wait_for_prediction(predict_id)
-        dataset.delete()
-
-        return self._get_predictions(predict_id)
-
-    def predict_from_dataset(self, dataset, confidence=False, dataset_folder=None) -> pd.DataFrame:
-        """ Make a prediction for a dataset stored in the current active [client]
-        workspace (using the current SDK dataset object).
-
-        Args:
-            dataset (:class:`.Dataset`): Dataset resource to make a prediction for
-            confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
-            dataset_folder (:class:`.Dataset`, None): Matching folder dataset resource for the prediction,
-                if necessary
-
-        Returns:
-            ``pd.DataFrame``: Prediction results dataframe
-        """
-        predict_id = self._predict_bulk(dataset.id,
-                                        confidence=confidence,
-                                        dataset_folder_id=dataset_folder.id if dataset_folder else None)
-
-        self.wait_for_prediction(predict_id)
-
-        # FIXME : wait_for_prediction() seems to be broken...
-        retry_count = 60
-        retry = 0
-        while retry < retry_count:
-            retry += 1
-            try:
-                preds = self._get_predictions(predict_id)
-                return preds
-            except Exception:
-                # FIXME:
-                # sometimes I observed error 500, with prediction on image usecase
-                logger.warning('wait_for_prediction has prolly exited {} seconds too early'
-                               .format(retry))
-                time.sleep(1)
-        return None
-
-    def predict(self, df, confidence=False) -> pd.DataFrame:
-        """ Make a prediction in a Scikit-learn blocking style.
-
-        .. warning::
-
-            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours). Prefer using
-            this for simple models and small dataframes or use option ``use_best_single = True``.
-
-        Args:
-            df (``pd.DataFrame``): A ``pandas`` dataframe containing the testing data
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-
-        Returns:
-            ``pd.DataFrame``: Prediction results dataframe
-        """
-        return self._format_predictions(self._predict_sklearn(df, confidence))
-
-    def deploy(self) -> DeployedModel:
-        """ (Not Implemented yet) Deploy the model as a REST API app.
-
-        Keyword Arguments:
-            app_type {enum} -- it can be 'model', 'notebook', 'shiny', 'dash' or 'node' application
-
-        Returns:
-            str: Path of the deployed application
-        """
-        raise NotImplementedError
 
 
-class ClassificationModel(Model):
+class ClassificationModel(ClassicModel):
     """ A model object for a (binary) classification usecase, i.e. a usecase where the target
     is categorical with exactly 2 modalities.
 
@@ -370,70 +353,6 @@ class ClassificationModel(Model):
         super().__init__(_id, usecase_version_id, name=name, **other_params)
         self._predict_threshold = 0.5
 
-    def _format_predictions(self, preds, confidence=False, apply_threshold=True):
-        """ Format predictions dataframe. In particular, you can apply a threshold on the predictions
-        probability.
-
-        Args:
-            preds (``pd.DataFrame``): Predictions dataframe
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-            apply_threshold (bool, optional): Whether to apply a threshold on the predicted probabilities
-                (default: ``True``)
-
-        Returns:
-            ``pd.DataFrame``: Formatted predictions dataframe.
-        """
-        pred_col = preds.columns[-1]
-        preds[pred_col] = preds[pred_col].astype(float)
-
-        if apply_threshold:
-            preds['predictions'] = (preds[pred_col] > self._predict_threshold)
-            preds[pred_col] = preds['predictions'].astype(int)
-            preds = preds.drop('predictions', axis=1)
-
-        return preds
-
-    def predict_proba(self, df, confidence=False):
-        """ Make a prediction in a Scikit-learn blocking style and return probabilities.
-
-        .. warning::
-
-            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours). Prefer using
-            this for simple models and small dataframes or use option ``use_best_single = True``.
-
-        Args:
-            df (``pd.DataFrame``): A ``pandas`` dataframe containing the testing data
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-
-        Returns:
-            ``pd.DataFrame``: (Formatted) prediction results dataframe
-        """
-        return self._format_predictions(self._predict_sklearn(df, confidence=confidence),
-                                        confidence=confidence, apply_threshold=False)
-
-    def predict_single(self, confidence=False, explain=False, **predict_data):
-        """ Make a prediction for a single instance.
-
-        Args:
-            confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
-            explain (bool, optional): Whether to explain prediction (default: ``False``)
-            **predict_data: Features names and values (without target feature) - missing feature keys
-                will be replaced by nans
-
-        .. note::
-
-            You can set both ``confidence`` and ``explain`` to true.
-
-        Returns:
-            tuple: Predictions probability, predictions class, predictions confidence and predictions explanation
-        """
-        single_pred = super().predict_single(confidence=confidence, explain=explain, **predict_data)
-
-        pred_index = list(filter(lambda x: 'pred' in x,
-                                 single_pred.keys()))[0]
-        res = single_pred[pred_index]
-
-        return res, int(res > self._predict_threshold), single_pred.get('confidence'), single_pred.get('explanation')
 
     @property
     @lru_cache()
@@ -446,13 +365,13 @@ class ClassificationModel(Model):
         Raises:
             PrevisionException: Any error while fetching data from the platform or parsing the result
         """
-        endpoint = '/usecases/{}/versions/{}/models/{}/analysis/dynamic'.format(self.uc_id, self.uc_version, self._id)
+        endpoint = '/models/{}/analysis'.format(self._id)
         response = client.request(endpoint=endpoint,
                                   method=requests.get)
 
         resp = json.loads(response.content.decode('utf-8'))
         if response.ok:
-            return resp["optimalProba"]
+            return resp["optimal_proba"]
         raise PrevisionException('Request Error : {}'.format(response.content['message']))
 
     def get_dynamic_performances(self, threshold=0.5):
@@ -481,8 +400,7 @@ class ClassificationModel(Model):
 
         result = dict()
         query = '?threshold={}'.format(str(threshold))
-        endpoint = '/usecases/{}/versions/{}/models/{}/analysis/dynamic{}'.format(self.uc_id, self.uc_version,
-                                                                                  self._id, query)
+        endpoint = '/models/{}/dynamic-analysis{}'.format(self._id, query)
 
         response = client.request(endpoint=endpoint,
                                   method=requests.get)
@@ -490,7 +408,7 @@ class ClassificationModel(Model):
         resp = json.loads(response.content.decode('utf-8'))
 
         if response.ok:
-            result['confusion_matrix'] = resp["confusionMatrix"]
+            result['confusion_matrix'] = resp["confusion_matrix"]
             for metric in ['accuracy', 'precision', 'recall', 'f1Score']:
                 result[metric] = resp["score"][metric]
 
@@ -498,7 +416,7 @@ class ClassificationModel(Model):
         raise PrevisionException('Request Error : {}'.format(response.content['message']))
 
 
-class RegressionModel(Model):
+class RegressionModel(ClassicModel):
     """ A model object for a regression usecase, i.e. a usecase where the target is numerical.
 
     Args:
@@ -509,39 +427,8 @@ class RegressionModel(Model):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def _format_predictions(self, preds, confidence=False, explain=False):
-        """ Format predictions dataframe (returns the dataframe as is).
 
-        Args:
-            preds (``pd.DataFrame``): Predictions dataframe
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-            apply_threshold (bool, optional): Whether to apply a threshold on the predicted probabilities
-                (default: ``True``)
-
-        Returns:
-            ``pd.DataFrame``: Formatted predictions dataframe.
-        """
-        return preds
-
-    def predict(self, df, confidence=False):
-        """ Make a prediction in a Scikit-learn blocking style.
-
-        .. warning::
-
-            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours). Prefer using
-            this for simple models and small dataframes or use option ``use_best_single = True``.
-
-        Args:
-            df (``pd.DataFrame``): A ``pandas`` dataframe containing the testing data
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-
-        Returns:
-            ``pd.DataFrame``: Prediction results dataframe
-        """
-        return self._predict_sklearn(df, confidence=confidence)
-
-
-class MultiClassificationModel(Model):
+class MultiClassificationModel(ClassicModel):
     """ A model object for a multi-classification usecase, i.e. a usecase where the target
     is categorical with strictly more than 2 modalities.
 
@@ -552,59 +439,6 @@ class MultiClassificationModel(Model):
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
-
-    def _format_predictions(self, preds, confidence=False, explain=False, apply_threshold=True):
-        """ Format predictions dataframe. In particular, you can apply a threshold on the predictions
-        probability.
-
-        Args:
-            preds (``pd.DataFrame``): Predictions dataframe
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-            explain (bool, optional): Whether to explain prediction (default: ``False``)
-            apply_threshold (bool, optional): Whether to apply a threshold on the predicted probabilities
-                (default: ``True``)
-
-        Returns:
-            ``pd.DataFrame``: Formatted predictions dataframe.
-        """
-        return preds
-
-    def predict_proba(self, df, confidence=False):
-        """ Make a prediction in a Scikit-learn blocking style and return probabilities.
-
-        .. warning::
-
-            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours). Prefer using
-            this for simple models and small dataframes or use option ``use_best_single = True``.
-
-        Args:
-            df (``pd.DataFrame``): A ``pandas`` dataframe containing the testing data
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-
-        Returns:
-            ``pd.DataFrame``: (Formatted) prediction results dataframe
-        """
-        return self._format_predictions(self._predict_sklearn(df, confidence=confidence),
-                                        confidence=confidence,
-                                        apply_threshold=False)
-
-    def predict(self, df, confidence=False):
-        """ Make a prediction in a Scikit-learn blocking style.
-
-        .. warning::
-
-            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours). Prefer using
-            this for simple models and small dataframes or use option ``use_best_single = True``.
-
-        Args:
-            df (``pd.DataFrame``): A ``pandas`` dataframe containing the testing data
-            confidence (bool, optional): Whether to predict with confidence estimator (default: ``False``)
-
-        Returns:
-            ``pd.DataFrame``: (Formatted) prediction results dataframe
-        """
-        return self._format_predictions(self._predict_sklearn(df, confidence), confidence,
-                                        apply_threshold=True)
 
 
 class TextSimilarityModel(Model):
@@ -634,7 +468,7 @@ class TextSimilarityModel(Model):
         data = {
             'model_id': self._id,
             'queries_dataset_id': queries_dataset_id,
-            'queries_dataset_content_column': queries_dataset_content_column,  # because we"ll be using the current model
+            'queries_dataset_content_column': queries_dataset_content_column,
             'top_k': top_k
         }
         if matching_id_description_column:

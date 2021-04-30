@@ -5,8 +5,12 @@ import requests
 from . import client
 from .utils import parse_json, PrevisionException
 from . import logger
+from . import TrainingConfig
 from .api_resource import ApiResource, UniqueResourceMixin
-
+from .datasource import DataSource
+from .dataset import Dataset, DatasetImages
+from .connector import Connector, SQLConnector, FTPConnector, SFTPConnector, S3Connector, HiveConnector, GCPConnector
+from .supervised import Regression, Classification, MultiClassification
 
 class Project(ApiResource, UniqueResourceMixin):
 
@@ -20,10 +24,11 @@ class Project(ApiResource, UniqueResourceMixin):
 
     """
 
-    resource = '/projects'
+    resource = 'projects'
 
-    def __init__(self, _id: str, name: str, description: str = None, color: str = None, created_by: str = None, admins=[], contributors=[], viewers=[],
-                 pipelines_count: int = 0, usecases_count: int = 0, dataset_count: int = 0, users=[], **kwargs):
+    def __init__(self, _id: str, name: str, description: str = None, color: str = None, created_by: str = None,
+                 admins=[], contributors=[], viewers=[], pipelines_count: int = 0, usecases_count: int = 0,
+                 dataset_count: int = 0, **kwargs):
         """ Instantiate a new :class:`.DataSource` object to manipulate a datasource resource
         on the platform. """
         super().__init__(_id=_id,
@@ -42,7 +47,6 @@ class Project(ApiResource, UniqueResourceMixin):
         self.pipelines_count = pipelines_count
         self.usecases_count = usecases_count
         self.dataset_count = dataset_count
-        #self.users = users
 
     @classmethod
     def list(cls, all=False):
@@ -83,7 +87,8 @@ class Project(ApiResource, UniqueResourceMixin):
 
         return cls(**resp_json)
 
-    def get_id(self):
+    @property
+    def id(self):
         return self._id
 
     def users(self):
@@ -102,32 +107,6 @@ class Project(ApiResource, UniqueResourceMixin):
 
         end_point = '/{}/{}/users'.format(self.resource, self._id)
         response = client.request(endpoint=end_point, method=requests.get)
-        if response.status_code != 200:
-            logger.error('cannot get users for project id {}'.format(self._id))
-            raise PrevisionException('[{}] {}'.format(self.resource, response.status_code))
-
-        res = parse_json(response)
-        return res
-
-    # check
-    def add_user(self, email, project_role):
-        """Get a project from the instance by its unique id.
-
-        Args:
-            email (str): new user email
-            project_role (str): user project role. Possible project role: admin, contributor, viewer
-        Returns:
-            :class:`.Project`: The fetched project
-
-        Raises:
-            PrevisionException: Any error while fetching data from the platform
-                or parsing the result
-        """
-        if project_role not in ['admin', 'contributor', 'viewer']:
-            PrevisionException("Possible project role: admin, contributor, viewer ")
-        data = {"email": email, "projectRole": project_role}
-        end_point = '/{}/{}/users'.format(self.resource, self._id)
-        response = client.request(endpoint=end_point, data=data, method=requests.post)
         if response.status_code != 200:
             logger.error('cannot get users for project id {}'.format(self._id))
             raise PrevisionException('[{}] {}'.format(self.resource, response.status_code))
@@ -200,7 +179,8 @@ class Project(ApiResource, UniqueResourceMixin):
             else:
                 raise Exception('unknown error: {}'.format(json))
 
-        return cls(json['_id'], name, description, color, json['created_by'], json['admins'], json['contributors'], json['pipelines_count'])
+        return cls(json['_id'], name, description, color, json['created_by'],
+                   json['admins'], json['contributors'], json['pipelines_count'])
 
     def delete(self):
         """Delete a project from the actual [client] workspace.
@@ -213,3 +193,112 @@ class Project(ApiResource, UniqueResourceMixin):
                               .format(self.resource, self.id),
                               method=requests.delete)
         return resp
+
+    def create_dataset(self, name: str, datasource: DataSource = None, file_name: str = None, dataframe=None):
+        """ Register a new dataset in the workspace for further processing.
+        You need to provide either a datasource, a file name or a dataframe
+        (only one can be specified).
+
+        .. note::
+
+            To start a new use case on a dataset, it has to be already
+            registred in your workspace.
+
+        Args:
+            name (str): Registration name for the dataset
+            datasource (:class:`.DataSource`, optional): A DataSource object used
+                to import a remote dataset (if you want to import a specific dataset
+                from an existent database, you need a datasource connector
+                (:class:`.Connector` object) designed to point to the related data source)
+            file_name (str, optional): Path to a file to upload as dataset
+            dataframe (pd.DataFrame, optional): A ``pandas`` dataframe containing the
+                data to upload
+
+        Raises:
+            Exception: If more than one of the keyword arguments ``datasource``, ``file_name``,
+                ``dataframe`` was specified
+            PrevisionException: Error while creating the dataset on the platform
+
+        Returns:
+            :class:`.Dataset`: The registered dataset object in the current workspace.
+        """
+        return Dataset._new(self._id, name, datasource=datasource, file_name=file_name, dataframe=dataframe)
+
+    def list_datasets(self, all=all):
+        """ List all the available datasets in the current active [client] workspace.
+
+        .. warning::
+
+            Contrary to the parent ``list()`` function, this method
+            returns actual :class:`.Dataset` objects rather than
+            plain dictionaries with the corresponding data.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+
+        Returns:
+            list(:class:`.Dataset`): Fetched dataset objects
+        """
+        return Dataset.list(self._id, all=all)
+
+    def create_image_folder(self, name, file_name):
+        return DatasetImages._new(self._id, name, file_name)
+
+    def list_image_folders(self, all=all):
+        return DatasetImages.list(self._id, all=all)
+
+    def create_sql_connector(self, name, host, port=3306, username='', password=''):
+        return SQLConnector._new(self._id, name, host, port, 'SQL', username=username, password=password)
+
+    def create_ftp_connector(self, name, host, port=21, username='', password=''):
+        return FTPConnector._new(self._id, name, host, port, 'FTP', username=username, password=password)
+
+    def create_sftp_connector(self, name, host, port=23, username='', password=''):
+        return SFTPConnector._new(self._id, name, host, port, 'SFTP', username=username, password=password)
+
+    def create_s3_connector(self, name, host='', port='', username='', password=''):
+        return S3Connector._new(self._id, name, host, port, 'S3', username=username, password=password)
+
+    def create_hive_connector(self, name, host, port=10000, username='', password=''):
+        return HiveConnector._new(self._id, name, host, port, 'HIVE', username=username, password=password)
+
+    def create_gcp_connector(self, name, host='', port='', username='', password='', googleCredentials=''):
+        return GCPConnector._new(self._id, name, host, port, 'GCP', username=username, password=password,
+                                 googleCredentials=googleCredentials)
+
+    def list_connectors(self, all=all):
+        return Connector.list(self._id, all=all)
+
+    def create_datasource(self, connector, name, path=None, database=None,
+                          table=None, bucket=None, request=None, gCloud=None):
+        return DataSource._new(self._id, connector, name, path=path, database=database,
+                               table=table, bucket=bucket, request=request, gCloud=gCloud)
+
+    def list_datasource(self, all=all):
+        return DataSource.list(self._id, all=all)
+
+    def fit_regression(self, name, dataset, column_config, metric=None, holdout_dataset=None,
+                       training_config=TrainingConfig(), type_problem=None, **kwargs):
+        return Regression.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
+                              training_config=training_config, type_problem=type_problem, **kwargs)
+
+    def fit_classification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
+                           training_config=TrainingConfig(), type_problem=None, **kwargs):
+        return Classification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
+                                  training_config=training_config, type_problem=type_problem, **kwargs)
+
+    def fit_multiclassification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
+                                training_config=TrainingConfig(), type_problem=None, **kwargs):
+        return MultiClassification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
+                                       training_config=training_config, type_problem=type_problem, **kwargs)
+
+connectors_names = {
+    'SQL': "create_sql_connector",
+    'FTP': "create_ftp_connector",
+    'SFTP': "create_sftp_connector",
+    'S3': "create_s3_connector",
+    'HIVE': "create_hive_connector",
+    'GCP': "create_gcp_connector"
+}

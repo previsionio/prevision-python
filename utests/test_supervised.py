@@ -21,16 +21,18 @@ uc_config = pio.TrainingConfig(normal_models=[pio.Model.LinReg],
 test_datasets = {}
 
 type_problem_2_pio_class = {
-    'regression': pio.Regression,
-    'classification': pio.Classification,
-    'multiclassification': pio.MultiClassification,
+    'regression': "fit_regression",
+    'classification': "fit_classification",
+    'multiclassification': "fit_multiclassification",
 }
 type_problems = type_problem_2_pio_class.keys()
 
 
 def make_pio_datasets(paths):
     for problem_type, p in paths.items():
-        dataset = pio.Dataset.new(PROJECT_ID, p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'), dataframe=pd.read_csv(p))
+        project = pio.Project.from_id(PROJECT_ID)
+        dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
+                                         dataframe=pd.read_csv(p))
         test_datasets[problem_type] = dataset
 
 
@@ -44,20 +46,14 @@ def setup_module(module):
     make_pio_datasets(paths)
 
 
-# def teardown_module(module):
-#     remove_datasets(DATA_PATH)
-#     for ds in pio.Dataset.list():
-#         if TESTING_ID in ds.name:
-#             ds.delete()
-#     for uc_dict in pio.Supervised.list():
-#         uc = pio.Supervised.from_id(uc_dict['usecase_id'])
-#         if TESTING_ID in uc.name:
-#             uc.delete()
+def teardown_module(module):
+    remove_datasets(DATA_PATH)
+    project = pio.Project.from_id(PROJECT_ID)
+    project.delete()
 
 
 def supervised_from_filename(type_problem, uc_name):
     dataset = test_datasets[type_problem]
-    #dataset = pio.Dataset.from_id(PROJECT_ID, "6082fb73b153a8001c3052e0")
     type_problem_class = type_problem_2_pio_class[type_problem]
     return train_model(PROJECT_ID, uc_name, dataset, type_problem, type_problem_class, uc_config)
 
@@ -65,10 +61,9 @@ def supervised_from_filename(type_problem, uc_name):
 def test_delete_usecase():
     uc_name = TESTING_ID + '_file_del'
     usecase_version = supervised_from_filename('regression', uc_name)
-    usecase = usecase_version.get_usecase()
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name in [u.name for u in usecases]
-    usecase.delete()
+    usecase_version.usecase.delete()
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name not in [u.name for u in usecases]
 
@@ -81,55 +76,29 @@ def test_stop_running_usecase():
     usecase_version.stop()
     usecase_version.update_status()
     assert not usecase_version.running
-    usecase = usecase_version.get_usecase()
-    usecase.delete()
-
-
-# def test_uc_from_name():
-#     uc_name_asked = TESTING_ID + '_df_name'
-#     uc = supervised_from_filename('regression', uc_name_asked)
-#     uc_name_returned = uc.name
-#     uc2 = pio.Regression.from_name(uc_name_returned)
-#     uc.wait_until(lambda usecase: usecase.get_nb_models() > 0)
-#     assert uc2.name == uc_name_returned
-#     uc.delete()
+    usecase_version.usecase.delete()
 
 
 @pytest.fixture(scope='module', params=type_problems)
 def setup_usecase_class(request):
     usecase_name = '{}_{}'.format(request.param[0:5], TESTING_ID)
     uc = supervised_from_filename(request.param, usecase_name)
-    print("1")
     uc.wait_until(lambda usecase: len(usecase.models) > 0)
-    print("2")
-    print("3")
     uc.stop()
-    print("4")
     uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
-    print("5")
     yield request.param, uc
-    print("6")
-    usecase = uc.get_usecase()
-    print("7")
-    usecase.delete()
-    print("8")
-
+    usecase = uc.usecase.delete()
 
 
 options_parameters = ('options',
-                      [{'confidence': False, 'use_best_single': False},
-                       {'confidence': False, 'use_best_single': True},
-                       pytest.param({'confidence': True, 'use_best_single': False}),
-                       {'confidence': True, 'use_best_single': True}])
+                      [{'confidence': False},
+                       {'confidence': True}])
 
 predict_u_options_parameters = ('options',
-                                [{'confidence': False, 'use_best_single': False, 'explain': True},
-                                 {'confidence': False, 'use_best_single': True},
-                                 {'confidence': True, 'use_best_single': False},
-                                 {'confidence': True, 'use_best_single': True}])
+                                [{'confidence': False, 'explain': True},
+                                 {'confidence': True}])
 
-predict_test_ids = [('confidence-' if opt['confidence'] else 'normal-') +
-                    ('best_single' if opt['use_best_single'] else 'best_model')
+predict_test_ids = [('confidence-' if opt['confidence'] else 'normal-')
                     for opt in predict_u_options_parameters[1]]
 
 
@@ -143,22 +112,25 @@ class TestUCGeneric:
         assert sorted(uc.simple_models_list) == sorted(uc_config.simple_models)
 
 
-#
-# class TestPredict:
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_predict(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#         data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
-#         preds = uc.predict(data, **options)
-#         assert len(preds) == len(data)
-#         if options['confidence']:
-#             if type_problem == 'regression':
-#                 conf_cols = ['_quantile={}'.format(q) for q in [1, 5, 10, 25, 50, 75, 95, 99]]
-#                 for q in conf_cols:
-#                     assert any([q in col for col in preds])
-#             elif type_problem == 'classification':
-#                 assert 'confidence' in preds
-#                 assert 'credibility' in preds
+class TestPredict:
+    @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
+    def test_predict(self, setup_usecase_class, options):
+        type_problem, uc = setup_usecase_class
+        data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
+        preds = uc.predict(data, **options)
+        assert len(preds) == len(data)
+        if options['confidence']:
+            if type_problem == 'regression':
+                conf_cols = ['_quantile={}'.format(q) for q in [1, 5, 10, 25, 50, 75, 95, 99]]
+                for q in conf_cols:
+                    assert any([q in col for col in preds])
+            elif type_problem == 'classification':
+                assert 'confidence' in preds
+                assert 'credibility' in preds
+        # test_predict_unit
+        data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
+        pred = uc.predict_single(data.iloc[0].to_dict(), **options)
+        assert pred is not None
 #
 #     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
 #     def test_predict_unit(self, setup_usecase_class, options):
@@ -216,6 +188,8 @@ class TestUCGeneric:
 #     #         assert k in uc_info_keys
 #
 #
+
+
 class TestInfos:
     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
     def test_info(self, setup_usecase_class, options):

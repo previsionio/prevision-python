@@ -28,7 +28,8 @@ class DataSource(ApiResource, UniqueResourceMixin):
 
     resource = 'data-sources'
 
-    def __init__(self, _id, connector_id, name, path=None, database=None, table=None, request=None, gCloud=None, **kwargs):
+    def __init__(self, _id, connector_id, name, path=None, database=None,
+                 table=None, request=None, gCloud=None, **kwargs):
         """ Instantiate a new :class:`.DataSource` object to manipulate a datasource resource
         on the platform. """
         super().__init__(_id=_id,
@@ -97,7 +98,8 @@ class DataSource(ApiResource, UniqueResourceMixin):
         return cls(**resp_json)
 
     @classmethod
-    def new(cls, project_id, connector, name, path=None, database=None, table=None, bucket=None, request=None, gCloud=None):
+    def _new(cls, project_id, connector, name, path=None, database=None, table=None,
+             bucket=None, request=None, gCloud=None):
         """ Create a new datasource object on the platform.
 
         Args:

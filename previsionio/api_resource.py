@@ -1,10 +1,8 @@
-import datetime
 import requests
 from .utils import parse_json, PrevisionException, get_all_results
 from .prevision_client import client
 from . import logger
 from enum import Enum
-import previsionio as pio
 
 
 class ApiResourceType(Enum):
@@ -44,6 +42,7 @@ class ApiResource:
         if self._id == "":
             raise RuntimeError("Invalid _id received from {}".format(str(params)))
         self.resource_id = self._id
+        # self.event_manager: Optional[EventManager] = None
 
     def update_status(self, specific_url: str = None):
         """Get an update on the status of a resource.
@@ -66,19 +65,20 @@ class ApiResource:
         resource_status_dict['event_type'] = 'update'
         resource_status_dict['event_name'] = 'update'
 
-        if pio.client.event_manager:
-            pio.client.event_manager.add_event(self.resource_id, resource_status_dict)
+        # if self.event_manager:
+        #    self.event_manager.add_event(self.resource_id, resource_status_dict)
 
         return resource_status_dict
 
     @property
     def _status(self):
-        if pio.client.event_manager:
-            events = pio.client.event_manager.events
-            if self.resource_id in events:
-                return sorted(events[self.resource_id],
-                              key=lambda k: datetime.datetime.strptime(k['end'], '%Y-%m-%dT%H:%M:%S.%fZ'))[-1]
 
+        # if self.event_manager:
+        #     events = self.event_manager.events
+        #     if self.resource_id in events:
+        #         return sorted(events[self.resource_id],
+        #                       key=lambda k: datetime.datetime.strptime(k['end'], '%Y-%m-%dT%H:%M:%S.%fZ'))[-1]
+        #
         resource_status_dict = self.update_status()
         return resource_status_dict
 
@@ -144,7 +144,6 @@ class ApiResource:
             PrevisionException: Any error while deleting data from the platform
         """
         resp = client.request('/{}/{}'.format(self.resource, self._id), method=requests.delete)
-        #resp_json = parse_json(resp)
         if resp.status_code in [200, 204]:
             logger.info('[Delete {} OK]'.format(self.resource))
             return

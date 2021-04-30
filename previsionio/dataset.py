@@ -95,41 +95,6 @@ class Dataset(ApiResource):
         resources = super().list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources]
 
-    @classmethod
-    def getid_from_name(cls, project_id, name, version='last'):
-        """ Return the dataset id corresponding to a given name.
-
-        Args:
-            name (str): Name of the dataset
-            version (int, str, optional): Specific version of the
-                dataset (can be an int, or 'last' - default - to
-                get the latest version of the dataset)
-
-        Raises:
-            PrevisionException: If dataset does not exist, version
-                number is out of range or there is another error
-                fetching or parsing data
-        """
-        # use prevision api to search by name
-        # FIXME useless version
-
-        if version != 'last':
-            if not isinstance(version, type(7)):
-                raise TypeError("version argument takes as values positive int or 'last' ")
-
-        datasets = cls.list(all=True, project_id=project_id)
-        datasets = list(filter(lambda d: d.name == name, datasets))
-        if len(datasets) > 0:
-            # get the corresponding id
-            if version == 'last':
-                version = len(datasets)
-            if (len(datasets) < version) or (version <= 0):
-                raise PrevisionException('list index out of range')
-            return datasets[(version - 1)]._id
-
-        msg_error = 'DatasetNotFoundError: No such dataset name : {}'.format(name)
-        raise PrevisionException(msg_error)
-
     def update_status(self):
         url = '/{}/{}'.format(self.resource, self._id)
         dset_resp = client.request(url, method=requests.get)
@@ -220,7 +185,7 @@ class Dataset(ApiResource):
                 was another error fetching or parsing data
         """
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
-        resp = client.request(endpoint='/{}/{}/download'.format(self.resource, self.id),
+        resp = client.request(endpoint=endpoint,
                               method=requests.get)
         if resp.status_code == 200 and resp._content is not None:
             if not download_path:
@@ -233,29 +198,7 @@ class Dataset(ApiResource):
             raise PrevisionException('could not download dataset')
 
     @classmethod
-    def get_by_name(cls, project_id, name, version='last'):
-        """Get an already registered dataset from the platform (using its registration
-        name).
-
-        Args:
-            name (str): Name of the dataset to retrieve
-            version (int, str, optional): Specific version of the
-                dataset (can be an int, or 'last' - default - to
-                get the latest version of the dataset)
-
-        Raises:
-            AttributeError: if dataset_name is not given
-            PrevisionException: If dataset does not exist or if there
-                was another error fetching or parsing data
-
-        Returns:
-            :class:`.Dataset`: Fetched dataset
-        """
-        dataset_id = cls.getid_from_name(project_id, name, version=version)
-        return cls.from_id(dataset_id)
-
-    @classmethod
-    def new(cls, project_id: str, name: str, datasource: DataSource = None, file_name: str = None, dataframe=None):
+    def _new(cls, project_id: str, name: str, datasource: DataSource = None, file_name: str = None, dataframe=None):
         """ Register a new dataset in the workspace for further processing.
         You need to provide either a datasource, a file name or a dataframe
         (only one can be specified).
@@ -266,6 +209,7 @@ class Dataset(ApiResource):
             registred in your workspace.
 
         Args:
+            project_id (str): project id
             name (str): Registration name for the dataset
             datasource (:class:`.DataSource`, optional): A DataSource object used
                 to import a remote dataset (if you want to import a specific dataset
@@ -310,7 +254,6 @@ class Dataset(ApiResource):
 
             with tempfile.NamedTemporaryFile(prefix=name, suffix='.csv') as temp:
                 dataframe.to_csv(temp.name, index=False)
-
                 file_name = temp.name.replace('.csv', file_ext)
                 with ZipFile(file_name, 'w') as zip_file:
                     zip_file.write(temp.name, arcname=name + '.csv')
@@ -336,7 +279,6 @@ class Dataset(ApiResource):
                                              data=data,
                                              files=files,
                                              method=requests.post)
-
         if create_resp is None:
             raise PrevisionException('[Dataset] Uexpected case in dataset creation')
 
@@ -380,14 +322,6 @@ class DatasetImages(ApiResource):
 
         self.other_params = kwargs
 
-    def to_pandas(self) -> pd.DataFrame:
-        """ Invalid method for a :class:`.DatasetImages` object.
-
-        Raises:
-            ValueError: Folder datasets cannot be converted to a ``pandas`` dataframe
-        """
-        raise ValueError("Cannot convert a folder dataset to pandas.")
-
     def delete(self):
         """Delete a DatasetImages from the actual [client] workspace.
 
@@ -422,7 +356,7 @@ class DatasetImages(ApiResource):
         return [cls(**conn_data) for conn_data in resources]
 
     @classmethod
-    def new(cls, project_id, name, file_name):
+    def _new(cls, project_id, name, file_name):
         """ Register a new image dataset in the workspace for further processing
         (in the image folders group).
 
@@ -486,7 +420,7 @@ class DatasetImages(ApiResource):
                 was another error fetching or parsing data
         """
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
-        resp = client.request(endpoint='/{}/{}/download'.format(self.resource, self.id),
+        resp = client.request(endpoint=endpoint,
                               method=requests.get)
         if resp.status_code == 200 and resp._content is not None:
             if not download_path:

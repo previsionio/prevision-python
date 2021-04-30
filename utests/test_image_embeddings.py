@@ -21,6 +21,7 @@ test_datasets = {}
 dataset_name = 'cats_and_dogs_train'
 dataset_test_name = TESTING_ID + '-' + dataset_name
 
+
 def setup_module(module):
     project = pio.Project.new(name=PROJECT_NAME,
                               description="description test sdk")
@@ -32,13 +33,13 @@ def setup_module(module):
 def upload_datasets():
     datapath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data_img/{}'.format(dataset_name))
     # upload CSV reference file
-    dataset_csv = pio.Dataset.new(
+    dataset_csv = pio.Dataset._new(
         PROJECT_ID,
         name=dataset_test_name,
         dataframe=pd.read_csv(os.path.join(datapath, '{}.csv'.format(dataset_name)))
     )
     # upload ZIP images folder
-    dataset_zip = pio.DatasetImages.new(
+    dataset_zip = pio.DatasetImages._new(
         PROJECT_ID,
         name=dataset_test_name,
         file_name=os.path.join(datapath, '{}.zip'.format(dataset_name))
