@@ -155,5 +155,5 @@ def setup_ts_class(request):
 
     usecase_version.wait_until(lambda usecase: len(usecase) > 0)
     usecase_version.stop()
-    yield groups, uc
+    yield groups, usecase_version
     usecase_version.usecase.delete()
