@@ -89,7 +89,7 @@ class Model(ApiResource):
         elif training_type == "multiclassification":
             return MultiClassificationModel(**model)
         elif training_type == "text-similarity":
-            return TextSimilarity(**model)
+            return TextSimilarityModel(**model)
         else:
             raise PrevisionException('Training type {} not supported'.format(model['training_type']))
 
