@@ -45,7 +45,8 @@ config = Config()
 
 from previsionio.prevision_client import client
 from previsionio.usecase_config import \
-    Model, \
+    AdvancedModel, \
+    NormalModel, \
     SimpleModel, \
     TypeProblem, \
     Feature, \
@@ -64,11 +65,12 @@ from previsionio.project import Project
 from previsionio.usecase import Usecase
 from previsionio.supervised import Supervised, SupervisedImages, \
     Regression, Classification, MultiClassification, \
-    RegressionImages, ClassificationImages, MultiClassificationImages
+    RegressionImages, ClassificationImages, MultiClassificationImages, MODEL_CLASS_DICT
 from previsionio.timeseries import TimeSeries, TimeWindow, TimeWindowException
 
 from previsionio.text_similarity import TextSimilarity, DescriptionsColumnConfig, \
     QueriesColumnConfig, ListModelsParameters, ModelsParameters, TextSimilarityModels, ModelEmbedding, Preprocessing
+from previsionio.model import Model, ClassificationModel, RegressionModel, MultiClassificationModel, TextSimilarityModel
 from previsionio.dataset import Dataset, DatasetImages
 # from previsionio.experiment import Experiment
 from previsionio.plotter import PrevisionioPlotter, PlotlyPlotter, MatplotlibPlotter
@@ -76,7 +78,8 @@ from previsionio.analyzer import cv_classif_analysis
 from previsionio.deployed_model import DeployedModel
 
 __all__ = ['client',
-           'Model',
+           'AdvancedModel',
+           'NormalModel',
            'SimpleModel',
            'TypeProblem',
            'Feature',
@@ -100,11 +103,17 @@ __all__ = ['client',
            'ClassificationImages',
            'MultiClassification',
            'MultiClassificationImages',
+           'MODEL_CLASS_DICT'
            'TimeSeries',
            'TimeWindow',
            'TimeWindowException',
            'Dataset',
            'DatasetImages',
+           'Model',
+           'RegressionModel',
+           'ClassificationModel',
+           'MultiClassification',
+           'TextSimilarityModel',
            'PrevisionioPlotter',
            'PlotlyPlotter',
            'MatplotlibPlotter',

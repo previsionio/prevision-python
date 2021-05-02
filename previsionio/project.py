@@ -9,8 +9,14 @@ from . import TrainingConfig
 from .api_resource import ApiResource, UniqueResourceMixin
 from .datasource import DataSource
 from .dataset import Dataset, DatasetImages
-from .connector import Connector, SQLConnector, FTPConnector, SFTPConnector, S3Connector, HiveConnector, GCPConnector
-from .supervised import Regression, Classification, MultiClassification
+from .connector import Connector, SQLConnector, FTPConnector, \
+    SFTPConnector, S3Connector, HiveConnector, GCPConnector
+from .supervised import Regression, Classification, MultiClassification, \
+    RegressionImages, ClassificationImages, MultiClassificationImages
+from .timeseries import TimeSeries
+from .text_similarity import TextSimilarity
+from .usecase import Usecase
+
 
 class Project(ApiResource, UniqueResourceMixin):
 
@@ -293,6 +299,29 @@ class Project(ApiResource, UniqueResourceMixin):
                                 training_config=TrainingConfig(), type_problem=None, **kwargs):
         return MultiClassification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
                                        training_config=training_config, type_problem=type_problem, **kwargs)
+
+    def fit_image_regression(self, name, dataset, column_config, metric=None, holdout_dataset=None,
+                                training_config=TrainingConfig(), type_problem=None, **kwargs):
+        return RegressionImages.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
+                                       training_config=training_config, type_problem=type_problem, **kwargs)
+
+    def fit_image_classification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
+                                 training_config=TrainingConfig(), type_problem=None, **kwargs):
+        return ClassificationImages.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
+                                        training_config=training_config, type_problem=type_problem, **kwargs)
+
+    def fit_image_multiclassification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
+                                      training_config=TrainingConfig(), type_problem=None, **kwargs):
+        return MultiClassificationImages.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
+                                             training_config=training_config, type_problem=type_problem, **kwargs)
+
+    def fit_timeseries_regression(self, name, dataset, column_config, time_window, metric=None, holdout_dataset=None,
+                                  training_config=TrainingConfig()):
+        return TimeSeries.fit(self._id, name, dataset, column_config, time_window, metric=metric, holdout_dataset=holdout_dataset,
+                              training_config=training_config)
+
+    def list_usecases(self, all=all):
+        return Usecase.list(self._id, all=all)
 
 connectors_names = {
     'SQL': "create_sql_connector",

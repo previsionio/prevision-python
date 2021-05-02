@@ -201,16 +201,6 @@ class Classification(Supervised):
     default_metric = metrics.Classification.AUC
     # model_class = ClassificationModel
 
-    def predict_proba(self, df,
-                      use_best_single=False,
-                      confidence=False) -> pd.DataFrame:
-        if use_best_single:
-            best = self.best_single
-        else:
-            best = self.best_model
-
-        return best.predict_proba(df=df, confidence=confidence)
-
 
 class MultiClassification(Supervised):
 

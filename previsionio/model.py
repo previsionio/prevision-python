@@ -31,13 +31,13 @@ class Model(ApiResource):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id, usecase_version_id, project_id, name=None, **other_params):
+    def __init__(self, _id, usecase_version_id, project_id, model_name=None, **other_params):
         """ Instantiate a new :class:`.Model` object to manipulate a model resource on the platform. """
         super().__init__(_id=_id)
         self._id = _id
         self.usecase_version_id = usecase_version_id
         self.project_id = project_id
-        self.name = name
+        self.name = model_name
         self.tags = {}
 
         for k, v in other_params.items():
@@ -61,6 +61,38 @@ class Model(ApiResource):
 
         return json.dumps(args_to_show, sort_keys=True, indent=4, separators=(',', ': '))
 
+    @classmethod
+    def from_id(cls, _id):
+        """Get a usecase from the platform by its unique id.
+
+        Args:
+            _id (str): Unique id of the usecase to retrieve
+            version (int, optional): Specific version of the usecase to retrieve
+                (default: 1)
+
+        Returns:
+            :class:`.BaseUsecaseVersion`: Fetched usecase
+
+        Raises:
+            PrevisionException: Any error while fetching data from the platform
+                or parsing result
+        """
+        end_point = '/models/{}'.format(_id)
+        response = client.request(endpoint=end_point,
+                                  method=requests.get)
+        model = json.loads(response.content.decode('utf-8'))
+        training_type = model['type_problem']
+        if training_type == "regression":
+            return RegressionModel(**model)
+        elif training_type == "classification":
+            return ClassificationModel(**model)
+        elif training_type == "multiclassification":
+            return MultiClassificationModel(**model)
+        elif training_type == "text-similarity":
+            return TextSimilarity(**model)
+        else:
+            raise PrevisionException('Training type {} not supported'.format(model['training_type']))
+
     @property
     @lru_cache()
     def hyperparameters(self):
@@ -73,17 +105,6 @@ class Model(ApiResource):
             endpoint='/models/{}/hyperparameters/download'.format(self._id),
             method=requests.get)
         return (json.loads(response.content.decode('utf-8')))
-
-    # def _get_uc_info(self):
-    #     """ Return the corresponding usecase summary.
-    #
-    #     Returns:
-    #         dict: Usecase summary
-    #     """
-    #     response = client.request(endpoint='/usecases/{}/versions/{}'.format(self.uc_id, self.uc_version),
-    #                               method=requests.get)
-    #
-    #     return json.loads(response.content.decode('utf-8'))
 
     def wait_for_prediction(self, prediction_id):
         """ Wait for a specific prediction to finish.

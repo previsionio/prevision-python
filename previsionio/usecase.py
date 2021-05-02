@@ -386,8 +386,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         self.training_config = TrainingConfig(profile=usecase_params.get('profile'),
                                               fe_selected_list=usecase_params.get(
                                                   'features_engineering_selected_list'),
-                                              normal_models=usecase_params.get('normal_models'),
-                                              lite_models=usecase_params.get('lite_models'),
+                                              advanced_models=usecase_params.get('normal_models'),
+                                              normal_models=usecase_params.get('lite_models'),
                                               simple_models=usecase_params.get('simple_models'))
 
         self._id = usecase_info.get('_id')
@@ -573,7 +573,6 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
             data = dict(name=name, dataset_id=csv_id, folder_dataset_id=folder_id, **kwargs)
         else:
             raise PrevisionException('invalid data type: {}'.format(data_type))
-
         endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', data_type, type_problem)
         start = client.request(endpoint, requests.post, data=data)
         if start.status_code != 200:
@@ -586,7 +585,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
         pio.client.event_manager.wait_for_event(usecase.resource_id,
                                                 cls.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running'),
+                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'done',
+                                                            [('state', 'failed')]),
                                                 specific_url=events_url)
         return usecase
 

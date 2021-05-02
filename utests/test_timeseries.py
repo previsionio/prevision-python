@@ -34,13 +34,9 @@ def setup_module():
 
 def teardown_module(module):
     remove_datasets(DATA_PATH)
-    for ds in pio.Dataset.list(PROJECT_ID):
-        if TESTING_ID in ds.name:
-            ds.delete()
-    for uc_dict in pio.Supervised.list():
-        uc = pio.Supervised.from_id(uc_dict['usecase_id'])
-        if TESTING_ID in uc.name:
-            uc.delete()
+    project = pio.Project.from_id(PROJECT_ID)
+    project.delete()
+
 
 
 def get_data(path, groups):
@@ -54,7 +50,6 @@ def get_data(path, groups):
     else:
         data = pd.concat([pd.read_csv(path).assign(group=i) for i in range(groups)])
         group_list = ['group']
-
     return data, group_list
 
 
@@ -63,12 +58,12 @@ def train_model(uc_name, groups=1, time_window=pio.TimeWindow(-90, -30, 1, 15)):
     data, group_list = get_data(path, groups)
     fname = '{}_{}.csv'.format(uc_name, '-'.join(group_list))
     data.to_csv(fname, index=False)
-    dataset = pio.Dataset.new(PROJECT_ID,
-                              name=uc_name,
-                              dataframe=data)
+    project = pio.Project.from_id(PROJECT_ID)
+    dataset = project.create_dataset(name=uc_name,
+                                     dataframe=data)
 
-    uc_config = pio.TrainingConfig(normal_models=[pio.Model.LinReg],
-                                   lite_models=[pio.Model.LinReg],
+    uc_config = pio.TrainingConfig(advanced_models=[pio.AdvancedModel.LinReg],
+                                   normal_models=[pio.NormalModel.LinReg],
                                    features=[pio.Feature.Counts],
                                    profile=pio.Profile.Quick)
 
@@ -77,26 +72,22 @@ def train_model(uc_name, groups=1, time_window=pio.TimeWindow(-90, -30, 1, 15)):
                                   # group_columns=group_list
                                   )
 
-    uc = pio.TimeSeries.fit(PROJECT_ID,
-                            uc_name,
-                            dataset,
-                            time_window=time_window,
-                            training_config=uc_config,
-                            column_config=col_config)
+    uc = project.fit_timeseries_regression(uc_name,
+                                           dataset,
+                                           time_window=time_window,
+                                           training_config=uc_config,
+                                           column_config=col_config)
     return uc
 
 
 windows = [
-    # dws, dwe, fws, fwe
     (-10, -5, 3, 4),
-    (-90, -30, 1, 15),
-    (-17, -15, 1, 3),
+    (-90, -30, 1, 15)
 ]
 
 wrong_windows = [
     (-10, -90, 1, 15),
-    (90, -15, 1, 15),
-    (-90, -10, -1, 15)
+    (90, -15, 1, 15)
 ]
 
 
@@ -107,11 +98,19 @@ wrong_windows = [
 def test_ts_groups(groups):
     group_name = '{}_{}'.format(str(groups[0]), str(groups[1])) if isinstance(groups, tuple) else groups
     uc_name_asked = 'ts_{}grp_{}'.format(group_name, TESTING_ID)
-    uc = train_model(uc_name_asked, groups)
-    uc.wait_until(lambda usecase: len(usecase) > 0)
-    uc.stop()
-    usecases = pio.Supervised.list()
-    assert uc.id in [u['usecase_id'] for u in usecases]
+    usecase_version = train_model(uc_name_asked, groups)
+    usecase_version.wait_until(lambda usecase: len(usecase) > 0)
+    usecase_version.stop()
+    usecase = usecase_version.usecase
+    project = pio.Project.from_id(PROJECT_ID)
+    usecases = project.list_usecases()
+    assert usecase.id in [uc.id for uc in usecases]
+
+    path = os.path.join(DATA_PATH, 'ts.csv')
+    test_data, group_list = get_data(path, groups)
+    test_data.loc[test_data['time'] > '2018-01-01', 'target'] = np.nan
+    preds = usecase_version.predict(test_data, confidence=False)
+    preds = usecase_version.predict(test_data, confidence=True)
 
 
 def time_window_test(dws, dwe, fws, fwe):
@@ -131,7 +130,8 @@ def time_window_test(dws, dwe, fws, fwe):
                          ids=['-'.join(str(s) for s in w) for w in windows])
 def test_time_window(dws, dwe, fws, fwe):
     uc_name_returned = time_window_test(dws, dwe, fws, fwe)
-    usecases = [uc['name'] for uc in pio.Supervised.list()]
+    project = pio.Project.from_id(PROJECT_ID)
+    usecases = [uc.name for uc in project.list_usecases()]
     assert uc_name_returned in usecases
 
 
@@ -151,33 +151,9 @@ def setup_ts_class(request):
     groups = request.param
     group_name = '{}_{}'.format(str(groups[0]), str(groups[1])) if isinstance(groups, tuple) else groups
     uc_name = 'ts_{}grp_{}'.format(group_name, TESTING_ID)
-    uc = train_model(uc_name, groups)
+    usecase_version = train_model(uc_name, groups)
 
-    uc.wait_until(lambda usecase: len(usecase) > 0)
-    uc.stop()
+    usecase_version.wait_until(lambda usecase: len(usecase) > 0)
+    usecase_version.stop()
     yield groups, uc
-    uc.delete()
-
-
-options_parameters = ('options', [
-    {'confidence': True, 'use_best_single': True},
-    {'confidence': True, 'use_best_single': False},
-    {'confidence': False, 'use_best_single': True},
-    {'confidence': False, 'use_best_single': False}
-])
-
-predict_test_ids = [('confidence-' if opt['confidence'] else 'normal-') +
-                    ('best_single' if opt['use_best_single'] else 'best_model')
-                    for opt in options_parameters[1]]
-
-
-class TestPredict:
-    @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-    def test_predict(self, setup_ts_class, options):
-        groups, uc = setup_ts_class
-
-        path = os.path.join(DATA_PATH, 'ts.csv')
-        test_data, group_list = get_data(path, groups)
-        test_data.loc[test_data['time'] > '2018-01-01', 'target'] = np.nan
-        preds = uc.predict(test_data, **options)
-        assert groups * len(preds) == (test_data['time'] >= '2018-01-01').sum()
+    usecase_version.usecase.delete()

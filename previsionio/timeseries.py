@@ -2,7 +2,7 @@
 from __future__ import print_function
 from . import TrainingConfig
 from .usecase_config import UsecaseConfig, ColumnConfig
-from .usecase import BaseUsecaseVersion
+from .usecase import ClassicUsecaseVersion
 from .metrics import Regression
 from .model import RegressionModel
 from .dataset import Dataset
@@ -40,9 +40,11 @@ class TimeWindow(UsecaseConfig):
         if derivation_start > 0 or derivation_end > 0:
             raise TimeWindowException('derivation window bounds must be negative')
 
-        if forecast_start < 0 or forecast_start < 0:
+        if forecast_start < 0 or forecast_end < 0:
             raise TimeWindowException('forecast window bounds must be positive')
 
+        if not(derivation_end <= ((2 *forecast_start) - forecast_end)):
+            raise TimeWindowException('derivation_end must be smaller than (2 * forecast_start) - forecast_end')
         # Not valid anymore :
         # if not abs(derivation_end) >= (forecast_end - forecast_start):
         #     raise TimeWindowException('end of derivation window must be smaller than end of forecast window')
@@ -53,7 +55,7 @@ class TimeWindow(UsecaseConfig):
         self.forecast_end = forecast_end
 
 
-class TimeSeries(BaseUsecaseVersion):
+class TimeSeries(ClassicUsecaseVersion):
     """
     A TimeSeries usecase.
     """
@@ -64,11 +66,17 @@ class TimeSeries(BaseUsecaseVersion):
 
     @classmethod
     def fit(cls, project_id: str, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow,
-            metric: Regression = None, training_config: TrainingConfig = TrainingConfig()):
+            metric: Regression = None, holdout_dataset=None, training_config: TrainingConfig = TrainingConfig()):
         config_args = training_config.to_kwargs()
         column_args = column_config.to_kwargs()
         time_window_args = time_window.to_kwargs()
         training_args = dict(config_args + column_args + time_window_args)
+
+        if holdout_dataset:
+            if isinstance(holdout_dataset, str):
+                training_args['holdout_dataset_id'] = holdout_dataset
+            else:
+                training_args['holdout_dataset_id'] = holdout_dataset.id
 
         if not metric:
             metric = cls.default_metric

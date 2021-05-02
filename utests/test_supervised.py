@@ -13,8 +13,8 @@ PROJECT_ID = ""
 pio.config.zip_files = False
 pio.config.default_timeout = 1000
 
-uc_config = pio.TrainingConfig(normal_models=[pio.Model.LinReg],
-                               lite_models=[pio.Model.LinReg],
+uc_config = pio.TrainingConfig(advanced_models=[pio.AdvancedModel.LinReg],
+                               normal_models=[pio.NormalModel.LinReg],
                                simple_models=[pio.SimpleModel.DecisionTree],
                                features=[pio.Feature.Counts],
                                profile=pio.Profile.Quick)
@@ -131,63 +131,6 @@ class TestPredict:
         data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
         pred = uc.predict_single(data.iloc[0].to_dict(), **options)
         assert pred is not None
-#
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_predict_unit(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#
-#         data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
-#         pred = uc.predict_single(**options, **data.iloc[0].to_dict())
-#         assert pred is not None
-#
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_sk_predict(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#
-#         data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
-#         preds = uc.predict(data, **options)
-#         assert len(preds) == len(data)
-#         if options['confidence']:
-#             if type_problem == 'regression':
-#                 conf_cols = ['target_quantile={}'.format(q) for q in [1, 5, 10, 25, 50, 75, 95, 99]]
-#                 for q in conf_cols:
-#                     assert any(q in col for col in preds)
-#             elif type_problem == 'classification':
-#                 assert 'confidence' in preds
-#                 assert 'credibility' in preds
-#
-#     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     def test_proba_predict(self, setup_usecase_class, options):
-#         type_problem, uc = setup_usecase_class
-#         if type_problem == 'classification':
-#             data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
-#             preds = uc.predict_proba(data, **options)
-#             assert len(preds) == len(data)
-#             if options['confidence']:
-#                 assert 'confidence' in preds
-#                 assert 'credibility' in preds
-#         else:
-#             print('\nInvalid usecase type for predict_proba: "{}"'.format(type_problem))
-#
-#     # @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-#     # @pytest.mark.xfail(reason='usecase_info keys change during training')
-#     # def test_get_usecase_params(self, setup_usecase_class, options):
-#     #     uc_info_keys = {'GROUP_column', 'algorithms', 'allClusters', 'avg', 'bar', 'bestModelID', 'clusterStats',
-#     #                     'clusterfe', 'cvFileID', 'datasetStats', 'dataset_stats_id', 'datasets_holdout', 'email',
-#     #                     'fe_length', 'featureImportance', 'global_end_dw', 'global_end_fw', 'global_start_dw',
-#     #                     'global_start_fw', 'hopts_length', 'hyperParameters', 'image_training', 'labels', 'losses',
-#     #                     'metric', 'models', 'nbColumns', 'nbFeatures', 'nbRows', 'nmodels', 'owner', 'pause',
-#     #                     'predsTargets', 'requestValues', 'runningExplain', 'runningPrediction', 'state', 'stdev',
-#     #                     'task', 'topicModeling', 'totalPreds', 'train_length', 'tsne', 'types', 'uploadDate',
-#     #                     'use_case', 'use_case_description'}
-#     #
-#     #     type_problem, uc = setup_usecase_class
-#     #     uc.update_uc_info()
-#     #
-#     #     for k in uc.usecase_info.keys():
-#     #         assert k in uc_info_keys
-#
-#
 
 
 class TestInfos:
@@ -224,3 +167,14 @@ class TestInfos:
         assert model.usecase_version_id == uc._id
         # test print info
         uc.print_info()
+        assert isinstance(uc.models, list)
+        model = uc.models[0]
+        model_copy = pio.Model.from_id(model._id)
+        assert isinstance(model.hyperparameters, dict)
+        assert model_copy.hyperparameters == model.hyperparameters
+
+        assert isinstance(model.cross_validation, pd.DataFrame)
+        assert isinstance(model.chart(), dict)
+        if type_problem == 'classification':
+            assert model_copy.optimal_threshold == model.optimal_threshold
+            assert isinstance(model.get_dynamic_performances(), dict)
