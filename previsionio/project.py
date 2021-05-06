@@ -319,7 +319,10 @@ class Project(ApiResource, UniqueResourceMixin):
                                   training_config=TrainingConfig()):
         return TimeSeries.fit(self._id, name, dataset, column_config, time_window, metric=metric, holdout_dataset=holdout_dataset,
                               training_config=training_config)
-
+    def fit_text_similarity(self, name, dataset, description_column_config, metric=None, top_k=None, lang='auto',
+                            queries_dataset=None, queries_column_config=None, models_parameters=ListModelsParameters()):
+        return TextSimilarity.fit(self._id, name, dataset, description_column_config, metric=metric, top_k=top_k, lang=lang,
+                                  queries_dataset=queries_dataset, queries_column_config=queries_column_config, models_parameters=models_parameters)
     def list_usecases(self, all=all):
         return Usecase.list(self._id, all=all)
 
