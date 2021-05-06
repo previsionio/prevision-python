@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+from typing import Union
 from previsionio import metrics
 from previsionio.usecase_config import ColumnConfig
 import requests
@@ -58,7 +59,7 @@ class Project(ApiResource, UniqueResourceMixin):
         self.dataset_count = dataset_count
 
     @classmethod
-    def list(cls, all=False):
+    def list(cls, all: bool = False):
         """ List all the available project in the current active [client] workspace.
 
         Args:
@@ -73,7 +74,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return [cls(**source_data) for source_data in resources]
 
     @classmethod
-    def from_id(cls, _id):
+    def from_id(cls, _id: str):
         """Get a project from the instance by its unique id.
 
         Args:
@@ -151,12 +152,10 @@ class Project(ApiResource, UniqueResourceMixin):
         return project_info
 
     @classmethod
-    def new(cls, name, description=None, color=None):
+    def new(cls, name: str, description: str = None, color: str = None) -> 'Project':
         """ Create a new datasource object on the platform.
 
         Args:
-
-            name (str): Name of the datasource
             name (str): Name of the project
             description(str, optional): Description of the project
             color (str, optional): Color of the project
@@ -176,10 +175,14 @@ class Project(ApiResource, UniqueResourceMixin):
             'color': color
         }
 
-        resp = client.request('/{}'.format(cls.resource),
+        url = '/{}'.format(cls.resource)
+        resp = client.request(url,
                               data=data,
                               method=requests.post)
 
+        if resp.status_code != 200:
+            message = "Error {} reaching url: {} with data: {}".format(resp.status_code, cls.resource, data)
+            raise PrevisionException(message)
         json = parse_json(resp)
 
         if '_id' not in json:
@@ -288,26 +291,25 @@ class Project(ApiResource, UniqueResourceMixin):
     def list_datasource(self, all=all):
         return DataSource.list(self._id, all=all)
 
-    def fit_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
+    def fit_regression(self, name: str, dataset: Union[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
                        training_config=TrainingConfig(), **kwargs):
         return Regression.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
                               training_config=training_config, **kwargs)
 
-    def fit_classification(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: str = None, holdout_dataset=None,
+    def fit_classification(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.Classification = None, holdout_dataset=None,
                            training_config=TrainingConfig(), **kwargs):
         return Classification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
                                   training_config=training_config, **kwargs)
 
-    def fit_multiclassification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
+    def fit_multiclassification(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.MultiClassification = None, holdout_dataset=None,
                                 training_config=TrainingConfig(), **kwargs):
         return MultiClassification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
                                        training_config=training_config, **kwargs)
 
-
-    def fit_image_regression(self, name, dataset, column_config, metric=None, holdout_dataset=None,
-                                training_config=TrainingConfig(), type_problem=None, **kwargs):
+    def fit_image_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.Regression = None, holdout_dataset=None,
+                             training_config=TrainingConfig(), **kwargs):
         return RegressionImages.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                                       training_config=training_config, type_problem=type_problem, **kwargs)
+                                    training_config=training_config, **kwargs)
 
     def fit_image_classification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
                                  training_config=TrainingConfig(), type_problem=None, **kwargs):
@@ -323,12 +325,15 @@ class Project(ApiResource, UniqueResourceMixin):
                                   training_config=TrainingConfig()):
         return TimeSeries.fit(self._id, name, dataset, column_config, time_window, metric=metric, holdout_dataset=holdout_dataset,
                               training_config=training_config)
+
     def fit_text_similarity(self, name, dataset, description_column_config, metric=None, top_k=None, lang='auto',
                             queries_dataset=None, queries_column_config=None, models_parameters=ListModelsParameters()):
         return TextSimilarity.fit(self._id, name, dataset, description_column_config, metric=metric, top_k=top_k, lang=lang,
                                   queries_dataset=queries_dataset, queries_column_config=queries_column_config, models_parameters=models_parameters)
+
     def list_usecases(self, all=all):
         return Usecase.list(self._id, all=all)
+
 
 connectors_names = {
     'SQL': "create_sql_connector",

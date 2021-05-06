@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+from typing import Tuple, Union
+from previsionio.usecase_config import ColumnConfig
+from previsionio.dataset import Dataset, DatasetImages
 import pandas as pd
 from . import TrainingConfig
 from . import metrics
@@ -21,7 +24,6 @@ class Supervised(ClassicUsecaseVersion):
     """ A supervised usecase. """
 
     start_command = 'focus'
-    default_metric = 'NA'
     data_type = 'tabular'
 
     # model_class = Model
@@ -81,8 +83,8 @@ class Supervised(ClassicUsecaseVersion):
         return instance
 
     @classmethod
-    def fit(cls, project_id, name, dataset, column_config, metric=None, holdout_dataset=None,
-            training_config=TrainingConfig(), **kwargs):
+    def fit(cls, project_id: str, name: str, dataset: Union[Dataset, DatasetImages], column_config: ColumnConfig, metric, holdout_dataset: Dataset = None,
+            training_config: TrainingConfig = TrainingConfig(), **kwargs):
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
 
@@ -99,7 +101,6 @@ class Supervised(ClassicUsecaseVersion):
             training_config (:class:`.TrainingConfig`): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
-            type_problem (str, optional): Specific problem type to train (default: ``None``)
 
         Returns:
             :class:`.Supervised`: Newly created supervised usecase object

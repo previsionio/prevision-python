@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import json
-from typing import List
+from typing import Dict, List
 import pandas as pd
 import requests
 import time
@@ -30,9 +30,9 @@ class Type_problem(Enum):
     """Prediction using classification approach, for when the output variable is a category"""
     multiclassification = "multiclassification"
     """Prediction using classification approach, for when the output variable many categories"""
-    object_detection="object-detection"
+    object_detection = "object-detection"
     """Detection of pattern in images"""
-    
+
 
 class BaseUsecaseVersion(ApiResource):
 
@@ -245,7 +245,7 @@ class BaseUsecaseVersion(ApiResource):
     #                               method=requests.delete)
     #     return (json.loads(response.content.decode('utf-8')))
 
-    def wait_until(self, condition, raise_on_error=True, timeout=config.default_timeout):
+    def wait_until(self, condition, raise_on_error: bool = True, timeout: float = config.default_timeout):
         """ Wait until condition is fulfilled, then break.
 
         Args:
@@ -279,7 +279,7 @@ class BaseUsecaseVersion(ApiResource):
 
             time.sleep(config.scheduler_refresh_rate)
 
-    def get_holdout_predictions(self, full=False):
+    def get_holdout_predictions(self, full: bool = False):
         """
         Retrieves the list of holdout predictions for the current usecase from client workspace
         (with the full predictions object if necessary)
@@ -301,7 +301,7 @@ class BaseUsecaseVersion(ApiResource):
                 preds_dict[_id] = pred
         return preds_dict
 
-    def get_predictions(self, full=False):
+    def get_predictions(self, full: bool = False):
         """
         Retrieves the list of predictions for the current usecase from client workspace
         (with the full predictions object if necessary)
@@ -322,7 +322,7 @@ class BaseUsecaseVersion(ApiResource):
                 preds_dict[_id] = pred
         return preds_dict
 
-    def delete_prediction(self, prediction_id):
+    def delete_prediction(self, prediction_id: str):
         """ Delete a prediction in the list for the current usecase from the actual [client] workspace.
 
         Args:
@@ -347,7 +347,7 @@ class BaseUsecaseVersion(ApiResource):
         return (json.loads(response.content.decode('utf-8')))
 
     @property
-    def score(self):
+    def score(self) -> float:
         """ Get the current score of the usecase (i.e. the score of the model that is
         currently considered the best performance-wise for this usecase).
 
@@ -367,13 +367,13 @@ class BaseUsecaseVersion(ApiResource):
     def _save_json(self):
         raise NotImplementedError
 
-    def save(self, directory='.'):
+    def save(self, directory: str = '.'):
         version_dict = self._save_json()
         with open(os.path.join(directory, self.name) + '.pio', 'w') as f:
             json.dump(version_dict, f)
 
     @classmethod
-    def load(cls, pio_file):
+    def load(cls, pio_file: str):
         with open(pio_file, 'r') as f:
             mdl = json.load(f)
         uc = cls.from_id(mdl['_id'])
@@ -488,7 +488,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                   method=requests.get)
         return (json.loads(response.content.decode('utf-8')))
 
-    def get_feature_info(self, feature_name):
+    def get_feature_info(self, feature_name: str) -> Dict:
         """ Return some information about the given feature, such as:
 
         - name: the name of the feature as it was given in the ``feature_name`` parameter
@@ -535,7 +535,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         return {k: result[k] for k in keep_list}
 
     @property
-    def drop_list(self):
+    def drop_list(self) -> List[str]:
         """ Get the list of drop columns in the usecase.
 
         Returns:
@@ -544,7 +544,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         return self._status['usecase_version_params'].get('drop_list', [])
 
     @property
-    def fe_selected_list(self):
+    def fe_selected_list(self) -> List[str]:
         """ Get the list of selected feature engineering modules in the usecase.
 
         Returns:
@@ -602,7 +602,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         pio.client.event_manager.wait_for_event(usecase.resource_id,
                                                 cls.resource,
                                                 EventTuple('USECASE_VERSION_UPDATE', 'state', 'done',
-                                                            [('state', 'failed')]),
+                                                           [('state', 'failed')]),
                                                 specific_url=events_url)
         return usecase
 
