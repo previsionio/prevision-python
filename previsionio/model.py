@@ -31,7 +31,7 @@ class Model(ApiResource):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id, usecase_version_id, project_id, model_name=None, **other_params):
+    def __init__(self, _id, usecase_version_id, project_id, model_name=None, deployable=False, **other_params):
         """ Instantiate a new :class:`.Model` object to manipulate a model resource on the platform. """
         super().__init__(_id=_id)
         self._id = _id
@@ -39,6 +39,7 @@ class Model(ApiResource):
         self.project_id = project_id
         self.name = model_name
         self.tags = {}
+        self.deployable = deployable
 
         for k, v in other_params.items():
             self.__setattr__(k, v)
@@ -236,6 +237,26 @@ class Model(ApiResource):
         self.wait_for_prediction(predict_id)
 
         return self._get_predictions(predict_id)
+
+    def enable_deploy(self):
+        data = {"deploy": True}
+        response = client.request('/models/{}'.format(self._id),
+                                  requests.put, data=data)
+        if response.status_code != 200:
+            raise PrevisionException('Cannot enable deploy with error: '.format(response.content['message']))
+        self.deployable = True
+        res = parse_json(response)
+        return res
+
+    def disable_deploy(self):
+        data = {"deploy": False}
+        response = client.request('/models/{}'.format(self._id),
+                                  requests.put, data=data)
+        if response.status_code != 200:
+            raise PrevisionException('Cannot disable deploy with error: '.format(response.content['message']))
+        self.deployable = False
+        res = parse_json(response)
+        return res
 
     def deploy(self) -> DeployedModel:
         """ (Not Implemented yet) Deploy the model as a REST API app.
