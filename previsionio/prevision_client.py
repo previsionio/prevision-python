@@ -98,6 +98,7 @@ class EventManager:
 
             try:
                 for msg in sse.iter_content(chunk_size=None):
+
                     event_logger.debug('url: {} -- data: {}'.format(self.event_endpoint, msg))
                     msg = msg.decode()
                     # SSE comments can start with ":" character
@@ -105,10 +106,12 @@ class EventManager:
                         event_logger.debug('sse comment{}'.format(msg))
                         continue
                     try:
-                        if len(msg.split('\n')) >= 3:
-                            _, event_name, event_data, *rest = msg.split('\n')
-                            event_name = event_name.replace('event: ', '')
-                            event_data = json.loads(event_data.replace('data: ', '').strip())
+                        if len(msg.split('\n')) < 2:
+                            event_logger.debug('cannot parse event {}'.format(msg))
+                            continue
+                        _, event_name, event_data, *rest = msg.split('\n')
+                        event_name = event_name.replace('event: ', '')
+                        event_data = json.loads(event_data.replace('data: ', '').strip())
                     except json.JSONDecodeError as e:
                         event_logger.warning('failed to parse json: "{}" -- error: {}'.format(msg, e.__repr__()))
                     except requests.exceptions.ChunkedEncodingError:
