@@ -30,7 +30,9 @@ class Type_problem(Enum):
     """Prediction using classification approach, for when the output variable is a category"""
     multiclassification = "multiclassification"
     """Prediction using classification approach, for when the output variable many categories"""
-
+    object_detection="object-detection"
+    """Detection of pattern in images"""
+    
 
 class BaseUsecaseVersion(ApiResource):
 
