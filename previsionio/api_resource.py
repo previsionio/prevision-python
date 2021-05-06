@@ -20,7 +20,7 @@ class ApiResourceType(Enum):
 
 class UniqueResourceMixin:
     @classmethod
-    def from_name(cls, name):
+    def from_name(cls, name: str):
         resources = cls.list()
         resources_match = [c for c in resources if c.name == name]
         if resources_match:
@@ -151,7 +151,7 @@ class ApiResource:
             raise PrevisionException('[Delete {}] Error'.format(self.resource))
 
     @classmethod
-    def from_id(cls, _id=None, specific_url=None):
+    def from_id(cls, _id: str = None, specific_url: str = None):
         """Get a resource from the platform by its unique id.
         You must provide either an ``_id`` or a ``specific_url``.
 
@@ -190,7 +190,7 @@ class ApiResource:
         return cls(**resp_json)
 
     @classmethod
-    def list(cls, all=True, project_id=None):
+    def list(cls, all: bool = True, project_id: str = None):
         """List all available instances of this resource type on the platform.
 
         Args:
