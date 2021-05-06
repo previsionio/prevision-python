@@ -16,7 +16,7 @@ from .connector import Connector, SQLConnector, FTPConnector, \
 from .supervised import Regression, Classification, MultiClassification, \
     RegressionImages, ClassificationImages, MultiClassificationImages
 from .timeseries import TimeSeries
-from .text_similarity import TextSimilarity
+from .text_similarity import ListModelsParameters, TextSimilarity
 from .usecase import Usecase
 
 
