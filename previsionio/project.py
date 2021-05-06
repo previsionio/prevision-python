@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+from previsionio import metrics
+from previsionio.usecase_config import ColumnConfig
 import requests
 
 from . import client
@@ -16,6 +18,7 @@ from .supervised import Regression, Classification, MultiClassification, \
 from .timeseries import TimeSeries
 from .text_similarity import TextSimilarity
 from .usecase import Usecase
+
 
 
 class Project(ApiResource, UniqueResourceMixin):
@@ -285,20 +288,21 @@ class Project(ApiResource, UniqueResourceMixin):
     def list_datasource(self, all=all):
         return DataSource.list(self._id, all=all)
 
-    def fit_regression(self, name, dataset, column_config, metric=None, holdout_dataset=None,
-                       training_config=TrainingConfig(), type_problem=None, **kwargs):
+    def fit_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
+                       training_config=TrainingConfig(), **kwargs):
         return Regression.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                              training_config=training_config, type_problem=type_problem, **kwargs)
+                              training_config=training_config, **kwargs)
 
-    def fit_classification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
-                           training_config=TrainingConfig(), type_problem=None, **kwargs):
+    def fit_classification(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: str = None, holdout_dataset=None,
+                           training_config=TrainingConfig(), **kwargs):
         return Classification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                                  training_config=training_config, type_problem=type_problem, **kwargs)
+                                  training_config=training_config, **kwargs)
 
     def fit_multiclassification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
-                                training_config=TrainingConfig(), type_problem=None, **kwargs):
+                                training_config=TrainingConfig(), **kwargs):
         return MultiClassification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                                       training_config=training_config, type_problem=type_problem, **kwargs)
+                                       training_config=training_config, **kwargs)
+
 
     def fit_image_regression(self, name, dataset, column_config, metric=None, holdout_dataset=None,
                                 training_config=TrainingConfig(), type_problem=None, **kwargs):

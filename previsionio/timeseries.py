@@ -2,7 +2,7 @@
 from __future__ import print_function
 from . import TrainingConfig
 from .usecase_config import UsecaseConfig, ColumnConfig
-from .usecase import ClassicUsecaseVersion
+from .usecase import ClassicUsecaseVersion, Type_problem
 from .metrics import Regression
 from .model import RegressionModel
 from .dataset import Dataset
@@ -59,7 +59,7 @@ class TimeSeries(ClassicUsecaseVersion):
     """
     A TimeSeries usecase.
     """
-    type_problem = 'regression'
+    type_problem = Type_problem.regression
     default_metric = Regression.RMSE
     data_type = 'timeseries'
     model_class = RegressionModel
