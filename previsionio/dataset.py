@@ -75,7 +75,7 @@ class Dataset(ApiResource):
     data = property(to_pandas)
 
     @classmethod
-    def list(cls, project_id, all=all):
+    def list(cls, project_id, all: bool= True):
         """ List all the available datasets in the current active [client] workspace.
 
         .. warning::

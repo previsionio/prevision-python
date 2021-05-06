@@ -21,7 +21,6 @@ from .text_similarity import ListModelsParameters, TextSimilarity
 from .usecase import Usecase
 
 
-
 class Project(ApiResource, UniqueResourceMixin):
 
     """ A Project
@@ -236,7 +235,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return Dataset._new(self._id, name, datasource=datasource, file_name=file_name, dataframe=dataframe)
 
-    def list_datasets(self, all=all):
+    def list_datasets(self, all: bool = True):
         """ List all the available datasets in the current active [client] workspace.
 
         .. warning::
