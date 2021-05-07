@@ -1,5 +1,4 @@
 import operator
-from .prevision_client import Client
 from typing import Dict, List
 import requests
 import uuid
@@ -81,7 +80,7 @@ def is_null_value(value) -> bool:
     return is_nan or is_null
 
 
-def get_all_results(client: Client, endpoint: str, method) -> List[Dict]:
+def get_all_results(client, endpoint: str, method) -> List[Dict]:
     resources = []
     batch: requests.Response = client.request(endpoint, method=method)
     json = parse_json(batch)
