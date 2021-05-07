@@ -2,6 +2,8 @@
 from __future__ import print_function
 from enum import Enum
 from typing import Dict, Tuple, Union
+
+from requests.models import Response
 from previsionio import metrics
 from previsionio.usecase_config import ColumnConfig
 import requests
@@ -50,13 +52,13 @@ class Project(ApiResource, UniqueResourceMixin):
         _id (str): Unique id of the project
         name (str): Name of the project
         description(str, optional): Description of the project
-        color (str, optional): Color of the project
+        color (ProjectColor, optional): Color of the project
 
     """
 
     resource = 'projects'
 
-    def __init__(self, _id: str, name: str, description: str = None, color: str = None, created_by: str = None,
+    def __init__(self, _id: str, name: str, description: str = None, color: ProjectColor = None, created_by: str = None,
                  admins=[], contributors=[], viewers=[], pipelines_count: int = 0, usecases_count: int = 0,
                  dataset_count: int = 0, **kwargs):
         """ Instantiate a new :class:`.Project` object to manipulate a project resource
@@ -226,7 +228,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return cls(json['_id'], name, description, color, json['created_by'],
                    json['admins'], json['contributors'], json['pipelines_count'])
 
-    def delete(self):
+    def delete(self) -> Response:
         """Delete a project from the actual [client] workspace.
 
         Raises:
@@ -299,20 +301,20 @@ class Project(ApiResource, UniqueResourceMixin):
     def create_ftp_connector(self, name: str, host: str, port: int = 21, username: str = '', password: str = ''):
         return FTPConnector._new(self._id, name, host, port, 'FTP', username=username, password=password)
 
-    def create_sftp_connector(self, name, host, port=23, username='', password=''):
+    def create_sftp_connector(self, name: str, host: str, port: int=23, username: str='', password: str=''):
         return SFTPConnector._new(self._id, name, host, port, 'SFTP', username=username, password=password)
 
-    def create_s3_connector(self, name, host='', port='', username='', password=''):
+    def create_s3_connector(self, name: str, host: str='', port:int=None, username: str='', password: str=''):
         return S3Connector._new(self._id, name, host, port, 'S3', username=username, password=password)
 
-    def create_hive_connector(self, name, host, port=10000, username='', password=''):
+    def create_hive_connector(self, name: str, host: str, port: int=10000, username: str='', password: str=''):
         return HiveConnector._new(self._id, name, host, port, 'HIVE', username=username, password=password)
 
-    def create_gcp_connector(self, name, host='', port='', username='', password='', googleCredentials=''):
+    def create_gcp_connector(self, name: str, host: str='', port=None, username: str='', password: str='', googleCredentials=''):
         return GCPConnector._new(self._id, name, host, port, 'GCP', username=username, password=password,
                                  googleCredentials=googleCredentials)
 
-    def list_connectors(self, all=all):
+    def list_connectors(self, all: bool = True):
         return Connector.list(self._id, all=all)
 
     def create_datasource(self, connector, name, path=None, database=None,

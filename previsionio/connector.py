@@ -1,3 +1,4 @@
+from typing import Union
 import requests
 from . import client
 from .utils import parse_json
@@ -23,8 +24,8 @@ class Connector(ApiResource, UniqueResourceMixin):
     resource = 'connectors'
     conn_type = 'connector'
 
-    def __init__(self, _id, name, host=None, port=None, type=None,
-                 username='', password='', googleCredentials=None, **kwargs):
+    def __init__(self, _id: str, name: str, host: str=None, port: int=None, type: str=None,
+                 username: str='', password: str='', googleCredentials=None, **kwargs):
         super().__init__(_id=_id, name=name, host=host, port=port, conn_type=type,
                          username=username, password=password, googleCredentials=googleCredentials)
         self._id = _id
@@ -39,7 +40,7 @@ class Connector(ApiResource, UniqueResourceMixin):
         self.other_params = kwargs
 
     @classmethod
-    def list(cls, project_id, all=False):
+    def list(cls, project_id: str, all: bool = False):
         """ List all the available connectors in the current active [client] workspace.
 
         .. warning::
@@ -61,7 +62,7 @@ class Connector(ApiResource, UniqueResourceMixin):
                 if conn_data['type'] == cls.conn_type or cls.conn_type == 'connector']
 
     @classmethod
-    def _new(cls, project_id, name, host, port, conn_type, username=None, password=None, googleCredentials=None):
+    def _new(cls, project_id: str, name: str, host: str, port: Union[int, None] , conn_type: str, username: str = None, password: str = None, googleCredentials = None):
         """ Create a new connector object on the platform.
 
         Args:
