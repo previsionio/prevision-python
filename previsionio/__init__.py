@@ -38,7 +38,7 @@ class Config:
         self.request_retries = 3
         self.request_retry_time = 10
         self.scheduler_refresh_rate = 10
-        self.default_timeout = 10800.
+        self.default_timeout = 120.
 
 
 config = Config()

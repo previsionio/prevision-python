@@ -59,5 +59,5 @@ def test_run_image_embeddings():
     usecase_version = project.fit_image_multiclassification(uc_name, dataset=datasets, column_config=col_config,
                                                metric=pio.metrics.MultiClassification.error_rate,
                                                training_config=uc_config)
-    usecase_version.wait_until(lambda usecase: len(usecase) > 0)
+    usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
     usecase_version.usecase.delete()

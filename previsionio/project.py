@@ -351,12 +351,12 @@ class Project(ApiResource, UniqueResourceMixin):
                                         training_config=training_config, **kwargs)
 
     def fit_image_multiclassification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.MultiClassification = None, holdout_dataset=None,
-                                      training_config=TrainingConfig(), **kwargs):
+                                      training_config=TrainingConfig(), **kwargs) -> MultiClassificationImages:
         return MultiClassificationImages.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
                                              training_config=training_config, **kwargs)
 
     def fit_timeseries_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow, metric: metrics.Regression = None, holdout_dataset=None,
-                                  training_config=TrainingConfig()):
+                                  training_config=TrainingConfig()) -> TimeSeries:
         return TimeSeries.fit(self._id, name, dataset, column_config, time_window, metric=metric, holdout_dataset=holdout_dataset,
                               training_config=training_config)
 

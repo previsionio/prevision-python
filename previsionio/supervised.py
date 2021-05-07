@@ -25,15 +25,16 @@ class Supervised(ClassicUsecaseVersion):
 
     start_command = 'focus'
     data_type = DataType.Tabular
+    metric_type = metrics.Enum
     default_metric = metrics.Enum
 
     # model_class = Model
 
     def __init__(self, **usecase_info):
         if usecase_info.get('holdout_dataset_id'):
-            self.holdout_dataset = usecase_info.get('holdout_dataset_id')
+            self.holdout_dataset_id = usecase_info.get('holdout_dataset_id')
         else:
-            self.holdout_dataset = None
+            self.holdout_dataset_id = None
 
         super().__init__(**usecase_info)
         self.model_class = MODEL_CLASS_DICT.get(self.training_type, Model)
@@ -134,29 +135,63 @@ class Supervised(ClassicUsecaseVersion):
                                   metric=metric if isinstance(metric, str) else metric.value,
                                   **training_args)
 
-    def new_version(self, **fit_params):
+    def new_version(self, name: str, dataset: Union[Dataset, Tuple[Dataset, DatasetImages]] = None, column_config: ColumnConfig = None, metric: metrics.Enum = None, holdout_dataset: Dataset = None,
+                    training_config: TrainingConfig = None, **fit_params):
         """ Start a supervised usecase training to create a new version of the usecase (on the
         platform): the training config is copied from the current version and then overridden
         for the given parameters.
 
         Args:
-            fit_params (kwargs): Training config parameters to change for the new version
-                (compared to the current version)
-
+            name (str): Name of the usecase version to create
+            dataset (:class:`.Dataset`, :class:`.DatasetImages`, optional): Reference to the dataset
+                object to use for as training dataset
+            column_config (:class:`.ColumnConfig`, optional): Column configuration for the usecase
+                (see the documentation of the :class:`.ColumnConfig` resource for more details
+                on each possible column types)
+            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
+                use as a holdout dataset (default: ``None``)
+            training_config (:class:`.TrainingConfig`): Specific training configuration
+                (see the documentation of the :class:`.TrainingConfig` resource for more details
+                on all the parameters)
         Returns:
             :class:`.Supervised`: Newly created supervised usecase object (new version)
         """
 
-        params = {'name': self.name,
-                  'dataset': self.dataset,
-                  'column_config': self.column_config,
-                  'metric': self.metric,
-                  'holdout_dataset': self.holdout_dataset,
-                  'training_config': self.training_config,
+        if column_config is None:
+            column_config = self.column_config
+
+        if training_config is None:
+            training_config = self.training_config
+
+        if metric is None:
+            metric = self.metric_type(self.metric)
+
+        if dataset is None:
+            dataset_ids = self.dataset_id
+        else:
+            if isinstance(dataset, Dataset):
+                dataset_ids = dataset.id
+            elif isinstance(dataset, tuple):
+                dataset_ids = [d.id for d in dataset]
+
+        if holdout_dataset is None:
+            holdout_dataset_id = self.holdout_dataset_id
+        else:
+            holdout_dataset_id = holdout_dataset.id
+
+        params = {'name': name,
+                  'dataset': dataset_ids,
+                  'metric': metric.value,
+                  'holdout_dataset': holdout_dataset_id,
                   'type_problem': self.type_problem,
                   'usecase_id': self._id,
                   'parent_version': self.version,
-                  'nextVersion': max([v['version'] for v in self.versions]) + 1}
+                  # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
+                  }
+
+        params.update(
+            dict(column_config.to_kwargs() + training_config.to_kwargs()))
 
         params.update(fit_params)
         return self.fit(**params)
@@ -169,8 +204,8 @@ class Supervised(ClassicUsecaseVersion):
             'type_problem': self.type_problem,
             'data_type': self.data_type,
         }
-        if self.holdout_dataset:
-            json_dict['holdout_id'] = self.holdout_dataset
+        if self.holdout_dataset_id:
+            json_dict['holdout_id'] = self.holdout_dataset_id
         return json_dict
 
 
@@ -188,6 +223,7 @@ class Regression(Supervised):
     """ A regression usecase for a numerical target using a basic dataset. """
 
     type_problem = TypeProblem.Regression
+    metric_type = metrics.Regression
     default_metric = metrics.Regression.RMSE
     # model_class = RegressionModel
 
@@ -198,6 +234,7 @@ class Classification(Supervised):
     exactly 2 modalities using a basic dataset. """
 
     type_problem = TypeProblem.Classification
+    metric_type = metrics.Classification
     default_metric = metrics.Classification.AUC
     # model_class = ClassificationModel
 
@@ -208,6 +245,7 @@ class MultiClassification(Supervised):
     strictly more than 2 modalities using a basic dataset. """
 
     type_problem = TypeProblem.Classification
+    metric_type = metrics.MultiClassification
     default_metric = metrics.MultiClassification.log_loss
     # model_class = MultiClassificationModel
 
@@ -217,6 +255,7 @@ class RegressionImages(SupervisedImages):
     """ A regression usecase for a numerical target using an image dataset. """
 
     type_problem = TypeProblem.Regression
+    metric_type = metrics.Regression
     default_metric = metrics.Regression.RMSE
 
 
@@ -226,6 +265,7 @@ class ClassificationImages(SupervisedImages):
     exactly 2 modalities using an image dataset. """
 
     type_problem = TypeProblem.Classification
+    metric_type = metrics.Classification
     default_metric = metrics.Classification.AUC
 
 
@@ -235,4 +275,5 @@ class MultiClassificationImages(SupervisedImages):
     strictly more than 2 modalities using an image dataset. """
 
     type_problem = TypeProblem.MultiClassification
+    metric_type = metrics.MultiClassification
     default_metric = metrics.MultiClassification.log_loss

@@ -243,7 +243,7 @@ class BaseUsecaseVersion(ApiResource):
 
         .. example::
 
-            usecase.wait_until(lambda usecase: len(usecase) > 3)
+            usecase.wait_until(lambda usecasev: len(usecasev.models) > 3)
 
         Raises:
             PrevisionException: If the resource could not be fetched or there was a timeout.
@@ -369,7 +369,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
         self.name: str = usecase_info['usecase'].get('name')
-        self.metric = usecase_info.get('metric')
+        self.metric: str = usecase_info.get('metric')
         usecase_params = usecase_info['usecase_version_params']
         self.column_config = ColumnConfig(target_column=usecase_params.get('target_column'),
                                           fold_column=usecase_params.get('fold_column'),
@@ -550,7 +550,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         return best.cross_validation
 
     @classmethod
-    def _start_usecase(cls, project_id: str, name: str, dataset_id: str, data_type: DataType, type_problem: TypeProblem, **kwargs):
+    def _start_usecase(cls, project_id: str, name: str, dataset_id: Union[str, List[str]], data_type: DataType, type_problem: TypeProblem, **kwargs):
         """ Start a usecase of the given data type and problem type with a specific
         training configuration (on the platform).
 
