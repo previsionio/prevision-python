@@ -1,4 +1,6 @@
 import operator
+from previsionio.prevision_client import Client
+from typing import Dict, List
 import requests
 import uuid
 import json
@@ -53,7 +55,7 @@ class NpEncoder(json.JSONEncoder):
             return super(NpEncoder, self).default(obj)
 
 
-def parse_json(json_response):
+def parse_json(json_response) -> Dict:
     try:
         return json_response.json()
     except Exception as e:
@@ -73,18 +75,18 @@ EventTuple = namedtuple('EventTuple', 'name key value fail_checks')
 EventTuple.__new__.__defaults__ = ((('state', 'failed'),),)
 
 
-def is_null_value(value):
+def is_null_value(value) -> bool:
     is_null = str(value) == 'null'
     is_nan = pd.isnull(value)
     return is_nan or is_null
 
 
-def get_all_results(client, endpoint, method):
+def get_all_results(client: Client, endpoint: str, method) -> List[Dict]:
     resources = []
-    batch = client.request(endpoint, method=method)
-    batch = parse_json(batch)
-    print(batch)
-    meta = batch['metaData']
+    batch: requests.Response = client.request(endpoint, method=method)
+    json = parse_json(batch)
+    print(json)
+    meta = json['metaData']
     total_items = meta['totalItems']
     rows_per_page = meta['rowsPerPage']
     n_pages = ceil(total_items / rows_per_page)

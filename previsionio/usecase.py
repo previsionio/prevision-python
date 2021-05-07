@@ -10,7 +10,7 @@ import os
 from functools import lru_cache
 
 from . import config
-from .usecase_config import TrainingConfig, ColumnConfig
+from .usecase_config import TrainingConfig, ColumnConfig, TypeProblem
 from .logger import logger
 from .prevision_client import client
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
@@ -18,21 +18,6 @@ from .api_resource import ApiResource
 from .dataset import Dataset
 
 from enum import Enum
-
-
-class Type_problem(Enum):
-    """
-    Different problem type offered by prevision
-    """
-    regression = "regression"
-    """Prediction using regression problem, for when the output variable is a real or continuous value"""
-    classification = "classification"
-    """Prediction using classification approach, for when the output variable is a category"""
-    multiclassification = "multiclassification"
-    """Prediction using classification approach, for when the output variable many categories"""
-    object_detection = "object-detection"
-    """Detection of pattern in images"""
-
 
 class BaseUsecaseVersion(ApiResource):
 
@@ -43,7 +28,7 @@ class BaseUsecaseVersion(ApiResource):
     id_key = 'usecase_id'
 
     resource = 'usecase-versions'
-    type_problem: Type_problem
+    type_problem: TypeProblem
     data_type = 'nan'
 
     def __init__(self, **usecase_info):
@@ -412,7 +397,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         self.version = usecase_info.get('version', 1)
         self._usecase_info = usecase_info
         self.data_type = usecase_info['usecase'].get('data_type')
-        self.training_type: Type_problem = usecase_info['usecase'].get('training_type')
+        self.training_type: TypeProblem = usecase_info['usecase'].get('training_type')
         self.dataset_id = usecase_info.get('dataset_id')
         self.predictions = {}
         self.predict_token = None
@@ -564,7 +549,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         return best.cross_validation
 
     @classmethod
-    def _start_usecase(cls, project_id: str, name: str, dataset_id, data_type: str, type_problem: Type_problem, **kwargs):
+    def _start_usecase(cls, project_id: str, name: str, dataset_id, data_type: str, type_problem: TypeProblem, **kwargs):
         """ Start a usecase of the given data type and problem type with a specific
         training configuration (on the platform).
 
@@ -709,7 +694,7 @@ class Usecase(ApiResource):
         return super().from_id(specific_url='/{}/{}'.format(cls.resource, _id))
 
     @classmethod
-    def list(cls, project_id, all=all):
+    def list(cls, project_id: str, all: bool= True) -> List['Usecase']:
         """ List all the available usecase in the current active [client] workspace.
 
         .. warning::

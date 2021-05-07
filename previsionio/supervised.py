@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 from typing import Tuple, Union
-from previsionio.usecase_config import ColumnConfig
+from previsionio.usecase_config import ColumnConfig, TypeProblem
 from previsionio.dataset import Dataset, DatasetImages
 import pandas as pd
 from . import TrainingConfig
@@ -10,12 +10,12 @@ from .usecase import ClassicUsecaseVersion
 from .model import Model, RegressionModel, \
     ClassificationModel, MultiClassificationModel
 from .utils import PrevisionException
-from .usecase import BaseUsecaseVersion, Type_problem
+from .usecase import BaseUsecaseVersion
 
 MODEL_CLASS_DICT = {
-    Type_problem.regression: RegressionModel,
-    Type_problem.classification: ClassificationModel,
-    Type_problem.multiclassification: MultiClassificationModel
+    TypeProblem.Regression: RegressionModel,
+    TypeProblem.Classification: ClassificationModel,
+    TypeProblem.MultiClassification: MultiClassificationModel
 }
 
 
@@ -83,7 +83,7 @@ class Supervised(ClassicUsecaseVersion):
         return instance
 
     @classmethod
-    def fit(cls, project_id: str, name: str, dataset: Union[Dataset, DatasetImages], column_config: ColumnConfig, metric, holdout_dataset: Dataset = None,
+    def fit(cls, project_id: str, name: str, dataset: Union[Dataset, Tuple[Dataset, DatasetImages]], column_config: ColumnConfig, metric, holdout_dataset: Dataset = None,
             training_config: TrainingConfig = TrainingConfig(), **kwargs):
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
@@ -186,7 +186,7 @@ class Regression(Supervised):
 
     """ A regression usecase for a numerical target using a basic dataset. """
 
-    type_problem = Type_problem.regression
+    type_problem = TypeProblem.Regression
     default_metric = metrics.Regression.RMSE
     # model_class = RegressionModel
 
@@ -196,7 +196,7 @@ class Classification(Supervised):
     """ A (binary) classification usecase for a categorical target with
     exactly 2 modalities using a basic dataset. """
 
-    type_problem = Type_problem.classification
+    type_problem = TypeProblem.Classification
     default_metric = metrics.Classification.AUC
     # model_class = ClassificationModel
 
@@ -206,7 +206,7 @@ class MultiClassification(Supervised):
     """ A multiclassification usecase for a categorical target with
     strictly more than 2 modalities using a basic dataset. """
 
-    type_problem = Type_problem.multiclassification
+    type_problem = TypeProblem.Classification
     default_metric = metrics.MultiClassification.log_loss
     # model_class = MultiClassificationModel
 
@@ -215,7 +215,7 @@ class RegressionImages(SupervisedImages):
 
     """ A regression usecase for a numerical target using an image dataset. """
 
-    type_problem = Type_problem.regression
+    type_problem = TypeProblem.Regression
     default_metric = metrics.Regression.RMSE
 
 
@@ -224,7 +224,7 @@ class ClassificationImages(SupervisedImages):
     """ A (binary) classification usecase for a categorical target with
     exactly 2 modalities using an image dataset. """
 
-    type_problem = Type_problem.classification
+    type_problem = TypeProblem.Classification
     default_metric = metrics.Classification.AUC
 
 
@@ -233,5 +233,5 @@ class MultiClassificationImages(SupervisedImages):
     """ A multiclassification usecase for a categorical target with
     strictly more than 2 modalities using an image dataset. """
 
-    type_problem = Type_problem.multiclassification
+    type_problem = TypeProblem.MultiClassification
     default_metric = metrics.MultiClassification.log_loss

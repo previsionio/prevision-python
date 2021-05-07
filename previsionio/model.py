@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+from previsionio.usecase_config import TypeProblem
 import time
 import json
 import uuid
@@ -83,13 +84,13 @@ class Model(ApiResource):
                                   method=requests.get)
         model = json.loads(response.content.decode('utf-8'))
         training_type = model['type_problem']
-        if training_type == "regression":
+        if training_type == TypeProblem.Regression:
             return RegressionModel(**model)
-        elif training_type == "classification":
+        elif training_type == TypeProblem.Classification:
             return ClassificationModel(**model)
-        elif training_type == "multiclassification":
+        elif training_type == TypeProblem.MultiClassification:
             return MultiClassificationModel(**model)
-        elif training_type == "text-similarity":
+        elif training_type == TypeProblem.TextSimilarity:
             return TextSimilarityModel(**model)
         else:
             raise PrevisionException('Training type {} not supported'.format(model['training_type']))
@@ -394,7 +395,6 @@ class ClassificationModel(ClassicModel):
         resource on the platform. """
         super().__init__(_id, usecase_version_id, name=name, **other_params)
         self._predict_threshold = 0.5
-
 
     @property
     @lru_cache()

@@ -15,13 +15,15 @@ class ParamList(list):
 class TypeProblem(object):
     """ Type of supervised problems available with Prevision.io. """
     Classification = 'classification'
-    """Classification"""
+    """Prediction using classification approach, for when the output variable is a category"""
     Regression = 'regression'
-    """Regression"""
+    """Prediction using regression problem, for when the output variable is a real or continuous value"""
     MultiClassification = 'multiclassification'
-    """Multi Classification"""
+    """Prediction using classification approach, for when the output variable many categories"""
     TextSimilarity = 'text-similarity'
-    """Text Similarity"""
+    """Ranking of texts by keywords"""
+    ObjectDetection = "object-detection"
+    """Detection of pattern in images"""
 
 
 class AdvancedModel(object):

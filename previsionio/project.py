@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from typing import Union
+from typing import Tuple, Union
 from previsionio import metrics
 from previsionio.usecase_config import ColumnConfig
 import requests
@@ -16,8 +16,8 @@ from .connector import Connector, SQLConnector, FTPConnector, \
     SFTPConnector, S3Connector, HiveConnector, GCPConnector
 from .supervised import Regression, Classification, MultiClassification, \
     RegressionImages, ClassificationImages, MultiClassificationImages
-from .timeseries import TimeSeries
-from .text_similarity import ListModelsParameters, TextSimilarity
+from .timeseries import TimeSeries, TimeWindow
+from .text_similarity import DescriptionsColumnConfig, ListModelsParameters, TextSimilarity
 from .usecase import Usecase
 
 
@@ -290,7 +290,7 @@ class Project(ApiResource, UniqueResourceMixin):
     def list_datasource(self, all=all):
         return DataSource.list(self._id, all=all)
 
-    def fit_regression(self, name: str, dataset: Union[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
+    def fit_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
                        training_config=TrainingConfig(), **kwargs):
         return Regression.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
                               training_config=training_config, **kwargs)
@@ -305,32 +305,32 @@ class Project(ApiResource, UniqueResourceMixin):
         return MultiClassification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
                                        training_config=training_config, **kwargs)
 
-    def fit_image_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.Regression = None, holdout_dataset=None,
+    def fit_image_regression(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.Regression = None, holdout_dataset=None,
                              training_config=TrainingConfig(), **kwargs):
         return RegressionImages.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
                                     training_config=training_config, **kwargs)
 
-    def fit_image_classification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
-                                 training_config=TrainingConfig(), type_problem=None, **kwargs):
+    def fit_image_classification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.Classification = None, holdout_dataset=None,
+                                 training_config=TrainingConfig(), **kwargs):
         return ClassificationImages.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                                        training_config=training_config, type_problem=type_problem, **kwargs)
+                                        training_config=training_config, **kwargs)
 
-    def fit_image_multiclassification(self, name, dataset, column_config, metric=None, holdout_dataset=None,
-                                      training_config=TrainingConfig(), type_problem=None, **kwargs):
+    def fit_image_multiclassification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.MultiClassification = None, holdout_dataset=None,
+                                      training_config=TrainingConfig(), **kwargs):
         return MultiClassificationImages.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                                             training_config=training_config, type_problem=type_problem, **kwargs)
+                                             training_config=training_config, **kwargs)
 
-    def fit_timeseries_regression(self, name, dataset, column_config, time_window, metric=None, holdout_dataset=None,
+    def fit_timeseries_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow, metric: metrics.Regression = None, holdout_dataset=None,
                                   training_config=TrainingConfig()):
         return TimeSeries.fit(self._id, name, dataset, column_config, time_window, metric=metric, holdout_dataset=holdout_dataset,
                               training_config=training_config)
 
-    def fit_text_similarity(self, name, dataset, description_column_config, metric=None, top_k=None, lang='auto',
+    def fit_text_similarity(self, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig, metric: metrics.TextSimilarity = None, top_k=None, lang: str = 'auto',
                             queries_dataset=None, queries_column_config=None, models_parameters=ListModelsParameters()):
         return TextSimilarity.fit(self._id, name, dataset, description_column_config, metric=metric, top_k=top_k, lang=lang,
                                   queries_dataset=queries_dataset, queries_column_config=queries_column_config, models_parameters=models_parameters)
 
-    def list_usecases(self, all=all):
+    def list_usecases(self, all: bool = True):
         return Usecase.list(self._id, all=all)
 
 

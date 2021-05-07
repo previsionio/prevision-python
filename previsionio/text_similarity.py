@@ -3,14 +3,11 @@ from functools import lru_cache
 import time
 import json
 from .logger import logger
-from .api_resource import ApiResource
-from .usecase_config import UsecaseConfig
+from .usecase_config import UsecaseConfig, TypeProblem
 from .prevision_client import client
 from .utils import PrevisionException, parse_json, EventTuple
 from . import config
 from .model import TextSimilarityModel
-from .dataset import Dataset
-from .usecase import Usecase
 from .usecase import ClassicUsecaseVersion
 import previsionio as pio
 
@@ -100,7 +97,7 @@ class TextSimilarity(ClassicUsecaseVersion):
     default_metric = 'accuracy_at_k'
     default_top_k = 10
     data_type = 'tabular'
-    type_problem = 'text-similarity'
+    type_problem = TypeProblem.TextSimilarity
     resource = 'usecase-versions'
 
     def __init__(self, **usecase_info):

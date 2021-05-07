@@ -2,10 +2,14 @@ from __future__ import print_function
 
 import os
 import copy
+from types import ClassMethodDescriptorType
+from typing import Dict
 import requests
 import time
 import json
 import threading
+
+from requests.models import Response
 
 import previsionio.utils
 from .logger import logger, event_logger
@@ -39,7 +43,7 @@ class EventManager:
         return events_dict_copy
 
     def wait_for_event(self,
-                       resource_id,
+                       resource_id: str,
                        resource_type,
                        event_tuple: previsionio.utils.EventTuple,
                        specific_url=None):
@@ -139,7 +143,7 @@ class EventManager:
             finally:
                 sse.close()
 
-    def add_event(self, resource_id, payload):
+    def add_event(self, resource_id: str, payload):
         event_logger.debug('adding event for {}:\npayload = {}'.format(resource_id, payload))
         semd, event_dict = self._events
 
@@ -186,8 +190,8 @@ class Client(object):
         if not self.prevision_url:
             raise PrevisionException('No url configured. Call client.init_client() to initialize')
 
-    def request(self, endpoint, method, files=None, data=None, allow_redirects=True, content_type=None,
-                no_retries=False, **requests_kwargs):
+    def request(self, endpoint: str, method, files: Dict = None, data: Dict = None, allow_redirects: bool = True, content_type: str = None,
+                no_retries: bool = False, **requests_kwargs) -> Response:
         """
         Make a request on the desired endpoint with the specified method & data.
 
@@ -220,12 +224,12 @@ class Client(object):
 
         for i in range(retries):
             try:
-                req = method(url,
-                             headers=headers,
-                             files=files,
-                             allow_redirects=allow_redirects,
-                             json=data,
-                             **requests_kwargs)
+                req: Response = method(url,
+                                       headers=headers,
+                                       files=files,
+                                       allow_redirects=allow_redirects,
+                                       json=data,
+                                       **requests_kwargs)
             except Exception as e:
                 logger.warning('failed to request ' + url + ' retrying ' + str(retries - i) + ' times: ' + e.__repr__())
                 if no_retries:
@@ -247,7 +251,8 @@ class Client(object):
             raise ValueError('Wrong token ' + str(result))
         self.user_info = result
 
-    def init_client(self, prevision_url, token):
+
+    def init_client(self, prevision_url: str, token: str):
         """
         Init the client (and check that the connection is valid).
 
