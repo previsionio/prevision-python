@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import os
 import copy
-from types import ClassMethodDescriptorType
 from typing import Dict
 import requests
 import time
@@ -20,7 +19,7 @@ EVENT_TIMEOUT = int(os.environ.get('EVENT_TIMEOUT', 600))
 
 
 class EventManager:
-    def __init__(self, event_endpoint, auth_headers, client):
+    def __init__(self, event_endpoint:str, auth_headers, client):
         self.event_endpoint = event_endpoint
         auth_headers = copy.deepcopy(auth_headers)
         self.headers = auth_headers
