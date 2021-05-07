@@ -3,7 +3,7 @@ from functools import lru_cache
 import time
 import json
 from .logger import logger
-from .usecase_config import UsecaseConfig, TypeProblem
+from .usecase_config import DataType, UsecaseConfig, TypeProblem
 from .prevision_client import client
 from .utils import PrevisionException, parse_json, EventTuple
 from . import config
@@ -96,7 +96,7 @@ class TextSimilarity(ClassicUsecaseVersion):
 
     default_metric = 'accuracy_at_k'
     default_top_k = 10
-    data_type = 'tabular'
+    data_type = DataType.Tabular
     type_problem = TypeProblem.TextSimilarity
     resource = 'usecase-versions'
 

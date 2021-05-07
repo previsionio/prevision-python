@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 from typing import Tuple, Union
-from previsionio.usecase_config import ColumnConfig, TypeProblem
+from previsionio.usecase_config import ColumnConfig, DataType, TypeProblem
 from previsionio.dataset import Dataset, DatasetImages
 import pandas as pd
 from . import TrainingConfig
@@ -24,7 +24,7 @@ class Supervised(ClassicUsecaseVersion):
     """ A supervised usecase. """
 
     start_command = 'focus'
-    data_type = 'tabular'
+    data_type = DataType.Tabular
 
     # model_class = Model
 
@@ -179,7 +179,7 @@ class SupervisedImages(Supervised):
 
     start_command = 'image_focus'
     default_metric = 'NA'
-    data_type = 'images'
+    data_type = DataType.Images
 
 
 class Regression(Supervised):

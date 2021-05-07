@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import json
-from typing import Dict, List
+from typing import Dict, List, Union
 import pandas as pd
 import requests
 import time
@@ -10,7 +10,7 @@ import os
 from functools import lru_cache
 
 from . import config
-from .usecase_config import TrainingConfig, ColumnConfig, TypeProblem
+from .usecase_config import DataType, TrainingConfig, ColumnConfig, TypeProblem
 from .logger import logger
 from .prevision_client import client
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
@@ -18,6 +18,7 @@ from .api_resource import ApiResource
 from .dataset import Dataset
 
 from enum import Enum
+
 
 class BaseUsecaseVersion(ApiResource):
 
@@ -29,7 +30,7 @@ class BaseUsecaseVersion(ApiResource):
 
     resource = 'usecase-versions'
     type_problem: TypeProblem
-    data_type = 'nan'
+    data_type: DataType
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
@@ -344,11 +345,6 @@ class BaseUsecaseVersion(ApiResource):
         except KeyError:
             return float('inf')
 
-    def print_info(self):
-        """ Print all info on the usecase. """
-        for k, v in self._usecase_info.items():
-            print(str(k) + ': ' + str(v))
-
     def _save_json(self):
         raise NotImplementedError
 
@@ -396,12 +392,17 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         self.project_id = usecase_info.get('project_id')
         self.version = usecase_info.get('version', 1)
         self._usecase_info = usecase_info
-        self.data_type = usecase_info['usecase'].get('data_type')
+        self.data_type: DataType = usecase_info['usecase'].get('data_type')
         self.training_type: TypeProblem = usecase_info['usecase'].get('training_type')
         self.dataset_id = usecase_info.get('dataset_id')
         self.predictions = {}
         self.predict_token = None
         self._models = {}
+
+    def print_info(self):
+        """ Print all info on the usecase. """
+        for k, v in self._usecase_info.items():
+            print(str(k) + ': ' + str(v))
 
     @property
     @lru_cache()
@@ -567,9 +568,9 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         """
         logger.info('[Usecase] Starting usecase')
 
-        if data_type == 'tabular' or data_type == 'timeseries':
+        if data_type == DataType.Tabular or data_type == DataType.TimeSeries:
             data = dict(name=name, dataset_id=dataset_id, **kwargs)
-        elif data_type == 'images':
+        elif data_type == DataType.Images:
             csv_id, folder_id = dataset_id
             data = dict(name=name, dataset_id=csv_id, folder_dataset_id=folder_id, **kwargs)
         else:
@@ -673,8 +674,8 @@ class Usecase(ApiResource):
         self._id = usecase_info.get('_id')
         self.name: str = usecase_info.get('name')
         self.project_id: str = usecase_info.get('project_id')
-        self.training_type: str = usecase_info.get('training_type')
-        self.data_type: str = usecase_info.get('data_type')
+        self.training_type: TypeProblem = usecase_info.get('training_type')
+        self.data_type: DataType = usecase_info.get('data_type')
         self.version_ids: list = usecase_info.get('version_ids')
 
     @classmethod
@@ -694,7 +695,7 @@ class Usecase(ApiResource):
         return super().from_id(specific_url='/{}/{}'.format(cls.resource, _id))
 
     @classmethod
-    def list(cls, project_id: str, all: bool= True) -> List['Usecase']:
+    def list(cls, project_id: str, all: bool = True) -> List['Usecase']:
         """ List all the available usecase in the current active [client] workspace.
 
         .. warning::
