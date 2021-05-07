@@ -1,5 +1,5 @@
 import operator
-from previsionio.prevision_client import Client
+from .prevision_client import Client
 from typing import Dict, List
 import requests
 import uuid
