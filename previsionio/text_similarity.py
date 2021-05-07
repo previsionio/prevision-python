@@ -139,7 +139,7 @@ class TextSimilarity(ClassicUsecaseVersion):
         self._models = {}
 
     @classmethod
-    def fit(self, project_id, name, dataset, description_column_config, metric=None, top_k=None, lang='auto',
+    def fit(cls, project_id, name, dataset, description_column_config, metric=None, top_k=None, lang: str='auto',
             queries_dataset=None, queries_column_config=None,
             models_parameters=ListModelsParameters(), **kwargs):
         """ Start a supervised usecase training with a specific training configuration
@@ -176,12 +176,12 @@ class TextSimilarity(ClassicUsecaseVersion):
                 training_args['queries_dataset_id'] = queries_dataset.id
 
         if not metric:
-            metric = self.default_metric
+            metric = cls.default_metric
         if not top_k:
-            top_k = self.default_top_k
+            top_k = cls.default_top_k
         training_args['metric'] = metric if isinstance(metric, str) else metric.value
         training_args['top_k'] = top_k
-        training_args['lang'] = lang if isinstance(lang, str) else self.lang
+        training_args['lang'] = lang
         if isinstance(dataset, str):
             dataset_id = dataset
         elif isinstance(dataset, tuple):
@@ -191,7 +191,7 @@ class TextSimilarity(ClassicUsecaseVersion):
 
         data = dict(name=name, dataset_id=dataset_id, **training_args)
 
-        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', self.data_type, self.type_problem)
+        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', cls.data_type, cls.type_problem)
         start = client.request(endpoint, requests.post, data=data, content_type='application/json')
 
         if start.status_code != 200:

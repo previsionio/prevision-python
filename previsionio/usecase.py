@@ -550,7 +550,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         return best.cross_validation
 
     @classmethod
-    def _start_usecase(cls, project_id: str, name: str, dataset_id, data_type: str, type_problem: TypeProblem, **kwargs):
+    def _start_usecase(cls, project_id: str, name: str, dataset_id: str, data_type: DataType, type_problem: TypeProblem, **kwargs):
         """ Start a usecase of the given data type and problem type with a specific
         training configuration (on the platform).
 

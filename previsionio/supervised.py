@@ -25,6 +25,7 @@ class Supervised(ClassicUsecaseVersion):
 
     start_command = 'focus'
     data_type = DataType.Tabular
+    default_metric = metrics.Enum
 
     # model_class = Model
 

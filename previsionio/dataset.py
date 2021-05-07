@@ -75,7 +75,7 @@ class Dataset(ApiResource):
     data = property(to_pandas)
 
     @classmethod
-    def list(cls, project_id, all: bool= True):
+    def list(cls, project_id, all: bool = True):
         """ List all the available datasets in the current active [client] workspace.
 
         .. warning::
@@ -169,7 +169,7 @@ class Dataset(ApiResource):
                                     dtype="float32").reshape(*tensors_shape)
             return {'labels': labels, 'tensors': tensors}
 
-    def download(self, download_path: str=None):
+    def download(self, download_path: str = None):
         """Download the dataset from the platform locally.
 
         Args:
@@ -335,7 +335,7 @@ class DatasetImages(ApiResource):
         return resp
 
     @classmethod
-    def list(cls, project_id, all=all):
+    def list(cls, project_id: str, all: bool = True):
         """ List all the available dataset image in the current active [client] workspace.
 
         .. warning::
@@ -356,7 +356,7 @@ class DatasetImages(ApiResource):
         return [cls(**conn_data) for conn_data in resources]
 
     @classmethod
-    def _new(cls, project_id, name, file_name):
+    def _new(cls, project_id: str, name: str, file_name: str):
         """ Register a new image dataset in the workspace for further processing
         (in the image folders group).
 

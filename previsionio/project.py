@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from typing import Tuple, Union
+from enum import Enum
+from typing import Dict, Tuple, Union
 from previsionio import metrics
 from previsionio.usecase_config import ColumnConfig
 import requests
@@ -19,6 +20,26 @@ from .supervised import Regression, Classification, MultiClassification, \
 from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import DescriptionsColumnConfig, ListModelsParameters, TextSimilarity
 from .usecase import Usecase
+from pandas import DataFrame
+
+
+class ProjectColor(Enum):
+    greenLighter = 'greenLighter'
+    green = 'green'
+    greenDarker = 'greenDarker'
+    greenDarkest = 'greenDarkest'
+    purpleLighter = 'purpleLighter'
+    purple = 'purple'
+    purpleDarker = 'purpleDarker'
+    purpleDarkest = 'purpleDarkest'
+    blueLighter = 'blueLighter'
+    blue = 'blue'
+    blueDarker = 'blueDarker'
+    blueDarkest = 'blueDarkest'
+    yellowLighter = 'yellowLighter'
+    yellow = 'yellow'
+    yellowDarker = 'yellowDarker'
+    yellowDarkest = 'yellowDarkest'
 
 
 class Project(ApiResource, UniqueResourceMixin):
@@ -26,7 +47,7 @@ class Project(ApiResource, UniqueResourceMixin):
     """ A Project
 
     Args:
-        _id (str): Unique id of the datasource
+        _id (str): Unique id of the project
         name (str): Name of the project
         description(str, optional): Description of the project
         color (str, optional): Color of the project
@@ -38,7 +59,7 @@ class Project(ApiResource, UniqueResourceMixin):
     def __init__(self, _id: str, name: str, description: str = None, color: str = None, created_by: str = None,
                  admins=[], contributors=[], viewers=[], pipelines_count: int = 0, usecases_count: int = 0,
                  dataset_count: int = 0, **kwargs):
-        """ Instantiate a new :class:`.DataSource` object to manipulate a datasource resource
+        """ Instantiate a new :class:`.Project` object to manipulate a project resource
         on the platform. """
         super().__init__(_id=_id,
                          name=name,
@@ -123,14 +144,26 @@ class Project(ApiResource, UniqueResourceMixin):
         res = parse_json(response)
         return res
 
-    def info(self):
+    def info(self) -> Dict:
         """Get a datasource from the instance by its unique id.
 
         Args:
             _id (str): Unique id of the resource to retrieve
 
         Returns:
-            :class:`.DataSource`: The fetched datasource
+            Dict: Information about the Project with these entries:
+                "_id"
+                "name"
+                "description"
+                "color"
+                "created_by"
+                "admins"
+                "contributors"
+                "viewers"
+                "pipelines_count"
+                "usecases_count"
+                "dataset_count"
+                "users"
 
         Raises:
             PrevisionException: Any error while fetching data from the platform
@@ -151,7 +184,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return project_info
 
     @classmethod
-    def new(cls, name: str, description: str = None, color: str = None) -> 'Project':
+    def new(cls, name: str, description: str = None, color: ProjectColor = None) -> 'Project':
         """ Create a new datasource object on the platform.
 
         Args:
@@ -205,7 +238,7 @@ class Project(ApiResource, UniqueResourceMixin):
                               method=requests.delete)
         return resp
 
-    def create_dataset(self, name: str, datasource: DataSource = None, file_name: str = None, dataframe=None):
+    def create_dataset(self, name: str, datasource: DataSource = None, file_name: str = None, dataframe: DataFrame = None):
         """ Register a new dataset in the workspace for further processing.
         You need to provide either a datasource, a file name or a dataframe
         (only one can be specified).
@@ -254,16 +287,16 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return Dataset.list(self._id, all=all)
 
-    def create_image_folder(self, name, file_name):
+    def create_image_folder(self, name: str, file_name: str):
         return DatasetImages._new(self._id, name, file_name)
 
-    def list_image_folders(self, all=all):
+    def list_image_folders(self, all: bool = True):
         return DatasetImages.list(self._id, all=all)
 
-    def create_sql_connector(self, name, host, port=3306, username='', password=''):
+    def create_sql_connector(self, name: str, host: str, port: int = 3306, username: str = '', password: str = ''):
         return SQLConnector._new(self._id, name, host, port, 'SQL', username=username, password=password)
 
-    def create_ftp_connector(self, name, host, port=21, username='', password=''):
+    def create_ftp_connector(self, name: str, host: str, port: int = 21, username: str = '', password: str = ''):
         return FTPConnector._new(self._id, name, host, port, 'FTP', username=username, password=password)
 
     def create_sftp_connector(self, name, host, port=23, username='', password=''):
