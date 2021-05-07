@@ -19,7 +19,7 @@ EVENT_TIMEOUT = int(os.environ.get('EVENT_TIMEOUT', 600))
 
 
 class EventManager:
-    def __init__(self, event_endpoint:str, auth_headers, client):
+    def __init__(self, event_endpoint: str, auth_headers, client):
         self.event_endpoint = event_endpoint
         auth_headers = copy.deepcopy(auth_headers)
         self.headers = auth_headers
@@ -249,7 +249,6 @@ class Client(object):
         if 'err_code' in result and result['err_code'] == 'E_UNK':
             raise ValueError('Wrong token ' + str(result))
         self.user_info = result
-
 
     def init_client(self, prevision_url: str, token: str):
         """
