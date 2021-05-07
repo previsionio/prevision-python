@@ -25,6 +25,15 @@ class TypeProblem(object):
     ObjectDetection = "object-detection"
     """Detection of pattern in images"""
 
+class DataType(object):
+    """ Type of data available with Prevision.io. """
+    Tabular = 'tabular'
+    """Data arranged in a table"""
+    TimeSeries = 'timeseries'
+    """Data points indexed in time order"""
+    Images = 'images'
+    """Catalogue of images"""
+
 
 class AdvancedModel(object):
     """ Types of normal models that can be trained with Prevision.io.
