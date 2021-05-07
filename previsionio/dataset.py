@@ -169,7 +169,7 @@ class Dataset(ApiResource):
                                     dtype="float32").reshape(*tensors_shape)
             return {'labels': labels, 'tensors': tensors}
 
-    def download(self, download_path=None):
+    def download(self, download_path: str=None):
         """Download the dataset from the platform locally.
 
         Args:
