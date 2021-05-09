@@ -2,7 +2,7 @@
 from __future__ import print_function
 import pandas as pd
 from . import TypeProblem, clustering_base_config
-from .usecase import BaseUsecaseVersion
+from .usecase_version import BaseUsecaseVersion
 
 
 class UnSupervised(BaseUsecaseVersion):

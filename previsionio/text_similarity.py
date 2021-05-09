@@ -8,7 +8,7 @@ from .prevision_client import client
 from .utils import PrevisionException, parse_json, EventTuple
 from . import config
 from .model import TextSimilarityModel
-from .usecase import ClassicUsecaseVersion
+from .usecase_version import ClassicUsecaseVersion
 import previsionio as pio
 
 
@@ -147,7 +147,7 @@ class TextSimilarity(ClassicUsecaseVersion):
 
         Args:
             name (str): Name of the usecase to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the dataset
+            dataset (:class:`.Dataset`): Reference to the dataset
                 object to use for as training dataset
             description_column_config (:class:`.DescriptionsColumnConfig`): Description column configuration
                 (see the documentation of the :class:`.DescriptionsColumnConfig` resource for more details

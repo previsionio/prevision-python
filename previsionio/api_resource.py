@@ -86,57 +86,6 @@ class ApiResource:
     def id(self) -> str:
         return self._id
 
-    @classmethod
-    def from_name(cls, name: str, raise_if_non_unique: bool = False, partial_match: bool = False):
-        """Get a resource from the platform by its name.
-
-        Args:
-            name (str): Name of the resource to retrieve
-            raise_if_non_unique (bool, optional): Whether or not to raise an error if
-                duplicates are found (default: ``False``)
-            partial_match (bool, optional): If true, resources with a name containing
-                the requested name will also be returned; else, only perfect matches
-                will be found (default: ``False``)
-
-        Raises:
-            PrevisionException: Error if duplicates are found and
-                the ``raise_if_non_unique`` is enabled
-
-        Returns:
-            :class:`.ApiResource`: Fetched resource
-        """
-        resources = cls.list()
-
-        if partial_match:
-            matches = []
-            for i in resources:
-                if (isinstance(i, dict) and name in i['name']) or \
-                   (isinstance(i, ApiResource) and name in i.name):
-                    matches.append(i)
-        else:
-            matches = []
-            for i in resources:
-                if (isinstance(i, dict) and name == i['name']) or \
-                   (isinstance(i, ApiResource) and name in i.name):
-                    matches.append(i)
-
-        if len(matches) == 1 or len(matches) > 1 and not raise_if_non_unique:
-            if isinstance(matches[0], dict):
-                result = cls.from_id(matches[0][cls.id_key])
-            else:
-                result = cls.from_id(matches[0]._id)
-            logger.info('[Fetch {} OK] by name: "{}"'.format(cls.__name__, name))
-            return result
-        elif len(matches) > 1 and raise_if_non_unique:
-            msg = 'Ambiguous {} name: {}, found {} resources matching: {}'
-            msg = msg.format(cls.resource,
-                             name,
-                             len(matches),
-                             ', '.join([m['name'] for m in matches]))
-            raise PrevisionException(msg)
-        else:
-            raise PrevisionException('No such {}: {}'.format(cls.resource, name))
-
     def delete(self):
         """Delete a resource from the actual [client] workspace.
 

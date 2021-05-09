@@ -2,7 +2,7 @@
 from __future__ import print_function
 from . import TrainingConfig
 from .usecase_config import DataType, UsecaseConfig, ColumnConfig, TypeProblem
-from .usecase import ClassicUsecaseVersion
+from .usecase_version import ClassicUsecaseVersion
 from .metrics import Regression
 from .model import RegressionModel
 from .dataset import Dataset

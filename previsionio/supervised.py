@@ -6,11 +6,11 @@ from previsionio.dataset import Dataset, DatasetImages
 import pandas as pd
 from . import TrainingConfig
 from . import metrics
-from .usecase import ClassicUsecaseVersion
+from .usecase_version import ClassicUsecaseVersion
 from .model import Model, RegressionModel, \
     ClassificationModel, MultiClassificationModel
 from .utils import PrevisionException
-from .usecase import BaseUsecaseVersion
+from .usecase_version import BaseUsecaseVersion
 
 MODEL_CLASS_DICT = {
     TypeProblem.Regression: RegressionModel,
@@ -38,32 +38,6 @@ class Supervised(ClassicUsecaseVersion):
 
         super().__init__(**usecase_info)
         self.model_class = MODEL_CLASS_DICT.get(self.training_type, Model)
-
-    @classmethod
-    def from_name(cls, name, raise_if_non_unique=False, partial_match=False):
-        """Get a supervised usecase from the platform by its name.
-
-        Args:
-            name (str): Name of the usecase to retrieve
-            raise_if_non_unique (bool, optional): Whether or not to raise an error if
-                duplicates are found (default: ``False``)
-            partial_match (bool, optional): If true, usecases with a name containing
-                the requested name will also be returned; else, only perfect matches
-                will be found (default: ``False``)
-
-        Raises:
-            PrevisionException: Error if duplicates are found and
-                the ``raise_if_non_unique`` is enabled
-
-        Returns:
-            :class:`.Supervised`: Fetched usecase
-        """
-        instance = super(BaseUsecaseVersion, cls).from_name(name, raise_if_non_unique, partial_match)
-        type_problem = instance.training_type
-        if cls.type_problem != 'nan' and type_problem != cls.type_problem:
-            raise PrevisionException('Invalid problem type: should be "{}" but is "{}".'.format(cls.type_problem,
-                                                                                                type_problem))
-        return instance
 
     @classmethod
     def from_id(cls, _id) -> 'Supervised':
