@@ -202,10 +202,10 @@ class TextSimilarity(ClassicUsecaseVersion):
             raise PrevisionException('usecase failed to start')
 
         start_response = parse_json(start)
-        usecase = self.from_id(start_response['_id'])
-        events_url = '/{}/{}'.format(self.resource, start_response['_id'])
+        usecase = cls.from_id(start_response['_id'])
+        events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
         pio.client.event_manager.wait_for_event(usecase._id,
-                                                self.resource,
+                                                cls.resource,
                                                 EventTuple('USECASE_VERSION_UPDATE', 'state', 'running'),
                                                 specific_url=events_url)
         return usecase
