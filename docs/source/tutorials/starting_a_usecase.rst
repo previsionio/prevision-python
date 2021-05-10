@@ -62,19 +62,18 @@ A common "quick-test" training config could be:
 
 .. code-block:: python
 
-    training_config = pio.TrainingConfig(models=[pio.Model.XGBoost, pio.Model.RandomForest],
-                                         features=pio.Feature.Full,
-                                         profile=pio.Profile.Quick,
-                                         with_blend=False)
+    training_config = pio.TrainingConfig(advanced_models=[pio.AdvancedModel.LinReg],
+                                         normal_models=[pio.NormalModel.LinReg],
+                                         simple_models=[pio.SimpleModel.DecisionTree],
+                                         features=[pio.Feature.Counts],
+                                         profile=pio.Profile.Quick)
 
 Starting the use case!
 ----------------------
 
-To create the usecase and start your training session, you need to call the ``fit()`` function of one of the SDK's usecase classes. The class you pick
-depends on the type of problem your usecase uses: regression, (binary) classification, multiclassification or timeseries; and on whether it uses a simple
-tabular dataset or images.
+To create the usecase and start your training session, you need to create a project then call the adapt function
 
-For a full list of the usecase objects and their API, check out the :ref:`api_reference`.
+For a full list of the usecase fit function, check out the :ref:`api_reference`.
 
 You also need to provide the API with the dataset you want to use (for a tabular usecase) or the CSV reference dataset and ZIP image dataset (for an image
 usecase).
@@ -83,10 +82,10 @@ The following example shows how to start a regression on a simple tabular datase
 
 .. code-block:: python
 
-    uc = pio.Regression.fit('helloworld reg',
-                            dataset,
-                            column_config=column_config,
-                            training_config=training_config)
+    uc = project.fit_regression('helloworld reg',
+                                dataset,
+                                column_config=column_config,
+                                training_config=training_config)
 
 If you are running an image usecase, then you need to pass the two datasets as a tuple:
 
@@ -95,10 +94,10 @@ the ZIP image dataset is a :class:`.DatasetImages` instance):
 
 .. code-block:: python
 
-    uc = pio.RegressionImages.fit('helloworld images reg',
-                                  (dataset_csv, dataset_zip),
-                                  column_config=column_config,
-                                  training_config=training_config)
+    uc = project.fit_image_regression('helloworld images reg',
+                                      (dataset_csv, dataset_zip),
+                                      column_config=column_config,
+                                      training_config=training_config)
 
 When you start your usecase, you can either let the SDK pick a default metric according to your usecase type, or you can choose one yourself from the
 list of available :ref:`metrics`.

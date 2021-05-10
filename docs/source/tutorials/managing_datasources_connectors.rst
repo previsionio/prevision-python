@@ -16,32 +16,32 @@ For more info on all the options of connectors and datasources, check out the :r
 Listing available connectors and datasources
 --------------------------------------------
 
-Like all SDK API resources, connectors and datasources already registered on the platform can be listed
-using the ``list()`` method:
+Connectors and datasources already registered on the platform can be listed
+using the ``list_connectors()`` and ``list_datasource()`` method from project class:
 
 .. code-block:: py
 
-    connectors = pio.Connector.list()
+    connectors = project.list_connectors()
     for connector in connectors:
         print(connector.name)
 
-    datasources = pio.Datasource.list()
+    datasources = project.list_datasource()
     for datasource in datasources:
         print(datasource.name)
 
 Creating a connector
 --------------------
 
-To create a connector, use the ``new()`` method of the connector class you want to use. For example,
-to create a connector to an SQL database, use the :class:`.SQLConnector` and pass in your credentials:
+To create a connector, use the appropriate method of project class. For example,
+to create a connector to an SQL database, use the ``create_sql_connector()`` and pass in your credentials:
 
 .. code-block:: py
 
-    connector = pio.SQLConnector.new('my_sql_connector',
-                                     'https://myserver.com',
-                                     port=3306,
-                                     username='username',
-                                     password='password')
+    connector = project.create_sql_connector('my_sql_connector',
+                                             'https://myserver.com',
+                                             port=3306,
+                                             username='username',
+                                             password='password')
 
 Creating a datasource
 ---------------------
@@ -52,9 +52,9 @@ the relevant info, depending on the connector type.
 
 .. code-block:: py
 
-    datasource = pio.Datasource.new(connector,
-                                    'my_sql_datasource',
-                                    database='my_db',
-                                    table='table1')
+    datasource = project.create_datasource(connector,
+                                           'my_sql_datasource',
+                                           database='my_db',
+                                           table='table1')
 
 You can then create datasets from this datasource as explained in the guide on :ref:`using_datasets`.

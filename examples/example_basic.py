@@ -14,8 +14,7 @@ if __name__ == '__main__':
     train_df['new_feature'] = train_df['Length'] * train_df['YearConstruction']
     test_df['new_feature'] = test_df['Length'] * test_df['YearConstruction']
 
-    PROJECT_ID = "example_id"
-    project = pio.Project.from_id(PROJECT_ID)
+    project = pio.Project.from_id('project_id')
 
     train_fe = project.create_dataset('train_fe', dataframe=train_df)
     test_fe = project.create_dataset('test_fe', dataframe=test_df)
