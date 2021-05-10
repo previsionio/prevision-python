@@ -3,7 +3,7 @@ from __future__ import print_function
 import requests
 
 from . import client
-from .utils import parse_json, PrevisionException
+from .utils import handle_error_response, parse_json, PrevisionException
 from . import logger
 from .api_resource import ApiResource, UniqueResourceMixin
 
@@ -88,12 +88,11 @@ class DataSource(ApiResource, UniqueResourceMixin):
                 or parsing the result
         """
         # FIXME GET datasource should not return a dict with a "data" key
-        resp = client.request('/{}/{}'.format(cls.resource, _id), method=requests.get)
+        url = '/{}/{}'.format(cls.resource, _id)
+        resp = client.request(url, method=requests.get)
         resp_json = parse_json(resp)
 
-        if resp.status_code != 200:
-            logger.error('[{}] {}'.format(cls.resource, resp_json['list']))
-            raise PrevisionException('[{}] {}'.format(cls.resource, resp_json['list']))
+        handle_error_response(resp, url, additional_log="{}".format(resp_json['list']))
 
         return cls(**resp_json)
 

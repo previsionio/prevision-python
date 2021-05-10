@@ -9,7 +9,7 @@ from previsionio.usecase_config import ColumnConfig
 import requests
 
 from . import client
-from .utils import parse_json, PrevisionException
+from .utils import handle_error_response, parse_json, PrevisionException
 from . import logger
 from . import TrainingConfig
 from .api_resource import ApiResource, UniqueResourceMixin
@@ -110,12 +110,11 @@ class Project(ApiResource, UniqueResourceMixin):
                 or parsing the result
         """
         # FIXME GET datasource should not return a dict with a "data" key
-        resp = client.request('/{}/{}'.format(cls.resource, _id), method=requests.get)
+        url = '/{}/{}'.format(cls.resource, _id)
+        resp = client.request(url, method=requests.get)
         resp_json = parse_json(resp)
 
-        if resp.status_code != 200:
-            logger.error('[{}] {}'.format(cls.resource, resp_json['list']))
-            raise PrevisionException('[{}] {}'.format(cls.resource, resp_json['list']))
+        handle_error_response(resp, url, additional_log="{}".format(resp_json['list']))
 
         return cls(**resp_json)
 
@@ -139,9 +138,8 @@ class Project(ApiResource, UniqueResourceMixin):
 
         end_point = '/{}/{}/users'.format(self.resource, self._id)
         response = client.request(endpoint=end_point, method=requests.get)
-        if response.status_code != 200:
-            logger.error('cannot get users for project id {}'.format(self._id))
-            raise PrevisionException('[{}] {}'.format(self.resource, response.status_code))
+        handle_error_response(response, end_point,
+                              message_prefix="Error while fetching user for project id {}".format(self._id))
 
         res = parse_json(response)
         return res
@@ -215,10 +213,7 @@ class Project(ApiResource, UniqueResourceMixin):
                               data=data,
                               method=requests.post)
 
-        if resp.status_code != 200:
-            message = "Error {}: {} reaching url: '/{}' with data: {}".format(
-                resp.status_code, resp.text, cls.resource, data)
-            raise PrevisionException(message)
+        handle_error_response(resp, url, data)
         json = parse_json(resp)
 
         if '_id' not in json:

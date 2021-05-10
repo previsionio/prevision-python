@@ -8,6 +8,7 @@ import pandas as pd
 import os
 from collections import namedtuple
 import numpy as np
+from requests.models import Response
 from . import logger
 import datetime
 from math import ceil
@@ -93,3 +94,13 @@ def get_all_results(client, endpoint: str, method) -> List[Dict]:
         batch = client.request(endpoint + "?page={}".format(n), method=method)
         resources.extend(parse_json(batch)['items'])
     return resources
+
+
+def handle_error_response(resp: Response, url: str, data: Dict = None, message_prefix: str = None, additional_log: str = None):
+    if resp.status_code != 200:
+        message = "{}\nError {}: {} reaching url: '{}' with data: {}".format(
+            message_prefix, resp.status_code, resp.text, url, data)
+        logger.error(message)
+        if additional_log:
+            logger.error(additional_log)
+        raise PrevisionException(message)

@@ -1,5 +1,5 @@
 import requests
-from .utils import parse_json, PrevisionException, get_all_results
+from .utils import handle_error_response, parse_json, PrevisionException, get_all_results
 from .prevision_client import client
 from . import logger
 from enum import Enum
@@ -125,9 +125,7 @@ class ApiResource:
             url = specific_url
         resp = client.request(url, method=requests.get)
 
-        if resp.status_code != 200:
-            logger.error('[{}] {}'.format(cls.resource, resp.text))
-            raise PrevisionException('[{}] {}'.format(cls.resource, resp.text))
+        handle_error_response(resp, url)
         resp_json = parse_json(resp)
         if _id is not None:
             logger.info('[Fetch {} OK] by id: "{}"'.format(cls.__name__, _id))

@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+from previsionio.prevision_client import Client
 from typing import Tuple, Union
+
+import requests
+from requests.api import request
 from previsionio.usecase_config import ColumnConfig, DataType, TypeProblem
 from previsionio.dataset import Dataset, DatasetImages
 import pandas as pd
@@ -9,8 +13,9 @@ from . import metrics
 from .usecase_version import ClassicUsecaseVersion
 from .model import Model, RegressionModel, \
     ClassificationModel, MultiClassificationModel
-from .utils import PrevisionException
+from .utils import PrevisionException, handle_error_response
 from .usecase_version import BaseUsecaseVersion
+from .prevision_client import client
 
 MODEL_CLASS_DICT = {
     TypeProblem.Regression: RegressionModel,
@@ -168,7 +173,10 @@ class Supervised(ClassicUsecaseVersion):
             dict(column_config.to_kwargs() + training_config.to_kwargs()))
 
         params.update(fit_params)
-        return self.fit(**params)
+        endpoint = "/usecases/{}/versions".format(self.usecase_id)
+        resp = client.request(endpoint=endpoint, data=params, method=requests.post)
+        handle_error_response(resp, endpoint, params)
+        
 
     def _save_json(self):
         json_dict = {

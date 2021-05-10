@@ -5,7 +5,7 @@ import json
 from .logger import logger
 from .usecase_config import DataType, UsecaseConfig, TypeProblem
 from .prevision_client import client
-from .utils import PrevisionException, parse_json, EventTuple
+from .utils import PrevisionException, handle_error_response, parse_json, EventTuple
 from . import config
 from .model import TextSimilarityModel
 from .usecase_version import ClassicUsecaseVersion
@@ -194,12 +194,7 @@ class TextSimilarity(ClassicUsecaseVersion):
         endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', cls.data_type, cls.type_problem)
         start = client.request(endpoint, requests.post, data=data, content_type='application/json')
 
-        if start.status_code != 200:
-            logger.error(data)
-            logger.error('response:')
-            logger.error(start.text)
-            logger.error(start.__dict__)
-            raise PrevisionException('usecase failed to start')
+        handle_error_response(start, endpoint, data, "text_similality usecase failed to start")
 
         start_response = parse_json(start)
         usecase = cls.from_id(start_response['_id'])

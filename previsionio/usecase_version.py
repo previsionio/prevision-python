@@ -13,7 +13,7 @@ from . import config
 from .usecase_config import DataType, TrainingConfig, ColumnConfig, TypeProblem
 from .logger import logger
 from .prevision_client import client
-from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
+from .utils import handle_error_response, parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
 from .api_resource import ApiResource
 from .dataset import Dataset
 from .usecase import Usecase
@@ -416,9 +416,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         end_point = '/{}/{}/correlation-matrix'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
                                   method=requests.get)
-        if response.status_code != 200:
-            logger.error(response.text)
-            raise PrevisionException('get correlation matrix with error msg : {}'.format(response.text))
+        handle_error_response(response, end_point, message_prefix="Error fetching the correlation matrix")
         corr = json.loads(response.content.decode('utf-8'))
         var_names = [d['name'] for d in corr]
         matrix = pd.DataFrame(0, index=var_names, columns=var_names)
@@ -577,11 +575,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
             raise PrevisionException('invalid data type: {}'.format(data_type))
         endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', data_type, type_problem)
         start = client.request(endpoint, requests.post, data=data)
-        if start.status_code != 200:
-            logger.error(data)
-            logger.error('response:')
-            logger.error(start.text)
-            raise PrevisionException('usecase failed to start')
+        handle_error_response(start, endpoint, data, message_prefix="Error starting usecase")
         start_response = parse_json(start)
         usecase = cls.from_id(start_response['_id'])
         events_url = '/{}/{}'.format(cls.resource, start_response['_id'])

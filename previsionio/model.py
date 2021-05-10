@@ -14,7 +14,7 @@ from .dataset import Dataset
 from .deployed_model import DeployedModel
 from .prevision_client import client
 from .api_resource import ApiResource
-from .utils import NpEncoder, parse_json, EventTuple, \
+from .utils import NpEncoder, handle_error_response, parse_json, EventTuple, \
     PrevisionException, zip_to_pandas
 
 
@@ -241,20 +241,18 @@ class Model(ApiResource):
 
     def enable_deploy(self):
         data = {"deploy": True}
-        response = client.request('/models/{}'.format(self._id),
-                                  requests.put, data=data)
-        if response.status_code != 200:
-            raise PrevisionException('Cannot enable deploy with error: '.format(response.content['message']))
+        url = '/models/{}'.format(self._id)
+        response = client.request(url, requests.put, data=data)
+        handle_error_response(response, url, data, message_prefix="Error cannot enable deploy")
         self.deployable = True
         res = parse_json(response)
         return res
 
     def disable_deploy(self):
         data = {"deploy": False}
-        response = client.request('/models/{}'.format(self._id),
-                                  requests.put, data=data)
-        if response.status_code != 200:
-            raise PrevisionException('Cannot disable deploy with error: '.format(response.content['message']))
+        url = '/models/{}'.format(self._id)
+        response = client.request(url, requests.put, data=data)
+        handle_error_response(response, url, data, message_prefix="Error cannot disable deploy")
         self.deployable = False
         res = parse_json(response)
         return res
@@ -364,12 +362,12 @@ class ClassicModel(Model):
         }
 
         logger.debug('[Predict Unit] sending payload ' + str(payload))
-        response = client.request('/usecase-versions/{}/unit-prediction'.format(self.usecase_version_id),
+        url = '/usecase-versions/{}/unit-prediction'.format(self.usecase_version_id)
+        response = client.request(url,
                                   requests.post,
                                   data=payload,
                                   content_type='application/json')
-        if response.status_code != 200:
-            raise PrevisionException('error getting response data: ' + response.text)
+        handle_error_response(response, url, payload, message_prefix="Error while doing a predict")
         try:
             response_json = parse_json(response)
             return response_json
