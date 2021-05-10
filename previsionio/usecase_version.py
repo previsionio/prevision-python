@@ -88,10 +88,7 @@ class BaseUsecaseVersion(ApiResource):
             list(:class:`.Model`): List of models found by the platform for the usecase
         """
         end_point = '/{}/{}/models'.format(self.resource, self._id)
-        response = client.request(endpoint=end_point,
-                                  method=requests.get)
-        models = json.loads(response.content.decode('utf-8'))['items']
-
+        models = get_all_results(client, end_point, method=requests.get)
         for model in models:
             if model['_id'] not in self._models:
                 self._models[model['_id']] = self.model_class(**model)
