@@ -92,7 +92,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
         resp = client.request(url, method=requests.get)
         resp_json = parse_json(resp)
 
-        handle_error_response(resp, url, additional_log="{}".format(resp_json['list']))
+        handle_error_response(resp, url)
 
         return cls(**resp_json)
 

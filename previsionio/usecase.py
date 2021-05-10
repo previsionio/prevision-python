@@ -36,8 +36,8 @@ class Usecase(ApiResource):
         self._id = usecase_info.get('_id')
         self.name: str = usecase_info.get('name')
         self.project_id: str = usecase_info.get('project_id')
-        self.training_type: TypeProblem = usecase_info.get('training_type')
-        self.data_type: DataType = usecase_info.get('data_type')
+        self.training_type: str = usecase_info.get('training_type')
+        self.data_type: str = usecase_info.get('data_type')
         self.version_ids: list = usecase_info.get('version_ids')
 
     @classmethod

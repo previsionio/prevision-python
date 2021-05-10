@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from previsionio.prevision_client import Client
 from typing import Tuple, Union
 
 import requests
-from requests.api import request
 from previsionio.usecase_config import ColumnConfig, DataType, TypeProblem
 from previsionio.dataset import Dataset, DatasetImages
-import pandas as pd
 from . import TrainingConfig
 from . import metrics
 from .usecase_version import ClassicUsecaseVersion
-from .model import Model, RegressionModel, \
+from .model import RegressionModel, \
     ClassificationModel, MultiClassificationModel
-from .utils import PrevisionException, handle_error_response
-from .usecase_version import BaseUsecaseVersion
+from .utils import handle_error_response, parse_json
 from .prevision_client import client
 
 MODEL_CLASS_DICT = {
@@ -42,7 +38,7 @@ class Supervised(ClassicUsecaseVersion):
             self.holdout_dataset_id = None
 
         super().__init__(**usecase_info)
-        self.model_class = MODEL_CLASS_DICT.get(self.training_type, Model)
+        self.model_class = MODEL_CLASS_DICT.get(self.training_type)
 
     @classmethod
     def from_id(cls, _id) -> 'Supervised':
@@ -176,7 +172,16 @@ class Supervised(ClassicUsecaseVersion):
         endpoint = "/usecases/{}/versions".format(self.usecase_id)
         resp = client.request(endpoint=endpoint, data=params, method=requests.post)
         handle_error_response(resp, endpoint, params)
-        
+        json = parse_json(resp)
+
+        result = type(self)(**json)
+        result.type_problem = self.type_problem
+        result.metric_type = self.metric_type
+        result.default_metric = self.default_metric
+        if getattr(self, "start_command", None) is not None:
+            result.start_command = self.start_command
+
+        return result
 
     def _save_json(self):
         json_dict = {

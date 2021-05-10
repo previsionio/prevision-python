@@ -392,8 +392,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         self.project_id = usecase_info.get('project_id')
         self.version = usecase_info.get('version', 1)
         self._usecase_info = usecase_info
-        self.data_type: DataType = usecase_info['usecase'].get('data_type')
-        self.training_type: TypeProblem = usecase_info['usecase'].get('training_type')
+        self.data_type: str = usecase_info['usecase'].get('data_type')
+        self.training_type: str = usecase_info['usecase'].get('training_type')
         self.dataset_id = usecase_info.get('dataset_id')
         self.predictions = {}
         self.predict_token = None

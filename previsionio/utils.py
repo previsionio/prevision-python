@@ -55,7 +55,7 @@ class NpEncoder(json.JSONEncoder):
             return super(NpEncoder, self).default(obj)
 
 
-def parse_json(json_response) -> Dict:
+def parse_json(json_response: Response) -> Dict:
     try:
         return json_response.json()
     except Exception as e:
