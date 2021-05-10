@@ -183,16 +183,14 @@ class ApiResource:
         for param in self.resource_params:
             if kwargs.get(param):
                 update_fields[param] = kwargs[param]
-
-        resp = client.request('/{}'.format(self.resource),
+        url = '/{}'.format(self.resource)
+        resp = client.request(url,
                               body=update_fields,
                               method=requests.put)
 
-        resp_json = parse_json(resp)
+        handle_error_response(resp, url)
 
-        if resp_json['status'] != 200:
-            logger.error('[{}] {}'.format(self.resource, resp_json['message']))
-            raise PrevisionException('[{}] {}'.format(self.resource, resp_json['message']))
+        resp_json = parse_json(resp)
 
         logger.debug('[{}] {}'.format(self.resource, resp_json['message']))
 
