@@ -216,7 +216,7 @@ class Project(ApiResource, UniqueResourceMixin):
                               method=requests.post)
 
         if resp.status_code != 200:
-            message = "Error {}: {} reaching url: {} with data: {}".format(resp.status_code, resp.text, cls.resource, data)
+            message = "Error {}: {} reaching url: '/{}' with data: {}".format(resp.status_code, resp.text, cls.resource, data)
             raise PrevisionException(message)
         json = parse_json(resp)
 
