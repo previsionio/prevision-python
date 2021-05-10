@@ -41,15 +41,14 @@ usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
 
 # check out the usecase status and other info
 usecase_version.print_info()
-print('Current number of models:', len(uc))
-print('Current (best model) score:', uc.score)
+print('Current (best model) score:', usecase_version.score)
 
 # PREDICTIONS ---------------------------------------------------
 # load up test data
 test_datapath = 'helloworld_test.csv'
 test_dataset = project.create_dataset(name='helloworld_test', file_name=test_datapath)
 
-preds = uc.predict_from_dataset(test_dataset)
+preds = usecase_version.predict_from_dataset(test_dataset)
 
 df = pd.read_csv(test_datapath)
-preds = uc.predict(df)
+preds = usecase_version.predict(df)
