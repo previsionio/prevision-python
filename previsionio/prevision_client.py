@@ -91,6 +91,9 @@ class EventManager:
 
     def update_events(self):
         sse_timeout = 300
+        event_data = None
+        event_name = None
+            
         while True:
             sse = requests.get(self.event_endpoint,
                                stream=True,
@@ -98,42 +101,56 @@ class EventManager:
                                timeout=sse_timeout)
 
             try:
-                for msg in sse.iter_content(chunk_size=None):
-                    event_logger.debug('url: {} -- data: {}'.format(self.event_endpoint, msg))
-                    msg = msg.decode()
-                    # SSE comments can start with ":" character
-                    if msg[0] == ':':
-                        event_logger.debug('sse comment{}'.format(msg))
+                for line in sse.iter_lines(chunk_size=None):
+                    if not line:
+                        # filter out keep-alive new lines
                         continue
-                    try:
-                        _, event_name, event_data, *rest = msg.split('\n')
-                        event_name = event_name.replace('event: ', '')
-                        event_data = json.loads(event_data.replace('data: ', '').strip())
-                    except json.JSONDecodeError as e:
-                        event_logger.warning('failed to parse json: "{}" -- error: {}'.format(msg, e.__repr__()))
-                    except requests.exceptions.ChunkedEncodingError:
-                        event_logger.warning('closing connection to endpoint: "{}"'.format(self.event_endpoint))
-                        sse.close()
-                        return
-                    else:
-                        resource_id = event_data.get('_id', None)
-                        # ignore invalid resource ids
-                        if not isinstance(resource_id, str):
-                            continue
-                        payload = {'event': event_name, 'id': resource_id}
 
-                        event_logger.debug('url: {} -- event: {} payload: {}'.format(self.event_endpoint,
-                                                                                     event_name,
-                                                                                     payload))
+                    event_logger.debug('url: {} -- data: {}'.format(self.event_endpoint, line))
+                    line = line.decode()
+                    if line.startswith(':'):
+                        # SSE comments can start with ":" character
+                        event_logger.debug('sse comment{}'.format(line))
+                        continue
+                    elif line.startswith('id '):
+                        # skip id message information
+                        continue
+                    elif line.startswith('event: '):
+                        # get event name
+                        event_name = line[len('event: '):]
+                    elif line.startswith('data: '):
+                        if event_name is None:
+                            # ignore event with unknown name
+                            continue
+
+                        # get event data
+                        try:
+                            event_data = json.loads(line[len('data: '):])
+                        except Exception as e:
+                            # skip malformed event data
+                            event_logger.warning('failed to parse json: "{}" -- error: {}'.format(line, e.__repr__()))
+                            continue
+
+                        resource_id = event_data.get('_id', None)
+
+                        if not isinstance(resource_id, str):
+                            # ignore event with invalid resource id
+                            continue
+
                         # add event only if monitored resource
                         semd, event_dict = self._events
                         if resource_id in event_dict:
+                            payload = {'event': event_name, 'id': resource_id}
+                            event_logger.debug('url: {} -- event: {} payload: {}'.format(self.event_endpoint,
+                                                                                         event_name,
+                                                                                         payload))
                             self.add_event(resource_id, payload)
+            except requests.exceptions.ChunkedEncodingError:
+                event_logger.warning('closing connection to endpoint: "{}"'.format(self.event_endpoint))
             except requests.exceptions.ConnectionError:
                 logger.warning('{}: no messages in {} seconds. reconnecting'.format(self.event_endpoint, sse_timeout))
             except Exception as e:
                 logger.error(e)
-                raise
             finally:
                 sse.close()
 
