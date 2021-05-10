@@ -26,22 +26,22 @@ from pandas import DataFrame
 
 
 class ProjectColor(Enum):
-    greenLighter = 'greenLighter'
-    green = 'green'
-    greenDarker = 'greenDarker'
-    greenDarkest = 'greenDarkest'
-    purpleLighter = 'purpleLighter'
-    purple = 'purple'
-    purpleDarker = 'purpleDarker'
-    purpleDarkest = 'purpleDarkest'
-    blueLighter = 'blueLighter'
-    blue = 'blue'
-    blueDarker = 'blueDarker'
-    blueDarkest = 'blueDarkest'
-    yellowLighter = 'yellowLighter'
-    yellow = 'yellow'
-    yellowDarker = 'yellowDarker'
-    yellowDarkest = 'yellowDarkest'
+    greenLighter = '#16D92C'
+    green = '#29CC3C'
+    greenDarker = '#47B354'
+    greenDarkest = '#5C9963'
+    purpleLighter = '#8E00E6'
+    purple = '#8D29CC'
+    purpleDarker = '#8947B3'
+    purpleDarkest = '#825C99'
+    blueLighter = '#0099E6'
+    blue = '#2996CC'
+    blueDarker = '#478FB3'
+    blueDarkest = '#5C8599'
+    yellowLighter = '#E6E600'
+    yellow = '#CCCC29'
+    yellowDarker = '#B3B347'
+    yellowDarkest = '#99995C'
 
 
 class Project(ApiResource, UniqueResourceMixin):
@@ -208,7 +208,7 @@ class Project(ApiResource, UniqueResourceMixin):
             'description': description
         }
         if color:
-            data['color'] = color
+            data['color'] = color.value
 
         url = '/{}'.format(cls.resource)
         resp = client.request(url,
@@ -216,7 +216,8 @@ class Project(ApiResource, UniqueResourceMixin):
                               method=requests.post)
 
         if resp.status_code != 200:
-            message = "Error {}: {} reaching url: '/{}' with data: {}".format(resp.status_code, resp.text, cls.resource, data)
+            message = "Error {}: {} reaching url: '/{}' with data: {}".format(
+                resp.status_code, resp.text, cls.resource, data)
             raise PrevisionException(message)
         json = parse_json(resp)
 
@@ -362,7 +363,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return FTPConnector._new(self._id, name, host, port, 'FTP', username=username, password=password)
 
-    def create_sftp_connector(self, name: str, host: str, port: int=23, username: str='', password: str=''):
+    def create_sftp_connector(self, name: str, host: str, port: int = 23, username: str = '', password: str = ''):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -378,7 +379,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return SFTPConnector._new(self._id, name, host, port, 'SFTP', username=username, password=password)
 
-    def create_s3_connector(self, name: str, host: str='', port:int=None, username: str='', password: str=''):
+    def create_s3_connector(self, name: str, host: str = '', port: int = None, username: str = '', password: str = ''):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -394,7 +395,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return S3Connector._new(self._id, name, host, port, 'S3', username=username, password=password)
 
-    def create_hive_connector(self, name: str, host: str, port: int=10000, username: str='', password: str=''):
+    def create_hive_connector(self, name: str, host: str, port: int = 10000, username: str = '', password: str = ''):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -410,7 +411,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return HiveConnector._new(self._id, name, host, port, 'HIVE', username=username, password=password)
 
-    def create_gcp_connector(self, name: str='', host: str='', port=None, username: str='', password: str='', googleCredentials=''):
+    def create_gcp_connector(self, name: str = '', host: str = '', port=None, username: str = '', password: str = '', googleCredentials=''):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
