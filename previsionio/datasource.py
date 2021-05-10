@@ -90,9 +90,8 @@ class DataSource(ApiResource, UniqueResourceMixin):
         # FIXME GET datasource should not return a dict with a "data" key
         url = '/{}/{}'.format(cls.resource, _id)
         resp = client.request(url, method=requests.get)
-        resp_json = parse_json(resp)
-
         handle_error_response(resp, url)
+        resp_json = parse_json(resp)
 
         return cls(**resp_json)
 
