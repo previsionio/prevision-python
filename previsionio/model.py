@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+from typing import Union
 from previsionio.usecase_config import TypeProblem
 import time
 import json
@@ -177,7 +178,7 @@ class Model(ApiResource):
 
         return zip_to_pandas(pred_response)
 
-    def predict_from_dataset(self, dataset, confidence=False, dataset_folder=None) -> pd.DataFrame:
+    def predict_from_dataset(self, dataset, confidence=False, dataset_folder=None) -> Union[pd.DataFrame, None]:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
@@ -412,7 +413,7 @@ class ClassificationModel(ClassicModel):
         resp = json.loads(response.content.decode('utf-8'))
         if response.ok:
             return resp["optimal_proba"]
-        raise PrevisionException('Request Error : {}'.format(response.content['message']))
+        raise PrevisionException('Request Error : {}'.format(resp['message']))
 
     def get_dynamic_performances(self, threshold=0.5):
         """ Get model performance for the given threshold.
@@ -453,7 +454,7 @@ class ClassificationModel(ClassicModel):
                 result[metric] = resp["score"][metric]
 
             return result
-        raise PrevisionException('Request Error : {}'.format(response.content['message']))
+        raise PrevisionException('Request Error : {}'.format(resp['message']))
 
 
 class RegressionModel(ClassicModel):
@@ -527,7 +528,7 @@ class TextSimilarityModel(Model):
         return predict_start_parsed['_id']
 
     def predict_from_dataset(self, queries_dataset, queries_dataset_content_column, top_k=10,
-                             queries_dataset_matching_id_description_column=None) -> pd.DataFrame:
+                             queries_dataset_matching_id_description_column=None) -> Union[pd.DataFrame, None]:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 

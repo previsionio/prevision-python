@@ -305,6 +305,6 @@ client = Client()
 
 if os.getenv('PREVISION_URL') and os.getenv('PREVISION_MASTER_TOKEN'):
     logger.info('Initializing Prevision.io client using environment variables')
-    logger.debug('PREVISION_URL:' + os.getenv('PREVISION_URL'))
-    logger.debug('PREVISION_MASTER_TOKEN:' + os.getenv('PREVISION_MASTER_TOKEN'))
-    client.init_client(os.getenv('PREVISION_URL'), os.getenv('PREVISION_MASTER_TOKEN'))
+    logger.debug('PREVISION_URL:' + os.getenv('PREVISION_URL', ""))
+    logger.debug('PREVISION_MASTER_TOKEN:' + os.getenv('PREVISION_MASTER_TOKEN', ""))
+    client.init_client(os.getenv('PREVISION_URL', ""), os.getenv('PREVISION_MASTER_TOKEN', ""))

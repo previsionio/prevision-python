@@ -68,6 +68,26 @@ def test_delete_usecase():
     assert uc_name not in [u.name for u in usecases]
 
 
+def test_usecase_version():
+    uc_name = TESTING_ID + '_file_del'
+    usecase_version: pio.Supervised = supervised_from_filename('regression', uc_name)
+    usecases = pio.Usecase.list(PROJECT_ID)
+    assert uc_name in [u.name for u in usecases]
+
+    new_version_uc_name = uc_name + '_new'
+    usecase_new_version = usecase_version.new_version(new_version_uc_name)
+    usecases = pio.Usecase.list(PROJECT_ID)
+    assert new_version_uc_name in [u.name for u in usecases]
+
+    usecase_new_version.usecase.delete()
+    usecases = pio.Usecase.list(PROJECT_ID)
+    assert new_version_uc_name not in [u.name for u in usecases]
+
+    usecase_version.usecase.delete()
+    usecases = pio.Usecase.list(PROJECT_ID)
+    assert uc_name not in [u.name for u in usecases]
+
+
 def test_stop_running_usecase():
     uc_name = TESTING_ID + '_file_run'
     usecase_version = supervised_from_filename('regression', uc_name)
