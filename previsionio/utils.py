@@ -98,8 +98,10 @@ def get_all_results(client, endpoint: str, method) -> List[Dict]:
 
 def handle_error_response(resp: Response, url: str, data: Dict = None, message_prefix: str = None, additional_log: str = None):
     if resp.status_code != 200:
-        message = "{}\nError {}: {} reaching url: '{}' with data: {}".format(
-            message_prefix, resp.status_code, resp.text, url, data)
+        message = "Error {}: {} reaching url: '{}' with data: {}".format(
+            resp.status_code, resp.text, url, data)
+        if message_prefix:
+            message = message_prefix + '\n' + message
         logger.error(message)
         if additional_log:
             logger.error(additional_log)
