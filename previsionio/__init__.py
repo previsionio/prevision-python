@@ -3,7 +3,7 @@ import logging
 from .logger import logger, event_logger
 
 
-__version__ = '10.8.0'
+__version__ = '10.21.1'
 
 
 def verbose(v, debug=False, event_log=False):
