@@ -10,7 +10,7 @@ from . import metrics
 from .usecase_version import ClassicUsecaseVersion
 from .model import RegressionModel, \
     ClassificationModel, MultiClassificationModel
-from .utils import handle_error_response, parse_json
+from .utils import EventTuple, handle_error_response, parse_json
 from .prevision_client import client
 
 MODEL_CLASS_DICT = {
@@ -156,7 +156,7 @@ class Supervised(ClassicUsecaseVersion):
             holdout_dataset_id = holdout_dataset.id
 
         params = {'name': name,
-                  'dataset': dataset_ids,
+                  'dataset_id': dataset_ids,
                   'metric': metric.value,
                   'holdout_dataset': holdout_dataset_id,
                   'type_problem': self.type_problem,
@@ -174,14 +174,21 @@ class Supervised(ClassicUsecaseVersion):
         handle_error_response(resp, endpoint, params)
         json = parse_json(resp)
 
-        result = type(self)(**json)
-        result.type_problem = self.type_problem
-        result.metric_type = self.metric_type
-        result.default_metric = self.default_metric
+        usecase = type(self).from_id(json["usecase_id"])
+        usecase.type_problem = self.type_problem
+        usecase.metric_type = self.metric_type
+        usecase.default_metric = self.default_metric
         if getattr(self, "start_command", None) is not None:
-            result.start_command = self.start_command
+            usecase.start_command = self.start_command
 
-        return result
+        events_url = '/{}/{}'.format(self.resource, json['_id'])
+        client.event_manager.wait_for_event(usecase.resource_id,
+                                                self.resource,
+                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
+                                                           [('state', 'failed')]),
+                                                specific_url=events_url)
+
+        return usecase
 
     def _save_json(self):
         json_dict = {

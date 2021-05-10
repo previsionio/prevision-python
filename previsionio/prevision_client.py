@@ -43,7 +43,7 @@ class EventManager:
 
     def wait_for_event(self,
                        resource_id: str,
-                       resource_type,
+                       resource_type: str,
                        event_tuple: previsionio.utils.EventTuple,
                        specific_url=None):
         # ignore invalid resource ids

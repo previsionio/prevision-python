@@ -14,6 +14,7 @@ if __name__ == '__main__':
     train_df['new_feature'] = train_df['Length'] * train_df['YearConstruction']
     test_df['new_feature'] = test_df['Length'] * test_df['YearConstruction']
 
+    PROJECT_ID = "example_id"
     project = pio.Project.from_id(PROJECT_ID)
 
     train_fe = project.create_dataset('train_fe', dataframe=train_df)
@@ -35,45 +36,45 @@ if __name__ == '__main__':
 
     usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 1)
 
-    preds = uc.predict_from_dataset(test_fe)
+    preds = usecase_version.predict_from_dataset(test_fe)
 
     # Get some Use case derived informations:
     # correlation matrix
     print('*************************************')
     print('***         GET CORR MATRIX       ***')
-    CM = uc.correlation_matrix
+    CM = usecase_version.correlation_matrix
     print(CM)
 
     # basic feauture stats
     print('*************************************')
     print('***    GET FEATURE STATISTICS    ***')
-    FS = uc.features_stats
+    FS = usecase_version.features_stats
     print(FS)
 
     # one specefic feature infos
     print('*************************************')
     print('***    GET FEATURE STATISTICS    ***')
-    FI = uc.get_feature_info(feature_name='bathrooms')
+    FI = usecase_version.get_feature_info(feature_name='bathrooms')
     print(FI)
 
     # list the created models:
     print('*************************************')
     print('***    LIST MODELS    ***')
-    print(uc.models)
+    print(usecase_version.models)
     print('-------')
-    #print(uc.list_models['xgb'])
+    #print(usecase_version.list_models['xgb'])
 
     # Get some typical models
     # a- the model with the best performances (having the minimal value of the chosen erro metric)
     print('*************************************')
     print('***         GET BEST MODEL        ***')
-    best_model = uc.best_model
+    best_model = usecase_version.best_model
     print(best_model.__dict__)
 
     # b- the fastest model (having the minimal prediction time)
     print('************************************')
     print('***       GET FASTEST MODEL      ***')
-    fastest_model = uc.fastest_model
+    fastest_model = usecase_version.fastest_model
     print(fastest_model.__dict__)
 
     # c- a specefic model (if a specefic model is desired, the SDK gives utilies to deal with it)
