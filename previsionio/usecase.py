@@ -1,23 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import json
-from typing import Dict, List, Union
-import pandas as pd
+from typing import List
 import requests
-import time
-import previsionio as pio
-import os
-from functools import lru_cache
 
-from . import config
-from .usecase_config import DataType, TrainingConfig, ColumnConfig, TypeProblem
-from .logger import logger
 from .prevision_client import client
-from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
+from .utils import parse_json
 from .api_resource import ApiResource
-from .dataset import Dataset
-
-from enum import Enum
 
 
 class Usecase(ApiResource):

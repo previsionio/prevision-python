@@ -32,10 +32,7 @@ class Supervised(ClassicUsecaseVersion):
     # model_class = Model
 
     def __init__(self, **usecase_info):
-        if usecase_info.get('holdout_dataset_id'):
-            self.holdout_dataset_id = usecase_info.get('holdout_dataset_id')
-        else:
-            self.holdout_dataset_id = None
+        self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
 
         super().__init__(**usecase_info)
         self.model_class = MODEL_CLASS_DICT.get(self.training_type)
@@ -183,10 +180,10 @@ class Supervised(ClassicUsecaseVersion):
 
         events_url = '/{}/{}'.format(self.resource, json['_id'])
         client.event_manager.wait_for_event(usecase.resource_id,
-                                                self.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
-                                                           [('state', 'failed')]),
-                                                specific_url=events_url)
+                                            self.resource,
+                                            EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
+                                                       [('state', 'failed')]),
+                                            specific_url=events_url)
 
         return usecase
 

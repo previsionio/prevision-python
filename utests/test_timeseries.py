@@ -120,7 +120,7 @@ def time_window_test(dws, dwe, fws, fwe):
                      time_window=pio.TimeWindow(dws, dwe, fws, fwe))
     uc_name_returned = uc.name
 
-    uc.wait_until(lambda usecase: len(usecase) > 0)
+    uc.wait_until(lambda usecasev: len(usecasev.models) > 0)
     uc.stop()
     return uc_name_returned
 
@@ -133,6 +133,20 @@ def test_time_window(dws, dwe, fws, fwe):
     usecases = [uc.name for uc in project.list_usecases()]
     assert uc_name_returned in usecases
 
+def test_version():
+    dws, dwe, fws, fwe = (-10, -5, 3, 4)
+    ts_label = '_'.join(str(s).replace('-', 'm') for s in (dws, dwe, fws, fwe))
+    uc_name_asked = 'ts_time{}_{}'.format(ts_label, TESTING_ID)
+
+    uc = train_model(uc_name_asked,
+                     time_window=pio.TimeWindow(dws, dwe, fws, fwe))
+    
+    uc.wait_until(lambda usecasev: len(usecasev.models) > 0)
+    uc.stop()
+    new_uc = uc.new_version("test")
+    new_uc.wait_until(lambda usecasev: len(usecasev.models) > 1)
+    uc.stop()
+    
 
 @pytest.mark.parametrize('dws, dwe, fws, fwe', wrong_windows,
                          ids=['-'.join(str(s) for s in w) for w in wrong_windows])
@@ -152,7 +166,7 @@ def setup_ts_class(request):
     uc_name = 'ts_{}grp_{}'.format(group_name, TESTING_ID)
     usecase_version = train_model(uc_name, groups)
 
-    usecase_version.wait_until(lambda usecase: len(usecase) > 0)
+    usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
     usecase_version.stop()
     yield groups, usecase_version
     usecase_version.usecase.delete()

@@ -1,14 +1,9 @@
 from typing import Union
 from previsionio.dataset import Dataset
 import requests
-from functools import lru_cache
-import time
-import json
-from .logger import logger
 from .usecase_config import DataType, UsecaseConfig, TypeProblem
 from .prevision_client import client
-from .utils import PrevisionException, handle_error_response, parse_json, EventTuple
-from . import config
+from .utils import handle_error_response, parse_json, EventTuple
 from .model import TextSimilarityModel
 from .usecase_version import ClassicUsecaseVersion
 import previsionio as pio
