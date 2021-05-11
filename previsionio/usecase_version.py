@@ -159,6 +159,16 @@ class BaseUsecaseVersion(ApiResource):
         return fastest_model
 
     @property
+    def done(self):
+        """ Get a flag indicating whether or not the usecase is currently done.
+
+        Returns:
+            bool: done status
+        """
+        status = self._status
+        return status['state'] == 'done'
+
+    @property
     def running(self):
         """ Get a flag indicating whether or not the usecase is currently running.
 

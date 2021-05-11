@@ -69,6 +69,30 @@ class BaseTrainSearchDelete(unittest.TestCase):
         assert not uc.running
         uc.usecase.delete()
 
+    def test_train_new_stop_delete_text_similarity(self):
+
+        description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
+        uc = pio.TextSimilarity.fit(PROJECT_ID,
+                                    'test_sdk_1_text_similarity_{}'.format(TESTING_ID),
+                                    test_datasets['description'],
+                                    description_column_config,
+                                    metric=pio.metrics.TextSimilarity.accuracy_at_k)
+
+        uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
+
+        new_version = uc.new_version('test_sdk_1_text_similarity_{}_new'.format(TESTING_ID))
+        new_version.wait_until(lambda usecase: usecase._status['state'] == 'done')
+
+        time.sleep(40)
+        new_version.stop()
+        new_version.update_status()
+        assert not new_version.running
+
+        uc.stop()
+        uc.update_status()
+        assert not uc.running
+        uc.usecase.delete()
+
     def test_train_search_delete_text_similarity_with_queries_dataset(self):
 
         description_column_config = pio.DescriptionsColumnConfig(content_column='item_desc', id_column='item_id')
