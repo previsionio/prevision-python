@@ -72,10 +72,14 @@ def test_usecase_version():
     uc_name = TESTING_ID + '_file_del'
     usecase_version: pio.Supervised = supervised_from_filename('regression', uc_name)
     usecases = pio.Usecase.list(PROJECT_ID)
+    print("usecase_version.usecase_id", usecase_version.usecase_id)
+    print("usecase_version.project_id", usecase_version.project_id)
     assert uc_name in [u.name for u in usecases]
 
     new_version_uc_name = uc_name + '_new'
     usecase_new_version = usecase_version.new_version(new_version_uc_name)
+    print("usecase_new_version.usecase_id", usecase_new_version.usecase_id)
+    print("usecase_new_version.project_id", usecase_new_version.project_id)
     usecases = pio.Usecase.list(PROJECT_ID)
     assert new_version_uc_name in [u.name for u in usecases]
 
