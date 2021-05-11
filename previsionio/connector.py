@@ -1,7 +1,7 @@
 from typing import Union
 import requests
 from . import client
-from .utils import parse_json
+from .utils import parse_json, handle_error_response
 from .api_resource import ApiResource, UniqueResourceMixin
 
 
@@ -128,7 +128,9 @@ class DataTableBaseConnector(Connector):
         Returns:
             dict: Databases information
         """
-        resp = client.request('/{}/{}/databases'.format(self.resource, self._id), requests.get)
+        url = '/{}/{}/databases'.format(self.resource, self._id)
+        resp = client.request(url, requests.get)
+        handle_error_response(resp, url)
         resp_json = parse_json(resp)
         return resp_json['items']
 
@@ -141,7 +143,9 @@ class DataTableBaseConnector(Connector):
         Returns:
             dict: Tables information
         """
-        resp = client.request('/{}/{}/databases/{}/tables'.format(self.resource, self._id, database), requests.get)
+        url = '/{}/{}/databases/{}/tables'.format(self.resource, self._id, database)
+        resp = client.request(url, requests.get)
+        handle_error_response(resp, url)
         resp_json = parse_json(resp)
         return resp_json['items']
 
@@ -158,7 +162,9 @@ class DataFileBaseConnector(Connector):
         Returns:
             dict: files information
         """
-        resp = client.request('/{}/{}/paths'.format(self.resource, self._id), requests.get)
+        url = '/{}/{}/paths'.format(self.resource, self._id)
+        resp = client.request(url, requests.get)
+        handle_error_response(resp, url)
         resp_json = parse_json(resp)
         return resp_json['items']
 
