@@ -174,7 +174,7 @@ class Supervised(ClassicUsecaseVersion):
         handle_error_response(resp, endpoint, params)
         json = parse_json(resp)
 
-        usecase = type(self).from_id(json["usecase_id"])
+        usecase = type(self).from_id(json["_id"])
         usecase.type_problem = self.type_problem
         usecase.metric_type = self.metric_type
         usecase.default_metric = self.default_metric
