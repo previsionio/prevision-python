@@ -15,8 +15,6 @@ from .logger import logger, event_logger
 from . import config
 from .utils import parse_json, PrevisionException
 
-EVENT_TIMEOUT = int(os.environ.get('EVENT_TIMEOUT', 600))
-
 
 class EventManager:
     def __init__(self, event_endpoint: str, auth_headers, client):
@@ -53,27 +51,21 @@ class EventManager:
         t0 = time.time()
         while time.time() < t0 + config.default_timeout:
             reconnect_start = time.time()
-            while time.time() < reconnect_start + 60:
+            semd, event_dict = self._events
+            semd.acquire()
+            if self.check_resource_event(resource_id, specific_url, event_tuple, semd):
+                return
+            semd.release()
+            time.sleep(0.1)
+            while time.time() < reconnect_start + 300:
                 semd, event_dict = self._events
-
                 semd.acquire()
                 semi, event_list = event_dict[resource_id]
-
                 remaining_events = []
                 with semi:
                     for event in event_list:
                         if event.get('event') == event_tuple.name:
-                            resp = self.client.request(endpoint=specific_url, method=requests.get)
-                            json_response = parse_json(resp)
-                            for k, v in event_tuple.fail_checks:
-                                if json_response.get(k) == v:
-                                    semd.release()
-                                    msg = 'Error on resource {}: {}\n{}'.format(resource_id,
-                                                                                json_response.get('errorMessage', ''),
-                                                                                json_response)
-                                    raise PrevisionException(msg)
-                            if json_response.get(event_tuple.key) == event_tuple.value:
-                                semd.release()
+                            if self.check_resource_event(resource_id, specific_url, event_tuple, semd):
                                 return
                         else:
                             remaining_events.append(event)
@@ -85,6 +77,21 @@ class EventManager:
             raise TimeoutError('Failed to get status {} on {} {}'.format(event_tuple,
                                                                          resource_type,
                                                                          resource_id))
+
+    def check_resource_event(self, resource_id, endpoint, event_tuple, semd):
+        resp = self.client.request(endpoint=endpoint, method=requests.get)
+        json_response = parse_json(resp)
+        for k, v in event_tuple.fail_checks:
+            if json_response.get(k) == v:
+                semd.release()
+                msg = 'Error on resource {}: {}\n{}'.format(resource_id,
+                                                            json_response.get('errorMessage', ''),
+                                                            json_response)
+                raise PrevisionException(msg)
+        if json_response.get(event_tuple.key) == event_tuple.value:
+            semd.release()
+            return True
+        return False
 
     def register_resource(self, resource_id):
         event_logger.debug('Registering resource with id {}'.format(resource_id))

@@ -122,7 +122,7 @@ class ApiResource:
                 raise Exception('[{}] Provide an _id or a specific url for "from_id" method'.format(cls.resource))
             url = '/{}/{}'.format(cls.resource, _id)
         else:
-            url = specific_url
+            url = specific_url 
         resp = client.request(url, method=requests.get)
 
         handle_error_response(resp, url)

@@ -85,7 +85,6 @@ def get_all_results(client, endpoint: str, method) -> List[Dict]:
     resources = []
     batch: requests.Response = client.request(endpoint, method=method)
     json = parse_json(batch)
-    print(json)
     meta = json['metaData']
     total_items = meta['totalItems']
     rows_per_page = meta['rowsPerPage']
