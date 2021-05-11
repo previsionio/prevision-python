@@ -80,14 +80,12 @@ def test_usecase_version():
     usecase_new_version = usecase_version.new_version(new_version_uc_name)
     print("usecase_new_version.usecase_id", usecase_new_version.usecase_id)
     print("usecase_new_version.project_id", usecase_new_version.project_id)
-    usecases = pio.Usecase.list(PROJECT_ID)
-    assert new_version_uc_name in [u.name for u in usecases]
+    #usecases = pio.Usecase.list(PROJECT_ID)
+    usecase_versions = usecase_version.usecase.versions
+    assert usecase_new_version._id in [u['_id'] for u in usecase_versions]
 
     usecase_new_version.usecase.delete()
-    usecases = pio.Usecase.list(PROJECT_ID)
-    assert new_version_uc_name not in [u.name for u in usecases]
 
-    usecase_version.usecase.delete()
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name not in [u.name for u in usecases]
 
@@ -162,9 +160,7 @@ class TestInfos:
     def test_info(self, setup_usecase_class, options):
         type_problem, uc = setup_usecase_class
         # test models
-        nb_models = len(uc)
-        assert isinstance(nb_models, int)
-        assert nb_models > 0
+        assert len(uc.models) > 0
         # test Score
         assert uc.score is not None
         # test cv
