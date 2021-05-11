@@ -71,7 +71,7 @@ class TimeSeries(ClassicUsecaseVersion):
 
     def __init__(self, **usecase_info):
         self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
-        self.time_window = TimeWindow.from_dict(usecase_info.get('time_window'))
+        self.time_window = TimeWindow.from_dict(usecase_info['usecase_version_params'].get('timeseries_values'))
 
         super().__init__(**usecase_info)
 
@@ -140,7 +140,7 @@ class TimeSeries(ClassicUsecaseVersion):
         params.update(training_args)
 
         endpoint = "/usecases/{}/versions".format(self.usecase_id)
-        
+
         resp = client.request(endpoint=endpoint, data=params, method=requests.post)
         handle_error_response(resp, endpoint, params)
         json = parse_json(resp)
@@ -160,4 +160,3 @@ class TimeSeries(ClassicUsecaseVersion):
                                             specific_url=events_url)
 
         return usecase
-
