@@ -118,7 +118,7 @@ class Model(ApiResource):
         specific_url = '/predictions/{}'.format(prediction_id)
         pio.client.event_manager.wait_for_event(prediction_id,
                                                 specific_url,
-                                                EventTuple('PREDICTION_UPDATE', 'state', 'done'),
+                                                EventTuple('PREDICTION_UPDATE', 'state', 'done', [('state', 'failed')]),
                                                 specific_url=specific_url)
 
     def _predict_bulk(self,

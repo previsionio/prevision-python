@@ -392,7 +392,8 @@ class DatasetImages(ApiResource):
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
         pio.client.event_manager.wait_for_event(create_json['_id'],
                                                 cls.resource,
-                                                previsionio.utils.EventTuple('FOLDER_UPDATE', 'state', 'done'),
+                                                previsionio.utils.EventTuple(
+                                                    'FOLDER_UPDATE', 'state', 'done', [('state', 'failed')]),
                                                 specific_url=url)
 
         dset_resp = client.request(url, method=requests.get)
