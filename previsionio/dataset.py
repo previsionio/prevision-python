@@ -187,15 +187,16 @@ class Dataset(ApiResource):
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
         resp = client.request(endpoint=endpoint,
                               method=requests.get)
-        if resp.status_code == 200 and resp._content is not None:
-            if not download_path:
-                download_path = os.getcwd()
-            path = os.path.join(download_path, self.name + ".zip")
-            with open(path, "wb") as file:
-                file.write(resp._content)
-            return path
-        else:
-            raise PrevisionException('could not download dataset')
+        handle_error_response(resp, endpoint)
+        if resp._content is None:
+            raise PrevisionException("could not download dataset")
+
+        if not download_path:
+            download_path = os.getcwd()
+        path = os.path.join(download_path, self.name + ".zip")
+        with open(path, "wb") as file:
+            file.write(resp._content)
+        return path
 
     @classmethod
     def _new(cls, project_id: str, name: str, datasource: DataSource = None, file_name: str = None, dataframe=None):
@@ -286,7 +287,7 @@ class Dataset(ApiResource):
         create_json = parse_json(create_resp)
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
         event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'describe_state', 'done',
-                                                    [('ready', 'failed'), ('drift', 'failed')])
+                                                   [('ready', 'failed'), ('drift', 'failed')])
         pio.client.event_manager.wait_for_event(create_json['_id'],
                                                 cls.resource,
                                                 event_tuple,
@@ -385,21 +386,18 @@ class DatasetImages(ApiResource):
                                      method=requests.post)
         source.close()
 
+        handle_error_response(create_resp, request_url)
+
         create_json = parse_json(create_resp)
+        url = '/{}/{}'.format(cls.resource, create_json['_id'])
+        pio.client.event_manager.wait_for_event(create_json['_id'],
+                                                cls.resource,
+                                                previsionio.utils.EventTuple('FOLDER_UPDATE', 'state', 'done'),
+                                                specific_url=url)
 
-        if create_resp.status_code == 200:
-            url = '/{}/{}'.format(cls.resource, create_json['_id'])
-            pio.client.event_manager.wait_for_event(create_json['_id'],
-                                                    cls.resource,
-                                                    previsionio.utils.EventTuple('FOLDER_UPDATE', 'state', 'done'),
-                                                    specific_url=url)
-
-            dset_resp = client.request(url, method=requests.get)
-            dset_json = parse_json(dset_resp)
-            return cls(**dset_json)
-
-        else:
-            raise PrevisionException('[Dataset] Error: {}'.format(create_json))
+        dset_resp = client.request(url, method=requests.get)
+        dset_json = parse_json(dset_resp)
+        return cls(**dset_json)
 
     def download(self, download_path=None):
         """Download the dataset from the platform locally.
@@ -419,12 +417,13 @@ class DatasetImages(ApiResource):
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
         resp = client.request(endpoint=endpoint,
                               method=requests.get)
-        if resp.status_code == 200 and resp._content is not None:
-            if not download_path:
-                download_path = os.getcwd()
-            path = os.path.join(download_path, self.name + ".zip")
-            with open(path, "wb") as file:
-                file.write(resp._content)
-            return path
-        else:
+        handle_error_response(resp, endpoint)
+        if resp._content is None:
             raise PrevisionException('could not download dataset')
+
+        if not download_path:
+            download_path = os.getcwd()
+        path = os.path.join(download_path, self.name + ".zip")
+        with open(path, "wb") as file:
+            file.write(resp._content)
+        return path

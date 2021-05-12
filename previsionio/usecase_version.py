@@ -511,14 +511,14 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         Raises:
             PrevisionException: If the given feature name does not match any feaure
         """
+        endpoint = '/{}/{}/features/{}'.format(self.resource, self._id, feature_name)
         response = client.request(
-            endpoint='/{}/{}/features/{}'.format(self.resource, self._id, feature_name),
+            endpoint=endpoint,
             method=requests.get)
+        handle_error_response(response, endpoint)
+
         result = (json.loads(response.content.decode('utf-8')))
-        if result.get('status', 200) != 200:
-            msg = result['message']
-            logger.error(msg)
-            raise PrevisionException(msg)
+
         # drop chart-related informations
         keep_list = list(filter(lambda x: 'chart' not in x.lower(),
                                 result.keys())

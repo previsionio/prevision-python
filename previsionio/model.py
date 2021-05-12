@@ -319,14 +319,15 @@ class ClassicModel(Model):
         Raises:
             PrevisionException: Any error while fetching data from the platform or parsing the result
         """
+        endpoint = '/models/{}/analysis'.format(self._id)
         response = client.request(
-            endpoint='/models/{}/analysis'.format(self._id),
+            endpoint=endpoint,
             method=requests.get)
+
+        handle_error_response(response, endpoint)
+
         result = (json.loads(response.content.decode('utf-8')))
-        if result.get('status', 200) != 200:
-            msg = result['message']
-            logger.error(msg)
-            raise PrevisionException(msg)
+
         # drop chart-related information
         return result
 
