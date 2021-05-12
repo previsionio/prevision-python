@@ -266,7 +266,8 @@ class TextSimilarity(ClassicUsecaseVersion):
         events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
         pio.client.event_manager.wait_for_event(usecase._id,
                                                 cls.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running'),
+                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
+                                                           [('state', 'failed')]),
                                                 specific_url=events_url)
         return usecase
 
@@ -350,6 +351,7 @@ class TextSimilarity(ClassicUsecaseVersion):
         events_url = '/{}/{}'.format(self.resource, start_response['_id'])
         pio.client.event_manager.wait_for_event(usecase._id,
                                                 self.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running'),
+                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
+                                                           [('state', 'failed')]),
                                                 specific_url=events_url)
         return usecase
