@@ -197,7 +197,7 @@ class TextSimilarity(ClassicUsecaseVersion):
         self.project_id = usecase_info.get('project_id')
         self.version = usecase_info.get('version', 1)
         self._usecase_info = usecase_info
-        self.dataset_id = usecase_info.get('dataset_id')
+        self.dataset_id: str = usecase_info.get('dataset_id')
         self.predictions = {}
         self.predict_token = None
 
@@ -331,7 +331,7 @@ class TextSimilarity(ClassicUsecaseVersion):
         if queries_dataset_id:
             training_args['queries_dataset_id'] = queries_dataset_id
 
-        training_args['metric'] = metric
+        training_args['metric'] = metric.value
         training_args['top_k'] = top_k
         training_args['lang'] = lang
 
