@@ -9,7 +9,7 @@ import tempfile
 from zipfile import ZipFile
 import previsionio.utils
 from . import client
-from .utils import parse_json, zip_to_pandas, PrevisionException
+from .utils import handle_error_response, parse_json, zip_to_pandas, PrevisionException
 from .api_resource import ApiResource
 from . import logger
 import previsionio as pio
@@ -282,22 +282,19 @@ class Dataset(ApiResource):
         if create_resp is None:
             raise PrevisionException('[Dataset] Uexpected case in dataset creation')
 
+        handle_error_response(create_resp, request_url, data)
         create_json = parse_json(create_resp)
-        if create_resp.status_code == 200:
-            url = '/{}/{}'.format(cls.resource, create_json['_id'])
-            event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'describe_state', 'done',
-                                                       [('ready', 'failed'), ('drift', 'failed')])
-            pio.client.event_manager.wait_for_event(create_json['_id'],
-                                                    cls.resource,
-                                                    event_tuple,
-                                                    specific_url=url)
+        url = '/{}/{}'.format(cls.resource, create_json['_id'])
+        event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'describe_state', 'done',
+                                                    [('ready', 'failed'), ('drift', 'failed')])
+        pio.client.event_manager.wait_for_event(create_json['_id'],
+                                                cls.resource,
+                                                event_tuple,
+                                                specific_url=url)
 
-            dset_resp = client.request(url, method=requests.get)
-            dset_json = parse_json(dset_resp)
-            return cls(**dset_json)
-
-        else:
-            raise PrevisionException('[Dataset] Error: {}'.format(create_json))
+        dset_resp = client.request(url, method=requests.get)
+        dset_json = parse_json(dset_resp)
+        return cls(**dset_json)
 
 
 class DatasetImages(ApiResource):
