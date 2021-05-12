@@ -1,4 +1,5 @@
 import operator
+from typing import Dict, List
 import requests
 import uuid
 import json
@@ -7,6 +8,7 @@ import pandas as pd
 import os
 from collections import namedtuple
 import numpy as np
+from requests.models import Response
 from . import logger
 import datetime
 from math import ceil
@@ -53,7 +55,7 @@ class NpEncoder(json.JSONEncoder):
             return super(NpEncoder, self).default(obj)
 
 
-def parse_json(json_response):
+def parse_json(json_response: Response) -> Dict:
     try:
         return json_response.json()
     except Exception as e:
@@ -70,20 +72,20 @@ def get_pred_from_multiclassification(row, pred_prefix='pred_'):
 
 
 EventTuple = namedtuple('EventTuple', 'name key value fail_checks')
-EventTuple.__new__.__defaults__ = ((('status', 'failed'),),)
+EventTuple.__new__.__defaults__ = ((('state', 'failed'),),)
 
 
-def is_null_value(value):
+def is_null_value(value) -> bool:
     is_null = str(value) == 'null'
     is_nan = pd.isnull(value)
     return is_nan or is_null
 
 
-def get_all_results(client, endpoint, method):
+def get_all_results(client, endpoint: str, method) -> List[Dict]:
     resources = []
-    batch = client.request(endpoint, method=method)
-    batch = parse_json(batch)
-    meta = batch['metaData']
+    batch: requests.Response = client.request(endpoint, method=method)
+    json = parse_json(batch)
+    meta = json['metaData']
     total_items = meta['totalItems']
     rows_per_page = meta['rowsPerPage']
     n_pages = ceil(total_items / rows_per_page)
@@ -91,3 +93,15 @@ def get_all_results(client, endpoint, method):
         batch = client.request(endpoint + "?page={}".format(n), method=method)
         resources.extend(parse_json(batch)['items'])
     return resources
+
+
+def handle_error_response(resp: Response, url: str, data: Dict = None, message_prefix: str = None, additional_log: str = None):
+    if resp.status_code != 200:
+        message = "Error {}: {} reaching url: '{}' with data: {}".format(
+            resp.status_code, resp.text, url, data)
+        if message_prefix:
+            message = message_prefix + '\n' + message
+        logger.error(message)
+        if additional_log:
+            logger.error(additional_log)
+        raise PrevisionException(message)

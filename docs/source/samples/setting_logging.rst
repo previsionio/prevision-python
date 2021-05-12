@@ -27,7 +27,14 @@ For example:
 
     # TESTING LOGS --------------------------------------------------
     # fetching a dataset from the platform
-    dataset = pio.Dataset.from_name('helloworld')
+    dataset = pio.Dataset.from_id('dataset_id')
 
-    # fetching a usecase from the platform
-    uc = pio.Supervised.from_name('helloworld classif')
+    # fetching a usecase  from the platform
+    usecase = pio.Usecase.from_id('usecase_id')
+
+    # fetching a usecase version from the platform
+    usecase_version = pio.Supervised.from_id('usecase_version_id')
+    usecase_version = pio.Classification.from_id('usecase_version_id')
+
+    # fetching a model from the platform
+    model = pio.Model.from_id('helloworld classif')

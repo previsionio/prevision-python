@@ -1,9 +1,9 @@
 from __future__ import print_function
 import logging
-from .logger import logger, event_logger
+from previsionio.logger import logger, event_logger
 
 
-__version__ = '10.24.0'
+__version__ = '11.0.0'
 
 
 def verbose(v, debug=False, event_log=False):
@@ -38,14 +38,15 @@ class Config:
         self.request_retries = 3
         self.request_retry_time = 10
         self.scheduler_refresh_rate = 10
-        self.default_timeout = 10800
+        self.default_timeout = 3600
 
 
 config = Config()
 
 from previsionio.prevision_client import client
 from previsionio.usecase_config import \
-    Model, \
+    AdvancedModel, \
+    NormalModel, \
     SimpleModel, \
     TypeProblem, \
     Feature, \
@@ -54,22 +55,22 @@ from previsionio.usecase_config import \
     base_config, \
     quick_config, \
     ultra_config, \
-    ClusterMagnitude, \
-    ClusteringTrainingConfig, \
-    clustering_base_config, \
     ColumnConfig
 
 import previsionio.metrics as metrics
 
 from previsionio.connector import Connector
 from previsionio.datasource import DataSource
+from previsionio.project import Project
+from previsionio.usecase import Usecase
 from previsionio.supervised import Supervised, SupervisedImages, \
     Regression, Classification, MultiClassification, \
-    RegressionImages, ClassificationImages, MultiClassificationImages
+    RegressionImages, ClassificationImages, MultiClassificationImages, MODEL_CLASS_DICT
 from previsionio.timeseries import TimeSeries, TimeWindow, TimeWindowException
 
 from previsionio.text_similarity import TextSimilarity, DescriptionsColumnConfig, \
     QueriesColumnConfig, ListModelsParameters, ModelsParameters, TextSimilarityModels, ModelEmbedding, Preprocessing
+from previsionio.model import Model, ClassificationModel, RegressionModel, MultiClassificationModel, TextSimilarityModel
 from previsionio.dataset import Dataset, DatasetImages
 # from previsionio.experiment import Experiment
 from previsionio.plotter import PrevisionioPlotter, PlotlyPlotter, MatplotlibPlotter
@@ -77,7 +78,8 @@ from previsionio.analyzer import cv_classif_analysis
 from previsionio.deployed_model import DeployedModel
 
 __all__ = ['client',
-           'Model',
+           'AdvancedModel',
+           'NormalModel',
            'SimpleModel',
            'TypeProblem',
            'Feature',
@@ -101,11 +103,17 @@ __all__ = ['client',
            'ClassificationImages',
            'MultiClassification',
            'MultiClassificationImages',
+           'MODEL_CLASS_DICT'
            'TimeSeries',
            'TimeWindow',
            'TimeWindowException',
            'Dataset',
            'DatasetImages',
+           'Model',
+           'RegressionModel',
+           'ClassificationModel',
+           'MultiClassification',
+           'TextSimilarityModel',
            'PrevisionioPlotter',
            'PlotlyPlotter',
            'MatplotlibPlotter',
@@ -118,5 +126,7 @@ __all__ = ['client',
            'ModelsParameters',
            'TextSimilarityModels',
            'ModelEmbedding',
-           'Preprocessing'
+           'Preprocessing',
+           'Project',
+           'Usecase'
            ]

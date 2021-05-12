@@ -2,16 +2,12 @@
 from __future__ import print_function
 import pandas as pd
 from . import TypeProblem, clustering_base_config
-from .usecase import BaseUsecase
+from .usecase_version import BaseUsecaseVersion
 
 
-class UnSupervised(BaseUsecase):
+class UnSupervised(BaseUsecaseVersion):
     specific_required_params = {
         'type_problem': 'clustering',
-    }
-
-    specific_optional_params = {
-        'fold_column': 'foldColumn',
     }
 
     start_command = 'focus'

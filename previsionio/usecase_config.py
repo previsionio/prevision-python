@@ -15,16 +15,27 @@ class ParamList(list):
 class TypeProblem(object):
     """ Type of supervised problems available with Prevision.io. """
     Classification = 'classification'
-    """Classification"""
+    """Prediction using classification approach, for when the output variable is a category"""
     Regression = 'regression'
-    """Regression"""
+    """Prediction using regression problem, for when the output variable is a real or continuous value"""
     MultiClassification = 'multiclassification'
-    """Multi Classification"""
-    Clustering = 'clustering'
-    """Clustering"""
+    """Prediction using classification approach, for when the output variable many categories"""
+    TextSimilarity = 'text-similarity'
+    """Ranking of texts by keywords"""
+    ObjectDetection = "object-detection"
+    """Detection of pattern in images"""
+
+class DataType(object):
+    """ Type of data available with Prevision.io. """
+    Tabular = 'tabular'
+    """Data arranged in a table"""
+    TimeSeries = 'timeseries'
+    """Data points indexed in time order"""
+    Images = 'images'
+    """Catalogue of images"""
 
 
-class Model(object):
+class AdvancedModel(object):
     """ Types of normal models that can be trained with Prevision.io.
     The ``Full`` member is a shortcut to get all available models at once.
     To just drop a single model from a list of models, use:
@@ -45,11 +56,13 @@ class Model(object):
     """Linear Regression"""
     RandomForest = 'RF'
     """Random Forest"""
-    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF'])
+    CatBoost = 'CB'
+    """CatBoost"""
+    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF', 'CB'])
     """Evaluate all models"""
 
 
-class LiteModel(object):
+class NormalModel(object):
     """ Types of lite models that can be trained with Prevision.io.
     The ``Full`` member is a shortcut to get all available models at once.
     To just drop a single model from a list of models, use:
@@ -72,7 +85,9 @@ class LiteModel(object):
     """Random Forest"""
     NaiveBayesClassifier = 'NBC'
     """Random Forest"""
-    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF', 'NBC'])
+    CatBoost = 'CB'
+    """CatBoost"""
+    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF', 'NBC', 'CB'])
     """Evaluate all models"""
 
 
@@ -149,10 +164,14 @@ class UsecaseConfig(object):
         for key, value in self.__dict__.items():
             if not value:
                 continue
-            if isinstance(value, list):
+            if key not in self.config:
+                kwargs.append((key, value))
+            elif isinstance(value, list):
                 kwargs.append((self.config[key], value))
             elif isinstance(value, bool):
                 kwargs.append((self.config[key], str(value).lower()))
+            elif isinstance(value, int):
+                kwargs.append((self.config[key], value))
             else:
                 kwargs.append((self.config[key], str(value)))
         return kwargs
@@ -189,9 +208,11 @@ class TrainingConfig(UsecaseConfig):
             - the "normal" profile is something in-between to help you investigate
               an interesting result
 
-        models (list(str), optional): Names of the (normal) models to use in the usecase
-            (among: "LR", "RF", "ET", "XGB", "LGB" and "NN")
-        simple_models (list(str), optional): Names of the (normal) models to use in the usecase
+        advanced_models (list(str), optional): Names of the (advanced) models to use in the usecase
+            (among: "LR", "RF", "ET", "XGB", "LGB", "CB" and "NN")
+        normal_models (list(str), optional): Names of the (normal) models to use in the usecase
+            (among: "LR", "RF", "ET", "XGB", "LGB", "CB", 'NB' and "NN")
+        simple_models (list(str), optional): Names of the (simple) models to use in the usecase
             (among: "LR" and "DT")
         features (list(str), optional): Names of the feature engineering modules to use (among:
             "Counter", "Date", "freq", "text_tfidf", "text_word2vec", "text_embedding", "tenc",
@@ -204,20 +225,15 @@ class TrainingConfig(UsecaseConfig):
     """
 
     config = {
-        'normal_models': 'normalModels',
-        'lite_models': 'liteModels',
-        'simple_models': 'simpleModels',
-        'fe_selected_list': 'featuresEngineeringSelectedList',
-        'profile': 'profile',
-        'with_blend': 'withBlend',
+        'fe_selected_list': 'features_engineering_selected_list'
     }
 
     def __init__(self,
-                 profile=Profile.Normal,
-                 normal_models=Model.Full,
-                 lite_models=LiteModel.Full,
-                 simple_models=SimpleModel.Full,
-                 features=Feature.Full,
+                 profile=Profile.Quick,
+                 advanced_models=[AdvancedModel.XGBoost, AdvancedModel.LinReg],
+                 normal_models=[NormalModel.XGBoost, NormalModel.LinReg],
+                 simple_models=[],
+                 features=[Feature.Frequency, Feature.TargetEncoding, Feature.Counts],
                  with_blend=False,
                  fe_selected_list=[]):
         """
@@ -237,8 +253,8 @@ class TrainingConfig(UsecaseConfig):
         else:
             self.fe_selected_list = [f for f in Feature.Full if f in features]
 
-        self.normal_models = normal_models
-        self.lite_models = lite_models
+        self.normal_models = advanced_models
+        self.lite_models = normal_models
         self.simple_models = simple_models
 
         self.profile = profile
@@ -271,15 +287,9 @@ class ColumnConfig(UsecaseConfig):
     """
 
     config = {
-        'id_column': 'idColumn',
-        'weight_column': 'weightColumn',
-        'target_column': 'targetColumn',
-        'filename_column': 'filenameColumn',
-        'fold_column': 'foldColumn',
-        'time_column': 'timeColumn',
-        'group_columns': 'groupList',
-        'apriori_columns': 'aprioriList',
-        'drop_list': 'dropList',
+        'group_columns': 'group_list',
+        'apriori_columns': 'apriori_list',
+        'drop_list': 'drop_list',
     }
 
     def __init__(self,
@@ -304,54 +314,29 @@ class ColumnConfig(UsecaseConfig):
 
 
 base_config = TrainingConfig(profile=Profile.Normal,
-                             normal_models=Model.Full,
-                             lite_models=LiteModel.Full,
+                             advanced_models=AdvancedModel.Full,
+                             normal_models=NormalModel.Full,
                              simple_models=SimpleModel.Full,
                              features=Feature.Full.drop(Feature.PCA, Feature.KMeans),
                              with_blend=True)
 
 quick_config = TrainingConfig(profile=Profile.Quick,
-                              normal_models=Model.Full.drop(Model.NeuralNet),
-                              lite_models=LiteModel.Full.drop(LiteModel.NeuralNet),
+                              advanced_models=AdvancedModel.Full.drop(AdvancedModel.NeuralNet),
+                              normal_models=NormalModel.Full.drop(NormalModel.NeuralNet),
                               simple_models=SimpleModel.Full.drop(SimpleModel.LinReg),
                               features=Feature.Full.drop(Feature.PCA, Feature.KMeans),
                               with_blend=False)
 
 ultra_config = TrainingConfig(profile=Profile.Quick,
                               features=Feature.Full.drop(Feature.PCA, Feature.KMeans),
-                              normal_models=[Model.XGBoost],
-                              lite_models=[LiteModel.XGBoost],
+                              advanced_models=[AdvancedModel.XGBoost],
+                              normal_models=[NormalModel.XGBoost],
                               simple_models=[SimpleModel.LinReg],
                               with_blend=False)
 
 nano_config = TrainingConfig(profile=Profile.Quick,
-                             normal_models=[Model.LinReg],
-                             lite_models=[LiteModel.LinReg],
+                             advanced_models=[AdvancedModel.LinReg],
+                             normal_models=[NormalModel.LinReg],
                              simple_models=[],
                              features=[],
                              with_blend=False)
-
-
-class ClusterMagnitude(object):
-    """
-    Training cluster magnitude type.
-    """
-    Few = 'FEW'
-    Some = 'SOME'
-    Many = 'MANY'
-
-
-class ClusteringTrainingConfig(object):
-    """
-    Holds a Clustering training configuration. (cluster_magnitude, feature engineering, training speed)
-    """
-
-    def __init__(self, cluster_magnitude, features, profile):
-        self.cluster_magnitude = cluster_magnitude
-        self.features = features
-        self.profile = profile
-
-
-clustering_base_config = ClusteringTrainingConfig(ClusterMagnitude.Some,
-                                                  Feature.Full.drop(Feature.PCA, Feature.KMeans),
-                                                  Profile.Normal)

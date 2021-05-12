@@ -1,17 +1,17 @@
 import os
 import time
 import pandas as pd
-import pytest
 import previsionio as pio
-from previsionio.utils import PrevisionException
 from .datasets import make_supervised_datasets, remove_datasets
 from . import DATA_PATH
 from .utils import get_testing_id
 
 TESTING_ID = get_testing_id()
 
+PROJECT_NAME = "sdk_test_dataset_" + str(TESTING_ID)
+PROJECT_ID = ""
 pio.config.zip_files = False
-pio.config.default_timeout = 80
+pio.config.default_timeout = 1000
 
 test_datasets = {}
 paths = {}
@@ -20,21 +20,29 @@ paths = {}
 def setup_module(module):
     remove_datasets(DATA_PATH)
     paths.update(make_supervised_datasets(DATA_PATH))
+    project = pio.Project.new(name=PROJECT_NAME,
+                              description="description test sdk")
+    global PROJECT_ID
+    PROJECT_ID = project._id
 
 
 def teardown_module(module):
     remove_datasets(DATA_PATH)
-    for ds in pio.Dataset.list(all=True):
+    project = pio.Project.from_id(PROJECT_ID)
+    for ds in project.list_datasets(all=True):
         if TESTING_ID in ds.name:
             ds.delete()
+    project.delete()
 
 
 def test_upload_datasets():
+    project = pio.Project.from_id(PROJECT_ID)
     for problem_type, p in paths.items():
-        dataset = pio.Dataset.new(name=p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
-                                  dataframe=pd.read_csv(p))
+        dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
+                                         dataframe=pd.read_csv(p))
         test_datasets[problem_type] = dataset
-    datasets = [ds for ds in pio.Dataset.list(all=True) if TESTING_ID in ds.name]
+
+    datasets = [ds for ds in project.list_datasets(all=True) if TESTING_ID in ds.name]
     ds_names = [k + str(TESTING_ID) + '.csv' for k in paths]
     assert len(datasets) == len(paths)
     for ds in datasets:
@@ -47,32 +55,22 @@ def test_from_id_new():
     assert new._id == ds._id
 
 
-def test_get_by_name():
-    # test with fake name
-    for (fake_name, v) in [('foobar', 'last'), ('foobar', -5)]:
-        with pytest.raises(PrevisionException) as e:
-            pio.dataset.Dataset.get_by_name(name=fake_name, version=v)
-        assert (e.match(r"DatasetNotFoundError"))
-
-    # delete the first uploaded dataset
-    ds_name = 'regression' + str(TESTING_ID) + '.csv'
-    ds = pio.dataset.Dataset.get_by_name(ds_name)
-    assert ds is not None
-    assert ds.name == ds_name
-
-
 def test_download():
-    ds_name = 'regression' + str(TESTING_ID) + '.csv'
-    csv_path = pio.dataset.Dataset.download(dataset_name=ds_name)
-    assert os.path.isfile(csv_path)
-    os.remove(csv_path)
+    ds = test_datasets['regression']
+    ds = pio.Dataset.from_id(ds._id)
+    path = ds.download()
+    assert os.path.isfile(path)
+    os.remove(path)
 
 
 def test_embedding():
-    ds_name = 'regression' + str(TESTING_ID) + '.csv'
-    ds = pio.dataset.Dataset.from_name(ds_name)
+    ds = test_datasets['regression']
+    ds = pio.Dataset.from_id(ds._id)
     ds.start_embedding()
-    time.sleep(20)
+    t0 = time.time()
+    while ds.get_embedding_status() in ['pending', 'running'] and time.time() < t0 + pio.config.default_timeout:
+        ds.update_status()
+
     embedding = ds.get_embedding()
     assert isinstance(embedding, dict)
     assert 'labels' in embedding
@@ -80,5 +78,6 @@ def test_embedding():
 
 
 def test_delete_dataset():
-    ds_name = 'regression' + str(TESTING_ID) + '.csv'
-    pio.dataset.Dataset.get_by_name(ds_name).delete()
+    ds = test_datasets['regression']
+    ds = pio.Dataset.from_id(ds._id)
+    ds.delete()

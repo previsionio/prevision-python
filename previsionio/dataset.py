@@ -9,11 +9,16 @@ import tempfile
 from zipfile import ZipFile
 import previsionio.utils
 from . import client
-from .utils import parse_json, zip_to_pandas, PrevisionException
+from .utils import handle_error_response, parse_json, zip_to_pandas, PrevisionException
 from .api_resource import ApiResource
 from . import logger
 import previsionio as pio
 import requests
+from .datasource import DataSource
+
+from typing import Union
+from pandas import DataFrame, Series
+FrameOrSeriesUnion = Union["DataFrame", "Series"]
 
 
 class Dataset(ApiResource):
@@ -28,14 +33,18 @@ class Dataset(ApiResource):
         - from files (CSV, ZIP)
         - or from a Data Source at a given time (snapshot) """
 
-    resource = 'datasets/files'
+    resource = 'datasets'
 
-    def __init__(self, _id, name, datasource=None, _data=None, **kwargs):
-        super().__init__(_id, datasource)
+    def __init__(self, _id: str, name: str, datasource: DataSource = None, _data=None, describe_state=None,
+                 drift_state=None, embeddings_state=None, **kwargs):
+        super().__init__(_id=_id, datasource=datasource)
         self.name = name
         self._id = _id
 
         self.datasource = datasource
+        self.describe_state = describe_state
+        self.drift_state = drift_state
+        self.embeddings_state = embeddings_state
         self.other_params = kwargs
         self._data = _data
 
@@ -66,7 +75,7 @@ class Dataset(ApiResource):
     data = property(to_pandas)
 
     @classmethod
-    def list(cls, all=all):
+    def list(cls, project_id, all: bool = True):
         """ List all the available datasets in the current active [client] workspace.
 
         .. warning::
@@ -83,43 +92,25 @@ class Dataset(ApiResource):
         Returns:
             list(:class:`.Dataset`): Fetched dataset objects
         """
-        resources = super().list(all=all)
+        resources = super().list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources]
 
-    @classmethod
-    def getid_from_name(cls, name=None, version='last'):
-        """ Return the dataset id corresponding to a given name.
+    def update_status(self):
+        url = '/{}/{}'.format(self.resource, self._id)
+        dset_resp = client.request(url, method=requests.get)
+        dset_json = parse_json(dset_resp)
+        self.describe_state = dset_json['describe_state']
+        self.drift_state = dset_json['drift_state']
+        self.embeddings_state = dset_json['embeddings_state']
 
-        Args:
-            name (str): Name of the dataset
-            version (int, str, optional): Specific version of the
-                dataset (can be an int, or 'last' - default - to
-                get the latest version of the dataset)
+    def get_describe_status(self):
+        return self.describe_state
 
-        Raises:
-            PrevisionException: If dataset does not exist, version
-                number is out of range or there is another error
-                fetching or parsing data
-        """
-        # use prevision api to search by name
-        if not name:
-            return None
-        if version != 'last':
-            if not isinstance(version, type(7)):
-                raise TypeError("version argument takes as values positive int or 'last' ")
+    def get_drift_status(self):
+        return self.drift_state
 
-        datasets = cls.list()
-        datasets = list(filter(lambda d: d.name == name, datasets))
-        if len(datasets) > 0:
-            # get the corresponding id
-            if version == 'last':
-                version = len(datasets)
-            if (len(datasets) < version) or (version <= 0):
-                raise PrevisionException('list index out of range')
-            return datasets[(version - 1)]._id
-
-        msg_error = 'DatasetNotFoundError: No such dataset name : {}'.format(name)
-        raise PrevisionException(msg_error)
+    def get_embedding_status(self):
+        return self.embeddings_state
 
     def delete(self):
         """Delete a dataset from the actual [client] workspace.
@@ -128,12 +119,9 @@ class Dataset(ApiResource):
             PrevisionException: If the dataset does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-
         resp = client.request(endpoint='/{}/{}'
                               .format(self.resource, self.id),
                               method=requests.delete)
-
-        resp = parse_json(resp)
         return resp
 
     def start_embedding(self):
@@ -144,7 +132,7 @@ class Dataset(ApiResource):
             requests.exceptions.ConnectionError: request error
         """
 
-        resp = client.request(endpoint='/{}/{}/start-embedding'
+        resp = client.request(endpoint='/{}/{}/analysis'
                               .format(self.resource, self.id),
                               method=requests.post)
 
@@ -181,12 +169,10 @@ class Dataset(ApiResource):
                                     dtype="float32").reshape(*tensors_shape)
             return {'labels': labels, 'tensors': tensors}
 
-    @classmethod
-    def download(cls, dataset_name=None, download_path=None):
+    def download(self, download_path: str = None):
         """Download the dataset from the platform locally.
 
         Args:
-            dataset_name (str): Name of the dataset to download
             download_path (str, optional): Target local directory path
                 (if none is provided, the current working directory is
                 used)
@@ -198,54 +184,21 @@ class Dataset(ApiResource):
             PrevisionException: If dataset does not exist or if there
                 was another error fetching or parsing data
         """
-        if not dataset_name:
-            raise AttributeError("download missing 1 required \
-            positional argument: 'dataset_name' ")
-
-        try:
-            dataset_id = cls.getid_from_name(name=dataset_name)
-            dataset = cls.from_id(dataset_id)
+        endpoint = '/{}/{}/download'.format(self.resource, self.id)
+        resp = client.request(endpoint=endpoint,
+                              method=requests.get)
+        if resp.status_code == 200 and resp._content is not None:
             if not download_path:
                 download_path = os.getcwd()
-            df = dataset.data
-            csv_path = os.path.join(download_path, dataset.name)
-            df.to_csv(csv_path)
-            logger.info('{} saved in {}'.format(dataset_name, download_path))
-            return csv_path
-        except Exception as e:
-            logger.error('could not download dataset {}: {}'.format(dataset_name, e))
-            raise PrevisionException(e)
+            path = os.path.join(download_path, self.name + ".zip")
+            with open(path, "wb") as file:
+                file.write(resp._content)
+            return path
+        else:
+            raise PrevisionException('could not download dataset')
 
     @classmethod
-    def get_by_name(cls, name=None, version='last'):
-        """Get an already registered dataset from the platform (using its registration
-        name).
-
-        Args:
-            name (str): Name of the dataset to retrieve
-            version (int, str, optional): Specific version of the
-                dataset (can be an int, or 'last' - default - to
-                get the latest version of the dataset)
-
-        Raises:
-            AttributeError: if dataset_name is not given
-            PrevisionException: If dataset does not exist or if there
-                was another error fetching or parsing data
-
-        Returns:
-            :class:`.Dataset`: Fetched dataset
-        """
-        # input control : name param required
-        if not name:
-            logger.error("name argument REQUIRED")
-            raise AttributeError("get_by_name missing 1 required \
-                                positional argument: 'name'")
-
-        dataset_id = cls.getid_from_name(name=name, version=version)
-        return cls.from_id(dataset_id)
-
-    @classmethod
-    def new(cls, name, datasource=None, file_name=None, dataframe=None):
+    def _new(cls, project_id: str, name: str, datasource: DataSource = None, file_name: str = None, dataframe=None):
         """ Register a new dataset in the workspace for further processing.
         You need to provide either a datasource, a file name or a dataframe
         (only one can be specified).
@@ -256,6 +209,7 @@ class Dataset(ApiResource):
             registred in your workspace.
 
         Args:
+            project_id (str): project id
             name (str): Registration name for the dataset
             datasource (:class:`.DataSource`, optional): A DataSource object used
                 to import a remote dataset (if you want to import a specific dataset
@@ -286,10 +240,10 @@ class Dataset(ApiResource):
         files = {
 
         }
-
-        request_url = '/{}'.format(cls.resource)
-
+        request_url = '/projects/{}/{}/file'.format(project_id, cls.resource)
+        create_resp = None
         if datasource is not None:
+            request_url = '/projects/{}/{}/data-sources'.format(project_id, cls.resource)
             data['datasource_id'] = datasource.id
             create_resp = client.request(request_url,
                                          data=data,
@@ -300,20 +254,19 @@ class Dataset(ApiResource):
 
             with tempfile.NamedTemporaryFile(prefix=name, suffix='.csv') as temp:
                 dataframe.to_csv(temp.name, index=False)
-
                 file_name = temp.name.replace('.csv', file_ext)
                 with ZipFile(file_name, 'w') as zip_file:
                     zip_file.write(temp.name, arcname=name + '.csv')
 
-            with open(zip_file.filename, 'rb') as f:
-                files['file'] = (os.path.basename(file_name), f)
+                with open(temp.name, 'rb') as f:
+                    files['file'] = (os.path.basename(file_name), f)
 
-                for k, v in data.items():
-                    files[k] = (None, v)
-
-                create_resp = client.request(request_url,
-                                             files=files,
-                                             method=requests.post)
+                    for k, v in data.items():
+                        files[k] = (None, v)
+                    create_resp = client.request(request_url,
+                                                 data=data,
+                                                 files=files,
+                                                 method=requests.post)
 
         elif file_name is not None:
             with open(file_name, 'r') as f:
@@ -323,30 +276,28 @@ class Dataset(ApiResource):
                     files[k] = (None, v)
 
                 create_resp = client.request(request_url,
+                                             data=data,
                                              files=files,
                                              method=requests.post)
+        if create_resp is None:
+            raise PrevisionException('[Dataset] Uexpected case in dataset creation')
 
+        handle_error_response(create_resp, request_url, data)
         create_json = parse_json(create_resp)
+        url = '/{}/{}'.format(cls.resource, create_json['_id'])
+        event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'describe_state', 'done',
+                                                    [('ready', 'failed'), ('drift', 'failed')])
+        pio.client.event_manager.wait_for_event(create_json['_id'],
+                                                cls.resource,
+                                                event_tuple,
+                                                specific_url=url)
 
-        if create_resp.status_code == 200:
-            url = '/{}/{}'.format(cls.resource, create_json['_id'])
-            event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'ready', 'done',
-                                                       [('ready', 'failed'), ('drift', 'failed')])
-            pio.client.event_manager.wait_for_event(create_json['_id'],
-                                                    cls.resource,
-                                                    event_tuple,
-                                                    specific_url=url)
-
-            dset_resp = client.request(url, method=requests.get)
-            dset_json = parse_json(dset_resp)
-
-            return cls(**dset_json)
-
-        else:
-            raise PrevisionException('[Dataset] Error: {}'.format(create_json))
+        dset_resp = client.request(url, method=requests.get)
+        dset_json = parse_json(dset_resp)
+        return cls(**dset_json)
 
 
-class DatasetImages(Dataset):
+class DatasetImages(ApiResource):
 
     """ DatasetImages objects represent image data resources that will be used by
         Prevision.io's platform.
@@ -357,24 +308,58 @@ class DatasetImages(Dataset):
         Within the platform, image folder datasets are stored as ZIP files and are copied from
         ZIP files. """
 
-    resource = 'datasets/folders'
+    resource = 'image-folders'
 
-    def to_pandas(self) -> pd.DataFrame:
-        """ Invalid method for a :class:`.DatasetImages` object.
+    def __init__(self, _id, name, project_id, copy_state, **kwargs):
+        super().__init__(_id=_id)
+        self.name = name
+        self._id = _id
+        self.project_id = project_id
+        self.copy_state = copy_state
+
+        self.other_params = kwargs
+
+    def delete(self):
+        """Delete a DatasetImages from the actual [client] workspace.
 
         Raises:
-            ValueError: Folder datasets cannot be converted to a ``pandas`` dataframe
+            PrevisionException: If the dataset images does not exist
+            requests.exceptions.ConnectionError: Error processing the request
         """
-        raise ValueError("Cannot convert a folder dataset to pandas.")
+        resp = client.request(endpoint='/{}/{}'
+                              .format(self.resource, self.id),
+                              method=requests.delete)
+        return resp
 
     @classmethod
-    def new(cls, name, file_name):
+    def list(cls, project_id: str, all: bool = True):
+        """ List all the available dataset image in the current active [client] workspace.
+
+        .. warning::
+
+            Contrary to the parent ``list()`` function, this method
+            returns actual :class:`.DatasetImages` objects rather than
+            plain dictionaries with the corresponding data.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+
+        Returns:
+            list(:class:`.DatasetImages`): Fetched dataset objects
+        """
+        resources = super().list(all=all, project_id=project_id)
+        return [cls(**conn_data) for conn_data in resources]
+
+    @classmethod
+    def _new(cls, project_id: str, name: str, file_name: str):
         """ Register a new image dataset in the workspace for further processing
         (in the image folders group).
 
         .. note::
 
-            To start a new use case on a dataset, it has to be already
+            To start a new use case on a dataset image, it has to be already
             registred in your workspace.
 
         Args:
@@ -385,9 +370,9 @@ class DatasetImages(Dataset):
             PrevisionException: Error while creating the dataset on the platform
 
         Returns:
-            :class:`.Dataset`: The registered dataset object in the current workspace.
+            :class:`.DatasetImages`: The registered dataset object in the current workspace.
         """
-        request_url = '/{}'.format(cls.resource)
+        request_url = '/projects/{}/{}'.format(project_id, cls.resource)
         source = open(file_name, 'rb')
 
         files = {
@@ -406,13 +391,40 @@ class DatasetImages(Dataset):
             url = '/{}/{}'.format(cls.resource, create_json['_id'])
             pio.client.event_manager.wait_for_event(create_json['_id'],
                                                     cls.resource,
-                                                    previsionio.utils.EventTuple('FOLDER_UPDATE', 'ready', 'done'),
+                                                    previsionio.utils.EventTuple('FOLDER_UPDATE', 'state', 'done'),
                                                     specific_url=url)
 
             dset_resp = client.request(url, method=requests.get)
             dset_json = parse_json(dset_resp)
-
             return cls(**dset_json)
 
         else:
             raise PrevisionException('[Dataset] Error: {}'.format(create_json))
+
+    def download(self, download_path=None):
+        """Download the dataset from the platform locally.
+
+        Args:
+            download_path (str, optional): Target local directory path
+                (if none is provided, the current working directory is
+                used)
+
+        Returns:
+            str: Path the data was downloaded to
+
+        Raises:
+            PrevisionException: If dataset does not exist or if there
+                was another error fetching or parsing data
+        """
+        endpoint = '/{}/{}/download'.format(self.resource, self.id)
+        resp = client.request(endpoint=endpoint,
+                              method=requests.get)
+        if resp.status_code == 200 and resp._content is not None:
+            if not download_path:
+                download_path = os.getcwd()
+            path = os.path.join(download_path, self.name + ".zip")
+            with open(path, "wb") as file:
+                file.write(resp._content)
+            return path
+        else:
+            raise PrevisionException('could not download dataset')

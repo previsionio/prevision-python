@@ -1,8 +1,8 @@
+from typing import Union
 import requests
 from . import client
-from .utils import parse_json
+from .utils import parse_json, handle_error_response
 from .api_resource import ApiResource, UniqueResourceMixin
-import json
 
 
 class Connector(ApiResource, UniqueResourceMixin):
@@ -24,9 +24,9 @@ class Connector(ApiResource, UniqueResourceMixin):
     resource = 'connectors'
     conn_type = 'connector'
 
-    def __init__(self, _id, name, host=None, port=None, type=None,
-                 username='', password='', googleCredentials=None, **kwargs):
-        super().__init__(_id, name, host=host, port=port, conn_type=type,
+    def __init__(self, _id: str, name: str, host: str=None, port: int=None, type: str=None,
+                 username: str='', password: str='', googleCredentials=None, **kwargs):
+        super().__init__(_id=_id, name=name, host=host, port=port, conn_type=type,
                          username=username, password=password, googleCredentials=googleCredentials)
         self._id = _id
         self.name = name
@@ -40,7 +40,7 @@ class Connector(ApiResource, UniqueResourceMixin):
         self.other_params = kwargs
 
     @classmethod
-    def list(cls, all=False):
+    def list(cls, project_id: str, all: bool = False):
         """ List all the available connectors in the current active [client] workspace.
 
         .. warning::
@@ -57,12 +57,12 @@ class Connector(ApiResource, UniqueResourceMixin):
         Returns:
             list(:class:`.Connector`): Fetched connector objects
         """
-        resources = super().list(all=all)
+        resources = super().list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources
                 if conn_data['type'] == cls.conn_type or cls.conn_type == 'connector']
 
     @classmethod
-    def _new(cls, name, host, port, conn_type, username=None, password=None, googleCredentials=None):
+    def _new(cls, project_id: str, name: str, host: str, port: Union[int, None] , conn_type: str, username: str = None, password: str = None, googleCredentials = None):
         """ Create a new connector object on the platform.
 
         Args:
@@ -90,10 +90,10 @@ class Connector(ApiResource, UniqueResourceMixin):
         if googleCredentials:
             data['googleCredentials'] = googleCredentials
             content_type = 'application/json'
-            resp = client.request('/{}'.format(cls.resource), data=json.dumps(data),
+            resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=data,
                                   method=requests.post, content_type=content_type)
         else:
-            resp = client.request('/{}'.format(cls.resource), data=data, method=requests.post)
+            resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=data, method=requests.post)
 
         resp_json = parse_json(resp)
         if '_id' not in resp_json:
@@ -112,11 +112,13 @@ class Connector(ApiResource, UniqueResourceMixin):
             dict: Test results
         """
         resp = client.request('/connectors/{}/test'.format(self.id), method=requests.post)
-        resp_json = parse_json(resp)
-        return resp_json['message'] == 'Connection successful'
+        if resp.status_code == 200:
+            return True
+        else:
+            return False
 
 
-class DataBaseConnector(Connector):
+class DataTableBaseConnector(Connector):
 
     """ A specific type of connector to interact with a database client (containing databases and tables). """
 
@@ -126,11 +128,11 @@ class DataBaseConnector(Connector):
         Returns:
             dict: Databases information
         """
-        print("self.resource", self.resource)
-        print("self._id", self._id)
-        resp = client.request('/{}/{}/data-bases'.format(self.resource, self._id), requests.get)
+        url = '/{}/{}/databases'.format(self.resource, self._id)
+        resp = client.request(url, requests.get)
+        handle_error_response(resp, url)
         resp_json = parse_json(resp)
-        return resp_json
+        return resp_json['items']
 
     def list_tables(self, database):
         """ List all available tables in a specific database for the client.
@@ -141,53 +143,58 @@ class DataBaseConnector(Connector):
         Returns:
             dict: Tables information
         """
-        resp = client.request('/{}/{}/data-bases/{}'.format(self.resource, self._id, database), requests.get)
+        url = '/{}/{}/databases/{}/tables'.format(self.resource, self._id, database)
+        resp = client.request(url, requests.get)
+        handle_error_response(resp, url)
         resp_json = parse_json(resp)
-        return resp_json
+        return resp_json['items']
 
 
-class FTPConnector(Connector):
+class DataFileBaseConnector(Connector):
+    """ A specific type of connector to interact with a database client (containing files). """
+
+    def list_files(self):
+        """ List all available tables in a specific database for the client.
+
+        Args:
+            database (str): Name of the database to find tables for
+
+        Returns:
+            dict: files information
+        """
+        url = '/{}/{}/paths'.format(self.resource, self._id)
+        resp = client.request(url, requests.get)
+        handle_error_response(resp, url)
+        resp_json = parse_json(resp)
+        return resp_json['items']
+
+
+class FTPConnector(DataFileBaseConnector):
 
     """ A specific type of connector to interact with a FTP client (containing files). """
 
     conn_type = 'FTP'
 
-    @classmethod
-    def new(cls, name, host, port=21, username='', password=''):
-        return cls._new(name=name, host=host, conn_type='FTP', port=port, username=username, password=password)
 
-
-class SFTPConnector(Connector):
+class SFTPConnector(DataFileBaseConnector):
 
     """ A specific type of connector to interact with a secured FTP client (containing files). """
 
     conn_type = 'SFTP'
 
-    @classmethod
-    def new(cls, name, host, port=23, username='', password=''):
-        return cls._new(name=name, host=host, conn_type='SFTP', port=port, username=username, password=password)
 
-
-class SQLConnector(DataBaseConnector):
+class SQLConnector(DataTableBaseConnector):
 
     """ A specific type of connector to interact with a SQL database client (containing databases and tables). """
 
     conn_type = 'SQL'
 
-    @classmethod
-    def new(cls, name, host, port=3306, username='', password=''):
-        return cls._new(name=name, host=host, conn_type='SQL', port=port, username=username, password=password)
 
-
-class HiveConnector(DataBaseConnector):
+class HiveConnector(DataTableBaseConnector):
 
     """ A specific type of connector to interact with a Hive database client (containing databases and tables). """
 
     conn_type = 'HIVE'
-
-    @classmethod
-    def new(cls, name, host, port=10000, username='', password=''):
-        return cls._new(name=name, host=host, conn_type='HIVE', port=port, username=username, password=password)
 
 
 # class HBaseConnector(DataBaseConnector):
@@ -207,10 +214,6 @@ class S3Connector(Connector):
 
     conn_type = 'S3'
 
-    @classmethod
-    def new(cls, name, host='', port='', username='', password=''):
-        return cls._new(name=name, host=host, conn_type='S3', port=port, username=username, password=password)
-
 
 class GCPConnector(Connector):
 
@@ -218,11 +221,6 @@ class GCPConnector(Connector):
         (containing databases and tables or buckets)."""
 
     conn_type = 'GCP'
-
-    @classmethod
-    def new(cls, name, host='', port='', username='', password='', googleCredentials=''):
-        return cls._new(name=name, host=host, conn_type='GCP', port=port,
-                        username=username, password=password, googleCredentials=googleCredentials)
 
 #
 # class HDFSConnector(Connector):

@@ -2,21 +2,22 @@ from __future__ import print_function
 
 import os
 import copy
+from typing import Dict
 import requests
 import time
 import json
 import threading
+
+from requests.models import Response
 
 import previsionio.utils
 from .logger import logger, event_logger
 from . import config
 from .utils import parse_json, PrevisionException
 
-EVENT_TIMEOUT = int(os.environ.get('EVENT_TIMEOUT', 600))
-
 
 class EventManager:
-    def __init__(self, event_endpoint, auth_headers, client):
+    def __init__(self, event_endpoint: str, auth_headers, client):
         self.event_endpoint = event_endpoint
         auth_headers = copy.deepcopy(auth_headers)
         self.headers = auth_headers
@@ -39,8 +40,8 @@ class EventManager:
         return events_dict_copy
 
     def wait_for_event(self,
-                       resource_id,
-                       resource_type,
+                       resource_id: str,
+                       resource_type: str,
                        event_tuple: previsionio.utils.EventTuple,
                        specific_url=None):
         # ignore invalid resource ids
@@ -48,30 +49,23 @@ class EventManager:
             return
         self.register_resource(resource_id)
         t0 = time.time()
-
         while time.time() < t0 + config.default_timeout:
             reconnect_start = time.time()
-            while time.time() < reconnect_start + 60:
+            semd, event_dict = self._events
+            semd.acquire()
+            if self.check_resource_event(resource_id, specific_url, event_tuple, semd):
+                return
+            semd.release()
+            time.sleep(0.1)
+            while time.time() < reconnect_start + 300:
                 semd, event_dict = self._events
-
                 semd.acquire()
                 semi, event_list = event_dict[resource_id]
-
                 remaining_events = []
                 with semi:
                     for event in event_list:
                         if event.get('event') == event_tuple.name:
-                            resp = self.client.request(endpoint=specific_url, method=requests.get)
-                            json_response = parse_json(resp)
-                            for k, v in event_tuple.fail_checks:
-                                if json_response.get(k) == v:
-                                    semd.release()
-                                    msg = 'Error on resource {}: {}\n{}'.format(resource_id,
-                                                                                json_response.get('errorMessage', ''),
-                                                                                json_response)
-                                    raise PrevisionException(msg)
-                            if json_response.get(event_tuple.key) == event_tuple.value:
-                                semd.release()
+                            if self.check_resource_event(resource_id, specific_url, event_tuple, semd):
                                 return
                         else:
                             remaining_events.append(event)
@@ -84,6 +78,21 @@ class EventManager:
                                                                          resource_type,
                                                                          resource_id))
 
+    def check_resource_event(self, resource_id, endpoint, event_tuple, semd):
+        resp = self.client.request(endpoint=endpoint, method=requests.get)
+        json_response = parse_json(resp)
+        for k, v in event_tuple.fail_checks:
+            if json_response.get(k) == v:
+                semd.release()
+                msg = 'Error on resource {}: {}\n{}'.format(resource_id,
+                                                            json_response.get('errorMessage', ''),
+                                                            json_response)
+                raise PrevisionException(msg)
+        if json_response.get(event_tuple.key) == event_tuple.value:
+            semd.release()
+            return True
+        return False
+
     def register_resource(self, resource_id):
         event_logger.debug('Registering resource with id {}'.format(resource_id))
         payload = {'event': 'REGISTER', '_id': resource_id}
@@ -91,55 +100,70 @@ class EventManager:
 
     def update_events(self):
         sse_timeout = 300
+        event_data = None
+        event_name = None
+
         while True:
-            print("self.event_endpoint",self.event_endpoint)
             sse = requests.get(self.event_endpoint,
                                stream=True,
                                headers=self.headers,
                                timeout=sse_timeout)
 
             try:
-                for msg in sse.iter_content(chunk_size=None):
-                    event_logger.debug('url: {} -- data: {}'.format(self.event_endpoint, msg))
-                    msg = msg.decode()
-                    # SSE comments can start with ":" character
-                    if msg[0] == ':':
-                        event_logger.debug('sse comment{}'.format(msg))
+                for line in sse.iter_lines(chunk_size=None):
+                    if not line:
+                        # filter out keep-alive new lines
                         continue
-                    try:
-                        if len(msg.split('\n'))>=3:
-                            _, event_name, event_data, *rest = msg.split('\n')
-                            event_name = event_name.replace('event: ', '')
-                            event_data = json.loads(event_data.replace('data: ', '').strip())
-                    except json.JSONDecodeError as e:
-                        event_logger.warning('failed to parse json: "{}" -- error: {}'.format(msg, e.__repr__()))
-                    except requests.exceptions.ChunkedEncodingError:
-                        event_logger.warning('closing connection to endpoint: "{}"'.format(self.event_endpoint))
-                        sse.close()
-                        return
-                    else:
-                        resource_id = event_data.get('_id', None)
-                        # ignore invalid resource ids
-                        if not isinstance(resource_id, str):
-                            continue
-                        payload = {'event': event_name, 'id': resource_id}
 
-                        event_logger.debug('url: {} -- event: {} payload: {}'.format(self.event_endpoint,
-                                                                                     event_name,
-                                                                                     payload))
+                    event_logger.debug('url: {} -- data: {}'.format(self.event_endpoint, line))
+                    line = line.decode()
+                    if line.startswith(':'):
+                        # SSE comments can start with ":" character
+                        event_logger.debug('sse comment{}'.format(line))
+                        continue
+                    elif line.startswith('id '):
+                        # skip id message information
+                        continue
+                    elif line.startswith('event: '):
+                        # get event name
+                        event_name = line[len('event: '):]
+                    elif line.startswith('data: '):
+                        if event_name is None:
+                            # ignore event with unknown name
+                            continue
+
+                        # get event data
+                        try:
+                            event_data = json.loads(line[len('data: '):])
+                        except Exception as e:
+                            # skip malformed event data
+                            event_logger.warning('failed to parse json: "{}" -- error: {}'.format(line, e.__repr__()))
+                            continue
+
+                        resource_id = event_data.get('_id', None)
+
+                        if not isinstance(resource_id, str):
+                            # ignore event with invalid resource id
+                            continue
+
                         # add event only if monitored resource
                         semd, event_dict = self._events
                         if resource_id in event_dict:
+                            payload = {'event': event_name, 'id': resource_id}
+                            event_logger.debug('url: {} -- event: {} payload: {}'.format(self.event_endpoint,
+                                                                                         event_name,
+                                                                                         payload))
                             self.add_event(resource_id, payload)
+            except requests.exceptions.ChunkedEncodingError:
+                event_logger.warning('closing connection to endpoint: "{}"'.format(self.event_endpoint))
             except requests.exceptions.ConnectionError:
                 logger.warning('{}: no messages in {} seconds. reconnecting'.format(self.event_endpoint, sse_timeout))
             except Exception as e:
                 logger.error(e)
-                raise
             finally:
                 sse.close()
 
-    def add_event(self, resource_id, payload):
+    def add_event(self, resource_id: str, payload):
         event_logger.debug('adding event for {}:\npayload = {}'.format(resource_id, payload))
         semd, event_dict = self._events
 
@@ -186,8 +210,8 @@ class Client(object):
         if not self.prevision_url:
             raise PrevisionException('No url configured. Call client.init_client() to initialize')
 
-    def request(self, endpoint, method, files=None, data=None, allow_redirects=True, content_type=None,
-                no_retries=False, **requests_kwargs):
+    def request(self, endpoint: str, method, files: Dict = None, data: Dict = None, allow_redirects: bool = True, content_type: str = None,
+                no_retries: bool = False, **requests_kwargs) -> Response:
         """
         Make a request on the desired endpoint with the specified method & data.
 
@@ -220,12 +244,12 @@ class Client(object):
 
         for i in range(retries):
             try:
-                req = method(url,
-                             headers=headers,
-                             files=files,
-                             allow_redirects=allow_redirects,
-                             json=data,
-                             **requests_kwargs)
+                req: Response = method(url,
+                                       headers=headers,
+                                       files=files,
+                                       allow_redirects=allow_redirects,
+                                       json=data,
+                                       **requests_kwargs)
             except Exception as e:
                 logger.warning('failed to request ' + url + ' retrying ' + str(retries - i) + ' times: ' + e.__repr__())
                 if no_retries:
@@ -247,7 +271,7 @@ class Client(object):
             raise ValueError('Wrong token ' + str(result))
         self.user_info = result
 
-    def init_client(self, prevision_url, token):
+    def init_client(self, prevision_url: str, token: str):
         """
         Init the client (and check that the connection is valid).
 
@@ -288,6 +312,6 @@ client = Client()
 
 if os.getenv('PREVISION_URL') and os.getenv('PREVISION_MASTER_TOKEN'):
     logger.info('Initializing Prevision.io client using environment variables')
-    logger.debug('PREVISION_URL:' + os.getenv('PREVISION_URL'))
-    logger.debug('PREVISION_MASTER_TOKEN:' + os.getenv('PREVISION_MASTER_TOKEN'))
-    client.init_client(os.getenv('PREVISION_URL'), os.getenv('PREVISION_MASTER_TOKEN'))
+    logger.debug('PREVISION_URL:' + os.getenv('PREVISION_URL', ""))
+    logger.debug('PREVISION_MASTER_TOKEN:' + os.getenv('PREVISION_MASTER_TOKEN', ""))
+    client.init_client(os.getenv('PREVISION_URL', ""), os.getenv('PREVISION_MASTER_TOKEN', ""))
