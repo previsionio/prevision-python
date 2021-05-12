@@ -199,7 +199,7 @@ class Dataset(ApiResource):
         return path
 
     @classmethod
-    def _new(cls, project_id: str, name: str, datasource: DataSource = None, file_name: str = None, dataframe=None):
+    def _new(cls, project_id: str, name: str, datasource: DataSource = None, file_name: str = None, dataframe: DataFrame = None):
         """ Register a new dataset in the workspace for further processing.
         You need to provide either a datasource, a file name or a dataframe
         (only one can be specified).
@@ -400,7 +400,7 @@ class DatasetImages(ApiResource):
         dset_json = parse_json(dset_resp)
         return cls(**dset_json)
 
-    def download(self, download_path=None):
+    def download(self, download_path: str = None):
         """Download the dataset from the platform locally.
 
         Args:

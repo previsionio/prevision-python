@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from typing import Union
+from typing import Dict, Union
 from previsionio.usecase_config import TypeProblem
 import time
 import json
@@ -331,7 +331,7 @@ class ClassicModel(Model):
         # drop chart-related information
         return result
 
-    def predict_single(self, data, confidence=False, explain=False):
+    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
         """ Make a prediction for a single instance. Use :py:func:`predict_from_dataset_name` or predict methods
         to predict multiple instances at the same time (it's faster).
 
