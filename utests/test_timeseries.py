@@ -143,7 +143,7 @@ def test_version():
     
     uc.wait_until(lambda usecasev: len(usecasev.models) > 0)
     uc.stop()
-    new_uc = uc.new_version("test")
+    new_uc = uc.new_version()
     new_uc.wait_until(lambda usecasev: len(usecasev.models) > 1)
     uc.stop()
     

@@ -80,7 +80,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
 
         uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
 
-        new_version = uc.new_version('test_sdk_1_text_similarity_{}_new'.format(TESTING_ID))
+        new_version = uc.new_version()
         new_version.wait_until(lambda usecase: usecase._status['state'] == 'done')
 
         time.sleep(40)

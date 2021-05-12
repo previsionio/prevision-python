@@ -107,20 +107,20 @@ class Supervised(ClassicUsecaseVersion):
                                   metric=metric if isinstance(metric, str) else metric.value,
                                   **training_args)
 
-    def new_version(self, name: str, dataset: Union[Dataset, Tuple[Dataset, DatasetImages]] = None, column_config: ColumnConfig = None, metric: metrics.Enum = None, holdout_dataset: Dataset = None,
+    def new_version(self, description: str = None, dataset: Union[Dataset, Tuple[Dataset, DatasetImages]] = None, column_config: ColumnConfig = None, metric: metrics.Enum = None, holdout_dataset: Dataset = None,
                     training_config: TrainingConfig = None, **fit_params):
         """ Start a supervised usecase training to create a new version of the usecase (on the
-        platform): the training config is copied from the current version and then overridden
+        platform): the training configs are copied from the current version and then overridden
         for the given parameters.
 
         Args:
-            name (str): Name of the usecase version to create
+            description (str, optional): additional description of the version
             dataset (:class:`.Dataset`, :class:`.DatasetImages`, optional): Reference to the dataset
                 object to use for as training dataset
             column_config (:class:`.ColumnConfig`, optional): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (metrics.Enum, optional): Specific metric to use for the usecase (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -152,15 +152,18 @@ class Supervised(ClassicUsecaseVersion):
         else:
             holdout_dataset_id = holdout_dataset.id
 
-        params = {'name': name,
-                  'dataset_id': dataset_ids,
-                  'metric': metric.value,
-                  'holdout_dataset': holdout_dataset_id,
-                  'type_problem': self.type_problem,
-                  'usecase_id': self._id,
-                  'parent_version': self.version,
-                  # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
-                  }
+        params = {
+            'dataset_id': dataset_ids,
+            'metric': metric.value,
+            'holdout_dataset': holdout_dataset_id,
+            'type_problem': self.type_problem,
+            'usecase_id': self._id,
+            'parent_version': self.version,
+            # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
+        }
+
+        if description:
+            params["description"] = description
 
         params.update(
             dict(column_config.to_kwargs() + training_config.to_kwargs()))

@@ -76,8 +76,7 @@ def test_usecase_version():
     print("usecase_version.project_id", usecase_version.project_id)
     assert uc_name in [u.name for u in usecases]
 
-    new_version_uc_name = uc_name + '_new'
-    usecase_new_version = usecase_version.new_version(new_version_uc_name)
+    usecase_new_version = usecase_version.new_version()
     print("usecase_new_version.usecase_id", usecase_new_version.usecase_id)
     print("usecase_new_version.project_id", usecase_new_version.project_id)
     #usecases = pio.Usecase.list(PROJECT_ID)

@@ -97,8 +97,30 @@ class TimeSeries(ClassicUsecaseVersion):
                                   metric=metric.value,
                                   **training_args)
 
-    def new_version(self, name: str, dataset: Dataset = None, column_config: ColumnConfig = None, time_window: TimeWindow = None,
+    def new_version(self, description: str = None, dataset: Dataset = None, column_config: ColumnConfig = None, time_window: TimeWindow = None,
                     metric: Regression = None, holdout_dataset: Dataset = None, training_config: TrainingConfig = TrainingConfig()):
+        """ Start a time series usecase training to create a new version of the usecase (on the
+        platform): the training configs are copied from the current version and then overridden
+        for the given parameters.
+
+        Args:
+            description (str, optional): additional description of the version
+            dataset (:class:`.Dataset`, :class:`.DatasetImages`, optional): Reference to the dataset
+                object to use for as training dataset
+            column_config (:class:`.ColumnConfig`, optional): Column configuration for the usecase
+                (see the documentation of the :class:`.ColumnConfig` resource for more details
+                on each possible column types)
+            time_window (:class: `.TimeWindow`, optional): a time window object for representing either feature 
+                derivation window periods or forecast window periods
+            metric (metrics.Regression, optional): Specific metric to use for the usecase (default: ``None``)
+            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
+                use as a holdout dataset (default: ``None``)
+            training_config (:class:`.TrainingConfig`, optional): Specific training configuration
+                (see the documentation of the :class:`.TrainingConfig` resource for more details
+                on all the parameters)
+        Returns:
+            :class:`.TimeSeries`: Newly created text similarity usecase version object (new version)
+        """
 
         if not dataset:
             dataset_id = self.dataset_id
@@ -127,7 +149,7 @@ class TimeSeries(ClassicUsecaseVersion):
         time_window_args = time_window.to_kwargs()
         training_args = dict(config_args + column_args + time_window_args)
 
-        params = {'name': name,
+        params = {'name': self.name,
                   'dataset_id': dataset_id,
                   'metric': metric.value,
                   'holdout_dataset': holdout_dataset_id,
@@ -136,6 +158,9 @@ class TimeSeries(ClassicUsecaseVersion):
                   'parent_version': self.version,
                   # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
                   }
+
+        if description:
+            params["description"] = description
 
         params.update(training_args)
 
