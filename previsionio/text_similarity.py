@@ -210,6 +210,10 @@ class TextSimilarity(ClassicUsecaseVersion):
         return cls(**super()._from_id(_id))
 
     @classmethod
+    def load(cls, pio_file: str) -> 'TextSimilarity':
+        return cls(**super()._load(pio_file))
+
+    @classmethod
     def fit(cls, project_id: str, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig, metric: pio.metrics.TextSimilarity = None, top_k: int = None, lang: str = 'auto',
             queries_dataset: Dataset = None, queries_column_config: QueriesColumnConfig = None,
             models_parameters: ListModelsParameters = ListModelsParameters(), **kwargs):

@@ -23,6 +23,10 @@ class UnSupervised(BaseUsecaseVersion):
         return cls(**super()._from_id(_id))
 
     @classmethod
+    def load(cls, pio_file: str) -> 'UnSupervised':
+        return cls(**super()._load(pio_file))
+
+    @classmethod
     def unsupervised_from_dataset(cls, dataset: Dataset, use_case: str, type_problem: str,
                                   metric: metrics.Clustering = None, training_config: TrainingConfig = clustering_base_config):
         """

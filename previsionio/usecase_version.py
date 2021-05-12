@@ -362,7 +362,7 @@ class BaseUsecaseVersion(ApiResource):
             json.dump(version_dict, f)
 
     @classmethod
-    def load(cls, pio_file: str):
+    def _load(cls, pio_file: str):
         with open(pio_file, 'r') as f:
             mdl = json.load(f)
         uc = cls._from_id(mdl['_id'])
@@ -585,14 +585,6 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         start = client.request(endpoint, requests.post, data=data)
         handle_error_response(start, endpoint, data, message_prefix="Error starting usecase")
         return parse_json(start)
-        usecase = cls._from_id(start_response['_id'])
-        events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
-        pio.client.event_manager.wait_for_event(usecase.resource_id,
-                                                cls.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
-                                                           [('state', 'failed')]),
-                                                specific_url=events_url)
-        return usecase
 
     def predict_single(self,
                        data,

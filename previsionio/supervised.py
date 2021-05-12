@@ -57,6 +57,10 @@ class Supervised(ClassicUsecaseVersion):
         return cls(**super()._from_id(_id))
 
     @classmethod
+    def load(cls, pio_file: str) -> 'Supervised':
+        return cls(**super()._load(pio_file))
+
+    @classmethod
     def fit(cls, project_id: str, name: str, dataset: Union[Dataset, Tuple[Dataset, DatasetImages]], column_config: ColumnConfig, metric, holdout_dataset: Dataset = None,
             training_config: TrainingConfig = TrainingConfig(), **kwargs) -> 'Supervised':
         """ Start a supervised usecase training with a specific training configuration
