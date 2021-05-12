@@ -515,7 +515,7 @@ class TextSimilarityModel(Model):
         if matching_id_description_column:
             data['queries_dataset_matching_id_description_column'] = matching_id_description_column
 
-        predict_start = client.request('/usecases/{}/versions/{}/predictions'.format(self.uc_id, self.uc_version),
+        predict_start = client.request('/usecase-versions/{}/predictions'.format(self.usecase_version_id),
                                        requests.post, data=data)
 
         predict_start_parsed = parse_json(predict_start)
