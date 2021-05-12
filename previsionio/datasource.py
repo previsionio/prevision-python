@@ -74,7 +74,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
         return [cls(**source_data) for source_data in resources]
 
     @classmethod
-    def from_id(cls, _id):
+    def from_id(cls, _id: str):
         """Get a datasource from the instance by its unique id.
 
         Args:

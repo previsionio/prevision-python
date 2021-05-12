@@ -1,3 +1,4 @@
+from typing import Dict
 import requests
 from .utils import handle_error_response, parse_json, PrevisionException, get_all_results
 from .prevision_client import client
@@ -100,7 +101,7 @@ class ApiResource:
             raise PrevisionException('[Delete {}] Error'.format(self.resource))
 
     @classmethod
-    def from_id(cls, _id: str = None, specific_url: str = None):
+    def _from_id(cls, _id: str = None, specific_url: str = None) -> Dict:
         """Get a resource from the platform by its unique id.
         You must provide either an ``_id`` or a ``specific_url``.
 
@@ -132,7 +133,7 @@ class ApiResource:
         else:
             logger.info('[Fetch {} OK] by url: "{}"'.format(cls.__name__, specific_url))
 
-        return cls(**resp_json)
+        return resp_json
 
     @classmethod
     def list(cls, all: bool = True, project_id: str = None):

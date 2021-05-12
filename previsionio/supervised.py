@@ -12,6 +12,7 @@ from .model import RegressionModel, \
     ClassificationModel, MultiClassificationModel
 from .utils import EventTuple, handle_error_response, parse_json
 from .prevision_client import client
+import previsionio as pio
 
 MODEL_CLASS_DICT = {
     TypeProblem.Regression: RegressionModel,
@@ -38,7 +39,7 @@ class Supervised(ClassicUsecaseVersion):
         self.model_class = MODEL_CLASS_DICT.get(self.training_type)
 
     @classmethod
-    def from_id(cls, _id) -> 'Supervised':
+    def from_id(cls, _id: str) -> 'Supervised':
         """Get a supervised usecase from the platform by its unique id.
 
         Args:
@@ -53,12 +54,11 @@ class Supervised(ClassicUsecaseVersion):
             PrevisionException: Invalid problem type or any error while fetching
                 data from the platform or parsing result
         """
-        instance = super().from_id(_id)
-        return instance
+        return cls(**super()._from_id(_id))
 
     @classmethod
     def fit(cls, project_id: str, name: str, dataset: Union[Dataset, Tuple[Dataset, DatasetImages]], column_config: ColumnConfig, metric, holdout_dataset: Dataset = None,
-            training_config: TrainingConfig = TrainingConfig(), **kwargs):
+            training_config: TrainingConfig = TrainingConfig(), **kwargs) -> 'Supervised':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
 
@@ -99,13 +99,23 @@ class Supervised(ClassicUsecaseVersion):
             dataset_id = [d.id for d in dataset]
         else:
             dataset_id = dataset.id
-        return cls._start_usecase(project_id,
+        start_response = cls._start_usecase(project_id,
                                   name,
                                   dataset_id=dataset_id,
                                   data_type=cls.data_type,
                                   type_problem=cls.type_problem,
                                   metric=metric if isinstance(metric, str) else metric.value,
                                   **training_args)
+        usecase = cls.from_id(start_response['_id'])
+        events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
+        pio.client.event_manager.wait_for_event(usecase.resource_id,
+                                                cls.resource,
+                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
+                                                           [('state', 'failed')]),
+                                                specific_url=events_url)
+        
+        return usecase
+
 
     def new_version(self, description: str = None, dataset: Union[Dataset, Tuple[Dataset, DatasetImages]] = None, column_config: ColumnConfig = None, metric: metrics.Enum = None, holdout_dataset: Dataset = None,
                     training_config: TrainingConfig = None, **fit_params):

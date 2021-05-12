@@ -10,6 +10,7 @@ from .metrics import Regression
 from .model import RegressionModel
 from .dataset import Dataset
 from .prevision_client import client
+import previsionio as pio
 
 
 class TimeWindowException(Exception):
@@ -76,8 +77,12 @@ class TimeSeries(ClassicUsecaseVersion):
         super().__init__(**usecase_info)
 
     @classmethod
+    def from_id(cls, _id: str) -> 'TimeSeries':
+        return cls(**super()._from_id(_id))
+
+    @classmethod
     def fit(cls, project_id: str, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow,
-            metric: Regression = None, holdout_dataset: Dataset = None, training_config: TrainingConfig = TrainingConfig()):
+            metric: Regression = None, holdout_dataset: Dataset = None, training_config: TrainingConfig = TrainingConfig()) -> 'TimeSeries':
         config_args = training_config.to_kwargs()
         column_args = column_config.to_kwargs()
         time_window_args = time_window.to_kwargs()
@@ -89,13 +94,23 @@ class TimeSeries(ClassicUsecaseVersion):
         if not metric:
             metric = cls.default_metric
 
-        return cls._start_usecase(project_id=project_id,
+        start_response = cls._start_usecase(project_id=project_id,
                                   name=name,
                                   dataset_id=dataset.id,
                                   data_type=cls.data_type,
                                   type_problem=cls.type_problem,
                                   metric=metric.value,
                                   **training_args)
+        
+        usecase = cls.from_id(start_response['_id'])
+        events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
+        pio.client.event_manager.wait_for_event(usecase.resource_id,
+                                                cls.resource,
+                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
+                                                           [('state', 'failed')]),
+                                                specific_url=events_url)
+        return usecase
+
 
     def new_version(self, description: str = None, dataset: Dataset = None, column_config: ColumnConfig = None, time_window: TimeWindow = None,
                     metric: Regression = None, holdout_dataset: Dataset = None, training_config: TrainingConfig = TrainingConfig()):

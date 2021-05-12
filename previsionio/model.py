@@ -65,7 +65,7 @@ class Model(ApiResource):
         return json.dumps(args_to_show, sort_keys=True, indent=4, separators=(',', ': '))
 
     @classmethod
-    def from_id(cls, _id):
+    def from_id(cls, _id: str) -> Union['RegressionModel', 'ClassificationModel', 'MultiClassificationModel', 'TextSimilarityModel']:
         """Get a usecase from the platform by its unique id.
 
         Args:

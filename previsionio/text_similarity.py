@@ -170,10 +170,10 @@ class TextSimilarity(ClassicUsecaseVersion):
         self.name: str = usecase_info.get('name')
         self.dataset = usecase_info.get('dataset_id')
         usecase_version_params = usecase_info['usecase_version_params']
-        self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(usecase_version_params.get('metric', self.default_metric))
+        self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
+            usecase_version_params.get('metric', self.default_metric))
         self.top_k: int = usecase_version_params.get('top_K', self.default_top_k)
         self.lang: str = usecase_version_params.get('lang')
-
 
         self.description_column_config = DescriptionsColumnConfig(
             content_column=usecase_version_params.get('content_column'),
@@ -204,6 +204,10 @@ class TextSimilarity(ClassicUsecaseVersion):
         self.model_class = TextSimilarityModel
 
         self._models = {}
+
+    @classmethod
+    def from_id(cls, _id: str) -> 'TextSimilarity':
+        return cls(**super()._from_id(_id))
 
     @classmethod
     def fit(cls, project_id: str, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig, metric: pio.metrics.TextSimilarity = None, top_k: int = None, lang: str = 'auto',
@@ -347,7 +351,7 @@ class TextSimilarity(ClassicUsecaseVersion):
         handle_error_response(resp, endpoint, data, "text_similality usecase failed to start")
 
         start_response = parse_json(resp)
-        usecase = type(self).from_id(start_response['_id'])
+        usecase = self.from_id(start_response['_id'])
         events_url = '/{}/{}'.format(self.resource, start_response['_id'])
         pio.client.event_manager.wait_for_event(usecase._id,
                                                 self.resource,

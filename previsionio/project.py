@@ -5,20 +5,20 @@ from typing import Dict, Tuple, Union
 
 from requests.models import Response
 from previsionio import metrics
-from previsionio.usecase_config import ColumnConfig
+from previsionio.usecase_config import ColumnConfig, TrainingConfig
 import requests
 
 from . import client
 from .utils import handle_error_response, parse_json, PrevisionException
 from . import logger
-from . import TrainingConfig
+
 from .api_resource import ApiResource, UniqueResourceMixin
 from .datasource import DataSource
 from .dataset import Dataset, DatasetImages
 from .connector import Connector, SQLConnector, FTPConnector, \
     SFTPConnector, S3Connector, HiveConnector, GCPConnector
 from .supervised import Regression, Classification, MultiClassification, \
-    RegressionImages, ClassificationImages, MultiClassificationImages
+    RegressionImages, ClassificationImages, MultiClassificationImages, Supervised
 from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import DescriptionsColumnConfig, ListModelsParameters, TextSimilarity
 from .usecase import Usecase
@@ -604,7 +604,7 @@ class Project(ApiResource, UniqueResourceMixin):
                                         training_config=training_config, **kwargs)
 
     def fit_image_multiclassification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.MultiClassification = None, holdout_dataset=None,
-                                      training_config=TrainingConfig(), **kwargs) -> MultiClassificationImages:
+                                      training_config=TrainingConfig(), **kwargs) -> Supervised:
         """ Start an image multiclassification usecase version training
 
         Args:

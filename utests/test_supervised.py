@@ -1,4 +1,5 @@
 import os
+from previsionio.model import ClassificationModel
 import pandas as pd
 import pytest
 import previsionio as pio
@@ -189,6 +190,7 @@ class TestInfos:
         assert isinstance(uc.models, list)
         model = uc.models[0]
         model_copy = pio.Model.from_id(model._id)
+        assert isinstance(model_copy, ClassificationModel)
         assert isinstance(model.hyperparameters, dict)
         assert model_copy.hyperparameters == model.hyperparameters
 

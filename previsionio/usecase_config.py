@@ -1,4 +1,5 @@
 import copy
+from previsionio.metrics import Clustering
 
 
 class ParamList(list):
@@ -24,6 +25,8 @@ class TypeProblem(object):
     """Ranking of texts by keywords"""
     ObjectDetection = "object-detection"
     """Detection of pattern in images"""
+    Clustering = "clustering"
+    """Used for unsupervised classification"""
 
 class DataType(object):
     """ Type of data available with Prevision.io. """

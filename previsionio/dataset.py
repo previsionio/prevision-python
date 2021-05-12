@@ -75,6 +75,10 @@ class Dataset(ApiResource):
     data = property(to_pandas)
 
     @classmethod
+    def from_id(cls, _id: str) -> 'Dataset':
+        return cls(**super()._from_id(_id=_id))
+
+    @classmethod
     def list(cls, project_id, all: bool = True):
         """ List all the available datasets in the current active [client] workspace.
 
@@ -286,7 +290,7 @@ class Dataset(ApiResource):
         create_json = parse_json(create_resp)
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
         event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'describe_state', 'done',
-                                                    [('ready', 'failed'), ('drift', 'failed')])
+                                                   [('ready', 'failed'), ('drift', 'failed')])
         pio.client.event_manager.wait_for_event(create_json['_id'],
                                                 cls.resource,
                                                 event_tuple,
@@ -318,6 +322,10 @@ class DatasetImages(ApiResource):
         self.copy_state = copy_state
 
         self.other_params = kwargs
+
+    @classmethod
+    def from_id(cls, _id: str) -> 'DatasetImages':
+        return cls(**super()._from_id(_id=_id))
 
     def delete(self):
         """Delete a DatasetImages from the actual [client] workspace.

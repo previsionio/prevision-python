@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+from previsionio.usecase_config import TrainingConfig
+from previsionio import metrics
+from previsionio.dataset import Dataset
 import pandas as pd
 from . import TypeProblem, clustering_base_config
 from .usecase_version import BaseUsecaseVersion
@@ -12,12 +15,16 @@ class UnSupervised(BaseUsecaseVersion):
 
     start_command = 'focus'
 
-    def __init__(self, usecase_params):
-        super(UnSupervised, self).__init__(usecase_params)
+    def __init__(self, **usecase_params):
+        super().__init__(**usecase_params)
 
     @classmethod
-    def unsupervised_from_dataset(cls, dataset, use_case, type_problem,
-                                  metric=None, training_config=clustering_base_config):
+    def from_id(cls, _id) -> 'UnSupervised':
+        return cls(**super()._from_id(_id))
+
+    @classmethod
+    def unsupervised_from_dataset(cls, dataset: Dataset, use_case: str, type_problem: str,
+                                  metric: metrics.Clustering = None, training_config: TrainingConfig = clustering_base_config):
         """
         Creates an unsupervised usecase from a pio.Dataset.
 
@@ -62,8 +69,8 @@ class Clustering(UnSupervised):
     }
 
     @classmethod
-    def from_dataset(cls, dataset, use_case, metric=None,
-                     training_config=clustering_base_config):
+    def from_dataset(cls, dataset: Dataset, use_case: str, metric: metrics.Clustering = None,
+                     training_config: TrainingConfig = clustering_base_config):
         """
         Creates a Clustering usecase from a pio.Dataset.
 

@@ -36,10 +36,11 @@ class BaseUsecaseVersion(ApiResource):
         super().__init__(**usecase_info)
         self.name: str = usecase_info.get('name')
         self._id = usecase_info.get('_id')
-        self.usecase_id = usecase_info.get('usecase_id')
+        self.usecase_id: str = usecase_info.get('usecase_id')
         self.project_id = usecase_info.get('project_id')
         self.dataset_id = usecase_info.get('dataset_id')
         self._models = {}
+        self.version = 1
 
     def __len__(self):
         return len(self.models)
@@ -49,7 +50,7 @@ class BaseUsecaseVersion(ApiResource):
                                                                   self._id))
 
     @classmethod
-    def from_id(cls, _id):
+    def _from_id(cls, _id) -> Dict:
         """Get a usecase from the platform by its unique id.
 
         Args:
@@ -64,10 +65,10 @@ class BaseUsecaseVersion(ApiResource):
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
         """
-        return super().from_id(specific_url='/{}/{}'.format(cls.resource, _id))
+        return super()._from_id(specific_url='/{}/{}'.format(cls.resource, _id))
 
     @property
-    def usecase(self):
+    def usecase(self) -> 'Usecase':
         """Get a usecase of current usecase version.
 
         Returns:
@@ -364,7 +365,7 @@ class BaseUsecaseVersion(ApiResource):
     def load(cls, pio_file: str):
         with open(pio_file, 'r') as f:
             mdl = json.load(f)
-        uc = cls.from_id(mdl['_id'])
+        uc = cls._from_id(mdl['_id'])
         # TODO check holdout_dataset in usecase_version_params
         # if mdl['usecase_version_params'].get('holdout_dataset_id'):
         #     uc.holdout_dataset = mdl['usecase_version_params'].get('holdout_dataset_id')[0]
@@ -583,8 +584,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', data_type, type_problem)
         start = client.request(endpoint, requests.post, data=data)
         handle_error_response(start, endpoint, data, message_prefix="Error starting usecase")
-        start_response = parse_json(start)
-        usecase = cls.from_id(start_response['_id'])
+        return parse_json(start)
+        usecase = cls._from_id(start_response['_id'])
         events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
         pio.client.event_manager.wait_for_event(usecase.resource_id,
                                                 cls.resource,
