@@ -168,11 +168,13 @@ class TextSimilarity(ClassicUsecaseVersion):
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
         self.name: str = usecase_info.get('name')
-        self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(usecase_info.get('metric', default=self.default_metric))
-        self.top_k: int = usecase_info.get('top_K', default=self.default_top_k)
-        self.lang: str = usecase_info.get('lang')
         self.dataset = usecase_info.get('dataset_id')
         usecase_version_params = usecase_info['usecase_version_params']
+        self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(usecase_version_params.get('metric', self.default_metric))
+        self.top_k: int = usecase_version_params.get('top_K', self.default_top_k)
+        self.lang: str = usecase_version_params.get('lang')
+
+
         self.description_column_config = DescriptionsColumnConfig(
             content_column=usecase_version_params.get('content_column'),
             id_column=usecase_version_params.get('id_column'))
@@ -293,7 +295,7 @@ class TextSimilarity(ClassicUsecaseVersion):
 
         if not queries_column_config:
             queries_column_config = self.queries_column_config
-        
+
         if not models_parameters:
             models_parameters = self.models_parameters
 
