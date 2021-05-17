@@ -214,7 +214,7 @@ class TextSimilarity(ClassicUsecaseVersion):
         return cls(**super()._load(pio_file))
 
     @classmethod
-    def fit(cls, project_id: str, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig, metric: pio.metrics.TextSimilarity = None, top_k: int = None, lang: str = 'auto',
+    def _fit(cls, project_id: str, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig, metric: pio.metrics.TextSimilarity = None, top_k: int = None, lang: str = 'auto',
             queries_dataset: Dataset = None, queries_column_config: QueriesColumnConfig = None,
             models_parameters: ListModelsParameters = ListModelsParameters(), **kwargs):
         """ Start a supervised usecase training with a specific training configuration

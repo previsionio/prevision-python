@@ -85,7 +85,7 @@ class TimeSeries(ClassicUsecaseVersion):
         return cls(**super()._load(pio_file))
 
     @classmethod
-    def fit(cls, project_id: str, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow,
+    def _fit(cls, project_id: str, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow,
             metric: Regression = None, holdout_dataset: Dataset = None, training_config: TrainingConfig = TrainingConfig()) -> 'TimeSeries':
         config_args = training_config.to_kwargs()
         column_args = column_config.to_kwargs()

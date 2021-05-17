@@ -5,7 +5,7 @@ from typing import Dict, Tuple, Union
 
 from requests.models import Response
 from previsionio import metrics
-from previsionio.usecase_config import ColumnConfig, TrainingConfig
+from previsionio.usecase_config import ColumnConfig, DataType, TrainingConfig, TypeProblem
 import requests
 
 from . import client
@@ -17,8 +17,7 @@ from .datasource import DataSource
 from .dataset import Dataset, DatasetImages
 from .connector import Connector, SQLConnector, FTPConnector, \
     SFTPConnector, S3Connector, HiveConnector, GCPConnector
-from .supervised import Regression, Classification, MultiClassification, \
-    RegressionImages, ClassificationImages, MultiClassificationImages, Supervised
+from .supervised import Supervised
 from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import DescriptionsColumnConfig, ListModelsParameters, TextSimilarity
 from .usecase import Usecase
@@ -504,10 +503,11 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Regression`: Newly created Regression usecase version object
         """
-        return Regression.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                              training_config=training_config, **kwargs)
+        return Supervised._fit(self._id, name, data_type=DataType.Tabular, type_problem=TypeProblem.Regression,
+                               dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
+                               training_config=training_config, **kwargs)
 
-    def fit_classification(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.Classification = None, holdout_dataset=None,
+    def fit_classification(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.Classification = metrics.Classification.AUC, holdout_dataset=None,
                            training_config=TrainingConfig(), **kwargs):
         """ Start a tabular classification usecase version training
 
@@ -528,10 +528,11 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Classification`: Newly created Classification usecase version object
         """
-        return Classification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                                  training_config=training_config, **kwargs)
+        return Supervised._fit(self._id, name, data_type=DataType.Tabular, type_problem=TypeProblem.Classification,
+                               dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
+                               training_config=training_config, **kwargs)
 
-    def fit_multiclassification(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.MultiClassification = None, holdout_dataset=None,
+    def fit_multiclassification(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.MultiClassification = metrics.MultiClassification.log_loss, holdout_dataset=None,
                                 training_config=TrainingConfig(), **kwargs):
         """ Start a tabular multiclassification usecase version training
 
@@ -552,10 +553,11 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.MultiClassification`: Newly created MultiClassification usecase version object
         """
-        return MultiClassification.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                                       training_config=training_config, **kwargs)
+        return Supervised._fit(self._id, name, data_type=DataType.Tabular, type_problem=TypeProblem.MultiClassification,
+                               dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
+                               training_config=training_config, **kwargs)
 
-    def fit_image_regression(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.Regression = None, holdout_dataset=None,
+    def fit_image_regression(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
                              training_config=TrainingConfig(), **kwargs):
         """ Start an image regression usecase version training
 
@@ -576,10 +578,11 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.RegressionImages`: Newly created RegressionImages usecase version object
         """
-        return RegressionImages.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                                    training_config=training_config, **kwargs)
+        return Supervised._fit(self._id, name, data_type=DataType.Images, type_problem=TypeProblem.Regression,
+                               dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
+                               training_config=training_config, **kwargs)
 
-    def fit_image_classification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.Classification = None, holdout_dataset=None,
+    def fit_image_classification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.Classification = metrics.Classification.AUC, holdout_dataset=None,
                                  training_config=TrainingConfig(), **kwargs):
         """ Start an image classification usecase version training
 
@@ -600,10 +603,11 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.ClassificationImages`: Newly created ClassificationImages usecase version object
         """
-        return ClassificationImages.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                                        training_config=training_config, **kwargs)
+        return Supervised._fit(self._id, name, data_type=DataType.Images, type_problem=TypeProblem.Classification,
+                               dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
+                               training_config=training_config, **kwargs)
 
-    def fit_image_multiclassification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.MultiClassification = None, holdout_dataset=None,
+    def fit_image_multiclassification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.MultiClassification = metrics.MultiClassification.log_loss, holdout_dataset=None,
                                       training_config=TrainingConfig(), **kwargs) -> Supervised:
         """ Start an image multiclassification usecase version training
 
@@ -614,7 +618,7 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:enum: `metrics.MultiClassification`, optional): Specific metric to use for the usecase (default: ``metrics.MultiClassification.log_loss``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -624,10 +628,11 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.MultiClassificationImages`: Newly created MultiClassificationImages usecase version object
         """
-        return MultiClassificationImages.fit(self._id, name, dataset, column_config, metric=metric, holdout_dataset=holdout_dataset,
-                                             training_config=training_config, **kwargs)
+        return Supervised._fit(self._id, name, data_type=DataType.Images, type_problem=TypeProblem.Classification,
+                               dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
+                               training_config=training_config, **kwargs)
 
-    def fit_timeseries_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow, metric: metrics.Regression = None, holdout_dataset=None,
+    def fit_timeseries_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow, metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
                                   training_config=TrainingConfig()) -> TimeSeries:
         """ Start a timeseries regression usecase version training
 
@@ -640,7 +645,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 on each possible column types)
             time_window (:class:`.TimeWindow`): Time configuration
                 (see the documentation of the :class:`.TimeWindow` resource for more details)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:enum: `metrics.Regression`, optional): Specific metric to use for the usecase (default: ``metrics.Regression.RMSE``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -650,8 +655,8 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.TimeSeries`: Newly created TimeSeries usecase version object
         """
-        return TimeSeries.fit(self._id, name, dataset, column_config, time_window, metric=metric, holdout_dataset=holdout_dataset,
-                              training_config=training_config)
+        return TimeSeries._fit(self._id, name, dataset, column_config, time_window, metric=metric, holdout_dataset=holdout_dataset,
+                               training_config=training_config)
 
     def fit_text_similarity(self, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig, metric: metrics.TextSimilarity = None, top_k=None, lang: str = 'auto',
                             queries_dataset=None, queries_column_config=None, models_parameters=ListModelsParameters()):
@@ -678,8 +683,8 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.TextSimilarity`: Newly created TextSimilarity usecase version object
         """
-        return TextSimilarity.fit(self._id, name, dataset, description_column_config, metric=metric, top_k=top_k, lang=lang,
-                                  queries_dataset=queries_dataset, queries_column_config=queries_column_config, models_parameters=models_parameters)
+        return TextSimilarity._fit(self._id, name, dataset, description_column_config, metric=metric, top_k=top_k, lang=lang,
+                                   queries_dataset=queries_dataset, queries_column_config=queries_column_config, models_parameters=models_parameters)
 
     def list_usecases(self, all: bool = True):
         """ List all the available usecase in the current project.

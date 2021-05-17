@@ -63,16 +63,13 @@ from previsionio.connector import Connector
 from previsionio.datasource import DataSource
 from previsionio.project import Project
 from previsionio.usecase import Usecase
-from previsionio.supervised import Supervised, SupervisedImages, \
-    Regression, Classification, MultiClassification, \
-    RegressionImages, ClassificationImages, MultiClassificationImages, MODEL_CLASS_DICT
+from previsionio.supervised import Supervised
 from previsionio.timeseries import TimeSeries, TimeWindow, TimeWindowException
 
+from previsionio.model import Model, ClassificationModel, RegressionModel, MultiClassificationModel, TextSimilarityModel
 from previsionio.text_similarity import TextSimilarity, DescriptionsColumnConfig, \
     QueriesColumnConfig, ListModelsParameters, ModelsParameters, TextSimilarityModels, ModelEmbedding, Preprocessing
-from previsionio.model import Model, ClassificationModel, RegressionModel, MultiClassificationModel, TextSimilarityModel
 from previsionio.dataset import Dataset, DatasetImages
-# from previsionio.experiment import Experiment
 from previsionio.plotter import PrevisionioPlotter, PlotlyPlotter, MatplotlibPlotter
 from previsionio.analyzer import cv_classif_analysis
 from previsionio.deployed_model import DeployedModel
@@ -96,14 +93,6 @@ __all__ = ['client',
            'Connector',
            'DataSource',
            'Supervised',
-           'SupervisedImages',
-           'Regression',
-           'RegressionImages',
-           'Classification',
-           'ClassificationImages',
-           'MultiClassification',
-           'MultiClassificationImages',
-           'MODEL_CLASS_DICT'
            'TimeSeries',
            'TimeWindow',
            'TimeWindowException',
@@ -113,6 +102,7 @@ __all__ = ['client',
            'RegressionModel',
            'ClassificationModel',
            'MultiClassification',
+           'MultiClassificationModel'
            'TextSimilarityModel',
            'PrevisionioPlotter',
            'PlotlyPlotter',
