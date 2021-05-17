@@ -190,12 +190,12 @@ class TestInfos:
         assert isinstance(uc.models, list)
         model = uc.models[0]
         model_copy = pio.Model.from_id(model._id)
-        assert isinstance(model_copy, ClassificationModel)
         assert isinstance(model.hyperparameters, dict)
         assert model_copy.hyperparameters == model.hyperparameters
 
         assert isinstance(model.cross_validation, pd.DataFrame)
         assert isinstance(model.chart(), dict)
         if type_problem == 'classification':
+            assert isinstance(model_copy, ClassificationModel)
             assert model_copy.optimal_threshold == model.optimal_threshold
             assert isinstance(model.get_dynamic_performances(), dict)
