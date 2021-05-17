@@ -15,7 +15,7 @@ from .dataset import Dataset
 from .deployed_model import DeployedModel
 from .prevision_client import client
 from .api_resource import ApiResource
-from .utils import NpEncoder, handle_error_response, parse_json, EventTuple, \
+from .utils import handle_error_response, parse_json, EventTuple, \
     PrevisionException, zip_to_pandas
 
 

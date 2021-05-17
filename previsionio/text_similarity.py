@@ -5,7 +5,7 @@ from .usecase_config import DataType, UsecaseConfig, TypeProblem
 from .prevision_client import client
 from .utils import handle_error_response, parse_json, EventTuple
 from .model import TextSimilarityModel
-from .usecase_version import ClassicUsecaseVersion
+from .usecase_version import BaseUsecaseVersion
 import previsionio as pio
 
 
@@ -157,7 +157,7 @@ def to_json(obj):
     return dict()
 
 
-class TextSimilarity(ClassicUsecaseVersion):
+class TextSimilarity(BaseUsecaseVersion):
 
     default_metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k
     default_top_k: int = 10
