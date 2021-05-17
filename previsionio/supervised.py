@@ -59,7 +59,7 @@ class Supervised(ClassicUsecaseVersion):
 
     @classmethod
     def _fit(cls, project_id: str, name: str, data_type: str, type_problem: str,
-            dataset: Union[Dataset, Tuple[Dataset, DatasetImages]], column_config: ColumnConfig, metric, holdout_dataset: Dataset = None,
+            dataset: Union[Dataset, Tuple[Dataset, DatasetImages]], column_config: ColumnConfig, metric: metrics.Enum, holdout_dataset: Dataset = None,
             training_config: TrainingConfig = TrainingConfig(), **kwargs) -> 'Supervised':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
