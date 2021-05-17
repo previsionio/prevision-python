@@ -362,7 +362,7 @@ class BaseUsecaseVersion(ApiResource):
             json.dump(version_dict, f)
 
     @classmethod
-    def _load(cls, pio_file: str):
+    def _load(cls, pio_file: str) -> Dict:
         with open(pio_file, 'r') as f:
             mdl = json.load(f)
         uc = cls._from_id(mdl['_id'])
