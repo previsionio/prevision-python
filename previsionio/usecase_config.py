@@ -312,7 +312,7 @@ class ColumnConfig(UsecaseConfig):
         self.time_column: Union[str, None] = time_column
         self.group_columns: Union[str, None] = group_columns
         self.apriori_columns: Union[str, None] = apriori_columns
-        self.drop_list: Union[str, None] = drop_list
+        self.drop_list: Union[List[str], None] = drop_list
 
 
 base_config = TrainingConfig(profile=Profile.Normal,
