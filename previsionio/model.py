@@ -35,7 +35,8 @@ class Model(ApiResource):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id: str, usecase_version_id: str, project_id: str, model_name: str = None, deployable: bool = False, **other_params):
+    def __init__(self, _id: str, usecase_version_id: str, project_id: str, model_name: str = None,
+                 deployable: bool = False, **other_params):
         """ Instantiate a new :class:`.Model` object to manipulate a model resource on the platform. """
         super().__init__(_id=_id)
         self._id = _id
@@ -67,7 +68,11 @@ class Model(ApiResource):
         return json.dumps(args_to_show, sort_keys=True, indent=4, separators=(',', ': '))
 
     @classmethod
-    def from_id(cls, _id: str) -> Union['RegressionModel', 'ClassificationModel', 'MultiClassificationModel', 'TextSimilarityModel']:
+    def from_id(cls, _id: str) -> Union[
+            'RegressionModel',
+            'ClassificationModel',
+            'MultiClassificationModel',
+            'TextSimilarityModel']:
         """Get a usecase from the platform by its unique id.
 
         Args:
@@ -185,7 +190,9 @@ class Model(ApiResource):
 
         return zip_to_pandas(pred_response)
 
-    def predict_from_dataset(self, dataset: Dataset, confidence: bool = False, dataset_folder: Dataset = None) -> Union[pd.DataFrame, None]:
+    def predict_from_dataset(self, dataset: Dataset,
+                             confidence: bool = False,
+                             dataset_folder: Dataset = None) -> Union[pd.DataFrame, None]:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 

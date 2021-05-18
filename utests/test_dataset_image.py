@@ -20,12 +20,14 @@ def setup_module(module):
     global PROJECT_ID
     PROJECT_ID = project._id
 
+
 def teardown_module(module):
     project = pio.Project.from_id(PROJECT_ID)
     for image_folder in project.list_image_folders(all=True):
         if TESTING_ID in image_folder.name:
             image_folder.delete()
     project.delete()
+
 
 def test_upload_dataset_image():
     project = pio.Project.from_id(PROJECT_ID)

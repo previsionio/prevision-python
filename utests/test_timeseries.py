@@ -37,7 +37,6 @@ def teardown_module(module):
     project.delete()
 
 
-
 def get_data(path, groups):
     if isinstance(groups, tuple):
         a, b = groups
@@ -133,6 +132,7 @@ def test_time_window(dws, dwe, fws, fwe):
     usecases = [uc.name for uc in project.list_usecases()]
     assert uc_name_returned in usecases
 
+
 def test_version():
     dws, dwe, fws, fwe = (-10, -5, 3, 4)
     ts_label = '_'.join(str(s).replace('-', 'm') for s in (dws, dwe, fws, fwe))
@@ -140,13 +140,13 @@ def test_version():
 
     uc = train_model(uc_name_asked,
                      time_window=pio.TimeWindow(dws, dwe, fws, fwe))
-    
+
     uc.wait_until(lambda usecasev: len(usecasev.models) > 0)
     uc.stop()
     new_uc = uc.new_version()
     new_uc.wait_until(lambda usecasev: len(usecasev.models) > 1)
     uc.stop()
-    
+
 
 @pytest.mark.parametrize('dws, dwe, fws, fwe', wrong_windows,
                          ids=['-'.join(str(s) for s in w) for w in wrong_windows])

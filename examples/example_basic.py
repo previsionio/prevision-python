@@ -61,7 +61,7 @@ if __name__ == '__main__':
     print('***    LIST MODELS    ***')
     print(usecase_version.models)
     print('-------')
-    #print(usecase_version.list_models['xgb'])
+    # print(usecase_version.list_models['xgb'])
 
     # Get some typical models
     # a- the model with the best performances (having the minimal value of the chosen erro metric)

@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import os
 import copy
-from typing import Dict, List, Union
+from typing import Dict, Union
 import requests
 import time
 import json
@@ -298,6 +298,7 @@ class Client(object):
 
         logger.debug('subscribing to events manager')
         self.event_manager = EventManager(self.url + '/events', auth_headers=self.headers, client=self)
+
 
 client = Client()
 

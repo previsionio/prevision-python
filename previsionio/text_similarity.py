@@ -215,8 +215,8 @@ class TextSimilarity(BaseUsecaseVersion):
 
     @classmethod
     def _fit(cls, project_id: str, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
-             metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k, top_k: int = 10, lang: str = 'auto',
-             queries_dataset: Dataset = None, queries_column_config: QueriesColumnConfig = None,
+             metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k, top_k: int = 10,
+             lang: str = 'auto', queries_dataset: Dataset = None, queries_column_config: QueriesColumnConfig = None,
              models_parameters: ListModelsParameters = ListModelsParameters(), **kwargs) -> 'TextSimilarity':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).

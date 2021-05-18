@@ -80,7 +80,7 @@ def test_usecase_version():
     usecase_new_version = usecase_version.new_version()
     print("usecase_new_version.usecase_id", usecase_new_version.usecase_id)
     print("usecase_new_version.project_id", usecase_new_version.project_id)
-    #usecases = pio.Usecase.list(PROJECT_ID)
+    # usecases = pio.Usecase.list(PROJECT_ID)
     usecase_versions = usecase_version.usecase.versions
     assert usecase_new_version._id in [u['_id'] for u in usecase_versions]
 

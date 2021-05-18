@@ -35,8 +35,8 @@ class Dataset(ApiResource):
 
     resource = 'datasets'
 
-    def __init__(self, _id: str, name: str, datasource: DataSource = None, _data: DataFrame = None, describe_state: Dict = None,
-                 drift_state=None, embeddings_state=None, **kwargs):
+    def __init__(self, _id: str, name: str, datasource: DataSource = None, _data: DataFrame = None,
+                 describe_state: Dict = None, drift_state=None, embeddings_state=None, **kwargs):
         super().__init__(_id=_id, datasource=datasource)
         self.name = name
         self._id = _id
@@ -202,7 +202,8 @@ class Dataset(ApiResource):
         return path
 
     @classmethod
-    def _new(cls, project_id: str, name: str, datasource: DataSource = None, file_name: str = None, dataframe: DataFrame = None):
+    def _new(cls, project_id: str, name: str, datasource: DataSource = None,
+             file_name: str = None, dataframe: DataFrame = None):
         """ Register a new dataset in the workspace for further processing.
         You need to provide either a datasource, a file name or a dataframe
         (only one can be specified).

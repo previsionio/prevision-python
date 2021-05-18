@@ -59,8 +59,9 @@ class Supervised(ClassicUsecaseVersion):
 
     @classmethod
     def _fit(cls, project_id: str, name: str, data_type: str, type_problem: str,
-            dataset: Union[Dataset, Tuple[Dataset, DatasetImages]], column_config: ColumnConfig, metric: metrics.Enum, holdout_dataset: Dataset = None,
-            training_config: TrainingConfig = TrainingConfig(), **kwargs) -> 'Supervised':
+             dataset: Union[Dataset, Tuple[Dataset, DatasetImages]], column_config: ColumnConfig,
+             metric: metrics.Enum, holdout_dataset: Dataset = None,
+             training_config: TrainingConfig = TrainingConfig(), **kwargs) -> 'Supervised':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
 
@@ -190,7 +191,7 @@ class Supervised(ClassicUsecaseVersion):
         usecase = type(self).from_id(json["_id"])
         usecase.data_type = self.data_type
         usecase.type_problem = self.type_problem
-        
+
         events_url = '/{}/{}'.format(self.resource, json['_id'])
         client.event_manager.wait_for_event(usecase.resource_id,
                                             self.resource,
@@ -211,4 +212,3 @@ class Supervised(ClassicUsecaseVersion):
         if self.holdout_dataset_id:
             json_dict['holdout_id'] = self.holdout_dataset_id
         return json_dict
-        
