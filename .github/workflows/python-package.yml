@@ -11,11 +11,14 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
+concurrency:
+  group: environment-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:  
   ci:
     environment: PREVISION_URL
     runs-on: ubuntu-latest
-    concurrency: ${{ github.head_ref || concat(github.ref, github.run_number) }}
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
