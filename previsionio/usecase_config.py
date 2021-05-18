@@ -1,5 +1,5 @@
 import copy
-from typing import Union
+from typing import List, Union
 
 
 class ParamList(list):
@@ -303,7 +303,7 @@ class ColumnConfig(UsecaseConfig):
                  time_column: Union[str, None] = None,
                  group_columns: Union[str, None] = None,
                  apriori_columns: Union[str, None] = None,
-                 drop_list: Union[str, None] = None):
+                 drop_list: Union[List[str], None] = None):
         self.target_column: Union[str, None] = target_column
         self.filename_column: Union[str, None] = filename_column
         self.id_column: Union[str, None] = id_column
