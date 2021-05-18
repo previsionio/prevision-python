@@ -56,11 +56,11 @@ class BaseTrainSearchDelete(unittest.TestCase):
     def test_train_stop_delete_text_similarity(self):
 
         description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
-        uc = pio.TextSimilarity.fit(PROJECT_ID,
-                                    'test_sdk_1_text_similarity_{}'.format(TESTING_ID),
-                                    test_datasets['description'],
-                                    description_column_config,
-                                    metric=pio.metrics.TextSimilarity.accuracy_at_k)
+        uc = pio.TextSimilarity._fit(PROJECT_ID,
+                                     'test_sdk_1_text_similarity_{}'.format(TESTING_ID),
+                                     test_datasets['description'],
+                                     description_column_config,
+                                     metric=pio.metrics.TextSimilarity.accuracy_at_k)
 
         uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
         time.sleep(40)
@@ -72,11 +72,11 @@ class BaseTrainSearchDelete(unittest.TestCase):
     def test_train_new_stop_delete_text_similarity(self):
 
         description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
-        uc = pio.TextSimilarity.fit(PROJECT_ID,
-                                    'test_sdk_1_text_similarity_{}'.format(TESTING_ID),
-                                    test_datasets['description'],
-                                    description_column_config,
-                                    metric=pio.metrics.TextSimilarity.accuracy_at_k)
+        uc = pio.TextSimilarity._fit(PROJECT_ID,
+                                     'test_sdk_1_text_similarity_{}'.format(TESTING_ID),
+                                     test_datasets['description'],
+                                     description_column_config,
+                                     metric=pio.metrics.TextSimilarity.accuracy_at_k)
 
         uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
 
@@ -98,15 +98,15 @@ class BaseTrainSearchDelete(unittest.TestCase):
         description_column_config = pio.DescriptionsColumnConfig(content_column='item_desc', id_column='item_id')
         queries_column_config = pio.QueriesColumnConfig(queries_dataset_content_column='query',
                                                         queries_dataset_matching_id_description_column='true_item_id')
-        uc = pio.TextSimilarity.fit(PROJECT_ID,
-                                    'test_sdk_2_text_similarity_{}'.format(TESTING_ID),
-                                    test_datasets['description'],
-                                    description_column_config,
-                                    metric=pio.metrics.TextSimilarity.accuracy_at_k,
-                                    top_k=10,
-                                    lang='auto',
-                                    queries_dataset=test_datasets['queries'],
-                                    queries_column_config=queries_column_config)
+        uc = pio.TextSimilarity._fit(PROJECT_ID,
+                                     'test_sdk_2_text_similarity_{}'.format(TESTING_ID),
+                                     test_datasets['description'],
+                                     description_column_config,
+                                     metric=pio.metrics.TextSimilarity.accuracy_at_k,
+                                     top_k=10,
+                                     lang='auto',
+                                     queries_dataset=test_datasets['queries'],
+                                     queries_column_config=queries_column_config)
 
         uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
         assert not uc.running
@@ -138,16 +138,16 @@ class BaseTrainSearchDelete(unittest.TestCase):
                            'preprocessing': {},
                            'models': ['brute_force', 'lsh', 'hkm']}]
         models_parameters = pio.ListModelsParameters(usecase_config)
-        uc = pio.TextSimilarity.fit(PROJECT_ID,
-                                    'test_sdk_3_text_similarity_{}'.format(TESTING_ID),
-                                    test_datasets['description'],
-                                    description_column_config,
-                                    metric=pio.metrics.TextSimilarity.accuracy_at_k,
-                                    top_k=10,
-                                    lang='auto',
-                                    queries_dataset=test_datasets['queries'],
-                                    queries_column_config=queries_column_config,
-                                    models_parameters=models_parameters)
+        uc = pio.TextSimilarity._fit(PROJECT_ID,
+                                     'test_sdk_3_text_similarity_{}'.format(TESTING_ID),
+                                     test_datasets['description'],
+                                     description_column_config,
+                                     metric=pio.metrics.TextSimilarity.accuracy_at_k,
+                                     top_k=10,
+                                     lang='auto',
+                                     queries_dataset=test_datasets['queries'],
+                                     queries_column_config=queries_column_config,
+                                     models_parameters=models_parameters)
 
         uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
         assert not uc.running

@@ -7,7 +7,6 @@ omit =
     ../previsionio/deployed_model.py
     ../previsionio/experiment.py
     ../previsionio/plotter.py
-    ../previsionio/unsupervised.py
 
 [report]
 ignore_errors = True

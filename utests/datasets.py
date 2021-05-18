@@ -124,19 +124,6 @@ def make_supervised_datasets(path,
     }
 
 
-def make_unsupervised_datasets(path, n_smp=100, n_feat_clustering=1):
-    if not os.path.exists(path):
-        os.mkdir(path)
-
-    # clustering
-    X_clustering = np.random.rand(n_smp, n_feat_clustering)
-    clustering = pd.DataFrame(
-        X_clustering,
-        columns=['feat_{}'.format(i) for i in range(n_feat_clustering)],
-    )
-    clustering.to_csv(os.path.join(path, 'clustering.csv'), index=False)
-
-
 def remove_datasets(path):
     if os.path.exists(path):
         for f in glob.glob(os.path.join(path, '*.csv')):
@@ -160,7 +147,6 @@ def main():
     n_samples = args.n_samples
     remove_datasets(data_folder)
     make_supervised_datasets(data_folder, n_smp=n_samples)
-    make_unsupervised_datasets(data_folder, n_smp=n_samples)
 
 
 if __name__ == '__main__':

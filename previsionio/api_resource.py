@@ -1,3 +1,4 @@
+from typing import Dict
 import requests
 from .utils import handle_error_response, parse_json, PrevisionException, get_all_results
 from .prevision_client import client
@@ -44,7 +45,7 @@ class ApiResource:
         self.resource_id = self._id
         # self.event_manager: Optional[EventManager] = None
 
-    def update_status(self, specific_url: str = None):
+    def update_status(self, specific_url: str = None) -> Dict:
         """Get an update on the status of a resource.
 
         Args:
@@ -71,7 +72,7 @@ class ApiResource:
         return resource_status_dict
 
     @property
-    def _status(self):
+    def _status(self) -> Dict:
 
         # if self.event_manager:
         #     events = self.event_manager.events
@@ -100,7 +101,7 @@ class ApiResource:
             raise PrevisionException('[Delete {}] Error'.format(self.resource))
 
     @classmethod
-    def from_id(cls, _id: str = None, specific_url: str = None):
+    def _from_id(cls, _id: str = None, specific_url: str = None) -> Dict:
         """Get a resource from the platform by its unique id.
         You must provide either an ``_id`` or a ``specific_url``.
 
@@ -122,7 +123,7 @@ class ApiResource:
                 raise Exception('[{}] Provide an _id or a specific url for "from_id" method'.format(cls.resource))
             url = '/{}/{}'.format(cls.resource, _id)
         else:
-            url = specific_url 
+            url = specific_url
         resp = client.request(url, method=requests.get)
 
         handle_error_response(resp, url)
@@ -132,10 +133,10 @@ class ApiResource:
         else:
             logger.info('[Fetch {} OK] by url: "{}"'.format(cls.__name__, specific_url))
 
-        return cls(**resp_json)
+        return resp_json
 
     @classmethod
-    def list(cls, all: bool = True, project_id: str = None):
+    def _list(cls, all: bool = True, project_id: str = None):
         """List all available instances of this resource type on the platform.
 
         Args:
@@ -156,42 +157,42 @@ class ApiResource:
             resources = client.request(url, method=requests.get)
             return parse_json(resources)['items']
 
-    def edit(self, **kwargs):
-        """Edit a resource on the platform. You simply pass the function a
-        dictionary of all the fields you want to update (as kwargs), with
-        the name of the field as key and the new data for the field as value.
+    # def edit(self, **kwargs):
+    #     """Edit a resource on the platform. You simply pass the function a
+    #     dictionary of all the fields you want to update (as kwargs), with
+    #     the name of the field as key and the new data for the field as value.
 
-        .. note::
+    #     .. note::
 
-            The parameters you can update can be listed by calling:
+    #         The parameters you can update can be listed by calling:
 
-            .. code-block:: python
+    #         .. code-block:: python
 
-                print(my_resource.resource_params)
+    #             print(my_resource.resource_params)
 
-        Returns:
-            dict: Updated resource data
+    #     Returns:
+    #         dict: Updated resource data
 
-        Raises:
-            PrevisionException: Any error while updating data on the platform
-                or parsing result
-        """
-        update_fields = {
-            'uid': self._id
-        }
+    #     Raises:
+    #         PrevisionException: Any error while updating data on the platform
+    #             or parsing result
+    #     """
+    #     update_fields = {
+    #         'uid': self._id
+    #     }
 
-        for param in self.resource_params:
-            if kwargs.get(param):
-                update_fields[param] = kwargs[param]
-        url = '/{}'.format(self.resource)
-        resp = client.request(url,
-                              body=update_fields,
-                              method=requests.put)
+    #     for param in self.resource_params:
+    #         if kwargs.get(param):
+    #             update_fields[param] = kwargs[param]
+    #     url = '/{}'.format(self.resource)
+    #     resp = client.request(url,
+    #                           body=update_fields,
+    #                           method=requests.put)
 
-        handle_error_response(resp, url)
+    #     handle_error_response(resp, url)
 
-        resp_json = parse_json(resp)
+    #     resp_json = parse_json(resp)
 
-        logger.debug('[{}] {}'.format(self.resource, resp_json['message']))
+    #     logger.debug('[{}] {}'.format(self.resource, resp_json['message']))
 
-        return resp_json['status'] == 200
+    #     return resp_json['status'] == 200
