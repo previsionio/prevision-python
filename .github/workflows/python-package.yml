@@ -13,7 +13,6 @@ on:
 
 concurrency:
   group: environment-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:  
   ci:
