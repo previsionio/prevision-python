@@ -24,8 +24,8 @@ class Connector(ApiResource, UniqueResourceMixin):
     resource = 'connectors'
     conn_type = 'connector'
 
-    def __init__(self, _id: str, name: str, host: str=None, port: int=None, type: str=None,
-                 username: str='', password: str='', googleCredentials=None, **kwargs):
+    def __init__(self, _id: str, name: str, host: str = None, port: int = None, type: str = None,
+                 username: str = '', password: str = '', googleCredentials=None, **kwargs):
         super().__init__(_id=_id, name=name, host=host, port=port, conn_type=type,
                          username=username, password=password, googleCredentials=googleCredentials)
         self._id = _id
@@ -57,12 +57,12 @@ class Connector(ApiResource, UniqueResourceMixin):
         Returns:
             list(:class:`.Connector`): Fetched connector objects
         """
-        resources = super().list(all=all, project_id=project_id)
+        resources = super()._list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources
                 if conn_data['type'] == cls.conn_type or cls.conn_type == 'connector']
 
     @classmethod
-    def _new(cls, project_id: str, name: str, host: str, port: Union[int, None] , conn_type: str, username: str = None, password: str = None, googleCredentials = None):
+    def _new(cls, project_id: str, name: str, host: str, port: Union[int, None], conn_type: str, username: str = None, password: str = None, googleCredentials=None):
         """ Create a new connector object on the platform.
 
         Args:
@@ -134,7 +134,7 @@ class DataTableBaseConnector(Connector):
         resp_json = parse_json(resp)
         return resp_json['items']
 
-    def list_tables(self, database):
+    def list_tables(self, database: str):
         """ List all available tables in a specific database for the client.
 
         Args:

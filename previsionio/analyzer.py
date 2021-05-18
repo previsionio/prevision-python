@@ -1,14 +1,15 @@
+from previsionio.usecase_version import ClassicUsecaseVersion
 import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score, fbeta_score, recall_score, precision_score
 
 
-def cv_classif_analysis(usecase, thresh=None, step=1000):
+def cv_classif_analysis(usecase: ClassicUsecaseVersion, thresh: float = None, step: int = 1000):
     '''Get metrics on a CV file retrieved from the platform for a binary classification usecase
 
     Args:
         usecase (Usecase): usecase to analyze
-        thresh (float): threshold to use (if none is provided, optimal threshold will be computed
+        thresh (float, optional): threshold to use (if none is provided, optimal threshold will be computed
             given F1 score)
         step (int): number of iterations required to find optimal threshold (1000 by default = 0.1% resolution per fold)
     Returns:

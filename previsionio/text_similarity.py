@@ -5,7 +5,7 @@ from .usecase_config import DataType, UsecaseConfig, TypeProblem
 from .prevision_client import client
 from .utils import handle_error_response, parse_json, EventTuple
 from .model import TextSimilarityModel
-from .usecase_version import ClassicUsecaseVersion
+from .usecase_version import BaseUsecaseVersion
 import previsionio as pio
 
 
@@ -157,7 +157,7 @@ def to_json(obj):
     return dict()
 
 
-class TextSimilarity(ClassicUsecaseVersion):
+class TextSimilarity(BaseUsecaseVersion):
 
     default_metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k
     default_top_k: int = 10
@@ -170,10 +170,10 @@ class TextSimilarity(ClassicUsecaseVersion):
         self.name: str = usecase_info.get('name')
         self.dataset = usecase_info.get('dataset_id')
         usecase_version_params = usecase_info['usecase_version_params']
-        self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(usecase_version_params.get('metric', self.default_metric))
+        self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
+            usecase_version_params.get('metric', self.default_metric))
         self.top_k: int = usecase_version_params.get('top_K', self.default_top_k)
         self.lang: str = usecase_version_params.get('lang')
-
 
         self.description_column_config = DescriptionsColumnConfig(
             content_column=usecase_version_params.get('content_column'),
@@ -206,9 +206,18 @@ class TextSimilarity(ClassicUsecaseVersion):
         self._models = {}
 
     @classmethod
-    def fit(cls, project_id: str, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig, metric: pio.metrics.TextSimilarity = None, top_k: int = None, lang: str = 'auto',
-            queries_dataset: Dataset = None, queries_column_config: QueriesColumnConfig = None,
-            models_parameters: ListModelsParameters = ListModelsParameters(), **kwargs):
+    def from_id(cls, _id: str) -> 'TextSimilarity':
+        return cls(**super()._from_id(_id))
+
+    @classmethod
+    def load(cls, pio_file: str) -> 'TextSimilarity':
+        return cls(**super()._load(pio_file))
+
+    @classmethod
+    def _fit(cls, project_id: str, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
+             metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k, top_k: int = 10,
+             lang: str = 'auto', queries_dataset: Dataset = None, queries_column_config: QueriesColumnConfig = None,
+             models_parameters: ListModelsParameters = ListModelsParameters(), **kwargs) -> 'TextSimilarity':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
 
@@ -273,7 +282,7 @@ class TextSimilarity(ClassicUsecaseVersion):
 
     def new_version(self, description: str = None, dataset: Dataset = None, description_column_config: DescriptionsColumnConfig = None, metric: pio.metrics.TextSimilarity = None, top_k: int = None, lang: str = 'auto',
                     queries_dataset: Dataset = None, queries_column_config: Union[QueriesColumnConfig, None] = None,
-                    models_parameters: ListModelsParameters = None, **kwargs):
+                    models_parameters: ListModelsParameters = None, **kwargs) -> 'TextSimilarity':
         """ Start a text similarity usecase training to create a new version of the usecase (on the
         platform): the training configs are copied from the current version and then overridden
         for the given parameters.
@@ -347,7 +356,7 @@ class TextSimilarity(ClassicUsecaseVersion):
         handle_error_response(resp, endpoint, data, "text_similality usecase failed to start")
 
         start_response = parse_json(resp)
-        usecase = type(self).from_id(start_response['_id'])
+        usecase = self.from_id(start_response['_id'])
         events_url = '/{}/{}'.format(self.resource, start_response['_id'])
         pio.client.event_manager.wait_for_event(usecase._id,
                                                 self.resource,

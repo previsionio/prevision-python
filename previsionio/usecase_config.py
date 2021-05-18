@@ -25,6 +25,7 @@ class TypeProblem(object):
     ObjectDetection = "object-detection"
     """Detection of pattern in images"""
 
+
 class DataType(object):
     """ Type of data available with Prevision.io. """
     Tabular = 'tabular'

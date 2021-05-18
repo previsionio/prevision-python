@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from typing import Union
+from typing import Dict, Union
+
+from pandas.core.frame import DataFrame
 from previsionio.usecase_config import TypeProblem
 import time
 import json
@@ -15,7 +17,7 @@ from .dataset import Dataset
 from .deployed_model import DeployedModel
 from .prevision_client import client
 from .api_resource import ApiResource
-from .utils import NpEncoder, handle_error_response, parse_json, EventTuple, \
+from .utils import handle_error_response, parse_json, EventTuple, \
     PrevisionException, zip_to_pandas
 
 
@@ -33,7 +35,8 @@ class Model(ApiResource):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id, usecase_version_id, project_id, model_name=None, deployable=False, **other_params):
+    def __init__(self, _id: str, usecase_version_id: str, project_id: str, model_name: str = None,
+                 deployable: bool = False, **other_params):
         """ Instantiate a new :class:`.Model` object to manipulate a model resource on the platform. """
         super().__init__(_id=_id)
         self._id = _id
@@ -65,7 +68,11 @@ class Model(ApiResource):
         return json.dumps(args_to_show, sort_keys=True, indent=4, separators=(',', ': '))
 
     @classmethod
-    def from_id(cls, _id):
+    def from_id(cls, _id: str) -> Union[
+            'RegressionModel',
+            'ClassificationModel',
+            'MultiClassificationModel',
+            'TextSimilarityModel']:
         """Get a usecase from the platform by its unique id.
 
         Args:
@@ -83,6 +90,7 @@ class Model(ApiResource):
         end_point = '/models/{}'.format(_id)
         response = client.request(endpoint=end_point,
                                   method=requests.get)
+        handle_error_response(response, end_point)
         model = json.loads(response.content.decode('utf-8'))
         training_type = model['type_problem']
         if training_type == TypeProblem.Regression:
@@ -104,12 +112,14 @@ class Model(ApiResource):
         Returns:
             dict: Hyperparameters of the model
         """
+        url = '/models/{}/hyperparameters/download'.format(self._id)
         response = client.request(
-            endpoint='/models/{}/hyperparameters/download'.format(self._id),
+            endpoint=url,
             method=requests.get)
+        handle_error_response(response, url)
         return (json.loads(response.content.decode('utf-8')))
 
-    def wait_for_prediction(self, prediction_id):
+    def wait_for_prediction(self, prediction_id: str):
         """ Wait for a specific prediction to finish.
 
         Args:
@@ -118,13 +128,13 @@ class Model(ApiResource):
         specific_url = '/predictions/{}'.format(prediction_id)
         pio.client.event_manager.wait_for_event(prediction_id,
                                                 specific_url,
-                                                EventTuple('PREDICTION_UPDATE', 'state', 'done'),
+                                                EventTuple('PREDICTION_UPDATE', 'state', 'done', [('state', 'failed')]),
                                                 specific_url=specific_url)
 
     def _predict_bulk(self,
-                      dataset_id,
-                      confidence=False,
-                      dataset_folder_id=None):
+                      dataset_id: str,
+                      confidence: bool = False,
+                      dataset_folder_id: str = None):
         """ (Util method) Private method used to handle bulk predict.
 
         .. note::
@@ -163,7 +173,8 @@ class Model(ApiResource):
 
         return predict_start_parsed['_id']
 
-    def _get_predictions(self, predict_id, separator=',') -> pd.DataFrame:
+
+    def _get_predictions(self, predict_id: str, separator=',') -> pd.DataFrame:
         """ Get the result prediction dataframe from a given predict id.
 
         Args:
@@ -172,12 +183,17 @@ class Model(ApiResource):
         Returns:
             ``pd.DataFrame``: Prediction dataframe.
         """
-        pred_response = pio.client.request('/predictions/{}/download'.format(predict_id),
+        url = '/predictions/{}/download'.format(predict_id)
+        pred_response = pio.client.request(url,
                                            requests.get)
         logger.debug('[Predict {0}] Downloading prediction file'.format(predict_id))
+        handle_error_response(pred_response, url)
+
         return zip_to_pandas(pred_response, separator=separator)
 
-    def predict_from_dataset(self, dataset, confidence=False, dataset_folder=None) -> Union[pd.DataFrame, None]:
+    def predict_from_dataset(self, dataset: Dataset,
+                             confidence: bool = False,
+                             dataset_folder: Dataset = None) -> Union[pd.DataFrame, None]:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
@@ -213,7 +229,7 @@ class Model(ApiResource):
                 time.sleep(1)
         return None
 
-    def predict(self, df, confidence=False, prediction_dataset_name=None) -> pd.DataFrame:
+    def predict(self, df: DataFrame, confidence: bool = False, prediction_dataset_name: str = None) -> pd.DataFrame:
         """ Make a prediction in a Scikit-learn blocking style.
 
         .. warning::
@@ -318,18 +334,19 @@ class ClassicModel(Model):
         Raises:
             PrevisionException: Any error while fetching data from the platform or parsing the result
         """
+        endpoint = '/models/{}/analysis'.format(self._id)
         response = client.request(
-            endpoint='/models/{}/analysis'.format(self._id),
+            endpoint=endpoint,
             method=requests.get)
+
+        handle_error_response(response, endpoint)
+
         result = (json.loads(response.content.decode('utf-8')))
-        if result.get('status', 200) != 200:
-            msg = result['message']
-            logger.error(msg)
-            raise PrevisionException(msg)
+
         # drop chart-related information
         return result
 
-    def predict_single(self, data, confidence=False, explain=False):
+    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
         """ Make a prediction for a single instance. Use :py:func:`predict_from_dataset_name` or predict methods
         to predict multiple instances at the same time (it's faster).
 
@@ -368,12 +385,8 @@ class ClassicModel(Model):
                                   data=payload,
                                   content_type='application/json')
         handle_error_response(response, url, payload, message_prefix="Error while doing a predict")
-        try:
-            response_json = parse_json(response)
-            return response_json
-        except PrevisionException as e:
-            logger.error('error getting response data: ' + str(e) + ' -- ' + response.text[0:250])
-            raise e
+        response_json = parse_json(response)
+        return response_json
 
 
 class ClassificationModel(ClassicModel):
@@ -408,13 +421,11 @@ class ClassificationModel(ClassicModel):
         endpoint = '/models/{}/analysis'.format(self._id)
         response = client.request(endpoint=endpoint,
                                   method=requests.get)
-
+        handle_error_response(response, endpoint)
         resp = json.loads(response.content.decode('utf-8'))
-        if response.ok:
-            return resp["optimal_proba"]
-        raise PrevisionException('Request Error : {}'.format(resp['message']))
+        return resp["optimal_proba"]
 
-    def get_dynamic_performances(self, threshold=0.5):
+    def get_dynamic_performances(self, threshold: float = 0.5):
         """ Get model performance for the given threshold.
 
         Args:
@@ -444,16 +455,14 @@ class ClassificationModel(ClassicModel):
 
         response = client.request(endpoint=endpoint,
                                   method=requests.get)
-
+        handle_error_response(response, endpoint)
         resp = json.loads(response.content.decode('utf-8'))
 
-        if response.ok:
-            result['confusion_matrix'] = resp["confusion_matrix"]
-            for metric in ['accuracy', 'precision', 'recall', 'f1Score']:
-                result[metric] = resp["score"][metric]
+        result['confusion_matrix'] = resp["confusion_matrix"]
+        for metric in ['accuracy', 'precision', 'recall', 'f1Score']:
+            result[metric] = resp["score"][metric]
 
-            return result
-        raise PrevisionException('Request Error : {}'.format(resp['message']))
+        return result
 
 
 class RegressionModel(ClassicModel):
@@ -484,10 +493,10 @@ class MultiClassificationModel(ClassicModel):
 class TextSimilarityModel(Model):
 
     def _predict_bulk(self,
-                      queries_dataset_id,
-                      queries_dataset_content_column,
-                      top_k,
-                      matching_id_description_column=None):
+                      queries_dataset_id: str,
+                      queries_dataset_content_column: str,
+                      top_k: int,
+                      matching_id_description_column: str = None):
         """ (Util method) Private method used to handle bulk predict.
 
         .. note::
@@ -526,16 +535,16 @@ class TextSimilarityModel(Model):
 
         return predict_start_parsed['_id']
 
-    def predict_from_dataset(self, queries_dataset, queries_dataset_content_column, top_k=10,
-                             queries_dataset_matching_id_description_column=None) -> Union[pd.DataFrame, None]:
+    def predict_from_dataset(self, queries_dataset: Dataset, queries_dataset_content_column: str, top_k: int = 10,
+                             queries_dataset_matching_id_description_column: str = None) -> Union[pd.DataFrame, None]:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
         Args:
             dataset (:class:`.Dataset`): Dataset resource to make a prediction for
-            confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
-            dataset_folder (:class:`.Dataset`, None): Matching folder dataset resource for the prediction,
-                if necessary
+            queries_dataset_content_column (str): Content queries column name
+            top_k (integer): Number of the nearest description to predict
+            queries_dataset_matching_id_description_column (str): Matching id description column name
 
         Returns:
             ``pd.DataFrame``: Prediction results dataframe

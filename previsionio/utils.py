@@ -1,5 +1,5 @@
 import operator
-from typing import Dict, List
+from typing import Dict, List, Union
 import requests
 import uuid
 import json
@@ -63,7 +63,7 @@ def parse_json(json_response: Response) -> Dict:
         raise
 
 
-def get_pred_from_multiclassification(row, pred_prefix='pred_'):
+def get_pred_from_multiclassification(row, pred_prefix: str='pred_'):
     d = row.to_dict()
     preds_probas = {k: float(v) for k, v in d.items() if pred_prefix in k}
     pred = max(preds_probas.items(), key=operator.itemgetter(1))[0]
@@ -95,10 +95,12 @@ def get_all_results(client, endpoint: str, method) -> List[Dict]:
     return resources
 
 
-def handle_error_response(resp: Response, url: str, data: Dict = None, message_prefix: str = None, additional_log: str = None):
+def handle_error_response(resp: Response, url: str, data: Union[Dict, List] = None, message_prefix: str = None, additional_log: str = None):
     if resp.status_code != 200:
-        message = "Error {}: {} reaching url: '{}' with data: {}".format(
-            resp.status_code, resp.text, url, data)
+        message = "Error {}: '{}' reaching url: '{}'".format(
+            resp.status_code, resp.text, url)
+        if data:
+            message += " with data: {}".format(data)
         if message_prefix:
             message = message_prefix + '\n' + message
         logger.error(message)

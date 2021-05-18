@@ -28,8 +28,8 @@ class DataSource(ApiResource, UniqueResourceMixin):
 
     resource = 'data-sources'
 
-    def __init__(self, _id, connector_id, name, path=None, database=None,
-                 table=None, request=None, gCloud=None, **kwargs):
+    def __init__(self, _id, connector_id: str, name: str, path: str = None, database: str = None,
+                 table: str = None, request: str = None, gCloud=None, **kwargs):
         """ Instantiate a new :class:`.DataSource` object to manipulate a datasource resource
         on the platform. """
         super().__init__(_id=_id,
@@ -54,7 +54,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
         self.other_params = kwargs
 
     @classmethod
-    def list(cls, project_id, all=False):
+    def list(cls, project_id: str, all: bool = False):
         """ List all the available datasources in the current active [client] workspace.
 
         .. warning::
@@ -70,11 +70,11 @@ class DataSource(ApiResource, UniqueResourceMixin):
             list(:class:`.DataSource`): Fetched datasource objects
         """
         # FIXME : get /resource return type should be consistent
-        resources = super().list(all=all, project_id=project_id)
+        resources = super()._list(all=all, project_id=project_id)
         return [cls(**source_data) for source_data in resources]
 
     @classmethod
-    def from_id(cls, _id):
+    def from_id(cls, _id: str):
         """Get a datasource from the instance by its unique id.
 
         Args:
@@ -96,7 +96,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
         return cls(**resp_json)
 
     @classmethod
-    def _new(cls, project_id, connector, name, path=None, database=None, table=None,
+    def _new(cls, project_id: str, connector, name: str, path: str = None, database: str = None, table: str = None,
              bucket=None, request=None, gCloud=None):
         """ Create a new datasource object on the platform.
 
@@ -131,10 +131,11 @@ class DataSource(ApiResource, UniqueResourceMixin):
         if gCloud:
             data['g_cloud'] = gCloud
 
-        resp = client.request('/projects/{}/{}'.format(project_id, cls.resource),
+        url = '/projects/{}/{}'.format(project_id, cls.resource)
+        resp = client.request(url,
                               data=data,
                               method=requests.post)
-
+        handle_error_response(resp, url, data)
         json = parse_json(resp)
 
         if '_id' not in json:

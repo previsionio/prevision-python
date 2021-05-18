@@ -10,14 +10,13 @@ import os
 from functools import lru_cache
 
 from . import config
-from .usecase_config import DataType, TrainingConfig, ColumnConfig, TypeProblem
+from .usecase_config import DataType, TrainingConfig, ColumnConfig
 from .logger import logger
 from .prevision_client import client
 from .utils import handle_error_response, parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
 from .api_resource import ApiResource
 from .dataset import Dataset
 from .usecase import Usecase
-from enum import Enum
 
 
 class BaseUsecaseVersion(ApiResource):
@@ -36,11 +35,12 @@ class BaseUsecaseVersion(ApiResource):
         super().__init__(**usecase_info)
         self.name: str = usecase_info.get('name')
         self._id = usecase_info.get('_id')
-        self.usecase_id = usecase_info.get('usecase_id')
+        self.usecase_id: str = usecase_info.get('usecase_id')
         self.project_id = usecase_info.get('project_id')
         self.dataset_id = usecase_info.get('dataset_id')
         self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
         self._models = {}
+        self.version = 1
 
     def __len__(self):
         return len(self.models)
@@ -50,7 +50,7 @@ class BaseUsecaseVersion(ApiResource):
                                                                   self._id))
 
     @classmethod
-    def from_id(cls, _id):
+    def _from_id(cls, _id: str) -> Dict:
         """Get a usecase from the platform by its unique id.
 
         Args:
@@ -65,10 +65,10 @@ class BaseUsecaseVersion(ApiResource):
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
         """
-        return super().from_id(specific_url='/{}/{}'.format(cls.resource, _id))
+        return super()._from_id(specific_url='/{}/{}'.format(cls.resource, _id))
 
     @property
-    def usecase(self):
+    def usecase(self) -> 'Usecase':
         """Get a usecase of current usecase version.
 
         Returns:
@@ -224,7 +224,8 @@ class BaseUsecaseVersion(ApiResource):
         events_url = '/{}/{}'.format(self.resource, self._id)
         pio.client.event_manager.wait_for_event(self.resource_id,
                                                 self.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'done'),
+                                                EventTuple('USECASE_VERSION_UPDATE', 'state',
+                                                           'done', [('state', 'failed')]),
                                                 specific_url=events_url)
         logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                       for k, v in parse_json(response).items()))
@@ -365,10 +366,10 @@ class BaseUsecaseVersion(ApiResource):
             json.dump(version_dict, f)
 
     @classmethod
-    def load(cls, pio_file: str):
+    def _load(cls, pio_file: str) -> Dict:
         with open(pio_file, 'r') as f:
             mdl = json.load(f)
-        uc = cls.from_id(mdl['_id'])
+        uc = cls._from_id(mdl['_id'])
         # TODO check holdout_dataset in usecase_version_params
         # if mdl['usecase_version_params'].get('holdout_dataset_id'):
         #     uc.holdout_dataset = mdl['usecase_version_params'].get('holdout_dataset_id')[0]
@@ -515,14 +516,14 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         Raises:
             PrevisionException: If the given feature name does not match any feaure
         """
+        endpoint = '/{}/{}/features/{}'.format(self.resource, self._id, feature_name)
         response = client.request(
-            endpoint='/{}/{}/features/{}'.format(self.resource, self._id, feature_name),
+            endpoint=endpoint,
             method=requests.get)
+        handle_error_response(response, endpoint)
+
         result = (json.loads(response.content.decode('utf-8')))
-        if result.get('status', 200) != 200:
-            msg = result['message']
-            logger.error(msg)
-            raise PrevisionException(msg)
+
         # drop chart-related informations
         keep_list = list(filter(lambda x: 'chart' not in x.lower(),
                                 result.keys())
@@ -559,7 +560,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         return best.cross_validation
 
     @classmethod
-    def _start_usecase(cls, project_id: str, name: str, dataset_id: Union[str, List[str]], data_type: str, type_problem: str, **kwargs):
+    def _start_usecase(cls, project_id: str, name: str,
+                       dataset_id: Union[str, List[str]], data_type: str, type_problem: str, **kwargs):
         """ Start a usecase of the given data type and problem type with a specific
         training configuration (on the platform).
 
@@ -587,15 +589,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', data_type, type_problem)
         start = client.request(endpoint, requests.post, data=data)
         handle_error_response(start, endpoint, data, message_prefix="Error starting usecase")
-        start_response = parse_json(start)
-        usecase = cls.from_id(start_response['_id'])
-        events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
-        pio.client.event_manager.wait_for_event(usecase.resource_id,
-                                                cls.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
-                                                           [('state', 'failed')]),
-                                                specific_url=events_url)
-        return usecase
+        return parse_json(start)
 
     def predict_single(self,
                        data,

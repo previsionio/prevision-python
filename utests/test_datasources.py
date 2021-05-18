@@ -5,10 +5,10 @@ from previsionio.project import connectors_names
 from .utils import get_testing_id
 
 
-try: 
+try:
     from .connectors_config import ftp_config, sftp_config, mysql_config, \
-    hive_config, S3_config, gcp_config
-     
+        hive_config, S3_config, gcp_config
+
     TESTING_ID = get_testing_id()
     TESTING_ID_CONNECTOR = get_testing_id()
     TESTING_ID_DATASOURCE = get_testing_id()
@@ -19,13 +19,11 @@ try:
 
     pio.config.default_timeout = 120
 
-
     def setup_module(module):
         project = pio.Project.new(name=PROJECT_NAME,
-                                description="description test sdk")
+                                  description="description test sdk")
         global PROJECT_ID
         PROJECT_ID = project._id
-
 
     def teardown_module(module):
         project = pio.Project.from_id(PROJECT_ID)
@@ -36,7 +34,6 @@ try:
             if TESTING_ID_CONNECTOR in conn.name:
                 conn.delete()
         project.delete()
-
 
     connectors = {
         'FTP': ftp_config,
@@ -75,7 +72,6 @@ try:
 
     datasource_test_ids = ['datasource-' + opt['connector'] for opt in datasources_options[1]]
 
-
     def prepare_connector_options(base_options):
         options = copy.deepcopy(base_options)
         connector_type = options.pop('type')
@@ -85,7 +81,6 @@ try:
                 del options[key]
 
         return options, connector_type
-
 
     @pytest.fixture(scope='module')
     def setup_connector_class():
@@ -99,21 +94,17 @@ try:
 
         return _wrapped_setter
 
-
     example_datasource_id = None
-
 
     @pytest.mark.parametrize(*connectors_options, ids=connector_test_ids)
     def test_connector_new(setup_connector_class, options):
         conn = setup_connector_class(options)
         assert conn is not None
 
-
     @pytest.mark.parametrize(*connectors_options, ids=connector_test_ids)
     def test_connector_new_test(setup_connector_class, options):
         conn = setup_connector_class(options)
         assert conn.test()
-
 
     @pytest.mark.parametrize(*connectors_sql_options, ids=connector_sql_test_ids)
     def test_sql_connector_list_databases(setup_connector_class, options):
@@ -122,7 +113,6 @@ try:
         assert databases is not None
         assert len(databases) > 0
         assert options['database'] in databases
-
 
     @pytest.mark.parametrize(*connectors_sql_options, ids=connector_sql_test_ids)
     def test_sql_connector_list_tables(setup_connector_class, options):
@@ -141,7 +131,6 @@ try:
     #     assert len(files) > 0
     #     assert options['file'] in files
 
-
     @pytest.mark.parametrize(*datasources_options, ids=datasource_test_ids)
     def test_datasource_new(setup_connector_class, options):
         datasource_options = copy.deepcopy(options)
@@ -158,7 +147,6 @@ try:
         if example_datasource_id is None:
             example_datasource_id = datasource._id
         assert datasource is not None
-
 
     def test_datasource_from_id():
         global example_datasource_id
