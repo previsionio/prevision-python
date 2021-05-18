@@ -299,14 +299,13 @@ class ClassicModel(Model):
         Raises:
             PrevisionException: Any error while fetching data from the platform or parsing the result
         """
+        endpoint = '/models/{}/features-importances/download'.format(self._id)
         response = client.request(
-            endpoint='/models/{}/features-importances/download'.format(self._id),
+            endpoint=endpoint,
             method=requests.get)
-        if response.ok:
-            df_feat_importance = zip_to_pandas(response)
-        else:
-            raise PrevisionException(
-                'Failed to download feature importance table: {}'.format(response.text))
+        handle_error_response(response, endpoint, message_prefix="Error cannot fetch feature importance")
+
+        df_feat_importance = zip_to_pandas(response)
 
         return df_feat_importance.sort_values(by="importance", ascending=False)
 
@@ -318,9 +317,10 @@ class ClassicModel(Model):
             ``pd.Dataframe``: Cross-validation dataframe
         """
         logger.debug('getting cv, model_id: {}'.format(self.id))
-        cv_response = client.request(
-            '/models/{}/cross-validation/download'.format(self._id),
-            requests.get)
+        url = '/models/{}/cross-validation/download'.format(self._id)
+        cv_response = client.request(url,
+                                     requests.get)
+        handle_error_response(cv_response, url, message_prefix="Error cannot fetch cross validation")
         df_cv = zip_to_pandas(cv_response)
 
         return df_cv
@@ -522,10 +522,10 @@ class TextSimilarityModel(Model):
         }
         if matching_id_description_column:
             data['queries_dataset_matching_id_description_column'] = matching_id_description_column
-
-        predict_start = client.request('/usecase-versions/{}/predictions'.format(self.usecase_version_id),
+        endpoint = '/usecase-versions/{}/predictions'.format(self.usecase_version_id)
+        predict_start = client.request(endpoint,
                                        requests.post, data=data)
-
+        handle_error_response(predict_start, endpoint, data)
         predict_start_parsed = parse_json(predict_start)
 
         if '_id' not in predict_start_parsed:

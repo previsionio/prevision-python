@@ -70,7 +70,6 @@ from previsionio.model import Model, ClassificationModel, RegressionModel, Multi
 from previsionio.text_similarity import TextSimilarity, DescriptionsColumnConfig, \
     QueriesColumnConfig, ListModelsParameters, ModelsParameters, TextSimilarityModels, ModelEmbedding, Preprocessing
 from previsionio.dataset import Dataset, DatasetImages
-from previsionio.plotter import PrevisionioPlotter, PlotlyPlotter, MatplotlibPlotter
 from previsionio.analyzer import cv_classif_analysis
 from previsionio.deployed_model import DeployedModel
 
@@ -85,9 +84,6 @@ __all__ = ['client',
            'base_config',
            'quick_config',
            'ultra_config',
-           'ClusterMagnitude',
-           'ClusteringTrainingConfig',
-           'clustering_base_config',
            'ColumnConfig',
            'metrics',
            'Connector',
@@ -104,9 +100,6 @@ __all__ = ['client',
            'MultiClassification',
            'MultiClassificationModel'
            'TextSimilarityModel',
-           'PrevisionioPlotter',
-           'PlotlyPlotter',
-           'MatplotlibPlotter',
            'cv_classif_analysis',
            'DeployedModel',
            'TextSimilarity',

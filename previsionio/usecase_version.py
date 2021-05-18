@@ -117,6 +117,7 @@ class BaseUsecaseVersion(ApiResource):
         end_point = '/{}/{}/graph'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
                                   method=requests.get)
+        handle_error_response(response, end_point)
         uc_schema = json.loads(response.content.decode('utf-8'))
         return uc_schema
 
@@ -219,8 +220,10 @@ class BaseUsecaseVersion(ApiResource):
     def stop(self):
         """ Stop a usecase (stopping all nodes currently in progress). """
         logger.info('[Usecase] stopping usecase')
-        response = client.request('/{}/{}/stop'.format(self.resource, self._id),
+        end_point = '/{}/{}/stop'.format(self.resource, self._id)
+        response = client.request(end_point,
                                   requests.put)
+        handle_error_response(response, end_point)
         events_url = '/{}/{}'.format(self.resource, self._id)
         pio.client.event_manager.wait_for_event(self.resource_id,
                                                 self.resource,
