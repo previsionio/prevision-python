@@ -39,6 +39,7 @@ class BaseUsecaseVersion(ApiResource):
         self.usecase_id = usecase_info.get('usecase_id')
         self.project_id = usecase_info.get('project_id')
         self.dataset_id = usecase_info.get('dataset_id')
+        self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
         self._models = {}
 
     def __len__(self):
@@ -279,16 +280,19 @@ class BaseUsecaseVersion(ApiResource):
         Args:
             full (boolean): If true, return full holdout prediction objects (else only metadata)
         """
-
-        response = client.request(endpoint='/usecases/{}/holdout-predictions'.format(self._id),
+        end_point = '/usecase-versions/{}/holdout-predictions'.format(self._id)
+        response = client.request(endpoint=end_point,
                                   method=requests.get)
+        handle_error_response(response, end_point, message_prefix="Error fetching holdout predictions")
         preds_list = (json.loads(response.content.decode('utf-8')))['items']
         preds_dict = {}
         for pred in preds_list:
             _id = pred.pop('_id')
             if full:
-                response = client.request(endpoint='/usecases/{}/predictions/{}/download'.format(self._id, _id),
+                end_point = '/predictions/{}/download'.format(_id)
+                response = client.request(endpoint=end_point,
                                           method=requests.get)
+                handle_error_response(response, end_point, message_prefix="Error fetching holdout predictions")
                 preds_dict[_id] = zip_to_pandas(response)
             else:
                 preds_dict[_id] = pred
@@ -308,7 +312,7 @@ class BaseUsecaseVersion(ApiResource):
         for pred in preds_list:
             _id = pred.pop('_id')
             if full:
-                response = client.request(endpoint='/usecases/{}/predictions/{}/download'.format(self._id, _id),
+                response = client.request(endpoint='/predictions/{}/download'.format(self._id, _id),
                                           method=requests.get)
                 preds_dict[_id] = zip_to_pandas(response)
             else:

@@ -36,11 +36,11 @@ class Dataset(ApiResource):
     resource = 'datasets'
 
     def __init__(self, _id: str, name: str, datasource: DataSource = None, _data=None, describe_state=None,
-                 drift_state=None, embeddings_state=None, **kwargs):
+                 drift_state=None, embeddings_state=None, separator=',', **kwargs):
         super().__init__(_id=_id, datasource=datasource)
         self.name = name
         self._id = _id
-
+        self.separator = separator
         self.datasource = datasource
         self.describe_state = describe_state
         self.drift_state = drift_state
@@ -65,7 +65,7 @@ class Dataset(ApiResource):
                                       method=requests.get)
 
             if response.ok:
-                pd_df = zip_to_pandas(response)
+                pd_df = zip_to_pandas(response, separator=self.separator)
                 self._data = pd_df
             else:
                 msg = 'Failed to download dataset {}: {}'.format(self.id, response.text)

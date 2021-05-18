@@ -14,7 +14,7 @@ import datetime
 from math import ceil
 
 
-def zip_to_pandas(pred_response: requests.Response) -> pd.DataFrame:
+def zip_to_pandas(pred_response: requests.Response, separator=None) -> pd.DataFrame:
     temp_zip_path = '/tmp/ziptmp{}.zip'.format(str(uuid.uuid4()))
 
     with open(temp_zip_path, 'wb') as temp:
@@ -28,7 +28,7 @@ def zip_to_pandas(pred_response: requests.Response) -> pd.DataFrame:
         names = pred_zip.namelist()
         pred_zip.extractall('/tmp')
         pred_csv_path = '/tmp/' + names[0]
-        data = pd.read_csv(pred_csv_path)
+        data = pd.read_csv(pred_csv_path, sep=separator)
         os.remove(pred_csv_path)
 
     return data

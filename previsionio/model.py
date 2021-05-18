@@ -163,7 +163,7 @@ class Model(ApiResource):
 
         return predict_start_parsed['_id']
 
-    def _get_predictions(self, predict_id) -> pd.DataFrame:
+    def _get_predictions(self, predict_id, separator=',') -> pd.DataFrame:
         """ Get the result prediction dataframe from a given predict id.
 
         Args:
@@ -175,8 +175,7 @@ class Model(ApiResource):
         pred_response = pio.client.request('/predictions/{}/download'.format(predict_id),
                                            requests.get)
         logger.debug('[Predict {0}] Downloading prediction file'.format(predict_id))
-
-        return zip_to_pandas(pred_response)
+        return zip_to_pandas(pred_response, separator=separator)
 
     def predict_from_dataset(self, dataset, confidence=False, dataset_folder=None) -> Union[pd.DataFrame, None]:
         """ Make a prediction for a dataset stored in the current active [client]
@@ -204,7 +203,7 @@ class Model(ApiResource):
         while retry < retry_count:
             retry += 1
             try:
-                preds = self._get_predictions(predict_id)
+                preds = self._get_predictions(predict_id, separator=dataset.separator)
                 return preds
             except Exception:
                 # FIXME:
@@ -238,7 +237,7 @@ class Model(ApiResource):
                                         confidence=confidence)
         self.wait_for_prediction(predict_id)
 
-        return self._get_predictions(predict_id)
+        return self._get_predictions(predict_id, separator=dataset.separator)
 
     def enable_deploy(self):
         data = {"deploy": True}
@@ -552,7 +551,7 @@ class TextSimilarityModel(Model):
         while retry < retry_count:
             retry += 1
             try:
-                preds = self._get_predictions(predict_id)
+                preds = self._get_predictions(predict_id, separator=queries_dataset.separator)
                 return preds
             except Exception:
                 # FIXME:
