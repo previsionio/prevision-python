@@ -57,7 +57,7 @@ class Connector(ApiResource, UniqueResourceMixin):
         Returns:
             list(:class:`.Connector`): Fetched connector objects
         """
-        resources = super().list(all=all, project_id=project_id)
+        resources = super()._list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources
                 if conn_data['type'] == cls.conn_type or cls.conn_type == 'connector']
 

@@ -70,7 +70,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
             list(:class:`.DataSource`): Fetched datasource objects
         """
         # FIXME : get /resource return type should be consistent
-        resources = super().list(all=all, project_id=project_id)
+        resources = super()._list(all=all, project_id=project_id)
         return [cls(**source_data) for source_data in resources]
 
     @classmethod

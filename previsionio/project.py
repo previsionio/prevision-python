@@ -19,7 +19,7 @@ from .connector import Connector, SQLConnector, FTPConnector, \
     SFTPConnector, S3Connector, HiveConnector, GCPConnector
 from .supervised import Supervised
 from .timeseries import TimeSeries, TimeWindow
-from .text_similarity import DescriptionsColumnConfig, ListModelsParameters, TextSimilarity
+from .text_similarity import DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig, TextSimilarity
 from .usecase import Usecase
 from pandas import DataFrame
 
@@ -91,7 +91,7 @@ class Project(ApiResource, UniqueResourceMixin):
             list(:class:`.Project`): Fetched project objects
         """
         # FIXME : get /resource return type should be consistent
-        resources = super().list(all=all)
+        resources = super()._list(all=all)
         return [cls(**source_data) for source_data in resources]
 
     @classmethod
@@ -607,7 +607,8 @@ class Project(ApiResource, UniqueResourceMixin):
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 
-    def fit_image_multiclassification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.MultiClassification = metrics.MultiClassification.log_loss, holdout_dataset=None,
+    def fit_image_multiclassification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig,
+                                      metric: metrics.MultiClassification = metrics.MultiClassification.log_loss, holdout_dataset: Dataset = None,
                                       training_config=TrainingConfig(), **kwargs) -> Supervised:
         """ Start an image multiclassification usecase version training
 
@@ -632,7 +633,8 @@ class Project(ApiResource, UniqueResourceMixin):
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 
-    def fit_timeseries_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow, metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
+    def fit_timeseries_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow,
+                                  metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset: Dataset = None,
                                   training_config=TrainingConfig()) -> TimeSeries:
         """ Start a timeseries regression usecase version training
 
@@ -658,8 +660,10 @@ class Project(ApiResource, UniqueResourceMixin):
         return TimeSeries._fit(self._id, name, dataset, column_config, time_window, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config)
 
-    def fit_text_similarity(self, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig, metric: metrics.TextSimilarity = None, top_k=None, lang: str = 'auto',
-                            queries_dataset=None, queries_column_config=None, models_parameters=ListModelsParameters()):
+    def fit_text_similarity(self, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
+                            metric: metrics.TextSimilarity = metrics.TextSimilarity.accuracy_at_k, top_k: int = 10, lang: str = 'auto',
+                            queries_dataset: Dataset = None, queries_column_config: QueriesColumnConfig = None,
+                            models_parameters: ListModelsParameters = ListModelsParameters()):
         """ Start a text similarity usecase training with a specific training configuration.
 
         Args:
@@ -669,8 +673,8 @@ class Project(ApiResource, UniqueResourceMixin):
             description_column_config (:class:`.DescriptionsColumnConfig`): Description column configuration
                 (see the documentation of the :class:`.DescriptionsColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
-            top_k (str, optional): top_k
+            metric (str, optional): Specific metric to use for the usecase (default: ``accuracy_at_k``)
+            top_k (int, optional): top_k (default: ``10``)
             queries_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a queries dataset (default: ``None``)
             queries_column_config (:class:`.QueriesColumnConfig`): Queries column configuration

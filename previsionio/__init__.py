@@ -6,7 +6,7 @@ from previsionio.logger import logger, event_logger
 __version__ = '11.0.0'
 
 
-def verbose(v, debug=False, event_log=False):
+def verbose(v, debug: bool = False, event_log: bool = False):
     """ Set the SDK level of verbosity.
 
     Args:
@@ -33,12 +33,12 @@ verbose(False)
 
 class Config:
     def __init__(self):
-        self.auto_update = True
-        self.zip_files = True
-        self.request_retries = 3
-        self.request_retry_time = 10
-        self.scheduler_refresh_rate = 10
-        self.default_timeout = 3600
+        self.auto_update: bool = True
+        self.zip_files: bool = True
+        self.request_retries: int = 3
+        self.request_retry_time: int = 10
+        self.scheduler_refresh_rate: int = 10
+        self.default_timeout: float = 3600.
 
 
 config = Config()

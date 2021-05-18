@@ -62,7 +62,7 @@ class Usecase(ApiResource):
         Returns:
             list(:class:`.Usecase`): Fetched dataset objects
         """
-        resources = super().list(all=all, project_id=project_id)
+        resources = super()._list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources]
 
     @property
