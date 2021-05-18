@@ -173,7 +173,8 @@ class Model(ApiResource):
 
         return predict_start_parsed['_id']
 
-    def _get_predictions(self, predict_id: str) -> pd.DataFrame:
+
+    def _get_predictions(self, predict_id: str, separator=',') -> pd.DataFrame:
         """ Get the result prediction dataframe from a given predict id.
 
         Args:
@@ -188,7 +189,7 @@ class Model(ApiResource):
         logger.debug('[Predict {0}] Downloading prediction file'.format(predict_id))
         handle_error_response(pred_response, url)
 
-        return zip_to_pandas(pred_response)
+        return zip_to_pandas(pred_response, separator=separator)
 
     def predict_from_dataset(self, dataset: Dataset,
                              confidence: bool = False,
@@ -218,7 +219,7 @@ class Model(ApiResource):
         while retry < retry_count:
             retry += 1
             try:
-                preds = self._get_predictions(predict_id)
+                preds = self._get_predictions(predict_id, separator=dataset.separator)
                 return preds
             except Exception:
                 # FIXME:
@@ -252,7 +253,7 @@ class Model(ApiResource):
                                         confidence=confidence)
         self.wait_for_prediction(predict_id)
 
-        return self._get_predictions(predict_id)
+        return self._get_predictions(predict_id, separator=dataset.separator)
 
     def enable_deploy(self):
         data = {"deploy": True}
@@ -559,7 +560,7 @@ class TextSimilarityModel(Model):
         while retry < retry_count:
             retry += 1
             try:
-                preds = self._get_predictions(predict_id)
+                preds = self._get_predictions(predict_id, separator=queries_dataset.separator)
                 return preds
             except Exception:
                 # FIXME:
