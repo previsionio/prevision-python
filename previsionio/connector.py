@@ -134,7 +134,7 @@ class DataTableBaseConnector(Connector):
         resp_json = parse_json(resp)
         return resp_json['items']
 
-    def list_tables(self, database):
+    def list_tables(self, database: str):
         """ List all available tables in a specific database for the client.
 
         Args:

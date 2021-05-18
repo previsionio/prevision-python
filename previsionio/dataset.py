@@ -393,23 +393,21 @@ class DatasetImages(ApiResource):
                                      method=requests.post)
         source.close()
 
+        handle_error_response(create_resp, request_url)
+
         create_json = parse_json(create_resp)
+        url = '/{}/{}'.format(cls.resource, create_json['_id'])
+        pio.client.event_manager.wait_for_event(create_json['_id'],
+                                                cls.resource,
+                                                previsionio.utils.EventTuple(
+                                                    'FOLDER_UPDATE', 'state', 'done', [('state', 'failed')]),
+                                                specific_url=url)
 
-        if create_resp.status_code == 200:
-            url = '/{}/{}'.format(cls.resource, create_json['_id'])
-            pio.client.event_manager.wait_for_event(create_json['_id'],
-                                                    cls.resource,
-                                                    previsionio.utils.EventTuple('FOLDER_UPDATE', 'state', 'done'),
-                                                    specific_url=url)
+        dset_resp = client.request(url, method=requests.get)
+        dset_json = parse_json(dset_resp)
+        return cls(**dset_json)
 
-            dset_resp = client.request(url, method=requests.get)
-            dset_json = parse_json(dset_resp)
-            return cls(**dset_json)
-
-        else:
-            raise PrevisionException('[Dataset] Error: {}'.format(create_json))
-
-    def download(self, download_path=None):
+    def download(self, download_path: str = None):
         """Download the dataset from the platform locally.
 
         Args:
