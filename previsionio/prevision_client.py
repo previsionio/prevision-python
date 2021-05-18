@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import os
 import copy
-from typing import Dict
+from typing import Dict, List, Union
 import requests
 import time
 import json
@@ -13,11 +13,11 @@ from requests.models import Response
 import previsionio.utils
 from .logger import logger, event_logger
 from . import config
-from .utils import parse_json, PrevisionException
+from .utils import handle_error_response, parse_json, PrevisionException
 
 
 class EventManager:
-    def __init__(self, event_endpoint: str, auth_headers, client):
+    def __init__(self, event_endpoint: str, auth_headers: Dict[str, str], client: 'Client'):
         self.event_endpoint = event_endpoint
         auth_headers = copy.deepcopy(auth_headers)
         self.headers = auth_headers
@@ -43,7 +43,7 @@ class EventManager:
                        resource_id: str,
                        resource_type: str,
                        event_tuple: previsionio.utils.EventTuple,
-                       specific_url=None):
+                       specific_url: str):
         # ignore invalid resource ids
         if not isinstance(resource_id, str):
             return
@@ -78,7 +78,7 @@ class EventManager:
                                                                          resource_type,
                                                                          resource_id))
 
-    def check_resource_event(self, resource_id, endpoint, event_tuple, semd):
+    def check_resource_event(self, resource_id: str, endpoint: str, event_tuple: previsionio.utils.EventTuple, semd: threading.Semaphore):
         resp = self.client.request(endpoint=endpoint, method=requests.get)
         json_response = parse_json(resp)
         for k, v in event_tuple.fail_checks:
@@ -93,7 +93,7 @@ class EventManager:
             return True
         return False
 
-    def register_resource(self, resource_id):
+    def register_resource(self, resource_id: str):
         event_logger.debug('Registering resource with id {}'.format(resource_id))
         payload = {'event': 'REGISTER', '_id': resource_id}
         self.add_event(resource_id, payload)
@@ -163,7 +163,7 @@ class EventManager:
             finally:
                 sse.close()
 
-    def add_event(self, resource_id: str, payload):
+    def add_event(self, resource_id: str, payload: Union[None, Dict]):
         event_logger.debug('adding event for {}:\npayload = {}'.format(resource_id, payload))
         semd, event_dict = self._events
 
@@ -293,19 +293,11 @@ class Client(object):
         self.headers['Authorization'] = self.token
 
         # check for correct connection
-        try:
-            resp = self.request('/version', requests.get, no_retries=True)
-        except Exception as e:
-            logger.error(e)
-            raise PrevisionException('Cannot connect: check your instance url')
-        if resp.status_code == 401:
-            msg = 'Cannot connect: check your master token'
-            logger.error(msg)
-            raise PrevisionException(msg)
+        resp = self.request('/version', requests.get, no_retries=True)
+        handle_error_response(resp, '/version')
 
         logger.debug('subscribing to events manager')
         self.event_manager = EventManager(self.url + '/events', auth_headers=self.headers, client=self)
-
 
 client = Client()
 

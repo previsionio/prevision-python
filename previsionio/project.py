@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 from enum import Enum
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 
 from requests.models import Response
 from previsionio import metrics
@@ -10,7 +10,6 @@ import requests
 
 from . import client
 from .utils import handle_error_response, parse_json, PrevisionException
-from . import logger
 
 from .api_resource import ApiResource, UniqueResourceMixin
 from .datasource import DataSource

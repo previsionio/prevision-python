@@ -10,14 +10,13 @@ import os
 from functools import lru_cache
 
 from . import config
-from .usecase_config import DataType, TrainingConfig, ColumnConfig, TypeProblem
+from .usecase_config import DataType, TrainingConfig, ColumnConfig
 from .logger import logger
 from .prevision_client import client
 from .utils import handle_error_response, parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
 from .api_resource import ApiResource
 from .dataset import Dataset
 from .usecase import Usecase
-from enum import Enum
 
 
 class BaseUsecaseVersion(ApiResource):
@@ -50,7 +49,7 @@ class BaseUsecaseVersion(ApiResource):
                                                                   self._id))
 
     @classmethod
-    def _from_id(cls, _id) -> Dict:
+    def _from_id(cls, _id: str) -> Dict:
         """Get a usecase from the platform by its unique id.
 
         Args:

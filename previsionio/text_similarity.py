@@ -217,7 +217,7 @@ class TextSimilarity(BaseUsecaseVersion):
     def _fit(cls, project_id: str, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
              metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k, top_k: int = 10, lang: str = 'auto',
              queries_dataset: Dataset = None, queries_column_config: QueriesColumnConfig = None,
-             models_parameters: ListModelsParameters = ListModelsParameters(), **kwargs):
+             models_parameters: ListModelsParameters = ListModelsParameters(), **kwargs) -> 'TextSimilarity':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
 
@@ -282,7 +282,7 @@ class TextSimilarity(BaseUsecaseVersion):
 
     def new_version(self, description: str = None, dataset: Dataset = None, description_column_config: DescriptionsColumnConfig = None, metric: pio.metrics.TextSimilarity = None, top_k: int = None, lang: str = 'auto',
                     queries_dataset: Dataset = None, queries_column_config: Union[QueriesColumnConfig, None] = None,
-                    models_parameters: ListModelsParameters = None, **kwargs):
+                    models_parameters: ListModelsParameters = None, **kwargs) -> 'TextSimilarity':
         """ Start a text similarity usecase training to create a new version of the usecase (on the
         platform): the training configs are copied from the current version and then overridden
         for the given parameters.
