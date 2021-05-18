@@ -32,6 +32,7 @@ def cv_classif_analysis(usecase: ClassicUsecaseVersion, thresh: float = None, st
     threshold = []
 
     target_col_name = usecase.column_config.target_column
+    assert target_col_name
     pred_target_col_name = 'pred_' + target_col_name
 
     for i in sorted(fold):
