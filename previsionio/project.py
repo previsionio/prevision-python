@@ -481,7 +481,8 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return DataSource.list(self._id, all=all)
 
-    def fit_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
+    def fit_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig,
+                       metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
                        training_config=TrainingConfig(), **kwargs):
         """ Start a tabular regression usecase version training
 
@@ -506,7 +507,8 @@ class Project(ApiResource, UniqueResourceMixin):
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 
-    def fit_classification(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.Classification = metrics.Classification.AUC, holdout_dataset=None,
+    def fit_classification(self, name: str, dataset: Dataset, column_config: ColumnConfig,
+                           metric: metrics.Classification = metrics.Classification.AUC, holdout_dataset=None,
                            training_config=TrainingConfig(), **kwargs):
         """ Start a tabular classification usecase version training
 
@@ -531,7 +533,8 @@ class Project(ApiResource, UniqueResourceMixin):
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 
-    def fit_multiclassification(self, name: str, dataset: Dataset, column_config: ColumnConfig, metric: metrics.MultiClassification = metrics.MultiClassification.log_loss, holdout_dataset=None,
+    def fit_multiclassification(self, name: str, dataset: Dataset, column_config: ColumnConfig,
+                                metric: metrics.MultiClassification = metrics.MultiClassification.log_loss, holdout_dataset=None,
                                 training_config=TrainingConfig(), **kwargs):
         """ Start a tabular multiclassification usecase version training
 
@@ -556,7 +559,8 @@ class Project(ApiResource, UniqueResourceMixin):
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 
-    def fit_image_regression(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
+    def fit_image_regression(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig,
+                             metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
                              training_config=TrainingConfig(), **kwargs):
         """ Start an image regression usecase version training
 
@@ -581,7 +585,8 @@ class Project(ApiResource, UniqueResourceMixin):
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 
-    def fit_image_classification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig, metric: metrics.Classification = metrics.Classification.AUC, holdout_dataset=None,
+    def fit_image_classification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig,
+                                 metric: metrics.Classification = metrics.Classification.AUC, holdout_dataset=None,
                                  training_config=TrainingConfig(), **kwargs):
         """ Start an image classification usecase version training
 
