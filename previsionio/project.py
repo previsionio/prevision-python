@@ -628,7 +628,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.MultiClassificationImages`: Newly created MultiClassificationImages usecase version object
         """
-        return Supervised._fit(self._id, name, data_type=DataType.Images, type_problem=TypeProblem.Classification,
+        return Supervised._fit(self._id, name, data_type=DataType.Images, type_problem=TypeProblem.MultiClassification,
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 
