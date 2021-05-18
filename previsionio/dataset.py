@@ -16,7 +16,7 @@ import previsionio as pio
 import requests
 from .datasource import DataSource
 
-from typing import Union
+from typing import Dict, Union
 from pandas import DataFrame, Series
 FrameOrSeriesUnion = Union["DataFrame", "Series"]
 
@@ -35,8 +35,8 @@ class Dataset(ApiResource):
 
     resource = 'datasets'
 
-    def __init__(self, _id: str, name: str, datasource: DataSource = None, _data=None, describe_state=None,
-                 drift_state=None, embeddings_state=None, **kwargs):
+    def __init__(self, _id: str, name: str, datasource: DataSource = None, _data: DataFrame = None,
+                 describe_state: Dict = None, drift_state=None, embeddings_state=None, **kwargs):
         super().__init__(_id=_id, datasource=datasource)
         self.name = name
         self._id = _id
@@ -75,6 +75,10 @@ class Dataset(ApiResource):
     data = property(to_pandas)
 
     @classmethod
+    def from_id(cls, _id: str) -> 'Dataset':
+        return cls(**super()._from_id(_id=_id))
+
+    @classmethod
     def list(cls, project_id, all: bool = True):
         """ List all the available datasets in the current active [client] workspace.
 
@@ -92,7 +96,7 @@ class Dataset(ApiResource):
         Returns:
             list(:class:`.Dataset`): Fetched dataset objects
         """
-        resources = super().list(all=all, project_id=project_id)
+        resources = super()._list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources]
 
     def update_status(self):
@@ -140,34 +144,33 @@ class Dataset(ApiResource):
         resp = parse_json(resp)
         return resp
 
-    def get_embedding(self):
+    def get_embedding(self) -> Dict:
         """Gets the embeddings analysis of the dataset from the actual [client] workspace
 
         Raises:
             PrevisionException: DatasetNotFoundError
             requests.exceptions.ConnectionError: request error
         """
-        resp = client.request(endpoint='/{}/{}/explorer'
-                              .format(self.resource, self.id),
-                              method=requests.get)
+        endpoint = '/{}/{}/explorer'.format(self.resource, self.id)
+        resp = client.request(endpoint=endpoint, method=requests.get)
         if resp.status_code == 404 or resp.status_code == 501 or resp.status_code == 502:
             logger.warning('Dataset {} has not been analyzed yet. '
                            'Cannot retrieve embedding.'.format(self.name))
-        elif resp.status_code == 400:
-            raise PrevisionException(parse_json(resp)['message'])
         else:
-            tensors_shape = parse_json(resp)['embeddings'][0]['tensorShape']
-            labels_resp = client.request(endpoint='/{}/{}/explorer/labels.bytes'
-                                         .format(self.resource, self.id),
-                                         method=requests.get)
-            tensors_resp = client.request(endpoint='/{}/{}/explorer/tensors.bytes'
-                                          .format(self.resource, self.id),
-                                          method=requests.get)
+            handle_error_response(resp, endpoint)
 
-            labels = pd.read_csv(StringIO(labels_resp.text), sep="\t")
-            tensors = np.frombuffer(BytesIO(tensors_resp.content).read(),
-                                    dtype="float32").reshape(*tensors_shape)
-            return {'labels': labels, 'tensors': tensors}
+        tensors_shape = parse_json(resp)['embeddings'][0]['tensorShape']
+        labels_resp = client.request(endpoint='/{}/{}/explorer/labels.bytes'
+                                     .format(self.resource, self.id),
+                                     method=requests.get)
+        tensors_resp = client.request(endpoint='/{}/{}/explorer/tensors.bytes'
+                                      .format(self.resource, self.id),
+                                      method=requests.get)
+
+        labels = pd.read_csv(StringIO(labels_resp.text), sep="\t")
+        tensors = np.frombuffer(BytesIO(tensors_resp.content).read(),
+                                dtype="float32").reshape(*tensors_shape)
+        return {'labels': labels, 'tensors': tensors}
 
     def download(self, download_path: str = None):
         """Download the dataset from the platform locally.
@@ -189,7 +192,7 @@ class Dataset(ApiResource):
                               method=requests.get)
         handle_error_response(resp, endpoint)
         if resp._content is None:
-            raise PrevisionException("could not download dataset")
+            raise PrevisionException('could not download dataset')
 
         if not download_path:
             download_path = os.getcwd()
@@ -199,7 +202,8 @@ class Dataset(ApiResource):
         return path
 
     @classmethod
-    def _new(cls, project_id: str, name: str, datasource: DataSource = None, file_name: str = None, dataframe: DataFrame = None):
+    def _new(cls, project_id: str, name: str, datasource: DataSource = None,
+             file_name: str = None, dataframe: DataFrame = None):
         """ Register a new dataset in the workspace for further processing.
         You need to provide either a datasource, a file name or a dataframe
         (only one can be specified).
@@ -311,7 +315,7 @@ class DatasetImages(ApiResource):
 
     resource = 'image-folders'
 
-    def __init__(self, _id, name, project_id, copy_state, **kwargs):
+    def __init__(self, _id: str, name: str, project_id: str, copy_state, **kwargs):
         super().__init__(_id=_id)
         self.name = name
         self._id = _id
@@ -319,6 +323,10 @@ class DatasetImages(ApiResource):
         self.copy_state = copy_state
 
         self.other_params = kwargs
+
+    @classmethod
+    def from_id(cls, _id: str) -> 'DatasetImages':
+        return cls(**super()._from_id(_id=_id))
 
     def delete(self):
         """Delete a DatasetImages from the actual [client] workspace.
@@ -350,7 +358,7 @@ class DatasetImages(ApiResource):
         Returns:
             list(:class:`.DatasetImages`): Fetched dataset objects
         """
-        resources = super().list(all=all, project_id=project_id)
+        resources = super()._list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources]
 
     @classmethod
@@ -421,7 +429,6 @@ class DatasetImages(ApiResource):
         handle_error_response(resp, endpoint)
         if resp._content is None:
             raise PrevisionException('could not download dataset')
-
         if not download_path:
             download_path = os.getcwd()
         path = os.path.join(download_path, self.name + ".zip")

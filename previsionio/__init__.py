@@ -6,7 +6,7 @@ from previsionio.logger import logger, event_logger
 __version__ = '11.0.0'
 
 
-def verbose(v, debug=False, event_log=False):
+def verbose(v, debug: bool = False, event_log: bool = False):
     """ Set the SDK level of verbosity.
 
     Args:
@@ -33,12 +33,12 @@ verbose(False)
 
 class Config:
     def __init__(self):
-        self.auto_update = True
-        self.zip_files = True
-        self.request_retries = 3
-        self.request_retry_time = 10
-        self.scheduler_refresh_rate = 10
-        self.default_timeout = 3600
+        self.auto_update: bool = True
+        self.zip_files: bool = True
+        self.request_retries: int = 3
+        self.request_retry_time: int = 10
+        self.scheduler_refresh_rate: int = 10
+        self.default_timeout: float = 3600.
 
 
 config = Config()
@@ -63,16 +63,13 @@ from previsionio.connector import Connector
 from previsionio.datasource import DataSource
 from previsionio.project import Project
 from previsionio.usecase import Usecase
-from previsionio.supervised import Supervised, SupervisedImages, \
-    Regression, Classification, MultiClassification, \
-    RegressionImages, ClassificationImages, MultiClassificationImages, MODEL_CLASS_DICT
+from previsionio.supervised import Supervised
 from previsionio.timeseries import TimeSeries, TimeWindow, TimeWindowException
 
+from previsionio.model import Model, ClassificationModel, RegressionModel, MultiClassificationModel, TextSimilarityModel
 from previsionio.text_similarity import TextSimilarity, DescriptionsColumnConfig, \
     QueriesColumnConfig, ListModelsParameters, ModelsParameters, TextSimilarityModels, ModelEmbedding, Preprocessing
-from previsionio.model import Model, ClassificationModel, RegressionModel, MultiClassificationModel, TextSimilarityModel
 from previsionio.dataset import Dataset, DatasetImages
-# from previsionio.experiment import Experiment
 from previsionio.plotter import PrevisionioPlotter, PlotlyPlotter, MatplotlibPlotter
 from previsionio.analyzer import cv_classif_analysis
 from previsionio.deployed_model import DeployedModel
@@ -96,14 +93,6 @@ __all__ = ['client',
            'Connector',
            'DataSource',
            'Supervised',
-           'SupervisedImages',
-           'Regression',
-           'RegressionImages',
-           'Classification',
-           'ClassificationImages',
-           'MultiClassification',
-           'MultiClassificationImages',
-           'MODEL_CLASS_DICT'
            'TimeSeries',
            'TimeWindow',
            'TimeWindowException',
@@ -113,6 +102,7 @@ __all__ = ['client',
            'RegressionModel',
            'ClassificationModel',
            'MultiClassification',
+           'MultiClassificationModel'
            'TextSimilarityModel',
            'PrevisionioPlotter',
            'PlotlyPlotter',

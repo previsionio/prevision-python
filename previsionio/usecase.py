@@ -29,7 +29,7 @@ class Usecase(ApiResource):
         self.version_ids: list = usecase_info.get('version_ids')
 
     @classmethod
-    def from_id(cls, _id):
+    def from_id(cls, _id: str) -> 'Usecase':
         """Get a usecase from the platform by its unique id.
 
         Args:
@@ -42,7 +42,7 @@ class Usecase(ApiResource):
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
         """
-        return super().from_id(specific_url='/{}/{}'.format(cls.resource, _id))
+        return cls(**super()._from_id(specific_url='/{}/{}'.format(cls.resource, _id)))
 
     @classmethod
     def list(cls, project_id: str, all: bool = True) -> List['Usecase']:
@@ -62,7 +62,7 @@ class Usecase(ApiResource):
         Returns:
             list(:class:`.Usecase`): Fetched dataset objects
         """
-        resources = super().list(all=all, project_id=project_id)
+        resources = super()._list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources]
 
     @property

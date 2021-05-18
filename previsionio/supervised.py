@@ -12,6 +12,7 @@ from .model import RegressionModel, \
     ClassificationModel, MultiClassificationModel
 from .utils import EventTuple, handle_error_response, parse_json
 from .prevision_client import client
+import previsionio as pio
 
 MODEL_CLASS_DICT = {
     TypeProblem.Regression: RegressionModel,
@@ -24,21 +25,18 @@ class Supervised(ClassicUsecaseVersion):
 
     """ A supervised usecase. """
 
-    start_command = 'focus'
     data_type = DataType.Tabular
-    metric_type = metrics.Enum
-    default_metric = metrics.Enum
-
     # model_class = Model
 
     def __init__(self, **usecase_info):
         self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
 
+        print(usecase_info)
         super().__init__(**usecase_info)
         self.model_class = MODEL_CLASS_DICT.get(self.training_type)
 
     @classmethod
-    def from_id(cls, _id) -> 'Supervised':
+    def from_id(cls, _id: str) -> 'Supervised':
         """Get a supervised usecase from the platform by its unique id.
 
         Args:
@@ -53,12 +51,17 @@ class Supervised(ClassicUsecaseVersion):
             PrevisionException: Invalid problem type or any error while fetching
                 data from the platform or parsing result
         """
-        instance = super().from_id(_id)
-        return instance
+        return cls(**super()._from_id(_id))
 
     @classmethod
-    def fit(cls, project_id: str, name: str, dataset: Union[Dataset, Tuple[Dataset, DatasetImages]], column_config: ColumnConfig, metric, holdout_dataset: Dataset = None,
-            training_config: TrainingConfig = TrainingConfig(), **kwargs):
+    def load(cls, pio_file: str) -> 'Supervised':
+        return cls(**super()._load(pio_file))
+
+    @classmethod
+    def _fit(cls, project_id: str, name: str, data_type: str, type_problem: str,
+             dataset: Union[Dataset, Tuple[Dataset, DatasetImages]], column_config: ColumnConfig,
+             metric: metrics.Enum, holdout_dataset: Dataset = None,
+             training_config: TrainingConfig = TrainingConfig(), **kwargs) -> 'Supervised':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
 
@@ -90,8 +93,7 @@ class Supervised(ClassicUsecaseVersion):
             else:
                 training_args['holdout_dataset_id'] = holdout_dataset.id
 
-        if not metric:
-            metric = cls.default_metric
+        assert metric
 
         if isinstance(dataset, str):
             dataset_id = dataset
@@ -99,13 +101,24 @@ class Supervised(ClassicUsecaseVersion):
             dataset_id = [d.id for d in dataset]
         else:
             dataset_id = dataset.id
-        return cls._start_usecase(project_id,
-                                  name,
-                                  dataset_id=dataset_id,
-                                  data_type=cls.data_type,
-                                  type_problem=cls.type_problem,
-                                  metric=metric if isinstance(metric, str) else metric.value,
-                                  **training_args)
+        start_response = cls._start_usecase(project_id,
+                                            name,
+                                            dataset_id=dataset_id,
+                                            data_type=data_type,
+                                            type_problem=type_problem,
+                                            metric=metric if isinstance(metric, str) else metric.value,
+                                            **training_args)
+        usecase = cls.from_id(start_response['_id'])
+        usecase.data_type = data_type
+        usecase.type_problem = type_problem
+        events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
+        pio.client.event_manager.wait_for_event(usecase.resource_id,
+                                                cls.resource,
+                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
+                                                           [('state', 'failed')]),
+                                                specific_url=events_url)
+
+        return usecase
 
     def new_version(self, description: str = None, dataset: Union[Dataset, Tuple[Dataset, DatasetImages]] = None, column_config: ColumnConfig = None, metric: metrics.Enum = None, holdout_dataset: Dataset = None,
                     training_config: TrainingConfig = None, **fit_params):
@@ -136,8 +149,9 @@ class Supervised(ClassicUsecaseVersion):
         if training_config is None:
             training_config = self.training_config
 
-        if metric is None:
-            metric = self.metric_type(self.metric)
+        metric_str: str = self.metric
+        if metric is not None:
+            metric_str = metric.value
 
         if dataset is None:
             dataset_ids = self.dataset_id
@@ -154,7 +168,7 @@ class Supervised(ClassicUsecaseVersion):
 
         params = {
             'dataset_id': dataset_ids,
-            'metric': metric.value,
+            'metric': metric_str,
             'holdout_dataset': holdout_dataset_id,
             'type_problem': self.type_problem,
             'usecase_id': self._id,
@@ -175,11 +189,8 @@ class Supervised(ClassicUsecaseVersion):
         json = parse_json(resp)
 
         usecase = type(self).from_id(json["_id"])
+        usecase.data_type = self.data_type
         usecase.type_problem = self.type_problem
-        usecase.metric_type = self.metric_type
-        usecase.default_metric = self.default_metric
-        if getattr(self, "start_command", None) is not None:
-            usecase.start_command = self.start_command
 
         events_url = '/{}/{}'.format(self.resource, json['_id'])
         client.event_manager.wait_for_event(usecase.resource_id,
@@ -201,73 +212,3 @@ class Supervised(ClassicUsecaseVersion):
         if self.holdout_dataset_id:
             json_dict['holdout_id'] = self.holdout_dataset_id
         return json_dict
-
-
-class SupervisedImages(Supervised):
-
-    """ A supervised usecase with an image dataset. """
-
-    start_command = 'image_focus'
-    default_metric = 'NA'
-    data_type = DataType.Images
-
-
-class Regression(Supervised):
-
-    """ A regression usecase for a numerical target using a basic dataset. """
-
-    type_problem = TypeProblem.Regression
-    metric_type = metrics.Regression
-    default_metric = metrics.Regression.RMSE
-    # model_class = RegressionModel
-
-
-class Classification(Supervised):
-
-    """ A (binary) classification usecase for a categorical target with
-    exactly 2 modalities using a basic dataset. """
-
-    type_problem = TypeProblem.Classification
-    metric_type = metrics.Classification
-    default_metric = metrics.Classification.AUC
-    # model_class = ClassificationModel
-
-
-class MultiClassification(Supervised):
-
-    """ A multiclassification usecase for a categorical target with
-    strictly more than 2 modalities using a basic dataset. """
-
-    type_problem = TypeProblem.Classification
-    metric_type = metrics.MultiClassification
-    default_metric = metrics.MultiClassification.log_loss
-    # model_class = MultiClassificationModel
-
-
-class RegressionImages(SupervisedImages):
-
-    """ A regression usecase for a numerical target using an image dataset. """
-
-    type_problem = TypeProblem.Regression
-    metric_type = metrics.Regression
-    default_metric = metrics.Regression.RMSE
-
-
-class ClassificationImages(SupervisedImages):
-
-    """ A (binary) classification usecase for a categorical target with
-    exactly 2 modalities using an image dataset. """
-
-    type_problem = TypeProblem.Classification
-    metric_type = metrics.Classification
-    default_metric = metrics.Classification.AUC
-
-
-class MultiClassificationImages(SupervisedImages):
-
-    """ A multiclassification usecase for a categorical target with
-    strictly more than 2 modalities using an image dataset. """
-
-    type_problem = TypeProblem.MultiClassification
-    metric_type = metrics.MultiClassification
-    default_metric = metrics.MultiClassification.log_loss

@@ -1,3 +1,4 @@
+from typing import Dict
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import BackendApplicationClient
 from previsionio.utils import NpEncoder
@@ -6,14 +7,14 @@ from time import time
 import requests
 from . import logger
 from . import config
-from .utils import parse_json, PrevisionException
+from .utils import handle_error_response, parse_json, PrevisionException
 
 PREVISION_TOKEN_URL = 'https://accounts.prevision.io/auth/realms/prevision.io/protocol/openid-connect/token'
 
 
 class DeployedModel(object):
 
-    def __init__(self, prevision_app_url, client_id, client_secret, prevision_token_url=None):
+    def __init__(self, prevision_app_url: str, client_id: str, client_secret: str, prevision_token_url: str = None):
         """
         Init DeployedModel (and check that the connection is valid).
 
@@ -45,11 +46,14 @@ class DeployedModel(object):
         try:
             self._get_token()
             about_resp = self.request('/about', method=requests.get, no_retries=True)
+            handle_error_response(about_resp, '/about')
             app_info = parse_json(about_resp)
             self.problem_type = app_info['problem_type']
             inputs_resp = self.request('/inputs', method=requests.get, no_retries=True)
+            handle_error_response(inputs_resp, '/inputs')
             self.inputs = parse_json(inputs_resp)
             outputs_resp = self.request('/outputs', method=requests.get, no_retries=True)
+            handle_error_response(outputs_resp, '/outputs')
             self.outputs = parse_json(outputs_resp)
         except Exception as e:
             logger.error(e)
@@ -166,7 +170,7 @@ class DeployedModel(object):
 
         return req
 
-    def predict(self, predict_data, use_confidence=False, explain=False):
+    def predict(self, predict_data: Dict, use_confidence: bool = False, explain: bool = False):
         """ Get a prediction on a single instance using the best model of the usecase.
 
         Args:
@@ -202,6 +206,7 @@ class DeployedModel(object):
                             method=requests.post,
                             no_retries=True)
 
+        handle_error_response(resp, predict_url, features)
         pred_response = resp.json()
         target_name = self.outputs[0]['keyName']
         preds = pred_response['response']['predictions']

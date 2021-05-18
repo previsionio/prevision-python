@@ -9,8 +9,8 @@
 import previsionio as pio
 
 # CHANGE LOGGING LEVEL ------------------------------------------
-pio.verbose(True, debug=True) # (add event_log=True
-                                # for events logging)
+pio.verbose(True, debug=True)  # (add event_log=True
+# for events logging)
 
 # CLIENT INITIALIZATION -----------------------------------------
 url = """https://<your instance>.prevision.io"""
