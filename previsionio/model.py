@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from typing import Union
+from typing import Dict, Union
 from previsionio.usecase_config import TypeProblem
 import time
 import json
@@ -118,7 +118,7 @@ class Model(ApiResource):
         specific_url = '/predictions/{}'.format(prediction_id)
         pio.client.event_manager.wait_for_event(prediction_id,
                                                 specific_url,
-                                                EventTuple('PREDICTION_UPDATE', 'state', 'done'),
+                                                EventTuple('PREDICTION_UPDATE', 'state', 'done', [('state', 'failed')]),
                                                 specific_url=specific_url)
 
     def _predict_bulk(self,
@@ -319,18 +319,19 @@ class ClassicModel(Model):
         Raises:
             PrevisionException: Any error while fetching data from the platform or parsing the result
         """
+        endpoint = '/models/{}/analysis'.format(self._id)
         response = client.request(
-            endpoint='/models/{}/analysis'.format(self._id),
+            endpoint=endpoint,
             method=requests.get)
+
+        handle_error_response(response, endpoint)
+
         result = (json.loads(response.content.decode('utf-8')))
-        if result.get('status', 200) != 200:
-            msg = result['message']
-            logger.error(msg)
-            raise PrevisionException(msg)
+
         # drop chart-related information
         return result
 
-    def predict_single(self, data, confidence=False, explain=False):
+    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
         """ Make a prediction for a single instance. Use :py:func:`predict_from_dataset_name` or predict methods
         to predict multiple instances at the same time (it's faster).
 
