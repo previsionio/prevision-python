@@ -11,20 +11,11 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
-jobs:
-  pre-ci:
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-    steps:
-      - name: 'Block Concurrent Executions'
-        uses: softprops/turnstyle@v1
-        with:
-          poll-interval-seconds: 10
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+jobs:  
   ci:
     environment: PREVISION_URL
     runs-on: ubuntu-latest
+    concurrency: ${{ github.head_ref || concat(github.ref, github.run_number) }}
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
