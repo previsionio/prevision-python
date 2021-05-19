@@ -4,7 +4,6 @@ import requests
 
 from . import client
 from .utils import handle_error_response, parse_json, PrevisionException
-from . import logger
 from .api_resource import ApiResource, UniqueResourceMixin
 
 

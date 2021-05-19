@@ -78,7 +78,8 @@ class EventManager:
                                                                          resource_type,
                                                                          resource_id))
 
-    def check_resource_event(self, resource_id: str, endpoint: str, event_tuple: previsionio.utils.EventTuple, semd: threading.Semaphore):
+    def check_resource_event(self, resource_id: str, endpoint: str, event_tuple: previsionio.utils.EventTuple,
+                             semd: threading.Semaphore):
         resp = self.client.request(endpoint=endpoint, method=requests.get)
         json_response = parse_json(resp)
         for k, v in event_tuple.fail_checks:
@@ -210,8 +211,8 @@ class Client(object):
         if not self.prevision_url:
             raise PrevisionException('No url configured. Call client.init_client() to initialize')
 
-    def request(self, endpoint: str, method, files: Dict = None, data: Dict = None, allow_redirects: bool = True, content_type: str = None,
-                no_retries: bool = False, **requests_kwargs) -> Response:
+    def request(self, endpoint: str, method, files: Dict = None, data: Dict = None, allow_redirects: bool = True,
+                content_type: str = None, no_retries: bool = False, **requests_kwargs) -> Response:
         """
         Make a request on the desired endpoint with the specified method & data.
 

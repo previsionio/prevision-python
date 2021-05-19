@@ -107,8 +107,8 @@ def test_ts_groups(groups):
     path = os.path.join(DATA_PATH, 'ts.csv')
     test_data, group_list = get_data(path, groups)
     test_data.loc[test_data['time'] > '2018-01-01', 'target'] = np.nan
-    preds = usecase_version.predict(test_data, confidence=False)
-    preds = usecase_version.predict(test_data, confidence=True)
+    # preds = usecase_version.predict(test_data, confidence=False)
+    # preds = usecase_version.predict(test_data, confidence=True)
 
 
 def time_window_test(dws, dwe, fws, fwe):

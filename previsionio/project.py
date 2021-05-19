@@ -403,7 +403,8 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return HiveConnector._new(self._id, name, host, port, 'HIVE', username=username, password=password)
 
-    def create_gcp_connector(self, name: str = '', host: str = '', port=None, username: str = '', password: str = '', googleCredentials=''):
+    def create_gcp_connector(self, name: str = '', host: str = '', port=None, username: str = '', password: str = '',
+                             googleCredentials: str = ''):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -436,8 +437,8 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return Connector.list(self._id, all=all)
 
-    def create_datasource(self, connector, name, path=None, database=None,
-                          table=None, bucket=None, request=None, gCloud=None):
+    def create_datasource(self, connector: Connector, name: str, path: str = None, database: str = None,
+                          table: str = None, bucket: str = None, request: str = None, gCloud: str = None):
         """ Create a new datasource object on the platform.
 
         Args:
@@ -462,7 +463,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return DataSource._new(self._id, connector, name, path=path, database=database,
                                table=table, bucket=bucket, request=request, gCloud=gCloud)
 
-    def list_datasource(self, all=all):
+    def list_datasource(self, all: bool = False):
         """ List all the available datasources in the current active project.
 
         .. warning::
@@ -534,8 +535,8 @@ class Project(ApiResource, UniqueResourceMixin):
                                training_config=training_config, **kwargs)
 
     def fit_multiclassification(self, name: str, dataset: Dataset, column_config: ColumnConfig,
-                                metric: metrics.MultiClassification = metrics.MultiClassification.log_loss, holdout_dataset=None,
-                                training_config=TrainingConfig(), **kwargs):
+                                metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
+                                holdout_dataset: Dataset = None, training_config=TrainingConfig(), **kwargs):
         """ Start a tabular multiclassification usecase version training
 
         Args:
@@ -560,7 +561,7 @@ class Project(ApiResource, UniqueResourceMixin):
                                training_config=training_config, **kwargs)
 
     def fit_image_regression(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig,
-                             metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
+                             metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset: Dataset = None,
                              training_config=TrainingConfig(), **kwargs):
         """ Start an image regression usecase version training
 
@@ -586,8 +587,8 @@ class Project(ApiResource, UniqueResourceMixin):
                                training_config=training_config, **kwargs)
 
     def fit_image_classification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig,
-                                 metric: metrics.Classification = metrics.Classification.AUC, holdout_dataset=None,
-                                 training_config=TrainingConfig(), **kwargs):
+                                 metric: metrics.Classification = metrics.Classification.AUC,
+                                 holdout_dataset: Dataset = None, training_config=TrainingConfig(), **kwargs):
         """ Start an image classification usecase version training
 
         Args:
@@ -612,8 +613,9 @@ class Project(ApiResource, UniqueResourceMixin):
                                training_config=training_config, **kwargs)
 
     def fit_image_multiclassification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig,
-                                      metric: metrics.MultiClassification = metrics.MultiClassification.log_loss, holdout_dataset: Dataset = None,
-                                      training_config=TrainingConfig(), **kwargs) -> Supervised:
+                                      metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
+                                      holdout_dataset: Dataset = None, training_config=TrainingConfig(),
+                                      **kwargs) -> Supervised:
         """ Start an image multiclassification usecase version training
 
         Args:
@@ -661,12 +663,13 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.TimeSeries`: Newly created TimeSeries usecase version object
         """
-        return TimeSeries._fit(self._id, name, dataset, column_config, time_window, metric=metric, holdout_dataset=holdout_dataset,
-                               training_config=training_config)
+        return TimeSeries._fit(self._id, name, dataset, column_config, time_window, metric=metric,
+                               holdout_dataset=holdout_dataset, training_config=training_config)
 
     def fit_text_similarity(self, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
-                            metric: metrics.TextSimilarity = metrics.TextSimilarity.accuracy_at_k, top_k: int = 10, lang: str = 'auto',
-                            queries_dataset: Dataset = None, queries_column_config: QueriesColumnConfig = None,
+                            metric: metrics.TextSimilarity = metrics.TextSimilarity.accuracy_at_k, top_k: int = 10,
+                            lang: str = 'auto', queries_dataset: Dataset = None,
+                            queries_column_config: QueriesColumnConfig = None,
                             models_parameters: ListModelsParameters = ListModelsParameters()):
         """ Start a text similarity usecase training with a specific training configuration.
 
@@ -692,7 +695,8 @@ class Project(ApiResource, UniqueResourceMixin):
             :class:`.TextSimilarity`: Newly created TextSimilarity usecase version object
         """
         return TextSimilarity._fit(self._id, name, dataset, description_column_config, metric=metric, top_k=top_k, lang=lang,
-                                   queries_dataset=queries_dataset, queries_column_config=queries_column_config, models_parameters=models_parameters)
+                                   queries_dataset=queries_dataset, queries_column_config=queries_column_config,
+                                   models_parameters=models_parameters)
 
     def list_usecases(self, all: bool = True):
         """ List all the available usecase in the current project.

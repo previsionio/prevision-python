@@ -280,8 +280,10 @@ class TextSimilarity(BaseUsecaseVersion):
                                                 specific_url=events_url)
         return usecase
 
-    def new_version(self, description: str = None, dataset: Dataset = None, description_column_config: DescriptionsColumnConfig = None, metric: pio.metrics.TextSimilarity = None, top_k: int = None, lang: str = 'auto',
-                    queries_dataset: Dataset = None, queries_column_config: Union[QueriesColumnConfig, None] = None,
+    def new_version(self, description: str = None, dataset: Dataset = None,
+                    description_column_config: DescriptionsColumnConfig = None, metric: pio.metrics.TextSimilarity = None,
+                    top_k: int = None, lang: str = 'auto', queries_dataset: Dataset = None,
+                    queries_column_config: Union[QueriesColumnConfig, None] = None,
                     models_parameters: ListModelsParameters = None, **kwargs) -> 'TextSimilarity':
         """ Start a text similarity usecase training to create a new version of the usecase (on the
         platform): the training configs are copied from the current version and then overridden

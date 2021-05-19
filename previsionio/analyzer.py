@@ -1,10 +1,11 @@
+from typing import Union
 from previsionio.usecase_version import ClassicUsecaseVersion
 import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score, fbeta_score, recall_score, precision_score
 
 
-def cv_classif_analysis(usecase: ClassicUsecaseVersion, thresh: float = None, step: int = 1000):
+def cv_classif_analysis(usecase: ClassicUsecaseVersion, thresh: float = None, step: Union[int, float] = 1000):
     '''Get metrics on a CV file retrieved from the platform for a binary classification usecase
 
     Args:
@@ -32,6 +33,7 @@ def cv_classif_analysis(usecase: ClassicUsecaseVersion, thresh: float = None, st
     threshold = []
 
     target_col_name = usecase.column_config.target_column
+    assert target_col_name
     pred_target_col_name = 'pred_' + target_col_name
 
     for i in sorted(fold):

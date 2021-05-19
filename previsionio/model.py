@@ -401,10 +401,10 @@ class ClassificationModel(ClassicModel):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id, usecase_version_id, name=None, **other_params):
+    def __init__(self, _id, usecase_version_id, **other_params):
         """ Instantiate a new :class:`.ClassificationModel` object to manipulate a classification model
         resource on the platform. """
-        super().__init__(_id, usecase_version_id, name=name, **other_params)
+        super().__init__(_id, usecase_version_id, **other_params)
         self._predict_threshold = 0.5
 
     @property

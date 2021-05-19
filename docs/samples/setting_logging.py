@@ -26,7 +26,6 @@ usecase = pio.Usecase.from_id('usecase_id')
 
 # fetching a usecase version from the platform
 usecase_version = pio.Supervised.from_id('usecase_version_id')
-usecase_version = pio.Classification.from_id('usecase_version_id')
 
 # fetching a model from the platform
 model = pio.Model.from_id('helloworld classif')

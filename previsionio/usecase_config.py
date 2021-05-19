@@ -1,4 +1,5 @@
 import copy
+from typing import List, Union
 
 
 class ParamList(list):
@@ -294,24 +295,24 @@ class ColumnConfig(UsecaseConfig):
     }
 
     def __init__(self,
-                 target_column=None,
-                 filename_column=None,
-                 id_column=None,
-                 fold_column=None,
-                 weight_column=None,
-                 time_column=None,
-                 group_columns=(),
-                 apriori_columns=(),
-                 drop_list=()):
-        self.target_column = target_column
-        self.filename_column = filename_column
-        self.id_column = id_column
-        self.fold_column = fold_column
-        self.weight_column = weight_column
-        self.time_column = time_column
-        self.group_columns = group_columns
-        self.apriori_columns = apriori_columns
-        self.drop_list = drop_list
+                 target_column: Union[str, None] = None,
+                 filename_column: Union[str, None] = None,
+                 id_column: Union[str, None] = None,
+                 fold_column: Union[str, None] = None,
+                 weight_column: Union[str, None] = None,
+                 time_column: Union[str, None] = None,
+                 group_columns: Union[str, None] = None,
+                 apriori_columns: Union[str, None] = None,
+                 drop_list: Union[List[str], None] = None):
+        self.target_column: Union[str, None] = target_column
+        self.filename_column: Union[str, None] = filename_column
+        self.id_column: Union[str, None] = id_column
+        self.fold_column: Union[str, None] = fold_column
+        self.weight_column: Union[str, None] = weight_column
+        self.time_column: Union[str, None] = time_column
+        self.group_columns: Union[str, None] = group_columns
+        self.apriori_columns: Union[str, None] = apriori_columns
+        self.drop_list: Union[List[str], None] = drop_list
 
 
 base_config = TrainingConfig(profile=Profile.Normal,
