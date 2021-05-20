@@ -5,7 +5,7 @@ Welcome to the Prevision.io Python SDK
 
 
 The Prevision.io Python SDK allows to easily use [Prevision.io](https://prevision.io/) 
-APIs to train, predict and automate pipelines with an sklearn-like interface.
+APIs to train, predict and automate pipelines with sklearn-like interface.
 
 The full documentation is available [here](https://prevision-python.readthedocs.io/en/latest/).
 

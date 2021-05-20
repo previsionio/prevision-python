@@ -4,6 +4,8 @@ if __name__ == '__main__':
     pio.client.init_client('url',
                            'token')
 
+    project = pio.Project.new("project_name")
+    
     # create train & test dataset
     train = pio.Dataset.from_id('train_id')
     test = pio.Dataset.from_id('test_id')

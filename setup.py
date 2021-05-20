@@ -36,7 +36,7 @@ with open("README.md") as readme:
           classifier=[
               'Intended Audience :: Developers',
               'Natural Language :: English',
-              'License :: OSI Approved :: Apache Software License',
+              'License :: OSI Approved :: MIT License',
               'Programming Language :: Python :: 3',
               'Programming Language :: Python :: 3.6',
               'Programming Language :: Python :: 3.7',
