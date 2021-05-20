@@ -261,15 +261,17 @@ class Dataset(ApiResource):
 
             with tempfile.NamedTemporaryFile(prefix=name, suffix='.csv') as temp:
                 dataframe.to_csv(temp.name, index=False)
+
                 file_name = temp.name.replace('.csv', file_ext)
                 with ZipFile(file_name, 'w') as zip_file:
                     zip_file.write(temp.name, arcname=name + '.csv')
 
-                with open(temp.name, 'rb') as f:
+                with open(zip_file.filename, 'rb') as f:
                     files['file'] = (os.path.basename(file_name), f)
 
                     for k, v in data.items():
                         files[k] = (None, v)
+
                     create_resp = client.request(request_url,
                                                  data=data,
                                                  files=files,

@@ -54,9 +54,3 @@ event_logger = logging.getLogger('event_logger')
 event_logger.setLevel(logging.ERROR)
 event_logger.propagate = False
 event_logger.addHandler(ch)
-
-logging.getLogger('urllib3').setLevel(logging.WARNING)
-logging.getLogger('connectionpool').setLevel(logging.ERROR)
-logging.getLogger('apscheduler').setLevel(logging.ERROR)
-logging.getLogger('chardet').setLevel(logging.WARNING)
-logging.getLogger('PIL').setLevel(logging.ERROR)
