@@ -504,7 +504,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Regression`: Newly created Regression usecase version object
         """
-        return Supervised._fit(self._id, name, data_type=DataType.Tabular, type_problem=TypeProblem.Regression,
+        return Supervised._fit(self._id, name, data_type=DataType.Tabular, training_type=TypeProblem.Regression,
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 
@@ -530,7 +530,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Classification`: Newly created Classification usecase version object
         """
-        return Supervised._fit(self._id, name, data_type=DataType.Tabular, type_problem=TypeProblem.Classification,
+        return Supervised._fit(self._id, name, data_type=DataType.Tabular, training_type=TypeProblem.Classification,
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 
@@ -556,7 +556,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.MultiClassification`: Newly created MultiClassification usecase version object
         """
-        return Supervised._fit(self._id, name, data_type=DataType.Tabular, type_problem=TypeProblem.MultiClassification,
+        return Supervised._fit(self._id, name, data_type=DataType.Tabular, training_type=TypeProblem.MultiClassification,
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 
@@ -582,7 +582,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.RegressionImages`: Newly created RegressionImages usecase version object
         """
-        return Supervised._fit(self._id, name, data_type=DataType.Images, type_problem=TypeProblem.Regression,
+        return Supervised._fit(self._id, name, data_type=DataType.Images, training_type=TypeProblem.Regression,
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 
@@ -608,7 +608,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.ClassificationImages`: Newly created ClassificationImages usecase version object
         """
-        return Supervised._fit(self._id, name, data_type=DataType.Images, type_problem=TypeProblem.Classification,
+        return Supervised._fit(self._id, name, data_type=DataType.Images, training_type=TypeProblem.Classification,
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 
@@ -635,7 +635,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.MultiClassificationImages`: Newly created MultiClassificationImages usecase version object
         """
-        return Supervised._fit(self._id, name, data_type=DataType.Images, type_problem=TypeProblem.MultiClassification,
+        return Supervised._fit(self._id, name, data_type=DataType.Images, training_type=TypeProblem.MultiClassification,
                                dataset=dataset, column_config=column_config, metric=metric, holdout_dataset=holdout_dataset,
                                training_config=training_config, **kwargs)
 

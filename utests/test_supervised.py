@@ -21,12 +21,12 @@ uc_config = pio.TrainingConfig(advanced_models=[pio.AdvancedModel.LinReg],
                                profile=pio.Profile.Quick)
 test_datasets = {}
 
-type_problem_2_pio_class = {
+training_type_2_pio_class = {
     'regression': "fit_regression",
     'classification': "fit_classification",
     'multiclassification': "fit_multiclassification",
 }
-type_problems = type_problem_2_pio_class.keys()
+training_types = training_type_2_pio_class.keys()
 
 
 def make_pio_datasets(paths):
@@ -53,10 +53,10 @@ def teardown_module(module):
     project.delete()
 
 
-def supervised_from_filename(type_problem, uc_name):
-    dataset = test_datasets[type_problem]
-    type_problem_class = type_problem_2_pio_class[type_problem]
-    return train_model(PROJECT_ID, uc_name, dataset, type_problem, type_problem_class, uc_config)
+def supervised_from_filename(training_type, uc_name):
+    dataset = test_datasets[training_type]
+    training_type_class = training_type_2_pio_class[training_type]
+    return train_model(PROJECT_ID, uc_name, dataset, training_type, training_type_class, uc_config)
 
 
 def test_delete_usecase():
@@ -101,7 +101,7 @@ def test_stop_running_usecase():
     usecase_version.usecase.delete()
 
 
-@pytest.fixture(scope='module', params=type_problems)
+@pytest.fixture(scope='module', params=training_types)
 def setup_usecase_class(request):
     usecase_name = '{}_{}'.format(request.param[0:5], TESTING_ID)
     uc = supervised_from_filename(request.param, usecase_name)
@@ -126,7 +126,7 @@ predict_test_ids = [('confidence-' if opt['confidence'] else 'normal-')
 
 class TestUCGeneric:
     def test_check_config(self, setup_usecase_class):
-        type_problem, uc = setup_usecase_class
+        training_type, uc = setup_usecase_class
         assert all([c in uc.drop_list for c in DROP_COLS])
         uc.update_status()
         assert sorted(uc.fe_selected_list) == sorted(uc_config.fe_selected_list)
@@ -137,20 +137,20 @@ class TestUCGeneric:
 class TestPredict:
     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
     def test_predict(self, setup_usecase_class, options):
-        type_problem, uc = setup_usecase_class
-        data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
+        training_type, uc = setup_usecase_class
+        data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(training_type)))
         preds = uc.predict(data, **options)
         assert len(preds) == len(data)
         if options['confidence']:
-            if type_problem == 'regression':
+            if training_type == 'regression':
                 conf_cols = ['_quantile={}'.format(q) for q in [1, 5, 10, 25, 50, 75, 95, 99]]
                 for q in conf_cols:
                     assert any([q in col for col in preds])
-            elif type_problem == 'classification':
+            elif training_type == 'classification':
                 assert 'confidence' in preds
                 assert 'credibility' in preds
         # test_predict_unit
-        data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(type_problem)))
+        data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(training_type)))
         pred = uc.predict_single(data.iloc[0].to_dict(), **options)
         assert pred is not None
 
@@ -158,7 +158,7 @@ class TestPredict:
 class TestInfos:
     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
     def test_info(self, setup_usecase_class, options):
-        type_problem, uc = setup_usecase_class
+        training_type, uc = setup_usecase_class
         # test models
         assert len(uc.models) > 0
         # test Score
@@ -195,7 +195,7 @@ class TestInfos:
 
         assert isinstance(model.cross_validation, pd.DataFrame)
         assert isinstance(model.chart(), dict)
-        if type_problem == 'classification':
+        if training_type == 'classification':
             assert isinstance(model_copy, ClassificationModel)
             assert model_copy.optimal_threshold == model.optimal_threshold
             assert isinstance(model.get_dynamic_performances(), dict)

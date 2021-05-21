@@ -2,6 +2,7 @@
 from __future__ import print_function
 from itertools import combinations
 from io import BytesIO, StringIO
+from previsionio.usecase_config import UsecaseState
 import numpy as np
 import pandas as pd
 import os
@@ -110,13 +111,13 @@ class Dataset(ApiResource):
         self.embeddings_state = dset_json['embeddings_state']
 
     def get_describe_status(self):
-        return self.describe_state
+        return UsecaseState(self.describe_state)
 
     def get_drift_status(self):
-        return self.drift_state
+        return UsecaseState(self.drift_state)
 
     def get_embedding_status(self):
-        return self.embeddings_state
+        return UsecaseState(self.embeddings_state)
 
     def delete(self):
         """Delete a dataset from the actual [client] workspace.

@@ -6,6 +6,7 @@
 # Date: July 2020
 # ===============================================================
 
+from previsionio.usecase_config import ColumnConfig
 import previsionio as pio
 import pandas as pd
 
@@ -34,6 +35,7 @@ uc_config = pio.TrainingConfig(advanced_models=[pio.AdvancedModel.LinReg],
 usecase_version = project.fit_classification('helloworld_classif',
                                              dataset,
                                              metric=pio.metrics.Classification.AUC,
+                                             column_config=ColumnConfig(target_column="target"),
                                              training_config=uc_config)
 
 # (block until there is at least 1 model trained)

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import json
+from previsionio.model import Model
 from typing import Dict, List, Union
 import pandas as pd
 import requests
@@ -10,7 +11,7 @@ import os
 from functools import lru_cache
 
 from . import config
-from .usecase_config import DataType, TrainingConfig, ColumnConfig
+from .usecase_config import DataType, TrainingConfig, ColumnConfig, TypeProblem, UsecaseState
 from .logger import logger
 from .prevision_client import client
 from .utils import handle_error_response, parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
@@ -28,8 +29,9 @@ class BaseUsecaseVersion(ApiResource):
     id_key = 'usecase_id'
 
     resource = 'usecase-versions'
-    type_problem: str
-    data_type: str
+    training_type: TypeProblem
+    data_type: DataType
+    model_class: Model
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
@@ -161,34 +163,34 @@ class BaseUsecaseVersion(ApiResource):
         return fastest_model
 
     @property
-    def done(self):
+    def done(self) -> bool:
         """ Get a flag indicating whether or not the usecase is currently done.
 
         Returns:
             bool: done status
         """
         status = self._status
-        return status['state'] == 'done'
+        return status['state'] == UsecaseState.Done.value
 
     @property
-    def running(self):
+    def running(self) -> bool:
         """ Get a flag indicating whether or not the usecase is currently running.
 
         Returns:
             bool: Running status
         """
         status = self._status
-        return status['state'] == 'running'
+        return status['state'] == UsecaseState.Running.value
 
     @property
-    def status(self):
+    def status(self) -> UsecaseState:
         """ Get a flag indicating whether or not the usecase is currently running.
 
         Returns:
             bool: Running status
         """
         status = self._status
-        return status['state']
+        return UsecaseState(status['state'])
 
     @property
     def normal_models_list(self):
@@ -396,7 +398,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                           drop_list=usecase_params.get('drop_list'))
 
         self.training_config = TrainingConfig(profile=usecase_params.get('profile'),
-                                              fe_selected_list=usecase_params.get(
+                                              features=usecase_params.get(
                                                   'features_engineering_selected_list'),
                                               advanced_models=usecase_params.get('normal_models'),
                                               normal_models=usecase_params.get('lite_models'),
@@ -407,8 +409,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         self.project_id = usecase_info.get('project_id')
         self.version = usecase_info.get('version', 1)
         self._usecase_info = usecase_info
-        self.data_type: str = usecase_info['usecase'].get('data_type')
-        self.training_type: str = usecase_info['usecase'].get('training_type')
+        self.data_type: DataType = DataType(usecase_info['usecase'].get('data_type'))
+        self.training_type: TypeProblem = TypeProblem(usecase_info['usecase'].get('training_type'))
         self.dataset_id = usecase_info.get('dataset_id')
         self.predictions = {}
         self.predict_token = None
@@ -564,7 +566,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
 
     @classmethod
     def _start_usecase(cls, project_id: str, name: str,
-                       dataset_id: Union[str, List[str]], data_type: str, type_problem: str, **kwargs):
+                       dataset_id: Union[str, List[str]], data_type: DataType, training_type: TypeProblem, **kwargs):
         """ Start a usecase of the given data type and problem type with a specific
         training configuration (on the platform).
 
@@ -573,7 +575,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
             dataset_id (str|tuple(str, str)): Unique id of the training dataset resource or a tuple of csv and folder id
             data_type (str): Type of data used in the usecase (among "tabular", "images"
                 and "timeseries")
-            type_problem: Type of problem to compute with the usecase (among "regression",
+            training_type: Type of problem to compute with the usecase (among "regression",
                 "classification", "multiclassification" and "object-detection")
             **kwargs:
 
@@ -589,8 +591,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
             data = dict(name=name, dataset_id=csv_id, folder_dataset_id=folder_id, **kwargs)
         else:
             raise PrevisionException('invalid data type: {}'.format(data_type))
-        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', data_type, type_problem)
-        start = client.request(endpoint, requests.post, data=data)
+        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', data_type.value, training_type.value)
+        start = client.request(endpoint, requests.post, data=data, content_type='application/json')
         handle_error_response(start, endpoint, data, message_prefix="Error starting usecase")
         return parse_json(start)
 

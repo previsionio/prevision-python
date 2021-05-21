@@ -1,3 +1,4 @@
+from enum import Enum
 import operator
 from typing import Dict, List, Union
 import requests
@@ -63,7 +64,35 @@ def parse_json(json_response: Response) -> Dict:
         raise
 
 
-def get_pred_from_multiclassification(row, pred_prefix: str='pred_'):
+def to_json(obj):
+    if isinstance(obj, bool):
+        return obj
+    elif isinstance(obj, str):
+        return obj
+    elif isinstance(obj, Enum):
+        return to_json(obj.value)
+    elif isinstance(obj, list):
+        obj_list = []
+        for e in obj:
+            obj_list.append(to_json(e))
+        return obj_list
+    elif isinstance(obj, dict):
+        obj_d = {}
+        for key, value in obj.items():
+            obj_d[key] = to_json(value)
+        return obj_d
+    elif hasattr(obj, '__dict__'):
+        obj_dict = {}
+        for key, value in obj.__dict__.items():
+            if value:
+                if hasattr(obj, 'config') and key in obj.config:
+                    key = obj.config[key]
+                obj_dict[key] = to_json(value)
+        return obj_dict
+    return dict()
+
+
+def get_pred_from_multiclassification(row, pred_prefix: str = 'pred_'):
     d = row.to_dict()
     preds_probas = {k: float(v) for k, v in d.items() if pred_prefix in k}
     pred = max(preds_probas.items(), key=operator.itemgetter(1))[0]

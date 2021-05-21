@@ -13850,13 +13850,13 @@ train_text_clean
 <span class="ansi-green-intense-fg ansi-bold">      5</span> t0 <span class="ansi-blue-fg">=</span> time<span class="ansi-blue-fg">.</span>time<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
 
 <span class="ansi-green-fg">~/prevision-python/previsionio/supervised.py</span> in <span class="ansi-cyan-fg">fit</span><span class="ansi-blue-fg">(cls, name, dataset, column_config, metric, holdout_dataset, training_config)</span>
-<span class="ansi-green-intense-fg ansi-bold">     32</span>                                   type_problem<span class="ansi-blue-fg">=</span>cls<span class="ansi-blue-fg">.</span>type_problem<span class="ansi-blue-fg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     32</span>                                   training_type<span class="ansi-blue-fg">=</span>cls<span class="ansi-blue-fg">.</span>training_type<span class="ansi-blue-fg">,</span>
 <span class="ansi-green-intense-fg ansi-bold">     33</span>                                   metric<span class="ansi-blue-fg">=</span>metric<span class="ansi-blue-fg">.</span>value<span class="ansi-blue-fg">,</span>
 <span class="ansi-green-fg">---&gt; 34</span><span class="ansi-red-fg">                                   **training_args)
 </span><span class="ansi-green-intense-fg ansi-bold">     35</span> 
 <span class="ansi-green-intense-fg ansi-bold">     36</span> 
 
-<span class="ansi-green-fg">~/prevision-python/previsionio/usecase.py</span> in <span class="ansi-cyan-fg">_start_usecase</span><span class="ansi-blue-fg">(cls, name, dataset_id, data_type, type_problem, **kwargs)</span>
+<span class="ansi-green-fg">~/prevision-python/previsionio/usecase.py</span> in <span class="ansi-cyan-fg">_start_usecase</span><span class="ansi-blue-fg">(cls, name, dataset_id, data_type, training_type, **kwargs)</span>
 <span class="ansi-green-intense-fg ansi-bold">    285</span>         pio.client.usecase_event_manager.wait_for_event(usecase.id,
 <span class="ansi-green-intense-fg ansi-bold">    286</span>                                                         cls<span class="ansi-blue-fg">.</span>resource<span class="ansi-blue-fg">,</span>
 <span class="ansi-green-fg">--&gt; 287</span><span class="ansi-red-fg">                                                         EventTuple(&#39;status&#39;, &#39;running&#39;))

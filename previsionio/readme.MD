@@ -38,7 +38,7 @@ zip_path = 'data/titanic.zip'
 # (Usecase.print_params() to display required & optional parameters)
 usecase_params = {
     'target_column': 'Survived',
-    'type_problem': 'classification',
+    'training_type': 'classification',
     'use_case': 'usecase_name',
 }
 
@@ -55,7 +55,7 @@ data_path = 'data/titanic.csv'
 
 usecase_params = {
     'target_column': 'Survived',
-    'type_problem': 'classification',
+    'training_type': 'classification',
     'use_case': 'usecase_name',
 }
 

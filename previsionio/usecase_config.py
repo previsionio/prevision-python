@@ -1,19 +1,18 @@
 import copy
-from typing import List, Union
+from enum import Enum
+from sys import api_version
+from typing import Dict, List, Union
+from .utils import to_json
 
 
-class ParamList(list):
-
-    """ A list of params to be passed to a usecase. """
-
-    def drop(self, *args):
-        new = copy.copy(self)
-        for arg in args:
-            new.remove(arg)
-        return new
+def _drop_in_list(feature_list: List, param_to_drop: List):
+    new = copy.copy(feature_list)
+    for arg in param_to_drop:
+        new.remove(arg.value)
+    return new
 
 
-class TypeProblem(object):
+class TypeProblem(Enum):
     """ Type of supervised problems available with Prevision.io. """
     Classification = 'classification'
     """Prediction using classification approach, for when the output variable is a category"""
@@ -27,7 +26,7 @@ class TypeProblem(object):
     """Detection of pattern in images"""
 
 
-class DataType(object):
+class DataType(Enum):
     """ Type of data available with Prevision.io. """
     Tabular = 'tabular'
     """Data arranged in a table"""
@@ -37,7 +36,19 @@ class DataType(object):
     """Catalogue of images"""
 
 
-class AdvancedModel(object):
+class UsecaseState(Enum):
+    """ Possible state of a Usecase in Prevision.io """
+    Done = 'done'
+    """The usecase finished properly"""
+    Running = 'running'
+    """The usecase is still running"""
+    Failed = 'failed'
+    """The usecase finished with an error"""
+    Pending = 'pending'
+    """The usecase is waiting for hardware ressources"""
+
+
+class AdvancedModel(Enum):
     """ Types of normal models that can be trained with Prevision.io.
     The ``Full`` member is a shortcut to get all available models at once.
     To just drop a single model from a list of models, use:
@@ -60,11 +71,11 @@ class AdvancedModel(object):
     """Random Forest"""
     CatBoost = 'CB'
     """CatBoost"""
-    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF', 'CB'])
+    Full = [LightGBM, XGBoost, NeuralNet, ExtraTrees, LinReg, RandomForest, CatBoost]
     """Evaluate all models"""
 
 
-class NormalModel(object):
+class NormalModel(Enum):
     """ Types of lite models that can be trained with Prevision.io.
     The ``Full`` member is a shortcut to get all available models at once.
     To just drop a single model from a list of models, use:
@@ -89,11 +100,11 @@ class NormalModel(object):
     """Random Forest"""
     CatBoost = 'CB'
     """CatBoost"""
-    Full = ParamList(['LGB', 'XGB', 'NN', 'ET', 'LR', 'RF', 'NBC', 'CB'])
+    Full = [LightGBM, XGBoost, NeuralNet, ExtraTrees, LinReg, RandomForest, NaiveBayesClassifier, CatBoost]
     """Evaluate all models"""
 
 
-class SimpleModel(object):
+class SimpleModel(Enum):
     """ Types of simple models that can be trained with Prevision.io.
     The ``Full`` member is a shortcut to get all available simple models at once.
     To just drop a single model from a list of simple models, use:
@@ -106,11 +117,11 @@ class SimpleModel(object):
     """DecisionTree"""
     LinReg = 'LR'
     """Linear Regression"""
-    Full = ParamList(['DT', 'LR'])
+    Full = [DecisionTree, LinReg]
     """Evaluate all simple models"""
 
 
-class Feature(object):
+class Feature(Enum):
     """ Types of feature engineering that can be applied to a dataset with Prevision.io.
     The ``Full`` member is a shortcut to get all available feature engineering modules at once.
     To just drop a feature engineering module from a list of modules, use:
@@ -139,13 +150,13 @@ class Feature(object):
     """Principal component analysis"""
     KMeans = 'kmean'
     """K-Means clustering"""
-    Full = ParamList(['Counter', 'Date', 'freq', 'text_tfidf',
-                      'text_word2vec', 'text_embedding', 'tenc',
-                      'poly', 'pca', 'kmean'])
+    Full = [Counts, DateTime, Frequency, TextTfidf,
+            TextWord2vect, TextEmbedding, TargetEncoding,
+            PolynomialFeatures, PCA, KMeans]
     """Full feature engineering"""
 
 
-class Profile(object):
+class Profile(Enum):
     """ Training profile type. """
     Quick = 'quick'
     """Quickest profile, lowest predictive performance"""
@@ -157,26 +168,7 @@ class Profile(object):
 
 class UsecaseConfig(object):
 
-    list_args = {'fe_selected_list', 'drop_list', 'normal_models'}
-
     config = {}
-
-    def to_kwargs(self):
-        kwargs = []
-        for key, value in self.__dict__.items():
-            if not value:
-                continue
-            if key not in self.config:
-                kwargs.append((key, value))
-            elif isinstance(value, list):
-                kwargs.append((self.config[key], value))
-            elif isinstance(value, bool):
-                kwargs.append((self.config[key], str(value).lower()))
-            elif isinstance(value, int):
-                kwargs.append((self.config[key], value))
-            else:
-                kwargs.append((self.config[key], str(value)))
-        return kwargs
 
     @classmethod
     def from_dict(cls, kwargs_dict):
@@ -201,7 +193,7 @@ class TrainingConfig(UsecaseConfig):
     the wanted feature engineering, the selected models, the training speed...
 
     Args:
-        profile (str): Type of training profile to use:
+        profile (Profile): Type of training profile to use:
 
             - "quick": this profile runs very fast but has a lower performance
               (it is recommended for early trials)
@@ -210,34 +202,38 @@ class TrainingConfig(UsecaseConfig):
             - the "normal" profile is something in-between to help you investigate
               an interesting result
 
-        advanced_models (list(str), optional): Names of the (advanced) models to use in the usecase
+        advanced_models (list(AdvancedModel), optional): Names of the (advanced) models to use in the usecase
             (among: "LR", "RF", "ET", "XGB", "LGB", "CB" and "NN")
-        normal_models (list(str), optional): Names of the (normal) models to use in the usecase
+        normal_models (list(NormalModel), optional): Names of the (normal) models to use in the usecase
             (among: "LR", "RF", "ET", "XGB", "LGB", "CB", 'NB' and "NN")
-        simple_models (list(str), optional): Names of the (simple) models to use in the usecase
+        simple_models (list(SimpleModel), optional): Names of the (simple) models to use in the usecase
             (among: "LR" and "DT")
-        features (list(str), optional): Names of the feature engineering modules to use (among:
+        features (list(Feature), optional): Names of the feature engineering modules to use (among:
             "Counter", "Date", "freq", "text_tfidf", "text_word2vec", "text_embedding", "tenc",
             "ee", "poly", "pca" and "kmean")
         with_blend (bool, optional): If true, Prevision.io's pipeline will add "blend" models
             at the end of the training by cherry-picking already trained models and fine-tuning
             hyperparameters (usually gives even better performance)
-        fe_selected_list (list(str), optional): Override for the features list, to restrict it
-            only this list
+        feature_time_seconds (int, optional): feature selection take at most fsel_time in seconds
+        feature_number_kept (int, optional): a feature selection algorithm is launched to keep at most `feature_number_kept` features
+
     """
 
     config = {
-        'fe_selected_list': 'features_engineering_selected_list'
+        'features': 'features_engineering_selected_list',
+        'feature_time_seconds': 'features_selection_time',
+        'feature_number_kept': 'features_selection_count'
     }
 
     def __init__(self,
-                 profile=Profile.Quick,
-                 advanced_models=[AdvancedModel.XGBoost, AdvancedModel.LinReg],
-                 normal_models=[NormalModel.XGBoost, NormalModel.LinReg],
-                 simple_models=[],
-                 features=[Feature.Frequency, Feature.TargetEncoding, Feature.Counts],
-                 with_blend=False,
-                 fe_selected_list=[]):
+                 profile: Profile = Profile.Quick,
+                 advanced_models: List[AdvancedModel] = [AdvancedModel.XGBoost, AdvancedModel.LinReg],
+                 normal_models: List[NormalModel] = [NormalModel.XGBoost, NormalModel.LinReg],
+                 simple_models: List[SimpleModel] = [],
+                 features: List[Feature] = [Feature.Frequency, Feature.TargetEncoding, Feature.Counts],
+                 with_blend: bool = False,
+                 feature_time_seconds: int = 3600,
+                 feature_number_kept: Union[int, None] = None):
         """
 
         Args:
@@ -245,15 +241,13 @@ class TrainingConfig(UsecaseConfig):
             normal_models:
             lite_models:
             simple_models:
-            features:
-            with_blend:
-            fe_selected_list:
+            features (Feature, optional): Names of the feature engineering modules to use
+            with_blend (bool, optional): models selectioned are also launched as blend
+            feature_time_seconds (int, optional): feature selection take at most fsel_time in seconds
+            feature_number_kept (int, optional): a feature selection algorithm is launched to keep at most `feature_number_kept` features
         """
 
-        if fe_selected_list:
-            self.fe_selected_list = fe_selected_list
-        else:
-            self.fe_selected_list = [f for f in Feature.Full if f in features]
+        self.features = features
 
         self.normal_models = advanced_models
         self.lite_models = normal_models
@@ -261,6 +255,21 @@ class TrainingConfig(UsecaseConfig):
 
         self.profile = profile
         self.with_blend = with_blend
+        self.feature_time_seconds = feature_time_seconds
+
+        if feature_number_kept:
+            self.feature_number_kept = feature_number_kept
+
+
+class YesOrNo(Enum):
+    Yes = "yes"
+    No = "no"
+
+
+class YesOrNoOrAuto(Enum):
+    Yes = "yes"
+    No = "no"
+    Auto = "auto"
 
 
 class ColumnConfig(UsecaseConfig):
@@ -316,21 +325,21 @@ class ColumnConfig(UsecaseConfig):
 
 
 base_config = TrainingConfig(profile=Profile.Normal,
-                             advanced_models=AdvancedModel.Full,
-                             normal_models=NormalModel.Full,
-                             simple_models=SimpleModel.Full,
-                             features=Feature.Full.drop(Feature.PCA, Feature.KMeans),
+                             advanced_models=AdvancedModel.Full.value,
+                             normal_models=NormalModel.Full.value,
+                             simple_models=SimpleModel.Full.value,
+                             features=_drop_in_list(Feature.Full.value, [Feature.PCA, Feature.KMeans]),
                              with_blend=True)
 
 quick_config = TrainingConfig(profile=Profile.Quick,
-                              advanced_models=AdvancedModel.Full.drop(AdvancedModel.NeuralNet),
-                              normal_models=NormalModel.Full.drop(NormalModel.NeuralNet),
-                              simple_models=SimpleModel.Full.drop(SimpleModel.LinReg),
-                              features=Feature.Full.drop(Feature.PCA, Feature.KMeans),
+                              advanced_models=_drop_in_list(AdvancedModel.Full.value, [AdvancedModel.NeuralNet]),
+                              normal_models=_drop_in_list(NormalModel.Full.value, [NormalModel.NeuralNet]),
+                              simple_models=_drop_in_list(SimpleModel.Full.value, [SimpleModel.LinReg]),
+                              features=_drop_in_list(Feature.Full.value, [Feature.PCA, Feature.KMeans]),
                               with_blend=False)
 
 ultra_config = TrainingConfig(profile=Profile.Quick,
-                              features=Feature.Full.drop(Feature.PCA, Feature.KMeans),
+                              features=_drop_in_list(Feature.Full.value, [Feature.PCA, Feature.KMeans]),
                               advanced_models=[AdvancedModel.XGBoost],
                               normal_models=[NormalModel.XGBoost],
                               simple_models=[SimpleModel.LinReg],

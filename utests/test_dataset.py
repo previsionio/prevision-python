@@ -1,4 +1,5 @@
 import os
+from previsionio.usecase_config import UsecaseState
 import time
 import pandas as pd
 import previsionio as pio
@@ -68,7 +69,7 @@ def test_embedding():
     ds = pio.Dataset.from_id(ds._id)
     ds.start_embedding()
     t0 = time.time()
-    while ds.get_embedding_status() in ['pending', 'running'] and time.time() < t0 + pio.config.default_timeout:
+    while ds.get_embedding_status() in [UsecaseState.Pending, UsecaseState.Running] and time.time() < t0 + pio.config.default_timeout:
         ds.update_status()
 
     embedding = ds.get_embedding()
