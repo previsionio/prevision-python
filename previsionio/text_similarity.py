@@ -280,11 +280,19 @@ class TextSimilarity(BaseUsecaseVersion):
                                                 specific_url=events_url)
         return usecase
 
-    def new_version(self, description: str = None, dataset: Dataset = None,
-                    description_column_config: DescriptionsColumnConfig = None, metric: pio.metrics.TextSimilarity = None,
-                    top_k: int = None, lang: str = 'auto', queries_dataset: Dataset = None,
-                    queries_column_config: Union[QueriesColumnConfig, None] = None,
-                    models_parameters: ListModelsParameters = None, **kwargs) -> 'TextSimilarity':
+    def new_version(
+        self,
+        description: str = None,
+        dataset: Dataset = None,
+        description_column_config: DescriptionsColumnConfig = None,
+        metric: pio.metrics.TextSimilarity = None,
+        top_k: int = None,
+        lang: str = 'auto',
+        queries_dataset: Dataset = None,
+        queries_column_config: Union[QueriesColumnConfig, None] = None,
+        models_parameters: ListModelsParameters = None,
+        **kwargs
+    ) -> 'TextSimilarity':
         """ Start a text similarity usecase training to create a new version of the usecase (on the
         platform): the training configs are copied from the current version and then overridden
         for the given parameters.
@@ -293,9 +301,9 @@ class TextSimilarity(BaseUsecaseVersion):
             description (str, optional): additional description of the version
             dataset (:class:`.Dataset`, :class:`.DatasetImages`, optional): Reference to the dataset
                 object to use for as training dataset
-            description_column_config (:class:`.DescriptionsColumnConfig`, optional): Column configuration for the usecase
-                (see the documentation of the :class:`.ColumnConfig` resource for more details
-                on each possible column types)
+            description_column_config (:class:`.DescriptionsColumnConfig`, optional): Column configuration for the
+                usecase (see the documentation of the :class:`.ColumnConfig` resource for more details on each possible
+                column types)
             metric (metrics.TextSimilarity, optional): Specific metric to use for the usecase (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)

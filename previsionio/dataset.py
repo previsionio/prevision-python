@@ -35,7 +35,6 @@ class Dataset(ApiResource):
 
     resource = 'datasets'
 
-
     def __init__(self, _id: str, name: str, datasource: DataSource = None, _data: DataFrame = None,
                  describe_state: Dict = None, drift_state=None, embeddings_state=None, separator=',', **kwargs):
 
