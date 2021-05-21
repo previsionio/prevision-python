@@ -98,7 +98,7 @@ __all__ = ['client',
            'RegressionModel',
            'ClassificationModel',
            'MultiClassification',
-           'MultiClassificationModel'
+           'MultiClassificationModel',
            'TextSimilarityModel',
            'cv_classif_analysis',
            'DeployedModel',
