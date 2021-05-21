@@ -124,7 +124,12 @@ def get_all_results(client, endpoint: str, method) -> List[Dict]:
     return resources
 
 
-def handle_error_response(resp: Response, url: str, data: Union[Dict, List] = None, message_prefix: str = None, additional_log: str = None):
+def handle_error_response(
+    resp: Response,
+    url: str, data: Union[Dict, List] = None,
+    message_prefix: str = None,
+    additional_log: str = None,
+):
     if resp.status_code != 200:
         message = "Error {}: '{}' reaching url: '{}'".format(
             resp.status_code, resp.text, url)

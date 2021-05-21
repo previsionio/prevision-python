@@ -116,8 +116,16 @@ class Supervised(ClassicUsecaseVersion):
 
         return usecase
 
-    def new_version(self, description: str = None, dataset: Union[Dataset, Tuple[Dataset, DatasetImages]] = None, column_config: ColumnConfig = None, metric: metrics.Enum = None, holdout_dataset: Dataset = None,
-                    training_config: TrainingConfig = None, **fit_params):
+    def new_vesion(
+        self,
+        description: str = None,
+        dataset: Union[Dataset, Tuple[Dataset, DatasetImages]] = None,
+        column_config: ColumnConfig = None,
+        metric: metrics.Enum = None,
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = None,
+        **fit_params
+    ):
         """ Start a supervised usecase training to create a new version of the usecase (on the
         platform): the training configs are copied from the current version and then overridden
         for the given parameters.

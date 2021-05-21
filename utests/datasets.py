@@ -12,8 +12,8 @@ URLS = {
         "https://raw.githubusercontent.com/ashishpatel26/Titanic-Machine-Learning-from-Disaster/master/input/test.csv"],
     "forest_fire": ["https://archive.ics.uci.edu/ml/machine-learning-databases/forest-fires/"],
     "housing": ["https://raw.githubusercontent.com/ageron/handson-ml/master/datasets/housing/housing.csv"],
-    "iris": ["https://gist.githubusercontent.com/curran/a08a1080b88344b0c8a7/raw/" +
-             "639388c2cbc2120a14dcf466e85730eb8be498bb/iris.csv"]
+    "iris": [("https://gist.githubusercontent.com/curran/a08a1080b88344b0c8a7/raw/"
+              "639388c2cbc2120a14dcf466e85730eb8be498bb/iris.csv")]
 }
 
 

@@ -14,6 +14,8 @@ PREVISION_TOKEN_URL = 'https://accounts.prevision.io/auth/realms/prevision.io/pr
 
 class DeployedModel(object):
 
+    """DeployedModel class to interact with a deployed model."""
+
     def __init__(self, prevision_app_url: str, client_id: str, client_secret: str, prevision_token_url: str = None):
         """
         Init DeployedModel (and check that the connection is valid).

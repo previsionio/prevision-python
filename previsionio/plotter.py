@@ -115,7 +115,7 @@ class PlotlyPlotter(Plotter):
 
             fig = tools.make_subplots(rows=n_rows,
                                       cols=n_cols,
-                                      subplot_titles=['Class: {}'.format(l) for l in labels])
+                                      subplot_titles=['Class: {}'.format(label) for label in labels])
 
             for i, label in enumerate(labels):
                 truth = preds[target_col_name] == label

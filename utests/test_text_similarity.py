@@ -1,5 +1,6 @@
 import os
-from previsionio.text_similarity import ModelEmbedding, TextSimilarityLang, TextSimilarityModels, YesOrNo, YesOrNoOrAuto
+from previsionio.text_similarity import ModelEmbedding, TextSimilarityLang, TextSimilarityModels
+from previsionio.usecase_config import YesOrNo, YesOrNoOrAuto
 import time
 import pandas as pd
 import unittest

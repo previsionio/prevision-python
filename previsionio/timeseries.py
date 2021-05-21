@@ -86,8 +86,14 @@ class TimeSeries(ClassicUsecaseVersion):
         return cls(**super()._load(pio_file))
 
     @classmethod
-    def _fit(cls, project_id: str, name: str, dataset: Dataset, column_config: ColumnConfig, time_window: TimeWindow,
-             metric: Regression = None, holdout_dataset: Dataset = None, training_config: TrainingConfig = TrainingConfig()) -> 'TimeSeries':
+    def _fit(cls, project_id: str,
+             name: str,
+             dataset: Dataset,
+             column_config: ColumnConfig,
+             time_window: TimeWindow,
+             metric: Regression = None,
+             holdout_dataset: Dataset = None,
+             training_config: TrainingConfig = TrainingConfig()) -> 'TimeSeries':
         training_args = to_json(training_config)
         assert isinstance(training_args, Dict)
 
@@ -117,8 +123,16 @@ class TimeSeries(ClassicUsecaseVersion):
                                                 specific_url=events_url)
         return usecase
 
-    def new_version(self, description: str = None, dataset: Dataset = None, column_config: ColumnConfig = None, time_window: TimeWindow = None,
-                    metric: Regression = None, holdout_dataset: Dataset = None, training_config: TrainingConfig = TrainingConfig()):
+    def new_version(
+        self,
+        description: str = None,
+        dataset: Dataset = None,
+        column_config: ColumnConfig = None,
+        time_window: TimeWindow = None,
+        metric: Regression = None,
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
+    ):
         """ Start a time series usecase training to create a new version of the usecase (on the
         platform): the training configs are copied from the current version and then overridden
         for the given parameters.
@@ -130,7 +144,7 @@ class TimeSeries(ClassicUsecaseVersion):
             column_config (:class:`.ColumnConfig`, optional): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            time_window (:class: `.TimeWindow`, optional): a time window object for representing either feature 
+            time_window (:class: `.TimeWindow`, optional): a time window object for representing either feature
                 derivation window periods or forecast window periods
             metric (metrics.Regression, optional): Specific metric to use for the usecase (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to

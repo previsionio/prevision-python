@@ -173,7 +173,6 @@ class Model(ApiResource):
 
         return predict_start_parsed['_id']
 
-
     def _get_predictions(self, predict_id: str, separator=',') -> pd.DataFrame:
         """ Get the result prediction dataframe from a given predict id.
 
