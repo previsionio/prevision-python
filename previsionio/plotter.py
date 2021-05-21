@@ -112,7 +112,7 @@ class PlotlyPlotter(Plotter):
 
             fig = tools.make_subplots(rows=n_rows,
                                       cols=n_cols,
-                                      subplot_titles=['Class: {}'.format(l) for l in labels])
+                                      subplot_titles=['Class: {}'.format(label) for label in labels])
 
             for i, label in enumerate(labels):
                 truth = preds[target_col_name] == label
@@ -299,8 +299,8 @@ class MatplotlibPlotter(Plotter):
 
         """
         if self.usecase.type_problem != 'multiclassification':
-            raise Exception('Confusion matrices only available for multiclassification, not ' +
-                            self.usecase.type_problem)
+            raise Exception('Confusion matrices only available for multiclassification, not {}.'.format(
+                self.usecase.type_problem))
 
         # retrieve current list of predictions if necessary
         if len(self.usecase.predictions) == 0:
@@ -364,8 +364,8 @@ class MatplotlibPlotter(Plotter):
 
         """
         if self.usecase.type_problem != 'classification':
-            raise Exception('Classification analysis plots only available for classification, not ' +
-                            self.usecase.type_problem)
+            raise Exception('Classification analysis plots only available for classification, not {}'.format(
+                self.usecase.type_problem))
 
         # retrieve current list of predictions if necessary
         if len(self.usecase.predictions) == 0:

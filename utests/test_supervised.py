@@ -109,7 +109,7 @@ def setup_usecase_class(request):
     uc.stop()
     uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
     yield request.param, uc
-    usecase = uc.usecase.delete()
+    _ = uc.usecase.delete()
 
 
 options_parameters = ('options',
