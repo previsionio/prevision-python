@@ -116,7 +116,7 @@ class Supervised(ClassicUsecaseVersion):
 
         return usecase
 
-    def new_vesion(
+    def new_version(
         self,
         description: str = None,
         dataset: Union[Dataset, Tuple[Dataset, DatasetImages]] = None,
@@ -125,7 +125,7 @@ class Supervised(ClassicUsecaseVersion):
         holdout_dataset: Dataset = None,
         training_config: TrainingConfig = None,
         **fit_params
-    ):
+    ) -> 'Supervised':
         """ Start a supervised usecase training to create a new version of the usecase (on the
         platform): the training configs are copied from the current version and then overridden
         for the given parameters.

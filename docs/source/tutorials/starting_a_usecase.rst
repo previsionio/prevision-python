@@ -47,7 +47,7 @@ The function offers you a range of options to choose from, among which some that
 
 - ``models``: the list of "full" models you want to add to your training pipeline chosen among "LR", "RF", "ET", "XGB", "LGB" and "NN"
 - ``simple_models``: the list of "simple" models you want to add to your training pipeline chosen among "LR" and "DT"
-- ``fe_selected_list``: the list of feature engineering blocks to integrate in the pipeline (these will be applied on your dataset during training to extract relevant
+- ``features``: the list of feature engineering blocks to integrate in the pipeline (these will be applied on your dataset during training to extract relevant
   information and transform it in the best possible way for the models fit step)
 - ``profile``: this Prevision.io specific is a way of setting a global run mode that determines both training time and performance. You may choose between 3 profiles:
 
