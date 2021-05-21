@@ -299,7 +299,7 @@ class MatplotlibPlotter(Plotter):
 
         """
         if self.usecase.type_problem != 'multiclassification':
-            raise Exception('Confusion matrices only available for multiclassification, not '.format(
+            raise Exception('Confusion matrices only available for multiclassification, not {}.'.format(
                 self.usecase.type_problem))
 
         # retrieve current list of predictions if necessary
