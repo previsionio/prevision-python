@@ -1,5 +1,5 @@
 lint:
-	pep8 --config pep8lint.cfg --statistics --format=pylint *.py previsionio/*.py utests/*.py
+	pycodestyle --config pep8lint.cfg --statistics --format=pylint *.py previsionio/*.py utests/*.py
 	pyflakes  *.py previsionio/*.py utests/*.py
 
 utests:

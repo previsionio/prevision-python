@@ -316,7 +316,7 @@ class BaseUsecaseVersion(ApiResource):
         for pred in preds_list:
             _id = pred.pop('_id')
             if full:
-                response = client.request(endpoint='/predictions/{}/download'.format(self._id, _id),
+                response = client.request(endpoint='/predictions/{}/download'.format(_id),
                                           method=requests.get)
                 preds_dict[_id] = zip_to_pandas(response)
             else:
