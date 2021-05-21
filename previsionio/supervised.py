@@ -120,7 +120,7 @@ class Supervised(ClassicUsecaseVersion):
 
         return usecase
 
-    def new_vesion(
+    def new_version(
         self,
         description: str = None,
         dataset: Union[Dataset, Tuple[Dataset, DatasetImages]] = None,
