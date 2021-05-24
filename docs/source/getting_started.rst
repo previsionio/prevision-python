@@ -115,7 +115,7 @@ the relevant info, depending on the connector type.
                                            database='my_db',
                                            table='table1')
 
-You can then create datasets from this datasource as explained in the guide on :ref:`using_datasets`.
+You can then create datasets from this datasource as explained in :ref:`Uploading Data`.
 
 Listing available connectors and data sources
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -132,6 +132,8 @@ using the ``list_connectors()`` and ``list_datasource()`` method from project cl
     datasources = project.list_datasource()
     for datasource in datasources:
         print(datasource.name)
+
+.. _Uploading Data:
 
 Uploading Data
 --------------
@@ -297,8 +299,8 @@ which embedding and preprocessing are applied.
         models_parameters = pio.ListModelsParameters()
 
 
-Starting text similarity training
----------------------------------
+Configuring the training parameters
+-----------------------------------
 
 You can then create a new text similarity usecase based on :
 
@@ -306,7 +308,7 @@ You can then create a new text similarity usecase based on :
  - a dataset
  - a description column config
  - (optional) a queries dataset
- - (optional) a qeries column config
+ - (optional) a queries column config
  - (optional) a metric type
  - (optional) a top k
  - (optional) a language
