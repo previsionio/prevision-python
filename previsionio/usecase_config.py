@@ -210,12 +210,16 @@ class TrainingConfig(UsecaseConfig):
             - the "normal" profile is something in-between to help you investigate
               an interesting result
 
-        advanced_models (list(str), optional): Names of the (advanced) models to use in the usecase
-            (among: "LR", "RF", "ET", "XGB", "LGB", "CB" and "NN")
+        advanced_models (list(str), optional): Names of the advanced models to use in the usecase
+            (among: "LR", "RF", "ET", "XGB", "LGB", "CB" and "NN"). The advanced models will be
+            hyperparametrized, resulting in a more accurate modelization at the cost of a longer
+            training time.
         normal_models (list(str), optional): Names of the (normal) models to use in the usecase
-            (among: "LR", "RF", "ET", "XGB", "LGB", "CB", 'NB' and "NN")
+            (among: "LR", "RF", "ET", "XGB", "LGB", "CB", 'NB' and "NN"). The normal models only
+            use default parameters.
         simple_models (list(str), optional): Names of the (simple) models to use in the usecase
-            (among: "LR" and "DT")
+            (among: "LR" and "DT"). These models are easy to ineterpret and fast to train but only
+            offer a limited modelization complexity.
         features (list(str), optional): Names of the feature engineering modules to use (among:
             "Counter", "Date", "freq", "text_tfidf", "text_word2vec", "text_embedding", "tenc",
             "ee", "poly", "pca" and "kmean")
