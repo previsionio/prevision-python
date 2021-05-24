@@ -20,3 +20,4 @@ This section gathers all the available classes, functions and tools offered by P
    api/model.rst
    api/metrics.rst
    api/deployed_model.rst
+   api/usecases/config.rst
