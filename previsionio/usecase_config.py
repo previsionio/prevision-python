@@ -280,10 +280,10 @@ class ColumnConfig(UsecaseConfig):
             an image-based usecase
         time_column (str, optional): Name of the time column in the dataset for a
             timeseries usecase
-        group_columns (str, optional): Name of the target column in the dataset for a
-            timeseries usecase
-        apriori_columns (str, optional): Name of the target column in the dataset for a
-            timeseries usecase
+        group_columns (str, optional): Name of the columns in the dataset that defines a
+            unique time serie for a timeseries usecase
+        apriori_columns (str, optional): Name of the columns that are known *a priori* in
+            the dataset for a timeseries usecase
         drop_list (list(str), optional): Names of all the columns that should be dropped
             from the dataset while training the usecase
     """
