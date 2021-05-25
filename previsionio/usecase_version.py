@@ -11,7 +11,7 @@ import os
 from functools import lru_cache
 
 from . import config
-from .usecase_config import DataType, TrainingConfig, ColumnConfig, TypeProblem, UsecaseState
+from .usecase_config import AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel, TrainingConfig, ColumnConfig, TypeProblem, UsecaseState
 from .logger import logger
 from .prevision_client import client
 from .utils import handle_error_response, parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
@@ -193,31 +193,31 @@ class BaseUsecaseVersion(ApiResource):
         return UsecaseState(status['state'])
 
     @property
-    def normal_models_list(self):
+    def advanced_models_list(self) -> List[AdvancedModel]:
+        """ Get the list of selected advanced models in the usecase.
+
+        Returns:
+            list(AdvancedModel): Names of the normal models selected for the usecase
+        """
+        return [AdvancedModel(f) for f in self._status['usecase_version_params'].get('normal_models', [])]
+
+    @property
+    def normal_models_list(self) -> List[NormalModel]:
         """ Get the list of selected normal models in the usecase.
 
         Returns:
-            list(str): Names of the normal models selected for the usecase
+            list(NormalModel): Names of the normal models selected for the usecase
         """
-        return self._status['usecase_version_params'].get('normal_models', [])
+        return [NormalModel(f) for f in self._status['usecase_version_params'].get('lite_models', [])]
 
     @property
-    def lite_models_list(self):
-        """ Get the list of selected lite models in the usecase.
-
-        Returns:
-            list(str): Names of the lite models selected for the usecase
-        """
-        return self._status['usecase_version_params'].get('lite_models', [])
-
-    @property
-    def simple_models_list(self):
+    def simple_models_list(self) -> List[SimpleModel]:
         """ Get the list of selected simple models in the usecase.
 
         Returns:
-            list(str): Names of the simple models selected for the usecase
+            list(SimpleModel): Names of the simple models selected for the usecase
         """
-        return self._status['usecase_version_params'].get('simple_models', [])
+        return [SimpleModel(f) for f in self._status['usecase_version_params'].get('simple_models', [])]
 
     def stop(self):
         """ Stop a usecase (stopping all nodes currently in progress). """
@@ -397,12 +397,15 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                           apriori_columns=usecase_params.get('apriori_columns'),
                                           drop_list=usecase_params.get('drop_list'))
 
-        self.training_config = TrainingConfig(profile=usecase_params.get('profile'),
-                                              features=usecase_params.get(
-                                                  'features_engineering_selected_list'),
-                                              advanced_models=usecase_params.get('normal_models'),
-                                              normal_models=usecase_params.get('lite_models'),
-                                              simple_models=usecase_params.get('simple_models'))
+        self.training_config = TrainingConfig(profile=Profile(usecase_params.get('profile')),
+                                              features=[Feature(f) for f in usecase_params.get(
+                                                  'features_engineering_selected_list', [])],
+                                              advanced_models=[
+                                                  AdvancedModel(f) for f in usecase_params.get('normal_models', [])],
+                                              normal_models=[NormalModel(f)
+                                                             for f in usecase_params.get('lite_models', [])],
+                                              simple_models=[SimpleModel(f)
+                                                             for f in usecase_params.get('simple_models', [])])
 
         self._id = usecase_info.get('_id')
         self.usecase_id = usecase_info.get('usecase_id')
@@ -545,13 +548,13 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         return self._status['usecase_version_params'].get('drop_list', [])
 
     @property
-    def fe_selected_list(self) -> List[str]:
+    def feature_list(self) -> List[Feature]:
         """ Get the list of selected feature engineering modules in the usecase.
 
         Returns:
             list(str): Names of the feature engineering modules selected for the usecase
         """
-        return self._status['usecase_version_params'].get('features_engineering_selected_list', [])
+        return [Feature(f) for f in self._status['usecase_version_params'].get('features_engineering_selected_list', [])]
 
     def get_cv(self) -> pd.DataFrame:
         """ Get the cross validation dataset from the best model of the usecase.

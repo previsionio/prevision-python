@@ -129,9 +129,10 @@ class TestUCGeneric:
         training_type, uc = setup_usecase_class
         assert all([c in uc.drop_list for c in DROP_COLS])
         uc.update_status()
-        assert set(uc.fe_selected_list) == set(uc_config.features)
-        assert set(uc.normal_models_list) == set(uc_config.normal_models)
+        assert set(uc.feature_list) == set(uc_config.features)
+        assert set(uc.advanced_models_list) == set(uc_config.advanced_models)
         assert set(uc.simple_models_list) == set(uc_config.simple_models)
+        assert set(uc.normal_models_list) == set(uc_config.normal_models)
 
 
 class TestPredict:

@@ -222,7 +222,9 @@ class TrainingConfig(UsecaseConfig):
     config = {
         'features': 'features_engineering_selected_list',
         'feature_time_seconds': 'features_selection_time',
-        'feature_number_kept': 'features_selection_count'
+        'feature_number_kept': 'features_selection_count',
+        'advanced_models': 'normal_models',
+        'normal_models': 'lite_models'
     }
 
     def __init__(self,
@@ -249,8 +251,8 @@ class TrainingConfig(UsecaseConfig):
 
         self.features = features
 
-        self.normal_models = advanced_models
-        self.lite_models = normal_models
+        self.advanced_models = advanced_models
+        self.normal_models = normal_models
         self.simple_models = simple_models
 
         self.profile = profile

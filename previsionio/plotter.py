@@ -77,7 +77,7 @@ class PlotlyPlotter(Plotter):
         target_col_name = self.usecase.column_config.target_column
         assert target_col_name
 
-        if self.usecase.training_type == 'classification':
+        if self.usecase.training_type == TypeProblem.Classification:
             fpr, tpr, _ = roc_curve(preds[target_col_name], preds['pred_' + target_col_name])
             roc_auc = auc(fpr, tpr)
 
@@ -214,7 +214,7 @@ class MatplotlibPlotter(Plotter):
             usecase:
             predict_id (str): ID of the prediction
         """
-        if self.usecase.training_type not in ['classification', 'multiclassification']:
+        if self.usecase.training_type not in [TypeProblem.Classification, TypeProblem.MultiClassification]:
             raise Exception(
                 'ROC curve only available for classification or multiclassif, '
                 'not ' + self.usecase.training_type)
@@ -240,7 +240,7 @@ class MatplotlibPlotter(Plotter):
 
         lw = 1
 
-        if self.usecase.training_type == 'classification':
+        if self.usecase.training_type == TypeProblem.Classification:
             fpr, tpr, _ = roc_curve(preds[target_col_name], preds['pred_' + target_col_name])
             roc_auc = auc(fpr, tpr)
             lw = 2
@@ -366,7 +366,7 @@ class MatplotlibPlotter(Plotter):
             top (int): top individuals to analyze
 
         """
-        if self.usecase.training_type != 'classification':
+        if self.usecase.training_type != TypeProblem.Classification:
             raise Exception('Classification analysis plots only available for classification, not ' +
                             self.usecase.training_type)
 

@@ -92,7 +92,7 @@ class Model(ApiResource):
                                   method=requests.get)
         handle_error_response(response, end_point)
         model = json.loads(response.content.decode('utf-8'))
-        training_type = model['training_type']
+        training_type = model.get('training_type', model.get('type_problem'))
         if training_type == TypeProblem.Regression:
             return RegressionModel(**model)
         elif training_type == TypeProblem.Classification:
