@@ -1,3 +1,5 @@
+.. _project_reference:
+
 Project
 =======
 
