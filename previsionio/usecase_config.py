@@ -284,9 +284,9 @@ class ColumnConfig(UsecaseConfig):
             an image-based usecase
         time_column (str, optional): Name of the time column in the dataset for a
             timeseries usecase
-        group_columns (str, optional): Name of the columns in the dataset that defines a
+        group_columns (list(str), optional): Names of the columns in the dataset that define a
             unique time serie for a timeseries usecase
-        apriori_columns (str, optional): Name of the columns that are known *a priori* in
+        apriori_columns (list(str), optional): Names of the columns that are known *a priori* in
             the dataset for a timeseries usecase
         drop_list (list(str), optional): Names of all the columns that should be dropped
             from the dataset while training the usecase
@@ -305,8 +305,8 @@ class ColumnConfig(UsecaseConfig):
                  fold_column: Union[str, None] = None,
                  weight_column: Union[str, None] = None,
                  time_column: Union[str, None] = None,
-                 group_columns: Union[str, None] = None,
-                 apriori_columns: Union[str, None] = None,
+                 group_columns: Union[List[str], None] = None,
+                 apriori_columns: Union[List[str], None] = None,
                  drop_list: Union[List[str], None] = None):
         self.target_column: Union[str, None] = target_column
         self.filename_column: Union[str, None] = filename_column
@@ -314,8 +314,8 @@ class ColumnConfig(UsecaseConfig):
         self.fold_column: Union[str, None] = fold_column
         self.weight_column: Union[str, None] = weight_column
         self.time_column: Union[str, None] = time_column
-        self.group_columns: Union[str, None] = group_columns
-        self.apriori_columns: Union[str, None] = apriori_columns
+        self.group_columns: Union[List[str], None] = group_columns
+        self.apriori_columns: Union[List[str], None] = apriori_columns
         self.drop_list: Union[List[str], None] = drop_list
 
 
