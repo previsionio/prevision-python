@@ -62,6 +62,7 @@ class ApiResource:
             url = specific_url
         # call api, add event to eventmanager events if available and return
         resource_status = client.request(url, method=requests.get)
+        handle_error_response(resource_status, url)
         resource_status_dict = parse_json(resource_status)
         resource_status_dict['event_type'] = 'update'
         resource_status_dict['event_name'] = 'update'
