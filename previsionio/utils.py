@@ -65,11 +65,7 @@ def parse_json(json_response: Response) -> Dict:
 
 
 def to_json(obj):
-    if isinstance(obj, bool):
-        return obj
-    elif isinstance(obj, str):
-        return obj
-    elif isinstance(obj, Enum):
+    if isinstance(obj, Enum):
         return to_json(obj.value)
     elif isinstance(obj, list):
         obj_list = []
@@ -89,7 +85,7 @@ def to_json(obj):
                     key = obj.config[key]
                 obj_dict[key] = to_json(value)
         return obj_dict
-    return dict()
+    return obj
 
 
 def get_pred_from_multiclassification(row, pred_prefix: str = 'pred_'):
