@@ -160,7 +160,7 @@ class TextSimilarity(BaseUsecaseVersion):
         self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
             usecase_version_params.get('metric', self.default_metric))
         self.top_k: int = usecase_version_params.get('top_K', self.default_top_k)
-        self.lang: TextSimilarityLang = TextSimilarityLang(usecase_version_params.get('lang'))
+        self.lang: TextSimilarityLang = TextSimilarityLang(usecase_version_params.get('lang', TextSimilarityLang.Auto))
 
         self.description_column_config = DescriptionsColumnConfig(
             content_column=usecase_version_params.get('content_column'),
