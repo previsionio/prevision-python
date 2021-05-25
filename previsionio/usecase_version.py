@@ -405,7 +405,9 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                               normal_models=[NormalModel(f)
                                                              for f in usecase_params.get('lite_models', [])],
                                               simple_models=[SimpleModel(f)
-                                                             for f in usecase_params.get('simple_models', [])])
+                                                             for f in usecase_params.get('simple_models', [])],
+                                              feature_time_seconds=usecase_params.get('features_selection_time', 3600),
+                                              feature_number_kept=usecase_params.get('features_selection_count', None))
 
         self._id = usecase_info.get('_id')
         self.usecase_id = usecase_info.get('usecase_id')
