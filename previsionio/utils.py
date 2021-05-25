@@ -28,7 +28,7 @@ def zip_to_pandas(pred_response: requests.Response, separator=None) -> pd.DataFr
         names = pred_zip.namelist()
         pred_zip.extractall('/tmp')
         pred_csv_path = '/tmp/' + names[0]
-        data = pd.read_csv(pred_csv_path, sep=separator)
+        data = pd.read_csv(pred_csv_path, sep=separator, engine='python')
         os.remove(pred_csv_path)
 
     return data
