@@ -16,18 +16,9 @@ You will be working on a specific "instance". This instance corresponds to the s
 Get the package
 ===============
 
-1. clone the git repo:
-
 .. code-block:: bash
 
-    git clone https://github.com/previsionio/prevision-python.git
-
-2. install as a Python package:
-
-.. code-block:: bash
-
-    cd prevision-python
-    python setup.py install
+    pip install previsionio
 
 
 Set up your client
@@ -190,22 +181,24 @@ If you already uploaded a dataset on the platform and want to grab it locally, s
 
     dataset = pio.Dataset.from_id('5ebaad70a7271000e7b28ea0')
 
-Starting Regression/Classification/Multi-classification
-=======================================================
+Regression/Classification/Multi-classification usecase
+======================================================
 
 Configuring the dataset
 -----------------------
 
-To start a usecase you need to specify the dataset to be used and its configuration (target column, weight column, id column, ...). To get a full documentation check the api documentation of the :class:`.ColumnConfig` in :ref:`config_reference`.
+To start a usecase you need to specify the dataset to be used and its configuration (target column, weight column, id column, ...). To get a full documentation check the api reference of the :class:`.ColumnConfig` in :ref:`config_reference`.
 
 .. code-block:: python
 
     column_config = pio.ColumnConfig(target_column='TARGET', id_column='ID')
 
+.. _configuring train:
+
 Configuring the training parameters
 -----------------------------------
 
-If you want, you can also specify some training parameters, such as which models are used, which transformations are applied, and how the models are optimized. To get a full documentation check the api documentation of the :class:`.TrainingConfig` in :ref:`config_reference`.
+If you want, you can also specify some training parameters, such as which models are used, which transformations are applied, and how the models are optimized. To get a full documentation check the api reference of the :class:`.TrainingConfig` in :ref:`config_reference`.
 
 .. code-block:: python
 
@@ -253,6 +246,8 @@ If you want to use image data for your usecase, you need to provide the API with
         holdout_dataset=None,
     )
 
+.. _making prediction:
+
 Making predictions
 ------------------
 
@@ -277,15 +272,82 @@ To make predictions from a dataset and a usecase, you need to wait until at leas
 
     The ``wait_until`` method takes a function that takes the usecase as an argument, and can therefore access any info relative to the usecase.
 
-Starting Text Similarity
-========================
+Time Series usecase
+===================
+
+A time series usecase is very similar to a regression usecase. The main differences rely in the dataset configuration, and the specification of a time window.
+
+Configuring the dataset
+-----------------------
+
+Here you need to specify which column in the dataset defines the time steps. Also you can precise the ``group_columns`` (columns defining a unique time serie) as well as the ``apriori_columns`` (columns containing information known in advanced):
+
+.. code-block:: python
+
+    column_config = pio.ColumnConfig(
+        target_column='Sales',
+        id_column='ID',
+        time_column='Date',
+        group_columns=['Store', 'Product']
+        apriori_columns=['is_holiday'],
+    )
+
+Configuring the training parameters
+-----------------------------------
+
+The training config is the same as for a regression usecase (detailed in :ref:`configuring train`).
+
+Starting training
+-----------------
+
+You can now create a new usecase based on:
+
+ - a usecase name
+ - a dataset
+ - a column config
+ - a time window
+ - (optional) a metric type
+ - (optional) a training config
+
+In particular the ``time_window`` parameters defines the period in the past that you have for each prediction, and the forecast.
+
+.. code-block:: python
+
+    # Define your time window:
+    # example here using 2 weeks in the past to predict the next week
+    time_window = pio.TimeWindow(
+        derivation_start=-28,
+        derivation_end=-14,
+        forecast_start=1,
+        forecast_end=7,
+    )
+
+    usecase_version = project.fit_timeseries_regression(
+        name='helloworld_time_series',
+        dataset=dataset,
+        time_window=time_window,
+        column_config=column_config,
+        metric=pio.metrics.Classification.RMSE,
+        training_config=uc_config,
+        holdout_dataset=None,
+    )
+
+To get a full documentation check the api reference :ref:`time_series_reference`.
+
+Making predictions
+------------------
+
+The predictions workflow is the same as for a regression usecase (detailed in :ref:`making prediction`).
+
+Text Similarity usecase
+=======================
 
 A Text Similarity usecase matches the most similar texts between a dataset containing descriptions (can be seen as a catalog) and a dataset containing queries. It first converts texts to numerical vectors (text embeddings) and then performs a similarity search to retrieve the most similar documents to a query.
 
 Configuring the datasets
 ------------------------
 
-To start a usecase you need to specify the datasets to be used and their configuration. Note that a *DescriptionsDataset* is required while a *QueriesDataset* is optional during training (used for scoring). To get a full documentation check the api documentation of the :class:`.DescriptionsColumnConfig` and the :class:`.QueriesColumnConfig` in :ref:`text_similarity_reference`.
+To start a usecase you need to specify the datasets to be used and their configuration. Note that a *DescriptionsDataset* is required while a *QueriesDataset* is optional during training (used for scoring). To get a full documentation check the api reference of the :class:`.DescriptionsColumnConfig` and the :class:`.QueriesColumnConfig` in :ref:`text_similarity_reference`.
 
 .. code-block:: python
 
@@ -304,7 +366,7 @@ To start a usecase you need to specify the datasets to be used and their configu
 Configuring the training parameters
 -----------------------------------
 
-If you want, you can also specify some training parameters, such as which embedding models, searching models and preprocessing are used. To get a full documentation check the api documentation of the :class:`.ModelsParameters` in :ref:`text_similarity_reference`. Here you need to specify one configuration per embedding model you want to use:
+If you want, you can also specify some training parameters, such as which embedding models, searching models and preprocessing are used. To get a full documentation check the api reference of the :class:`.ModelsParameters` in :ref:`text_similarity_reference`. Here you need to specify one configuration per embedding model you want to use:
 
 .. code-block:: python
 
