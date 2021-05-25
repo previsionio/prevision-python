@@ -1,3 +1,5 @@
+.. _deployed_model_reference:
+
 Deployed model
 ==============
 
