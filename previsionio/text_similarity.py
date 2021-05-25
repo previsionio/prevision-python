@@ -75,7 +75,7 @@ class ModelsParameters(UsecaseConfig):
             - *ignore_punctuation*: default to "no".
         model_embedding (str, optional): Name of the embedding model to be used
             (among: "tf_idf", "transformer", "transformer_fine_tuned").
-        models (str, optional): Name of the searching model to be used (among:
+        models (list(str), optional): Names of the searching models to be used (among:
             "brute_force", "cluster_pruning", "ivfopq", "hkm", "lsh").
     """
 
