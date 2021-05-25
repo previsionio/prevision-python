@@ -102,7 +102,7 @@ class Model(ApiResource):
         elif training_type == TypeProblem.TextSimilarity:
             return TextSimilarityModel(**model)
         else:
-            raise PrevisionException('Training type {} not supported'.format(model['training_type']))
+            raise PrevisionException('Training type {} not supported'.format(training_type))
 
     @property
     @lru_cache()
