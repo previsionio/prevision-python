@@ -33,7 +33,7 @@ Get the package
 Set up your client
 ==================
 
-Prevision.io's SDK client uses a specific master token to authenticate with the instance's server and allow you to perform various requests. To get your master token, log in the online interface on your instance, navigate to the admin page and copy the token.
+Prevision.io's SDK client uses a specific master token to authenticate with the instance's server and allows you to perform various requests. To get your master token, log in the online interface on your instance, navigate to the admin page and copy the token.
 
 You can either set the token and the instance name as environment variables, by specifying
 ``PREVISION_URL`` and ``PREVISION_MASTER_TOKEN``, or at the beginning of your script:
@@ -83,9 +83,7 @@ Datasources and connectors are Prevision.io's way of keeping a link to a source 
 - S3
 - GCP
 
-Connectors hold the credentials to connect to the distant data sources. Then you can specify the exact resource to extract from a data source (be it the path to the file to load, the name of the database table to parse...).
-
-For more info on all the options of connectors and datasources, check out the :ref:`api_reference`.
+Connectors hold the credentials to connect to the distant data sources. Then you can specify the exact resource to extract from a data source (be it the path to the file to load, the name of the database table to parse, ...).
 
 Creating a connector
 ~~~~~~~~~~~~~~~~~~~~
@@ -101,12 +99,14 @@ to create a connector to an SQL database, use the ``create_sql_connector()`` and
                                              username='username',
                                              password='password')
 
+For more information on all the available connectors, check out the :ref:`project_reference` full documentation.
+
 Creating a data source
 ~~~~~~~~~~~~~~~~~~~~~~
 
 After you've created a connector, you need to use a datasource to actually refer to and fetch a resource
 in the distant data source. To create a datasource, you need to link the matching connector and to supply
-the relevant info, depending on the connector type.
+the relevant info, depending on the connector type:
 
 .. code-block:: py
 
@@ -114,6 +114,8 @@ the relevant info, depending on the connector type.
                                            'my_sql_datasource',
                                            database='my_db',
                                            table='table1')
+
+For more details on the creation of a datasource, check out the :ref:`project_reference` full documentation of the method ``create_datasource``.
 
 You can then create datasets from this datasource as explained in :ref:`Uploading Data`.
 
@@ -137,6 +139,8 @@ using the ``list_connectors()`` and ``list_datasource()`` method from project cl
 
 Uploading Data
 --------------
+
+You can upload data from three different sources: a path to a local (``csv``, ``zip``) file, a :class:`.pandas.DataFrame` or a created data source
 
 .. code-block:: python
 
@@ -180,7 +184,7 @@ method:
 Downloading data from the platform
 ----------------------------------
 
-If you already uploaded a dataset on the platform and want to grab it locally, simply use the ``Dataset.from_id()`` SDK methods:
+If you already uploaded a dataset on the platform and want to grab it locally, simply use the ``Dataset.from_id()`` SDK method:
 
 .. code-block:: py
 
@@ -210,13 +214,13 @@ If you want, you can also specify some training parameters, such as which models
         normal_models=[pio.NormalModel.LinReg],
         simple_models=[pio.SimpleModel.DecisionTree],
         features=[pio.Feature.Counts],
-        profile=pio.Profile.Quick
+        profile=pio.Profile.Quick,
     )
 
 Starting training
 -----------------
 
-You can now create a new usecase based on :
+You can now create a new usecase based on:
 
  - a usecase name
  - a dataset
@@ -252,11 +256,11 @@ If you want to use image data for your usecase, you need to provide the API with
 Making predictions
 ------------------
 
-To make prediction from a dataset and a usecase, you need to wait until at least one model is trained. This can be achieved in the following way:
+To make predictions from a dataset and a usecase, you need to wait until at least one model is trained. This can be achieved in the following way:
 
 .. code-block:: python
 
-    # (block until there is at least 1 model trained)
+    # block until there is at least 1 model trained
     usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
 
     # check out the usecase status and other info
@@ -269,23 +273,63 @@ To make prediction from a dataset and a usecase, you need to wait until at least
     # or predict from a `pandas.DataFrame`
     preds = usecase_version.predict(test_dataframe)
 
+.. note::
+
+    The ``wait_until`` method takes a function that takes the usecase as an argument, and can therefore access any info relative to the usecase.
+
 Starting Text Similarity
 ========================
 
-If you want, you can also specify some training parameters, such as which models are used,
-which embedding and preprocessing are applied.
+A Text Similarity usecase matches the most similar texts between a dataset containing descriptions (can be seen as a catalog) and a dataset containing queries. It first converts texts to numerical vectors (text embeddings) and then performs a similarity search to retrieve the most similar documents to a query.
+
+Configuring the datasets
+------------------------
+
+To start a usecase you need to specify the datasets to be used and their configuration. Note that a *DescriptionsDataset* is required while a *QueriesDataset* is optional during training (used for scoring). To get a full documentation check the api documentation of the :class:`.DescriptionsColumnConfig` and the :class:`.QueriesColumnConfig` in :ref:`text_similarity_reference`.
 
 .. code-block:: python
 
-    models_parameters_1 = pio.ModelsParameters(pio.ModelEmbedding.TFIDF,
-                                               pio.Preprocessing(),
-                                               [pio.TextSimilarityModels.BruteForce, pio.TextSimilarityModels.ClusterPruning])
-    models_parameters_2 = pio.ModelsParameters(pio.ModelEmbedding.Transformer,
-                                               {},
-                                               [pio.TextSimilarityModels.BruteForce])
-    models_parameters_3 = pio.ModelsParameters(pio.ModelEmbedding.TransformerFineTuned,
-                                               {},
-                                               [pio.TextSimilarityModels.BruteForce])
+    # Required: configuration of the DescriptionsDataset
+    description_column_config = pio.TextSimilarity.DescriptionsColumnConfig(
+        content_column='text_descriptions',
+        id_column='ID',
+    )
+
+    # Optional: configuration of the QueriesDataset
+    queries_column_config = pio.TextSimilarity.QueriesColumnConfig(
+        content_column='text_queries',
+        id_column='ID',
+    )
+
+Configuring the training parameters
+-----------------------------------
+
+If you want, you can also specify some training parameters, such as which embedding models, searching models and preprocessing are used. To get a full documentation check the api documentation of the :class:`.ModelsParameters` in :ref:`text_similarity_reference`. Here you need to specify one configuration per embedding model you want to use:
+
+.. code-block:: python
+
+    # Using TF-IDF as embedding model
+    models_parameters_1 = pio.ModelsParameters(
+        model_embedding=pio.ModelEmbedding.TFIDF,
+        preprocessing=pio.Preprocessing(),
+        models=[pio.TextSimilarityModels.BruteForce, pio.TextSimilarityModels.ClusterPruning],
+    )
+
+    # Using Transformer as embedding model
+    models_parameters_2 = pio.ModelsParameters(
+        model_embedding=pio.ModelEmbedding.Transformer,
+        preprocessing={},
+        models=[pio.TextSimilarityModels.BruteForce, pio.TextSimilarityModels.IVFOPQ],
+    )
+
+    # Using fine-tuned Transformer as embedding model
+    models_parameters_3 = pio.ModelsParameters(
+        model_embedding=pio.ModelEmbedding.TransformerFineTuned,
+        preprocessing={},
+        models=[pio.TextSimilarityModels.BruteForce, pio.TextSimilarityModels.IVFOPQ],
+    )
+
+    # Gather everything
     models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
     models_parameters = pio.ListModelsParameters(models_parameters=models_parameters)
 
@@ -299,10 +343,10 @@ which embedding and preprocessing are applied.
         models_parameters = pio.ListModelsParameters()
 
 
-Configuring the training parameters
------------------------------------
+Starting the training
+---------------------
 
-You can then create a new text similarity usecase based on :
+You can then create a new text similarity usecase based on:
 
  - a usecase name
  - a dataset
@@ -310,83 +354,48 @@ You can then create a new text similarity usecase based on :
  - (optional) a queries dataset
  - (optional) a queries column config
  - (optional) a metric type
- - (optional) a top k
+ - (optional) the number of *top k* results tou want per query
  - (optional) a language
  - (optional) a models parameters list
 
 .. code-block:: python
 
-    usecase_verion = project.fit_text_similarity('helloworld_text_similarity',
-                                                 dataset,
-                                                 description_column_config,
-                                                 metric=pio.metrics.TextSimilarity.accuracy_at_k,
-                                                 top_k=10,
-                                                 models_parameters=models_parameters)
-
-Monitoring training
--------------------
-
-You can retrieve at any moment the number of models trained so far and the current error score,
-as well as some additional info.
-
-.. code-block:: python
-
-    >>> usecase_verion.score
-    0.0585
-
-    >>> usecase_verion.print_info()
-    scores_cv: 0.0585
-
-
-
-You can also wait until a certain condition is reached, such as a number of models or a certain score:
-
-.. code-block:: python
-
-    # will block until there are more than 3 models
-    uc.wait_until(lambda usecasev: len(usecasev.models) > 0)
-
-    # will block until error is lower than 0.3 (warning, it may never reach it and wait forever)
-    uc.wait_until(lambda usecasev: usecasev.score < .3)
-
-
-The ``wait_until`` method takes a function that takes the usecase as an argument, and can therefore access any info
-relative to the usecase.
+    usecase_verion = project.fit_text_similarity(
+        name='helloworld_text_similarity',
+        dataset=dataset,
+        description_column_config=description_column_config,
+        metric=pio.metrics.TextSimilarity.accuracy_at_k,
+        top_k=10,
+        queries_dataset=queries_dataset,
+        queries_column_config=queries_column_config,
+        models_parameters=models_parameters,
+    )
 
 Making predictions
 ------------------
 
-Once we have at least a model, we can start making predictions. We don't need to wait until the complete training
-process is done, and we'll always have access to the best model trained so far.
+To make predictions from a dataset and a usecase, you need to wait until at least one model is trained. This can be achieved in the following way:
 
 .. code-block:: python
 
-    # we have some test data here:
-    data_path = 'data/titanic_test.csv'
-    test_dataset = project.create_dataset(name='helloworld_test', file_name=data_path)
+    # block until there is at least 1 model trained
+    usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
 
-    preds = usecase_verion.predict_from_dataset(test_dataset)
+    # check out the usecase status and other info
+    usecase_version.print_info()
+    print('Current (best model) score:', usecase_version.score)
 
-    # scikit-learn style:
-    df = pd.read_csv(data_path)
-    preds = uc.predict(df)
+    # predict from uploaded dataset on the plateform
+    preds = usecase_version.predict_from_dataset(
+        queries_dataset=queries_dataset,
+        queries_dataset_content_column='queries',
+        top_k=10,
+        queries_dataset_matching_id_description_column=None, # Optional
+    )
 
-For text similarity, you can create a new prediction based on :
-  - a dataset queries
-  - a query colmun name
-  - (optional) topK
-  - (optional) description id column name
+.. note::
 
-.. code-block:: python
-
-    # we have some test data here:
-    data_path = 'data/queries_test.csv'
-    test_dataset = project.create_dataset(name='helloworld_test', file_name=data_path)
-
-    preds = usecase_verion.predict_from_dataset(test_dataset,
-                                                'query',
-                                                top_k=10,
-                                                queries_dataset_matching_id_description_column='true_item_id')
+    The ``wait_until`` method takes a function that takes the usecase as an argument, and can therefore access any info relative to the usecase.
 
 Additional util methods
 =======================
@@ -401,7 +410,8 @@ To do that, we need to be able to recreate a usecase object in python from its n
 .. code-block:: python
 
     usecase_version = pio.Supervised.from_id('<a usecase id>')
-    # usecase_version now has all the same methods as a usecase_version created directly from a file or a dataframe
+    # Usecase_version now has all the same methods as a usecase_version
+    # created directly from a file or a dataframe
     usecase_version.print_info()
 
 Stopping and deleting
