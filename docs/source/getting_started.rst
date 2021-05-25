@@ -280,7 +280,7 @@ A time series usecase is very similar to a regression usecase. The main differen
 Configuring the dataset
 -----------------------
 
-Here you need to specify which column in the dataset defines the time steps. Also you can precise the ``group_columns`` (columns defining a unique time serie) as well as the ``apriori_columns`` (columns containing information known in advanced):
+Here you need to specify which column in the dataset defines the time steps. Also you can specify the ``group_columns`` (columns defining a unique time serie) as well as the ``apriori_columns`` (columns containing information known in advanced):
 
 .. code-block:: python
 
@@ -288,7 +288,7 @@ Here you need to specify which column in the dataset defines the time steps. Als
         target_column='Sales',
         id_column='ID',
         time_column='Date',
-        group_columns=['Store', 'Product']
+        group_columns=['Store', 'Product'],
         apriori_columns=['is_holiday'],
     )
 
@@ -309,7 +309,7 @@ You can now create a new usecase based on:
  - (optional) a metric type
  - (optional) a training config
 
-In particular the ``time_window`` parameters defines the period in the past that you have for each prediction, and the forecast.
+In particular the ``time_window`` parameter defines the period in the past that you have for each prediction, and the period in the future that you want to predict:
 
 .. code-block:: python
 
@@ -327,7 +327,7 @@ In particular the ``time_window`` parameters defines the period in the past that
         dataset=dataset,
         time_window=time_window,
         column_config=column_config,
-        metric=pio.metrics.Classification.RMSE,
+        metric=pio.metrics.Regression.RMSE,
         training_config=uc_config,
         holdout_dataset=None,
     )
@@ -495,3 +495,28 @@ You can decide to completely delete the usecase:
     uc.delete()
 
 However be careful, in that case any detail about the usecase will be removed, and you won't be able to make predictions from it anymore.
+
+Using deployed model
+--------------------
+
+Prevision.io's SDK allows to make a prediction from a model deployed with the Prevision.io's platform.
+
+To deploy a model you need to log to the web interface of your instance, and click to the ``STORE`` button at the bottom left of your screen. Then you need to go to the ``Usecases``  tab and you will be able to deploy a model by clicking on ``Deploy a new usecase``. Then you can specify a project, a usecase and the model you want to deploy.
+
+Once the model is deployed and your on its main page, go to the bottom of the page and click on ``generate new key`` wich will create a ``Client Id`` and a ``Client secret``. You will need the ``url`` (displayed at the top of the page in the interface) the ``Client Id`` and the ``Client secret`` to call it via the python SDK:
+
+.. code-block:: python
+
+    import previsionio as pio
+
+    # Initialize the deployed model object from the url of the model, your client id and client secret for this model, and your credentials
+    model = pio.DeployedModel(prevision_app_url, client_id, client_secret)
+
+    # Make a prediction
+    prediction, confidance, explain = model.predict(
+        predict_data={'feature1': 1, 'feature2': 2},
+        use_confidence=True,
+        explain=True,
+    )
+
+To get a full documentation check the api reference :ref:`deployed_model_reference`.
