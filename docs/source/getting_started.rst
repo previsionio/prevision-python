@@ -246,6 +246,8 @@ If you want to use image data for your usecase, you need to provide the API with
         holdout_dataset=None,
     )
 
+To get an exhaustive list of the available metrics go to the api reference :ref:`metrics_reference`.
+
 .. _making prediction:
 
 Making predictions
@@ -432,6 +434,8 @@ You can then create a new text similarity usecase based on:
         queries_column_config=queries_column_config,
         models_parameters=models_parameters,
     )
+
+To get an exhaustive list of the available metrics go to the class :class:`.previsionio.metrics.TextSimilarity` in the api reference :ref:`metrics_reference`.
 
 Making predictions
 ------------------
