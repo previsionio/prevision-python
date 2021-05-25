@@ -20,7 +20,13 @@ class TimeWindowException(Exception):
 class TimeWindow(UsecaseConfig):
     """
     A time window object for representing either feature derivation window periods or
-    forecast window periods
+    forecast window periods.
+
+    Args:
+        derivation_start (int): Start of the derivation window (must be < 0)
+        derivation_end (int): End of the derivation window (must be < 0)
+        forecast_start (int): Start of the forecast window (must be > 0)
+        forecast_end (int): End of the forecast window (must be > 0)
     """
     config = {
         'derivation_start': 'start_dw',
@@ -30,14 +36,7 @@ class TimeWindow(UsecaseConfig):
     }
 
     def __init__(self, derivation_start: int, derivation_end: int, forecast_start: int, forecast_end: int):
-        """Instantiate a new :class:`.TimeWindow` util object.
-
-        Args:
-            derivation_start (int): Start of the derivation window (must be < 0)
-            derivation_end (int): End of the derivation window (must be < 0)
-            forecast_start (int): Start of the forecast window (must be > 0)
-            forecast_end (int): End of the forecast window (must be > 0)
-        """
+        """Instantiate a new :class:`.TimeWindow` util object."""
 
         if not derivation_start < derivation_end or not forecast_start < forecast_end:
             raise TimeWindowException('start must be smaller than end')
