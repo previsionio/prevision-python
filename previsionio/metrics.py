@@ -114,6 +114,6 @@ class TextSimilarity(Enum):
     Metrics for text similarity projects
     """
     accuracy_at_k = 'accuracy_at_k'
-    """Accuracy At K"""
+    """Accuracy at K"""
     mrr_at_k = 'mrr_at_k'
-    """MRR At K"""
+    """Mean Reciprocal Rank at K"""
