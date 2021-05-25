@@ -6,4 +6,4 @@ TextSimilarity usecases
 .. automodule:: previsionio.text_similarity
     :members:
     :show-inheritance:
-    :exclude-members: ModelEmbedding, TextSimilarityModels, Preprocessing, ListModelsParameters
+    :exclude-members: Preprocessing, ListModelsParameters

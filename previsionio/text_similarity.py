@@ -10,17 +10,27 @@ import previsionio as pio
 
 
 class ModelEmbedding(object):
+    """Embedding models for Text Similarity"""
     TFIDF = 'tf_idf'
+    """Term Frequency - Inverse Document Frequency"""
     Transformer = 'transformer'
+    """Transformer"""
     TransformerFineTuned = 'transformer_fine_tuned'
+    """fine tuned Transformer"""
 
 
 class TextSimilarityModels(object):
+    """Similarity search models for Text Similarity"""
     BruteForce = 'brute_force'
+    """Brute force search"""
     ClusterPruning = 'cluster_pruning'
+    """Cluster Pruning"""
     IVFOPQ = 'ivfopq'
+    """InVerted File system and Optimized Product Quantization"""
     HKM = 'hkm'
+    """Hierarchical K-Means"""
     LSH = 'lsh'
+    """Locality Sensitive Hashing"""
 
 
 class Preprocessing(object):
