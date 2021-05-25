@@ -229,7 +229,7 @@ You can now create a new usecase based on:
         dataset=dataset,
         column_config=column_config,
         metric=pio.metrics.Classification.AUC,
-        training_config=uc_config,
+        training_config=training_config,
         holdout_dataset=None,
     )
 
@@ -242,7 +242,7 @@ If you want to use image data for your usecase, you need to provide the API with
         dataset=(dataset, image_folder),
         column_config=column_config,
         metric=pio.metrics.Classification.AUC,
-        training_config=uc_config,
+        training_config=training_config,
         holdout_dataset=None,
     )
 
@@ -330,7 +330,7 @@ In particular the ``time_window`` parameter defines the period in the past that 
         time_window=time_window,
         column_config=column_config,
         metric=pio.metrics.Regression.RMSE,
-        training_config=uc_config,
+        training_config=training_config,
         holdout_dataset=None,
     )
 
