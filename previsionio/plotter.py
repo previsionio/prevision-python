@@ -301,7 +301,7 @@ class MatplotlibPlotter(Plotter):
             predict_id (str): ID of the prediction
 
         """
-        if self.usecase.training_type != 'multiclassification':
+        if self.usecase.training_type != TypeProblem.MultiClassification:
             raise Exception('Confusion matrices only available for multiclassification, not ' +
                             self.usecase.training_type)
 
