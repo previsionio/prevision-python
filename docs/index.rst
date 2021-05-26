@@ -14,8 +14,6 @@ in your data science scripts.
 
 To take a quick peek at the available features, look at the :ref:`getting_started` guide.
 
-For more in-depth explanations, dive into the extended documentation with :ref:`tutorials`.
-
 If you'd rather examine the Python API directly, here is the direct :ref:`api_reference`.
 
 The compatibility version between Prevision.io’s Python SDK and Prevision Platform works as follows:
@@ -321,5 +319,4 @@ The compatibility version between Prevision.io’s Python SDK and Prevision Plat
    :caption: Contents:
 
    source/getting_started.rst
-   source/tutorials_and_samples.rst
    source/api.rst

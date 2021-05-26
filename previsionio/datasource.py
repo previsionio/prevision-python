@@ -61,10 +61,12 @@ class DataSource(ApiResource, UniqueResourceMixin):
             Contrary to the parent ``list()`` function, this method
             returns actual :class:`.DataSource` objects rather than
             plain dictionaries with the corresponding data.
+
         Args:
             all (boolean, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
+
         Returns:
             list(:class:`.DataSource`): Fetched datasource objects
         """

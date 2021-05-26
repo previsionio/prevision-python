@@ -4,8 +4,7 @@ from enum import Enum
 class Regression(Enum):
     """
     Metrics for regression projects
-    Available metrics in prevision:
-            rmse, mape, rmsle, mse, mae
+    Available metrics in prevision: rmse, mape, rmsle, mse, mae
     """
     RMSE = 'rmse'
     """Root Mean Squared Error"""
@@ -30,8 +29,7 @@ class Regression(Enum):
 class Classification(Enum):
     """
     Metrics for classification projects
-    Available metrics in prevision:
-        auc, log_loss, error_rate_binary
+    Available metrics in prevision: auc, log_loss, error_rate_binary
     """
     AUC = 'auc'
     """Area Under ROC Curve"""
@@ -116,6 +114,6 @@ class TextSimilarity(Enum):
     Metrics for text similarity projects
     """
     accuracy_at_k = 'accuracy_at_k'
-    """Accuracy At K"""
+    """Accuracy at K"""
     mrr_at_k = 'mrr_at_k'
-    """MRR At K"""
+    """Mean Reciprocal Rank at K"""

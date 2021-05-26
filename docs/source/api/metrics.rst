@@ -1,4 +1,4 @@
-.. _metrics:
+.. _metrics_reference:
 
 Metrics
 =======
@@ -8,3 +8,4 @@ The metrics you can choose depends on the type of usecase you are training.
 
 .. automodule:: previsionio.metrics
     :members:
+    :exclude-members: Clustering
