@@ -11,21 +11,27 @@ import previsionio as pio
 
 
 class ModelEmbedding(Enum):
-    """
-    Embedder used in text similarity process
-    """
+    """Embedding models for Text Similarity"""
     TFIDF = 'tf_idf'
-    """Term Frequency–Inverse Document Frequency"""
+    """Term Frequency - Inverse Document Frequency"""
     Transformer = 'transformer'
+    """Transformer"""
     TransformerFineTuned = 'transformer_fine_tuned'
+    """fine tuned Transformer"""
 
 
 class TextSimilarityModels(Enum):
+    """Similarity search models for Text Similarity"""
     BruteForce = 'brute_force'
+    """Brute force search"""
     ClusterPruning = 'cluster_pruning'
+    """Cluster Pruning"""
     IVFOPQ = 'ivfopq'
+    """InVerted File system and Optimized Product Quantization"""
     HKM = 'hkm'
+    """Hierarchical K-Means"""
     LSH = 'lsh'
+    """Locality Sensitive Hashing"""
 
 
 class TextSimilarityLang(Enum):
@@ -48,7 +54,17 @@ class ModelsParameters(UsecaseConfig):
     the wanted feature engineering, the selected models, the training speed...
 
     Args:
+        preprocessing (Preprocessing, optional): Dictionary of the text preprocessings to be applied
+            (only for "tf_idf" embedding model),
 
+            - *word_stemming*: default to "yes"
+            - *ignore_stop_word*: default to "auto", choice will be made depending on if the
+              text descriptions contain full sentences or not
+            - *ignore_punctuation*: default to "no".
+        model_embedding (ModelEmbedding, optional): Name of the embedding model to be used
+            (among: "tf_idf", "transformer", "transformer_fine_tuned").
+        models (list(TextSimilarityModels), optional): Names of the searching models to be used (among:
+            "brute_force", "cluster_pruning", "ivfopq", "hkm", "lsh").
     """
 
     config = {
@@ -87,10 +103,10 @@ class ListModelsParameters(UsecaseConfig):
                                                     TextSimilarityModels.ClusterPruning])
             models_parameters_2 = ModelsParameters(ModelEmbedding.Transformer,
                                                    Preprocessing(),
-                                                   [TextSimilarityModels.BruteForce])
+                                                   [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
             models_parameters_3 = ModelsParameters(ModelEmbedding.TransformerFineTuned,
                                                    Preprocessing(),
-                                                   [TextSimilarityModels.BruteForce])
+                                                   [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
             models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
         self.models_parameters = []
         for element in models_parameters:
@@ -105,8 +121,9 @@ class DescriptionsColumnConfig(UsecaseConfig):
     the role of specific columns in the dataset.
 
     Args:
-        content_column (str, required): Name of the content column in the description dataset
-        id_column (str, optional): Name of the id column in the description dataset
+        content_column (str, required): Name of the column containing the text descriptions in the
+            description dataset.
+        id_column (str, optional): Name of the id column in the description dataset.
     """
 
     config = {
@@ -124,8 +141,9 @@ class QueriesColumnConfig(UsecaseConfig):
     the role of specific columns in the dataset.
 
     Args:
-        content_column (str, required): Name of the content column in the description dataset
-        id_column (str, optional): Name of the id column in the description dataset
+        content_column (str, required): Name of the column containing the text queries in the
+            description dataset.
+        id_column (str, optional): Name of the id column in the description dataset.
     """
 
     # config = {

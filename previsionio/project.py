@@ -756,7 +756,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 on all the parameters)
 
         Returns:
-            :class:`.TextSimilarity`: Newly created TextSimilarity usecase version object
+            :class:`.previsionio.text_similarity.TextSimilarity`: Newly created TextSimilarity usecase version object
         """
         return TextSimilarity._fit(
             self._id,

@@ -281,16 +281,15 @@ class Client(object):
         Init the client (and check that the connection is valid).
 
         Args:
-            prevision_url (str): URL of the Prevision.io platform. Should be
-                https://cloud.prevision.io if you're in the cloud, or a custom
-                IP address if installed on-premise.
+            prevision_url (str): URL of the Prevision.io platform. Should be of the form
+                https://<instance_name>.prevision.io, or a custom IP address if working on-premise.
 
             token (str): Your Prevision.io master token. Can be retrieved on
                 /dashboard/infos on the web interface or obtained programmatically through:
 
                 .. code-block:: python
 
-                    client.init_client_with_login(prevision_url, email, password)
+                    client.init_client(prevision_url, token)
         """
         self.prevision_url = prevision_url
         self.url = self.prevision_url + self.api_version

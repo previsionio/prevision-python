@@ -202,12 +202,16 @@ class TrainingConfig(UsecaseConfig):
             - the "normal" profile is something in-between to help you investigate
               an interesting result
 
-        advanced_models (list(AdvancedModel), optional): Names of the (advanced) models to use in the usecase
-            (among: "LR", "RF", "ET", "XGB", "LGB", "CB" and "NN")
+        advanced_models (list(AdvancedModel), optional): Names of the advanced models to use in the usecase
+            (among: "LR", "RF", "ET", "XGB", "LGB", "CB" and "NN"). The advanced models will be
+            hyperparametrized, resulting in a more accurate modelization at the cost of a longer
+            training time.
         normal_models (list(NormalModel), optional): Names of the (normal) models to use in the usecase
-            (among: "LR", "RF", "ET", "XGB", "LGB", "CB", 'NB' and "NN")
+            (among: "LR", "RF", "ET", "XGB", "LGB", "CB", 'NB' and "NN"). The normal models only
+            use default parameters.
         simple_models (list(SimpleModel), optional): Names of the (simple) models to use in the usecase
-            (among: "LR" and "DT")
+            (among: "LR" and "DT"). These models are easy to ineterpret and fast to train but only
+            offer a limited modelization complexity.
         features (list(Feature), optional): Names of the feature engineering modules to use (among:
             "Counter", "Date", "freq", "text_tfidf", "text_word2vec", "text_embedding", "tenc",
             "ee", "poly", "pca" and "kmean")
@@ -291,10 +295,10 @@ class ColumnConfig(UsecaseConfig):
             an image-based usecase
         time_column (str, optional): Name of the time column in the dataset for a
             timeseries usecase
-        group_columns (str, optional): Name of the target column in the dataset for a
-            timeseries usecase
-        apriori_columns (str, optional): Name of the target column in the dataset for a
-            timeseries usecase
+        group_columns (list(str), optional): Names of the columns in the dataset that define a
+            unique time serie for a timeseries usecase
+        apriori_columns (list(str), optional): Names of the columns that are known *a priori* in
+            the dataset for a timeseries usecase
         drop_list (list(str), optional): Names of all the columns that should be dropped
             from the dataset while training the usecase
     """
@@ -312,8 +316,8 @@ class ColumnConfig(UsecaseConfig):
                  fold_column: Union[str, None] = None,
                  weight_column: Union[str, None] = None,
                  time_column: Union[str, None] = None,
-                 group_columns: Union[str, None] = None,
-                 apriori_columns: Union[str, None] = None,
+                 group_columns: Union[List[str], None] = None,
+                 apriori_columns: Union[List[str], None] = None,
                  drop_list: Union[List[str], None] = None):
         self.target_column: Union[str, None] = target_column
         self.filename_column: Union[str, None] = filename_column
@@ -321,8 +325,8 @@ class ColumnConfig(UsecaseConfig):
         self.fold_column: Union[str, None] = fold_column
         self.weight_column: Union[str, None] = weight_column
         self.time_column: Union[str, None] = time_column
-        self.group_columns: Union[str, None] = group_columns
-        self.apriori_columns: Union[str, None] = apriori_columns
+        self.group_columns: Union[List[str], None] = group_columns
+        self.apriori_columns: Union[List[str], None] = apriori_columns
         self.drop_list: Union[List[str], None] = drop_list
 
 

@@ -14,21 +14,20 @@ PREVISION_TOKEN_URL = 'https://accounts.prevision.io/auth/realms/prevision.io/pr
 
 class DeployedModel(object):
 
-    """DeployedModel class to interact with a deployed model."""
+    """
+    DeployedModel class to interact with a deployed model.
+
+    Args:
+        prevision_app_url (str): URL of the App. Can be retrieved on your app dashbord.
+        client_id (str): Your app client id. Can be retrieved on your app dashbord.
+        client_secret (str): Your app client secret. Can be retrieved on your app dashbord.
+        prevision_token_url (str): URL of get token. Should be
+            https://accounts.prevision.io/auth/realms/prevision.io/protocol/openid-connect/token
+            if you're in the cloud, or a custom IP address if installed on-premise.
+    """
 
     def __init__(self, prevision_app_url: str, client_id: str, client_secret: str, prevision_token_url: str = None):
-        """
-        Init DeployedModel (and check that the connection is valid).
-
-        Args:
-            prevision_app_url (str): URL of the App. Can be retrieved on your app dashbord.
-            client_id (str): Your app client id. Can be retrieved on your app dashbord.
-            client_secret (str): Your app client secret. Can be retrieved on your app dashbord.
-            prevision_token_url (str): URL of get token. Should be
-                https://accounts.prevision.io/auth/realms/prevision.io/protocol/openid-connect/token
-                if you're in the cloud, or a custom
-                IP address if installed on-premise.
-        """
+        """Init DeployedModel (and check that the connection is valid)."""
         self.prevision_app_url = prevision_app_url
         self.client_id = client_id
         self.client_secret = client_secret
