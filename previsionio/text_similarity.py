@@ -93,7 +93,7 @@ class ListModelsParameters(UsecaseConfig):
         'models_parameters': 'models_params'
     }
 
-    def __init__(self, models_parameters: Union[List[Union[ModelsParameters, Dict]], None] = None):
+    def __init__(self, models_parameters: Union[List[ModelsParameters], List[Dict], None] = None):
 
         if models_parameters is None:
 

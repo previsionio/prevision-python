@@ -1,4 +1,7 @@
 import os
+from previsionio.usecase_version import ClassicUsecaseVersion
+from typing import Tuple
+from previsionio.usecase import Usecase
 from previsionio.model import ClassificationModel
 import pandas as pd
 import pytest
@@ -158,7 +161,7 @@ class TestPredict:
 
 class TestInfos:
     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-    def test_info(self, setup_usecase_class, options):
+    def test_info(self, setup_usecase_class: Tuple[str, ClassicUsecaseVersion], options):
         training_type, uc = setup_usecase_class
         # test models
         assert len(uc.models) > 0
@@ -193,6 +196,8 @@ class TestInfos:
         model_copy = pio.Model.from_id(model._id)
         assert isinstance(model.hyperparameters, dict)
         assert model_copy.hyperparameters == model.hyperparameters
+
+        print("uc.status", uc.status)
 
         assert isinstance(model.cross_validation, pd.DataFrame)
         assert isinstance(model.chart(), dict)
