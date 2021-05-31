@@ -265,7 +265,7 @@ class Dataset(ApiResource):
                 file_name = temp.name.replace('.csv', file_ext)
                 with ZipFile(file_name, 'w') as zip_file:
                     zip_file.write(temp.name, arcname=name + '.csv')
-
+                assert zip_file.filename is not None
                 with open(zip_file.filename, 'rb') as f:
                     files['file'] = (os.path.basename(file_name), f)
 

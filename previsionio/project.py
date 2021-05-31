@@ -18,7 +18,7 @@ from .connector import Connector, SQLConnector, FTPConnector, \
     SFTPConnector, S3Connector, HiveConnector, GCPConnector
 from .supervised import Supervised
 from .timeseries import TimeSeries, TimeWindow
-from .text_similarity import DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig, TextSimilarity
+from .text_similarity import DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig, TextSimilarity, TextSimilarityLang
 from .usecase import Usecase
 from pandas import DataFrame
 
@@ -732,7 +732,7 @@ class Project(ApiResource, UniqueResourceMixin):
 
     def fit_text_similarity(self, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
                             metric: metrics.TextSimilarity = metrics.TextSimilarity.accuracy_at_k, top_k: int = 10,
-                            lang: str = 'auto', queries_dataset: Dataset = None,
+                            lang: TextSimilarityLang = TextSimilarityLang.Auto, queries_dataset: Dataset = None,
                             queries_column_config: QueriesColumnConfig = None,
                             models_parameters: ListModelsParameters = ListModelsParameters()):
         """ Start a text similarity usecase training with a specific training configuration.
