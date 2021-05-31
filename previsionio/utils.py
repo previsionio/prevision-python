@@ -1,3 +1,4 @@
+from enum import Enum
 import operator
 from typing import Dict, List, Union
 import requests
@@ -63,6 +64,30 @@ def parse_json(json_response: Response) -> Dict:
         raise
 
 
+def to_json(obj):
+    if isinstance(obj, Enum):
+        return to_json(obj.value)
+    elif isinstance(obj, list):
+        obj_list = []
+        for e in obj:
+            obj_list.append(to_json(e))
+        return obj_list
+    elif isinstance(obj, dict):
+        obj_d = {}
+        for key, value in obj.items():
+            obj_d[key] = to_json(value)
+        return obj_d
+    elif hasattr(obj, '__dict__'):
+        obj_dict = {}
+        for key, value in obj.__dict__.items():
+            if value:
+                if hasattr(obj, 'config') and key in obj.config:
+                    key = obj.config[key]
+                obj_dict[key] = to_json(value)
+        return obj_dict
+    return obj
+
+
 def get_pred_from_multiclassification(row, pred_prefix: str = 'pred_'):
     d = row.to_dict()
     preds_probas = {k: float(v) for k, v in d.items() if pred_prefix in k}
@@ -84,13 +109,16 @@ def is_null_value(value) -> bool:
 def get_all_results(client, endpoint: str, method) -> List[Dict]:
     resources = []
     batch: requests.Response = client.request(endpoint, method=method)
+    handle_error_response(batch, endpoint)
     json = parse_json(batch)
     meta = json['metaData']
     total_items = meta['totalItems']
     rows_per_page = meta['rowsPerPage']
     n_pages = ceil(total_items / rows_per_page)
     for n in range(1, n_pages + 1):
-        batch = client.request(endpoint + "?page={}".format(n), method=method)
+        url = endpoint + "?page={}".format(n)
+        batch = client.request(url, method=method)
+        handle_error_response(batch, url)
         resources.extend(parse_json(batch)['items'])
     return resources
 

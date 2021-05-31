@@ -55,7 +55,9 @@ from previsionio.usecase_config import \
     base_config, \
     quick_config, \
     ultra_config, \
-    ColumnConfig
+    ColumnConfig, \
+    YesOrNo, \
+    YesOrNoOrAuto
 
 import previsionio.metrics as metrics
 
@@ -80,6 +82,8 @@ __all__ = ['client',
            'TypeProblem',
            'Feature',
            'TrainingConfig',
+           'YesOrNo',
+           'YesOrNoOrAuto',
            'Profile',
            'base_config',
            'quick_config',

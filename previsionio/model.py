@@ -92,7 +92,7 @@ class Model(ApiResource):
                                   method=requests.get)
         handle_error_response(response, end_point)
         model = json.loads(response.content.decode('utf-8'))
-        training_type = model['type_problem']
+        training_type = TypeProblem(model.get('training_type', model.get('type_problem')))
         if training_type == TypeProblem.Regression:
             return RegressionModel(**model)
         elif training_type == TypeProblem.Classification:
@@ -102,7 +102,7 @@ class Model(ApiResource):
         elif training_type == TypeProblem.TextSimilarity:
             return TextSimilarityModel(**model)
         else:
-            raise PrevisionException('Training type {} not supported'.format(model['training_type']))
+            raise PrevisionException('Training type {} not supported'.format(training_type))
 
     @property
     @lru_cache()

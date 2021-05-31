@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from typing import Tuple, Union
+from typing import Dict, Tuple, Union
 
 import requests
 from previsionio.usecase_config import ColumnConfig, DataType, TypeProblem
@@ -8,9 +8,9 @@ from previsionio.dataset import Dataset, DatasetImages
 from . import TrainingConfig
 from . import metrics
 from .usecase_version import ClassicUsecaseVersion
-from .model import RegressionModel, \
+from .model import Model, RegressionModel, \
     ClassificationModel, MultiClassificationModel
-from .utils import EventTuple, handle_error_response, parse_json
+from .utils import EventTuple, handle_error_response, parse_json, to_json
 from .prevision_client import client
 import previsionio as pio
 
@@ -26,14 +26,12 @@ class Supervised(ClassicUsecaseVersion):
     """ A supervised usecase. """
 
     data_type = DataType.Tabular
-    # model_class = Model
 
     def __init__(self, **usecase_info):
         self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
 
-        print(usecase_info)
         super().__init__(**usecase_info)
-        self.model_class = MODEL_CLASS_DICT.get(self.training_type)
+        self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
 
     @classmethod
     def from_id(cls, _id: str) -> 'Supervised':
@@ -58,7 +56,7 @@ class Supervised(ClassicUsecaseVersion):
         return cls(**super()._load(pio_file))
 
     @classmethod
-    def _fit(cls, project_id: str, name: str, data_type: str, type_problem: str,
+    def _fit(cls, project_id: str, name: str, data_type: DataType, training_type: TypeProblem,
              dataset: Union[Dataset, Tuple[Dataset, DatasetImages]], column_config: ColumnConfig,
              metric: metrics.Enum, holdout_dataset: Dataset = None,
              training_config: TrainingConfig = TrainingConfig(), **kwargs) -> 'Supervised':
@@ -82,10 +80,9 @@ class Supervised(ClassicUsecaseVersion):
         Returns:
             :class:`.Supervised`: Newly created supervised usecase object
         """
-        config_args = training_config.to_kwargs()
-        column_args = column_config.to_kwargs()
-        training_args = dict(config_args + column_args)
-        training_args.update(kwargs)
+        training_args = to_json(training_config)
+        assert isinstance(training_args, Dict)
+        training_args.update(to_json(column_config))
 
         if holdout_dataset:
             if isinstance(holdout_dataset, str):
@@ -105,12 +102,11 @@ class Supervised(ClassicUsecaseVersion):
                                             name,
                                             dataset_id=dataset_id,
                                             data_type=data_type,
-                                            type_problem=type_problem,
+                                            training_type=training_type,
                                             metric=metric if isinstance(metric, str) else metric.value,
                                             **training_args)
         usecase = cls.from_id(start_response['_id'])
-        usecase.data_type = data_type
-        usecase.type_problem = type_problem
+        print(usecase.training_type)
         events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
         pio.client.event_manager.wait_for_event(usecase.resource_id,
                                                 cls.resource,
@@ -129,7 +125,7 @@ class Supervised(ClassicUsecaseVersion):
         holdout_dataset: Dataset = None,
         training_config: TrainingConfig = None,
         **fit_params
-    ):
+    ) -> 'Supervised':
         """ Start a supervised usecase training to create a new version of the usecase (on the
         platform): the training configs are copied from the current version and then overridden
         for the given parameters.
@@ -178,7 +174,7 @@ class Supervised(ClassicUsecaseVersion):
             'dataset_id': dataset_ids,
             'metric': metric_str,
             'holdout_dataset': holdout_dataset_id,
-            'type_problem': self.type_problem,
+            'training_type': self.training_type.value,
             'usecase_id': self._id,
             'parent_version': self.version,
             # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
@@ -187,18 +183,16 @@ class Supervised(ClassicUsecaseVersion):
         if description:
             params["description"] = description
 
-        params.update(
-            dict(column_config.to_kwargs() + training_config.to_kwargs()))
+        params.update(to_json(column_config))
+        params.update(to_json(training_config))
 
         params.update(fit_params)
         endpoint = "/usecases/{}/versions".format(self.usecase_id)
-        resp = client.request(endpoint=endpoint, data=params, method=requests.post)
+        resp = client.request(endpoint=endpoint, data=params, method=requests.post, content_type='application/json')
         handle_error_response(resp, endpoint, params)
         json = parse_json(resp)
 
-        usecase = type(self).from_id(json["_id"])
-        usecase.data_type = self.data_type
-        usecase.type_problem = self.type_problem
+        usecase = self.from_id(json["_id"])
 
         events_url = '/{}/{}'.format(self.resource, json['_id'])
         client.event_manager.wait_for_event(usecase.resource_id,
@@ -214,8 +208,8 @@ class Supervised(ClassicUsecaseVersion):
             '_id': self.id,
             'usecase_version_params': self._status.get('usecase_version_params', {}),
             'dataset_id': self._status['dataset_id'],
-            'type_problem': self.type_problem,
-            'data_type': self.data_type,
+            'training_type': self.training_type.value,
+            'data_type': self.data_type.value,
         }
         if self.holdout_dataset_id:
             json_dict['holdout_id'] = self.holdout_dataset_id

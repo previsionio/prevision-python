@@ -382,14 +382,14 @@ If you want, you can also specify some training parameters, such as which embedd
     # Using Transformer as embedding model
     models_parameters_2 = pio.ModelsParameters(
         model_embedding=pio.ModelEmbedding.Transformer,
-        preprocessing={},
+        preprocessing=pio.Preprocessing(),
         models=[pio.TextSimilarityModels.BruteForce, pio.TextSimilarityModels.IVFOPQ],
     )
 
     # Using fine-tuned Transformer as embedding model
     models_parameters_3 = pio.ModelsParameters(
         model_embedding=pio.ModelEmbedding.TransformerFineTuned,
-        preprocessing={},
+        preprocessing=pio.Preprocessing(),
         models=[pio.TextSimilarityModels.BruteForce, pio.TextSimilarityModels.IVFOPQ],
     )
 

@@ -1,4 +1,6 @@
 import itertools
+from previsionio.usecase_version import ClassicUsecaseVersion
+from previsionio.usecase_config import TypeProblem
 import numpy as np
 import os
 
@@ -47,7 +49,7 @@ class PrevisionioPlotter(Plotter):
 
 
 class PlotlyPlotter(Plotter):
-    def __init__(self, usecase):
+    def __init__(self, usecase: ClassicUsecaseVersion):
         self.usecase = usecase
         super().__init__()
 
@@ -65,16 +67,17 @@ class PlotlyPlotter(Plotter):
 
         init_notebook_mode()
 
-        if self.usecase.type_problem not in ['classification', 'multiclassification']:
+        if self.usecase.training_type not in [TypeProblem.Classification, TypeProblem.MultiClassification]:
             raise Exception(
                 'ROC curve only available for classification or multiclassif, '
-                'not ' + self.usecase.type_problem)
+                'not ' + self.usecase.training_type.value)
 
         preds = self.usecase.get_cv()
 
         target_col_name = self.usecase.column_config.target_column
+        assert target_col_name
 
-        if self.usecase.type_problem == 'classification':
+        if self.usecase.training_type == TypeProblem.Classification:
             fpr, tpr, _ = roc_curve(preds[target_col_name], preds['pred_' + target_col_name])
             roc_auc = auc(fpr, tpr)
 
@@ -211,10 +214,10 @@ class MatplotlibPlotter(Plotter):
             usecase:
             predict_id (str): ID of the prediction
         """
-        if self.usecase.type_problem not in ['classification', 'multiclassification']:
+        if self.usecase.training_type not in [TypeProblem.Classification, TypeProblem.MultiClassification]:
             raise Exception(
                 'ROC curve only available for classification or multiclassif, '
-                'not ' + self.usecase.type_problem)
+                'not ' + self.usecase.training_type)
 
         if predict_id:
             raise NotImplementedError
@@ -237,7 +240,7 @@ class MatplotlibPlotter(Plotter):
 
         lw = 1
 
-        if self.usecase.type_problem == 'classification':
+        if self.usecase.training_type == TypeProblem.Classification:
             fpr, tpr, _ = roc_curve(preds[target_col_name], preds['pred_' + target_col_name])
             roc_auc = auc(fpr, tpr)
             lw = 2
@@ -298,9 +301,9 @@ class MatplotlibPlotter(Plotter):
             predict_id (str): ID of the prediction
 
         """
-        if self.usecase.type_problem != 'multiclassification':
-            raise Exception('Confusion matrices only available for multiclassification, not {}.'.format(
-                self.usecase.type_problem))
+        if self.usecase.training_type != TypeProblem.MultiClassification:
+            raise Exception('Confusion matrices only available for multiclassification, not ' +
+                            self.usecase.training_type)
 
         # retrieve current list of predictions if necessary
         if len(self.usecase.predictions) == 0:
@@ -363,9 +366,9 @@ class MatplotlibPlotter(Plotter):
             top (int): top individuals to analyze
 
         """
-        if self.usecase.type_problem != 'classification':
-            raise Exception('Classification analysis plots only available for classification, not {}'.format(
-                self.usecase.type_problem))
+        if self.usecase.training_type != TypeProblem.Classification:
+            raise Exception('Classification analysis plots only available for classification, not ' +
+                            self.usecase.training_type)
 
         # retrieve current list of predictions if necessary
         if len(self.usecase.predictions) == 0:
