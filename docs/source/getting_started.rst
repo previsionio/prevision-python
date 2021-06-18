@@ -505,7 +505,7 @@ Using deployed model
 
 Prevision.io's SDK allows to make a prediction from a model deployed with the Prevision.io's platform.
 
-To deploy a model you need to log to the web interface of your instance, and click to the ``STORE`` button at the bottom left of your screen. Then you need to go to the ``Usecases``  tab and you will be able to deploy a model by clicking on ``Deploy a new usecase``. Then you can specify a project, a usecase and the model you want to deploy.
+To deploy a model you need to log to the web interface of your instance, select a project and the usecase you want to work with. Then go to the ``Models`` tab and toggle on the models you want to use in production. Then click on the ``Deployments`` tab at the left of the screen, go to ``Deployments usecases`` at the top left of the screen and click on the ``Deploy  new usecase`` button at the top right of the screen. Fill in the different fields and click on ``Deploy``.
 
 Once the model is deployed and your on its main page, go to the bottom of the page and click on ``generate new key`` wich will create a ``Client Id`` and a ``Client secret``. You will need the ``url`` (displayed at the top of the page in the interface) the ``Client Id`` and the ``Client secret`` to call it via the python SDK:
 
