@@ -10,7 +10,7 @@ import os
 from collections import namedtuple
 import numpy as np
 from requests.models import Response
-from . import logger
+from . import logger, config
 import datetime
 from math import ceil
 
@@ -127,11 +127,14 @@ def handle_error_response(
     resp: Response,
     url: str, data: Union[Dict, List] = None,
     message_prefix: str = None,
+    n_tries: int = 1,
     additional_log: str = None,
 ):
-    if resp.status_code != 200:
+    if resp.status_code not in config.success_codes:
         message = "Error {}: '{}' reaching url: '{}'".format(
             resp.status_code, resp.text, url)
+        if n_tries > 1:
+            message += " after {} tries".format(n_tries)
         if data:
             message += " with data: {}".format(data)
         if message_prefix:
