@@ -1,7 +1,7 @@
 from typing import Union
 import requests
 from . import client
-from .utils import parse_json, handle_error_response
+from .utils import parse_json
 from .api_resource import ApiResource, UniqueResourceMixin
 
 
@@ -165,7 +165,6 @@ class DataFileBaseConnector(Connector):
         """
         url = '/{}/{}/paths'.format(self.resource, self._id)
         resp = client.request(url, requests.get, message_prefix='Datasource files listing')
-        handle_error_response(resp, url)
         resp_json = parse_json(resp)
         return resp_json['items']
 
