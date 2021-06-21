@@ -35,6 +35,7 @@ class Config:
     def __init__(self):
         self.auto_update: bool = True
         self.zip_files: bool = True
+        self.success_codes: list = list(range(200, 211)) + [226]
         self.retry_codes: list = [500, 502, 503, 504]
         self.request_retries: int = 3
         self.request_retry_time: int = 10
