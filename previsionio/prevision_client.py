@@ -245,27 +245,29 @@ class Client(object):
 
         url = self.url + endpoint
 
+        status_code = 502
         retries = 1 if no_retries else config.request_retries
+        n_tries = 0
 
-        for i in range(retries):
+        while (n_tries < retries) and (status_code in config.retry_codes):
+
             try:
-                req: Response = method(url,
-                                       headers=headers,
-                                       files=files,
-                                       allow_redirects=allow_redirects,
-                                       json=data,
-                                       **requests_kwargs)
-            except Exception as e:
-                logger.warning('failed to request ' + url + ' retrying ' + str(retries - i) + ' times: ' + e.__repr__())
-                if no_retries:
-                    raise PrevisionException('error requesting: {} (no retry allowed)'.format(url)) from None
-                time.sleep(config.request_retry_time)
-            else:
-                break
-        else:
-            raise Exception('failed to request')
+                resp: Response = method(url,
+                                        headers=headers,
+                                        files=files,
+                                        allow_redirects=allow_redirects,
+                                        json=data,
+                                        **requests_kwargs)
+                n_tries += 1
+                status_code = resp.status_code
 
-        return req
+                if not no_retries and status_code in config.retry_codes:
+                    time.sleep(config.request_retry_time)
+
+            except Exception as e:
+                logger.warning('failed to request ' + url + ': ' + e.__repr__())
+
+        return resp
 
     def update_user_info(self):
         user_info_response = requests.get(self.url + '/profile',
