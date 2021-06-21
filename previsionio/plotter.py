@@ -302,8 +302,8 @@ class MatplotlibPlotter(Plotter):
 
         """
         if self.usecase.training_type != TypeProblem.MultiClassification:
-            raise Exception('Confusion matrices only available for multiclassification, not ' +
-                            self.usecase.training_type)
+            raise Exception(('Confusion matrices only available for multiclassification, not '
+                             self.usecase.training_type))
 
         # retrieve current list of predictions if necessary
         if len(self.usecase.predictions) == 0:
@@ -367,8 +367,8 @@ class MatplotlibPlotter(Plotter):
 
         """
         if self.usecase.training_type != TypeProblem.Classification:
-            raise Exception('Classification analysis plots only available for classification, not ' +
-                            self.usecase.training_type)
+            raise Exception(('Classification analysis plots only available for classification, not '
+                             self.usecase.training_type))
 
         # retrieve current list of predictions if necessary
         if len(self.usecase.predictions) == 0:
