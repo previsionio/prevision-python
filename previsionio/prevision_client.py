@@ -216,7 +216,7 @@ class Client(object):
             raise PrevisionException('No url configured. Call client.init_client() to initialize')
 
     def request(self, endpoint: str, method, files: Dict = None, data: Dict = None, allow_redirects: bool = True,
-                content_type: str = None, no_retries: bool = False, check_response: int = True,
+                content_type: str = None, no_retries: bool = False, check_response: bool = True,
                 message_prefix: str = None, **requests_kwargs) -> Response:
         """
         Make a request on the desired endpoint with the specified method & data.
