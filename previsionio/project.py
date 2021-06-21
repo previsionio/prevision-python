@@ -18,7 +18,8 @@ from .connector import Connector, SQLConnector, FTPConnector, \
     SFTPConnector, S3Connector, HiveConnector, GCPConnector
 from .supervised import Supervised
 from .timeseries import TimeSeries, TimeWindow
-from .text_similarity import DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig, TextSimilarity, TextSimilarityLang
+from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
+                              TextSimilarity, TextSimilarityLang)
 from .usecase import Usecase
 from pandas import DataFrame
 

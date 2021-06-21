@@ -69,7 +69,8 @@ def test_embedding():
     ds = pio.Dataset.from_id(ds._id)
     ds.start_embedding()
     t0 = time.time()
-    while ds.get_embedding_status() in [UsecaseState.Pending, UsecaseState.Running] and time.time() < t0 + pio.config.default_timeout:
+    states = [UsecaseState.Pending, UsecaseState.Running]
+    while ds.get_embedding_status() in states and time.time() < t0 + pio.config.default_timeout:
         ds.update_status()
 
     embedding = ds.get_embedding()

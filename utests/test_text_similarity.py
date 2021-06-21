@@ -135,10 +135,12 @@ class BaseTrainSearchDelete(unittest.TestCase):
                            'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.ClusterPruning]},
                           {'model_embedding': ModelEmbedding.Transformer,
                            'preprocessing': {},
-                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH, TextSimilarityModels.HKM]},
+                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
+                                      TextSimilarityModels.HKM]},
                           {'model_embedding': ModelEmbedding.TransformerFineTuned,
                            'preprocessing': {},
-                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH, TextSimilarityModels.HKM]}]
+                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
+                                      TextSimilarityModels.HKM]}]
         models_parameters = pio.ListModelsParameters(usecase_config)
         uc = pio.TextSimilarity._fit(PROJECT_ID,
                                      'test_sdk_3_text_similarity_{}'.format(TESTING_ID),

@@ -11,7 +11,8 @@ import os
 from functools import lru_cache
 
 from . import config
-from .usecase_config import AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel, TrainingConfig, ColumnConfig, TypeProblem, UsecaseState
+from .usecase_config import (AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel,
+                             TrainingConfig, ColumnConfig, TypeProblem, UsecaseState)
 from .logger import logger
 from .prevision_client import client
 from .utils import handle_error_response, parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
@@ -556,7 +557,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         Returns:
             list(str): Names of the feature engineering modules selected for the usecase
         """
-        return [Feature(f) for f in self._status['usecase_version_params'].get('features_engineering_selected_list', [])]
+        res = [Feature(f) for f in self._status['usecase_version_params'].get('features_engineering_selected_list', [])]
+        return res
 
     def get_cv(self) -> pd.DataFrame:
         """ Get the cross validation dataset from the best model of the usecase.

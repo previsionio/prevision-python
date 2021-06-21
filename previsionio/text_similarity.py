@@ -43,7 +43,10 @@ class TextSimilarityLang(Enum):
 class Preprocessing(object):
     config = {}
 
-    def __init__(self, word_stemming: YesOrNo = YesOrNo.Yes, ignore_stop_word: YesOrNoOrAuto = YesOrNoOrAuto.Auto, ignore_punctuation: YesOrNo = YesOrNo.Yes):
+    def __init__(self,
+                 word_stemming: YesOrNo = YesOrNo.Yes,
+                 ignore_stop_word: YesOrNoOrAuto = YesOrNoOrAuto.Auto,
+                 ignore_punctuation: YesOrNo = YesOrNo.Yes):
         self.word_stemming = word_stemming
         self.ignore_stop_word = ignore_stop_word
         self.ignore_punctuation = ignore_punctuation
@@ -217,10 +220,20 @@ class TextSimilarity(BaseUsecaseVersion):
         return cls(**super()._load(pio_file))
 
     @classmethod
-    def _fit(cls, project_id: str, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
-             metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k, top_k: int = 10,
-             lang: TextSimilarityLang = TextSimilarityLang.Auto, queries_dataset: Dataset = None, queries_column_config: QueriesColumnConfig = None,
-             models_parameters: ListModelsParameters = ListModelsParameters(), **kwargs) -> 'TextSimilarity':
+    def _fit(
+        cls,
+        project_id: str,
+        name: str,
+        dataset: Dataset,
+        description_column_config: DescriptionsColumnConfig,
+        metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k,
+        top_k: int = 10,
+        lang: TextSimilarityLang = TextSimilarityLang.Auto,
+        queries_dataset: Dataset = None,
+        queries_column_config: QueriesColumnConfig = None,
+        models_parameters: ListModelsParameters = ListModelsParameters(),
+        **kwargs
+    ) -> 'TextSimilarity':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
 
