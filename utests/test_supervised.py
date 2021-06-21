@@ -1,7 +1,6 @@
 import os
 from previsionio.usecase_version import ClassicUsecaseVersion
 from typing import Tuple
-from previsionio.usecase import Usecase
 from previsionio.model import ClassificationModel
 import pandas as pd
 import pytest

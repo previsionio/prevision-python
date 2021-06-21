@@ -1,8 +1,6 @@
 import copy
 from enum import Enum
-from sys import api_version
-from typing import Dict, List, Union
-from .utils import to_json
+from typing import List, Union
 
 
 def _drop_in_list(feature_list: List, param_to_drop: List):

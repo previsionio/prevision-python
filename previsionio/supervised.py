@@ -8,8 +8,7 @@ from previsionio.dataset import Dataset, DatasetImages
 from . import TrainingConfig
 from . import metrics
 from .usecase_version import ClassicUsecaseVersion
-from .model import Model, RegressionModel, \
-    ClassificationModel, MultiClassificationModel
+from .model import RegressionModel, ClassificationModel, MultiClassificationModel
 from .utils import EventTuple, handle_error_response, parse_json, to_json
 from .prevision_client import client
 import previsionio as pio
