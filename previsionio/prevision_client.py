@@ -251,21 +251,21 @@ class Client(object):
 
         while (n_tries < retries) and (status_code in config.retry_codes):
 
-            try:
-                resp: Response = method(url,
-                                        headers=headers,
-                                        files=files,
-                                        allow_redirects=allow_redirects,
-                                        json=data,
-                                        **requests_kwargs)
-                n_tries += 1
-                status_code = resp.status_code
+            resp: Response = method(url,
+                                    headers=headers,
+                                    files=files,
+                                    allow_redirects=allow_redirects,
+                                    json=data,
+                                    **requests_kwargs)
 
-                if not no_retries and status_code in config.retry_codes:
-                    time.sleep(config.request_retry_time)
+            n_tries += 1
+            status_code = resp.status_code
 
-            except Exception as e:
-                logger.warning('failed to request ' + url + ': ' + e.__repr__())
+            if not no_retries and status_code in config.retry_codes:
+                time.sleep(config.request_retry_time)
+
+        if status_code != 200:
+            raise ValueError(f'failed to request "{url}", status_code "{status_code}" after {n_tries} tries.')
 
         return resp
 
