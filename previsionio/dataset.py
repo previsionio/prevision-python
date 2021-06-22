@@ -275,17 +275,34 @@ class Dataset(ApiResource):
                                                  message_prefix='Dataset upload from dataframe')
 
         elif file_name is not None:
-            with open(file_name, 'r') as f:
-                files['file'] = (os.path.basename(file_name), f, 'application/csv')
 
-                for k, v in data.items():
-                    files[k] = (None, v)
+            if zip_file.is_zipfile(file_name):
+                with open(file_name, 'rb') as f:
+                    files['file'] = (os.path.basename(file_name), f, 'application/zip')
 
-                create_resp = client.request(request_url,
-                                             data=data,
-                                             files=files,
-                                             method=requests.post,
-                                             message_prefix='Dataset upload from file')
+                    for k, v in data.items():
+                        files[k] = (None, v)
+
+                    create_resp = client.request(request_url,
+                                                 data=data,
+                                                 files=files,
+                                                 method=requests.post,
+                                                 message_prefix='Dataset upload from zip file')
+
+            # If not a zip, assert it is a CSV
+            else:
+                with open(file_name, 'r') as f:
+                    files['file'] = (os.path.basename(file_name), f, 'application/csv')
+
+                    for k, v in data.items():
+                        files[k] = (None, v)
+
+                    create_resp = client.request(request_url,
+                                                 data=data,
+                                                 files=files,
+                                                 method=requests.post,
+                                                 message_prefix='Dataset upload from csv file')
+
         if create_resp is None:
             raise PrevisionException('[Dataset] Unexpected case in dataset creation')
 
