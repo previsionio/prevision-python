@@ -9,7 +9,7 @@ from previsionio.usecase_config import ColumnConfig, DataType, TrainingConfig, T
 import requests
 
 from . import client
-from .utils import handle_error_response, parse_json, PrevisionException
+from .utils import parse_json, PrevisionException
 
 from .api_resource import ApiResource, UniqueResourceMixin
 from .datasource import DataSource
@@ -110,8 +110,9 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         # FIXME GET datasource should not return a dict with a "data" key
         url = '/{}/{}'.format(cls.resource, _id)
-        resp = client.request(url, method=requests.get)
-        handle_error_response(resp, url)
+        resp = client.request(url,
+                              method=requests.get,
+                              message_prefix='Projects list')
         resp_json = parse_json(resp)
 
         return cls(**resp_json)
@@ -135,9 +136,9 @@ class Project(ApiResource, UniqueResourceMixin):
         """
 
         end_point = '/{}/{}/users'.format(self.resource, self._id)
-        response = client.request(endpoint=end_point, method=requests.get)
-        handle_error_response(response, end_point,
-                              message_prefix="Error while fetching user for project id {}".format(self._id))
+        response = client.request(endpoint=end_point,
+                                  method=requests.get,
+                                  message_prefix='Fetching user for project id {}'.format(self._id))
 
         res = parse_json(response)
         return res
@@ -183,7 +184,7 @@ class Project(ApiResource, UniqueResourceMixin):
 
     @classmethod
     def new(cls, name: str, description: str = None, color: ProjectColor = None) -> 'Project':
-        """ Create a new datasource object on the platform.
+        """ Create a new project on the platform.
 
         Args:
             name (str): Name of the project
@@ -209,9 +210,9 @@ class Project(ApiResource, UniqueResourceMixin):
         url = '/{}'.format(cls.resource)
         resp = client.request(url,
                               data=data,
-                              method=requests.post)
+                              method=requests.post,
+                              message_prefix='Project creation')
 
-        handle_error_response(resp, url, data)
         json = parse_json(resp)
 
         if '_id' not in json:
@@ -230,9 +231,9 @@ class Project(ApiResource, UniqueResourceMixin):
             PrevisionException: If the dataset does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/{}/{}'
-                              .format(self.resource, self.id),
-                              method=requests.delete)
+        resp = client.request(endpoint='/{}/{}'.format(self.resource, self.id),
+                              method=requests.delete,
+                              message_prefix='Project delete')
         return resp
 
     def create_dataset(self, name: str, datasource: DataSource = None, file_name: str = None,

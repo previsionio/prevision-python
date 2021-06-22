@@ -80,7 +80,7 @@ class EventManager:
 
     def check_resource_event(self, resource_id: str, endpoint: str, event_tuple: previsionio.utils.EventTuple,
                              semd: threading.Semaphore):
-        resp = self.client.request(endpoint=endpoint, method=requests.get)
+        resp = self.client.request(endpoint=endpoint, method=requests.get, check_response=False)
         if resp.status_code != 200:
             semd.release()
             msg = 'Error on resource {}: {}\n{}'.format(resource_id, resp.status_code, resp.text)
