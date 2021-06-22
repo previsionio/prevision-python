@@ -9,7 +9,7 @@ from .utils import get_testing_id
 
 TESTING_ID = get_testing_id()
 
-PROJECT_NAME = "sdk_test_usecase_" + str(TESTING_ID)
+PROJECT_NAME = "sdk_test_text_sim_usecase_" + str(TESTING_ID)
 PROJECT_ID = ""
 
 test_datasets = {}
