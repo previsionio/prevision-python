@@ -138,7 +138,7 @@ def handle_error_response(
         if data:
             message += " with data: {}".format(data)
         if message_prefix:
-            message = message_prefix + '\n' + message
+            message = message_prefix + ' failure\n' + message
         logger.error(message)
         if additional_log:
             logger.error(additional_log)
