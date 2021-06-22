@@ -3,7 +3,7 @@ from __future__ import print_function
 from typing import Dict
 
 import requests
-from previsionio.utils import EventTuple, handle_error_response, parse_json, to_json
+from previsionio.utils import EventTuple, parse_json, to_json
 from . import TrainingConfig
 from .usecase_config import DataType, UsecaseConfig, ColumnConfig, TypeProblem
 from .usecase_version import ClassicUsecaseVersion
@@ -199,8 +199,11 @@ class TimeSeries(ClassicUsecaseVersion):
 
         endpoint = "/usecases/{}/versions".format(self.usecase_id)
 
-        resp = client.request(endpoint=endpoint, data=params, method=requests.post, content_type='application/json')
-        handle_error_response(resp, endpoint, params)
+        resp = client.request(endpoint=endpoint,
+                              data=params,
+                              method=requests.post,
+                              content_type='application/json',
+                              message_prefix='Time series usecase start')
         json = parse_json(resp)
 
         usecase = self.from_id(json["_id"])

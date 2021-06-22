@@ -74,7 +74,9 @@ class Usecase(ApiResource):
             list(dict): List of the usecase versions (as JSON metadata)
         """
         end_point = '/{}/{}/versions'.format(self.resource, self._id)
-        response = client.request(endpoint=end_point, method=requests.get)
+        response = client.request(endpoint=end_point,
+                                  method=requests.get,
+                                  message_prefix='Usecase versions listing')
         res = parse_json(response)
         # TODO create usecase version object
         return res['items']
@@ -86,5 +88,6 @@ class Usecase(ApiResource):
             dict: Deletion process results
         """
         response = client.request(endpoint='/usecases/{}'.format(self._id),
-                                  method=requests.delete)
+                                  method=requests.delete,
+                                  message_prefix='Usecase deletion')
         return response

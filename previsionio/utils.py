@@ -109,7 +109,6 @@ def is_null_value(value) -> bool:
 def get_all_results(client, endpoint: str, method) -> List[Dict]:
     resources = []
     batch: requests.Response = client.request(endpoint, method=method)
-    handle_error_response(batch, endpoint)
     json = parse_json(batch)
     meta = json['metaData']
     total_items = meta['totalItems']
@@ -118,7 +117,6 @@ def get_all_results(client, endpoint: str, method) -> List[Dict]:
     for n in range(1, n_pages + 1):
         url = endpoint + "?page={}".format(n)
         batch = client.request(url, method=method)
-        handle_error_response(batch, url)
         resources.extend(parse_json(batch)['items'])
     return resources
 

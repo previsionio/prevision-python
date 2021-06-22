@@ -15,7 +15,7 @@ from .usecase_config import (AdvancedModel, DataType, Feature, NormalModel, Prof
                              TrainingConfig, ColumnConfig, TypeProblem, UsecaseState)
 from .logger import logger
 from .prevision_client import client
-from .utils import handle_error_response, parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
+from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
 from .api_resource import ApiResource
 from .dataset import Dataset
 from .usecase import Usecase
@@ -119,8 +119,8 @@ class BaseUsecaseVersion(ApiResource):
         """
         end_point = '/{}/{}/graph'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
-                                  method=requests.get)
-        handle_error_response(response, end_point)
+                                  method=requests.get,
+                                  message_prefix='Usecase schema')
         uc_schema = json.loads(response.content.decode('utf-8'))
         return uc_schema
 
@@ -225,8 +225,8 @@ class BaseUsecaseVersion(ApiResource):
         logger.info('[Usecase] stopping usecase')
         end_point = '/{}/{}/stop'.format(self.resource, self._id)
         response = client.request(end_point,
-                                  requests.put)
-        handle_error_response(response, end_point)
+                                  requests.put,
+                                  message_prefix='Usecase stop')
         events_url = '/{}/{}'.format(self.resource, self._id)
         pio.client.event_manager.wait_for_event(self.resource_id,
                                                 self.resource,
@@ -289,8 +289,8 @@ class BaseUsecaseVersion(ApiResource):
         """
         end_point = '/usecase-versions/{}/holdout-predictions'.format(self._id)
         response = client.request(endpoint=end_point,
-                                  method=requests.get)
-        handle_error_response(response, end_point, message_prefix="Error fetching holdout predictions")
+                                  method=requests.get,
+                                  message_prefix='Holdout predictions listing')
         preds_list = (json.loads(response.content.decode('utf-8')))['items']
         preds_dict = {}
         for pred in preds_list:
@@ -298,8 +298,8 @@ class BaseUsecaseVersion(ApiResource):
             if full:
                 end_point = '/predictions/{}/download'.format(_id)
                 response = client.request(endpoint=end_point,
-                                          method=requests.get)
-                handle_error_response(response, end_point, message_prefix="Error fetching holdout predictions")
+                                          method=requests.get,
+                                          message_prefix='Predictions fetching')
                 preds_dict[_id] = zip_to_pandas(response)
             else:
                 preds_dict[_id] = pred
@@ -313,14 +313,16 @@ class BaseUsecaseVersion(ApiResource):
             full (boolean): If true, return full prediction objects (else only metadata)
         """
         response = client.request(endpoint='/usecases/{}/predictions'.format(self._id),
-                                  method=requests.get)
+                                  method=requests.get,
+                                  message_prefix='Predictions listing')
         preds_list = (json.loads(response.content.decode('utf-8')))['items']
         preds_dict = {}
         for pred in preds_list:
             _id = pred.pop('_id')
             if full:
                 response = client.request(endpoint='/predictions/{}/download'.format(_id),
-                                          method=requests.get)
+                                          method=requests.get,
+                                          message_prefix='Predictions fetching')
                 preds_dict[_id] = zip_to_pandas(response)
             else:
                 preds_dict[_id] = pred
@@ -335,9 +337,10 @@ class BaseUsecaseVersion(ApiResource):
         Returns:
             dict: Deletion process results
         """
-        response = client.request(endpoint='/usecases/{}/versions/{}/predictions/{}'.format(self._id, self.version,
-                                                                                            prediction_id),
-                                  method=requests.delete)
+        endpoint = '/usecases/{}/versions/{}/predictions/{}'.format(self._id, self.version, prediction_id)
+        response = client.request(endpoint=endpoint,
+                                  method=requests.delete,
+                                  message_prefix='Prediction delete')
         return (json.loads(response.content.decode('utf-8')))
 
     def delete_predictions(self):
@@ -347,7 +350,8 @@ class BaseUsecaseVersion(ApiResource):
             dict: Deletion process results
         """
         response = client.request(endpoint='/usecases/{}/versions/{}/predictions'.format(self._id, self.version),
-                                  method=requests.delete)
+                                  method=requests.delete,
+                                  message_prefix='Predictions delete')
         return (json.loads(response.content.decode('utf-8')))
 
     @property
@@ -438,8 +442,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         """
         end_point = '/{}/{}/correlation-matrix'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
-                                  method=requests.get)
-        handle_error_response(response, end_point, message_prefix="Error fetching the correlation matrix")
+                                  method=requests.get,
+                                  message_prefix='Correlation matrix fetching')
         corr = json.loads(response.content.decode('utf-8'))
         var_names = [d['name'] for d in corr]
         matrix = pd.DataFrame(0, index=var_names, columns=var_names)
@@ -478,7 +482,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         # todo pagination
         end_point = '/{}/{}/features-stats'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
-                                  method=requests.get)
+                                  method=requests.get,
+                                  message_prefix='Features stats fetching')
         return (json.loads(response.content.decode('utf-8')))
 
     @property
@@ -492,7 +497,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         # todo pagination
         end_point = '/{}/{}/dropped-features'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
-                                  method=requests.get)
+                                  method=requests.get,
+                                  message_prefix='Dropped features fetching')
         return (json.loads(response.content.decode('utf-8')))
 
     def get_feature_info(self, feature_name: str) -> Dict:
@@ -528,10 +534,9 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
             PrevisionException: If the given feature name does not match any feaure
         """
         endpoint = '/{}/{}/features/{}'.format(self.resource, self._id, feature_name)
-        response = client.request(
-            endpoint=endpoint,
-            method=requests.get)
-        handle_error_response(response, endpoint)
+        response = client.request(endpoint=endpoint,
+                                  method=requests.get,
+                                  message_prefix='Features info fetching')
 
         result = (json.loads(response.content.decode('utf-8')))
 
@@ -599,8 +604,11 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         else:
             raise PrevisionException('invalid data type: {}'.format(data_type))
         endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', data_type.value, training_type.value)
-        start = client.request(endpoint, requests.post, data=data, content_type='application/json')
-        handle_error_response(start, endpoint, data, message_prefix="Error starting usecase")
+        start = client.request(endpoint,
+                               method=requests.post,
+                               data=data,
+                               content_type='application/json',
+                               message_prefix='Usecase start')
         return parse_json(start)
 
     def predict_single(self,
