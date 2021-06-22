@@ -4,7 +4,7 @@ from previsionio.dataset import Dataset
 import requests
 from .usecase_config import DataType, UsecaseConfig, TypeProblem, YesOrNo, YesOrNoOrAuto
 from .prevision_client import client
-from .utils import handle_error_response, parse_json, EventTuple, to_json
+from .utils import parse_json, EventTuple, to_json
 from .model import TextSimilarityModel
 from .usecase_version import BaseUsecaseVersion
 import previsionio as pio
@@ -279,9 +279,11 @@ class TextSimilarity(BaseUsecaseVersion):
         data = dict(name=name, dataset_id=dataset_id, **training_args)
 
         endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', cls.data_type.value, cls.training_type.value)
-        start = client.request(endpoint, requests.post, data=data, content_type='application/json')
-
-        handle_error_response(start, endpoint, data, "text_similality usecase failed to start")
+        start = client.request(endpoint,
+                               method=requests.post,
+                               data=data,
+                               content_type='application/json',
+                               message_prefix='Text similarity usecase start')
 
         start_response = parse_json(start)
         usecase = cls.from_id(start_response['_id'])
@@ -371,9 +373,11 @@ class TextSimilarity(BaseUsecaseVersion):
             data["description"] = description
 
         endpoint = "/usecases/{}/versions".format(self.usecase_id)
-        resp = client.request(endpoint=endpoint, data=data, method=requests.post, content_type='application/json')
-
-        handle_error_response(resp, endpoint, data, "text_similality usecase failed to start")
+        resp = client.request(endpoint=endpoint,
+                              data=data,
+                              method=requests.post,
+                              content_type='application/json',
+                              message_prefix='Text similarity usecase start')
 
         start_response = parse_json(resp)
         usecase = self.from_id(start_response['_id'])
