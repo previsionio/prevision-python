@@ -123,7 +123,9 @@ def get_all_results(client, endpoint: str, method) -> List[Dict]:
 
 def handle_error_response(
     resp: Response,
-    url: str, data: Union[Dict, List] = None,
+    url: str,
+    data: Union[Dict, List] = None,
+    files: Dict = None,
     message_prefix: str = None,
     n_tries: int = 1,
     additional_log: str = None,
@@ -135,6 +137,8 @@ def handle_error_response(
             message += " after {} tries".format(n_tries)
         if data:
             message += " with data: {}".format(data)
+        if files:
+            message += " with files: {}".format(files)
         if message_prefix:
             message = message_prefix + ' failure\n' + message
         logger.error(message)

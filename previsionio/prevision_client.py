@@ -268,7 +268,12 @@ class Client(object):
                 time.sleep(config.request_retry_time)
 
         if check_response:
-            handle_error_response(resp, url, data, message_prefix=message_prefix, n_tries=n_tries)
+            handle_error_response(resp=resp,
+                                  url=url,
+                                  data=data,
+                                  files=files,
+                                  message_prefix=message_prefix,
+                                  n_tries=n_tries)
 
         return resp
 
