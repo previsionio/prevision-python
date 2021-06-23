@@ -81,10 +81,6 @@ class EventManager:
     def check_resource_event(self, resource_id: str, endpoint: str, event_tuple: previsionio.utils.EventTuple,
                              semd: threading.Semaphore):
         resp = self.client.request(endpoint=endpoint, method=requests.get, check_response=False)
-        if resp.status_code != 200:
-            semd.release()
-            msg = 'Error on resource {}: {}\n{}'.format(resource_id, resp.status_code, resp.text)
-            raise PrevisionException(msg)
         json_response = parse_json(resp)
         for k, v in event_tuple.fail_checks:
             if json_response.get(k) == v:
@@ -216,7 +212,7 @@ class Client(object):
             raise PrevisionException('No url configured. Call client.init_client() to initialize')
 
     def request(self, endpoint: str, method, files: Dict = None, data: Dict = None, allow_redirects: bool = True,
-                content_type: str = None, no_retries: bool = False, check_response: bool = True,
+                content_type: str = None, check_response: bool = True,
                 message_prefix: str = None, **requests_kwargs) -> Response:
         """
         Make a request on the desired endpoint with the specified method & data.
@@ -230,7 +226,6 @@ class Client(object):
             data (dict): for single predict
             content_type (str): force request content-type
             allow_redirects (bool): passed to requests method
-            no_retries (bool): force request to run the first time, or exit directly
             check_response (bool): wether to handle error or not
             message_prefix (str): prefix message in error logs
 
@@ -249,22 +244,26 @@ class Client(object):
         url = self.url + endpoint
 
         status_code = 502
-        retries = 1 if no_retries else config.request_retries
+        retries = config.request_retries
         n_tries = 0
 
         while (n_tries < retries) and (status_code in config.retry_codes):
-
-            resp: Response = method(url,
-                                    headers=headers,
-                                    files=files,
-                                    allow_redirects=allow_redirects,
-                                    json=data,
-                                    **requests_kwargs)
-
             n_tries += 1
-            status_code = resp.status_code
+            try:
+                resp: Response = method(url,
+                                        headers=headers,
+                                        files=files,
+                                        allow_redirects=allow_redirects,
+                                        json=data,
+                                        **requests_kwargs)
+            except Exception as e:
+                logger.warning('failed to request ' + url + ' retrying ' + str(retries - n_tries) + ' times: ' + e.__repr__())
+                if n_tries == retries:
+                    raise PrevisionException('error requesting: {} after {} retries'.format(url, n_tries))
+                continue
 
-            if not no_retries and status_code in config.retry_codes:
+            status_code = resp.status_code
+            if status_code in config.retry_codes:
                 time.sleep(config.request_retry_time)
 
         if check_response:
@@ -307,7 +306,7 @@ class Client(object):
         self.headers['Authorization'] = self.token
 
         # check for correct connection
-        resp = self.request('/version', requests.get, no_retries=True)
+        resp = self.request('/version', requests.get)
         handle_error_response(resp, '/version')
 
         logger.debug('subscribing to events manager')
