@@ -292,7 +292,7 @@ class Dataset(ApiResource):
             # If not a zip, assert it is a CSV
             else:
                 with open(file_name, 'r') as f:
-                    files['file'] = (os.path.basename(file_name), f, 'application/csv')
+                    files['file'] = (os.path.basename(file_name), f, 'text/csv')
 
                     for k, v in data.items():
                         files[k] = (None, v)
