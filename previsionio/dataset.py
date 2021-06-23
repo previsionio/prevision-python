@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import os
 import tempfile
-from zipfile import ZipFile
+import zipfile
 import previsionio.utils
 from . import client
 from .utils import parse_json, zip_to_pandas, PrevisionException
@@ -259,7 +259,7 @@ class Dataset(ApiResource):
                 dataframe.to_csv(temp.name, index=False)
 
                 file_name = temp.name.replace('.csv', file_ext)
-                with ZipFile(file_name, 'w') as zip_file:
+                with zipfile.ZipFile(file_name, 'w') as zip_file:
                     zip_file.write(temp.name, arcname=name + '.csv')
                 assert zip_file.filename is not None
 
@@ -276,7 +276,7 @@ class Dataset(ApiResource):
 
         elif file_name is not None:
 
-            if zip_file.is_zipfile(file_name):
+            if zipfile.is_zipfile(file_name):
                 with open(file_name, 'rb') as f:
                     files['file'] = (os.path.basename(file_name), f, 'application/zip')
 
@@ -317,6 +317,10 @@ class Dataset(ApiResource):
 
         dset_resp = client.request(url, method=requests.get, message_prefix='Dataset loading')
         dset_json = parse_json(dset_resp)
+
+        if dataframe is not None:
+            os.remove(file_name)
+
         return cls(**dset_json)
 
 
