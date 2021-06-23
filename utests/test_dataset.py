@@ -8,7 +8,7 @@ from . import DATA_PATH
 from .utils import get_testing_id
 
 TESTING_ID = get_testing_id()
-
+N_DATASETS = 0
 PROJECT_NAME = "sdk_test_dataset_" + str(TESTING_ID)
 PROJECT_ID = ""
 pio.config.zip_files = False
@@ -36,18 +36,34 @@ def teardown_module(module):
     project.delete()
 
 
-def test_upload_datasets():
+def test_upload_dataset_from_dataframe():
     project = pio.Project.from_id(PROJECT_ID)
-    for problem_type, p in paths.items():
-        dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
+    paths_df = {k: paths[k] for k in paths if k != 'zip_regression'}
+    for problem_type, p in paths_df.items():
+        dataset = project.create_dataset(p.split('/')[-1][:-4] + str(TESTING_ID),
                                          dataframe=pd.read_csv(p))
         test_datasets[problem_type] = dataset
 
     datasets = [ds for ds in project.list_datasets(all=True) if TESTING_ID in ds.name]
-    ds_names = [k + str(TESTING_ID) + '.csv' for k in paths]
-    assert len(datasets) == len(paths)
+    ds_names = [k + str(TESTING_ID) for k in paths_df]
+
+    assert len(datasets) == len(paths_df)
+    global N_DATASETS
+    N_DATASETS += len(datasets)
+
     for ds in datasets:
         assert ds.name in ds_names
+
+
+def test_upload_dataset_from_filename():
+    project = pio.Project.from_id(PROJECT_ID)
+    paths_files = {k: paths[k] for k in ('regression', 'zip_regression')}
+    for p in paths_files.values():
+        project.create_dataset(p.split('/')[-1][:-4] + str(TESTING_ID),
+                               file_name=p)
+
+    datasets = [ds for ds in project.list_datasets(all=True) if TESTING_ID in ds.name]
+    assert len(datasets) == len(paths_files) + N_DATASETS
 
 
 def test_from_id_new():

@@ -5,6 +5,7 @@ import glob
 import numpy as np
 import pandas as pd
 import requests
+import zipfile
 
 URLS = {
     "titanic": [
@@ -105,6 +106,18 @@ def make_supervised_datasets(path,
     ts_path = os.path.join(path, 'ts.csv')
     ts.to_csv(ts_path, index=False)
 
+    # zip
+    X_reg = np.random.rand(n_smp, n_feat_reg)
+    y_reg = np.random.rand(n_smp)
+    reg = pd.DataFrame(X_reg,
+                       columns=['feat_{}'.format(i) for i in range(n_feat_reg)])
+    reg['target'] = y_reg
+    reg_path2 = os.path.join(path, 'zip_regression.csv')
+    reg.to_csv(reg_path2, index=False)
+    zip_path = reg_path2.replace('.csv', '.zip')
+    with zipfile.ZipFile(zip_path, 'w') as zip_file:
+        zip_file.write(reg_path2)
+
     # big
     # n_smp_big = 10000
     # n_feat_big = 100
@@ -119,6 +132,7 @@ def make_supervised_datasets(path,
         'regression': reg_path,
         'classification': classif_path,
         'multiclassification': mclassif_path,
+        'zip_regression': zip_path,
         # 'timeseries': ts_path,
         # 'big': big_path
     }
@@ -127,6 +141,8 @@ def make_supervised_datasets(path,
 def remove_datasets(path):
     if os.path.exists(path):
         for f in glob.glob(os.path.join(path, '*.csv')):
+            os.remove(f)
+        for f in glob.glob(os.path.join(path, '*.zip')):
             os.remove(f)
         os.rmdir(path)
 
