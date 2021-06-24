@@ -1,6 +1,54 @@
 from __future__ import print_function
 import logging
+
+from previsionio.analyzer import cv_classif_analysis
+from previsionio.connector import Connector
+from previsionio.dataset import Dataset, DatasetImages
+from previsionio.datasource import DataSource
+from previsionio.deployed_model import DeployedModel
 from previsionio.logger import logger, event_logger
+import previsionio.metrics as metrics
+from previsionio.model import (
+    Model,
+    ClassificationModel,
+    RegressionModel,
+    MultiClassificationModel,
+    TextSimilarityModel,
+)
+from previsionio.prevision_client import client
+from previsionio.project import Project
+from previsionio.supervised import Supervised
+from previsionio.text_similarity import (
+    TextSimilarity,
+    DescriptionsColumnConfig,
+    QueriesColumnConfig,
+    ListModelsParameters,
+    ModelsParameters,
+    TextSimilarityModels,
+    ModelEmbedding,
+    Preprocessing,
+)
+from previsionio.timeseries import (
+    TimeSeries,
+    TimeWindow,
+    TimeWindowException,
+)
+from previsionio.usecase import Usecase
+from previsionio.usecase_config import (
+    AdvancedModel,
+    NormalModel,
+    SimpleModel,
+    TypeProblem,
+    Feature,
+    TrainingConfig,
+    Profile,
+    base_config,
+    quick_config,
+    ultra_config,
+    ColumnConfig,
+    YesOrNo,
+    YesOrNoOrAuto,
+)
 
 
 __version__ = '11.0.0'
@@ -45,76 +93,46 @@ class Config:
 
 config = Config()
 
-from previsionio.prevision_client import client
-from previsionio.usecase_config import \
-    AdvancedModel, \
-    NormalModel, \
-    SimpleModel, \
-    TypeProblem, \
-    Feature, \
-    TrainingConfig, \
-    Profile, \
-    base_config, \
-    quick_config, \
-    ultra_config, \
-    ColumnConfig, \
-    YesOrNo, \
-    YesOrNoOrAuto
 
-import previsionio.metrics as metrics
-
-from previsionio.connector import Connector
-from previsionio.datasource import DataSource
-from previsionio.project import Project
-from previsionio.usecase import Usecase
-from previsionio.supervised import Supervised
-from previsionio.timeseries import TimeSeries, TimeWindow, TimeWindowException
-
-from previsionio.model import Model, ClassificationModel, RegressionModel, MultiClassificationModel, TextSimilarityModel
-from previsionio.text_similarity import TextSimilarity, DescriptionsColumnConfig, \
-    QueriesColumnConfig, ListModelsParameters, ModelsParameters, TextSimilarityModels, ModelEmbedding, Preprocessing
-from previsionio.dataset import Dataset, DatasetImages
-from previsionio.analyzer import cv_classif_analysis
-from previsionio.deployed_model import DeployedModel
-
-__all__ = ['client',
-           'AdvancedModel',
-           'NormalModel',
-           'SimpleModel',
-           'TypeProblem',
-           'Feature',
-           'TrainingConfig',
-           'YesOrNo',
-           'YesOrNoOrAuto',
-           'Profile',
-           'base_config',
-           'quick_config',
-           'ultra_config',
-           'ColumnConfig',
-           'metrics',
-           'Connector',
-           'DataSource',
-           'Supervised',
-           'TimeSeries',
-           'TimeWindow',
-           'TimeWindowException',
-           'Dataset',
-           'DatasetImages',
-           'Model',
-           'RegressionModel',
-           'ClassificationModel',
-           'MultiClassificationModel',
-           'TextSimilarityModel',
-           'cv_classif_analysis',
-           'DeployedModel',
-           'TextSimilarity',
-           'DescriptionsColumnConfig',
-           'QueriesColumnConfig',
-           'ListModelsParameters',
-           'ModelsParameters',
-           'TextSimilarityModels',
-           'ModelEmbedding',
-           'Preprocessing',
-           'Project',
-           'Usecase'
-           ]
+__all__ = [
+    'client',
+    'AdvancedModel',
+    'NormalModel',
+    'SimpleModel',
+    'TypeProblem',
+    'Feature',
+    'TrainingConfig',
+    'YesOrNo',
+    'YesOrNoOrAuto',
+    'Profile',
+    'base_config',
+    'quick_config',
+    'ultra_config',
+    'ColumnConfig',
+    'metrics',
+    'Connector',
+    'DataSource',
+    'Supervised',
+    'TimeSeries',
+    'TimeWindow',
+    'TimeWindowException',
+    'Dataset',
+    'DatasetImages',
+    'Model',
+    'RegressionModel',
+    'ClassificationModel',
+    'MultiClassificationModel',
+    'TextSimilarityModel',
+    'cv_classif_analysis',
+    'DeployedModel',
+    'TextSimilarity',
+    'DescriptionsColumnConfig',
+    'QueriesColumnConfig',
+    'ListModelsParameters',
+    'ModelsParameters',
+    'TextSimilarityModels',
+    'ModelEmbedding',
+    'Preprocessing',
+    'Project',
+    'Usecase',
+]
