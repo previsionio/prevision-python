@@ -46,12 +46,12 @@ class DeployedModel(object):
 
         try:
             self._get_token()
-            about_resp = self.request('/about', method=requests.get, no_retries=True)
+            about_resp = self.request('/about', method=requests.get)
             app_info = parse_json(about_resp)
             self.problem_type = app_info['problem_type']
-            inputs_resp = self.request('/inputs', method=requests.get, no_retries=True)
+            inputs_resp = self.request('/inputs', method=requests.get)
             self.inputs = parse_json(inputs_resp)
-            outputs_resp = self.request('/outputs', method=requests.get, no_retries=True)
+            outputs_resp = self.request('/outputs', method=requests.get)
             self.outputs = parse_json(outputs_resp)
         except Exception as e:
             logger.error(e)
@@ -113,7 +113,7 @@ class DeployedModel(object):
             raise PrevisionException('No client secret configured. Call client_app.init_client() to initialize')
 
     def request(self, endpoint, method, files=None, data=None, allow_redirects=True, content_type=None,
-                no_retries=False, check_response=True, message_prefix=None, **requests_kwargs):
+                check_response=True, message_prefix=None, **requests_kwargs):
         """
         Make a request on the desired endpoint with the specified method & data.
 
@@ -126,7 +126,6 @@ class DeployedModel(object):
             data (dict): for single predict
             content_type (str): force request content-type
             allow_redirects (bool): passed to requests method
-            no_retries (bool): force request to run the first time, or exit directly
 
         Returns:
             request response
@@ -139,7 +138,7 @@ class DeployedModel(object):
         url = self.prevision_app_url + endpoint
 
         status_code = 502
-        retries = 1 if no_retries else config.request_retries
+        retries = config.request_retries
         n_tries = 0
 
         while (n_tries < retries) and (status_code in config.retry_codes):
@@ -161,7 +160,7 @@ class DeployedModel(object):
             n_tries += 1
             status_code = resp.status_code
 
-            if not no_retries and status_code in config.retry_codes:
+            if status_code in config.retry_codes:
                 time.sleep(config.request_retry_time)
 
         if check_response:
@@ -203,7 +202,6 @@ class DeployedModel(object):
         resp = self.request(predict_url,
                             data=json.dumps(features, cls=NpEncoder),
                             method=requests.post,
-                            no_retries=True,
                             message_prefix='Deployed model predict')
 
         pred_response = resp.json()
