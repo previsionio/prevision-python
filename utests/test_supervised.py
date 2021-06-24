@@ -95,7 +95,8 @@ def test_usecase_version():
 def test_stop_running_usecase():
     uc_name = TESTING_ID + '_file_run'
     usecase_version = supervised_from_filename('regression', uc_name)
-    usecase_version.wait_until(lambda usecase: len(usecase.models) > 0)
+    usecase_version.wait_until(
+        lambda usecase: (len(usecase.models) > 0) or (usecase._status['state'] == 'failed'))
     assert usecase_version.running
     usecase_version.stop()
     usecase_version.update_status()
@@ -107,7 +108,9 @@ def test_stop_running_usecase():
 def setup_usecase_class(request):
     usecase_name = '{}_{}'.format(request.param[0:5], TESTING_ID)
     uc = supervised_from_filename(request.param, usecase_name)
-    uc.wait_until(lambda usecase: len(usecase.models) > 0)
+    uc.wait_until(
+        lambda usecase: (len(usecase.models) > 0) or (usecase._status['state'] == 'failed'))
+    assert uc.running
     uc.stop()
     uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
     yield request.param, uc
