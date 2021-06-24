@@ -88,14 +88,14 @@ class DeployedModel(object):
             elif self.token_creation_date and self.refresh_expires_in:
                 if time() < self.token_creation_date + self.refresh_expires_in:
                     # refresh token
-                    _ = self._refresh_token()
+                    self._refresh_token()
                 else:
                     # generate token
-                    _ = self._generate_token()
+                    self._generate_token()
             else:
-                _ = self._generate_token()
+                self._generate_token()
         else:
-            _ = self._generate_token()
+            self._generate_token()
 
     def check_types(self, features):
         for feature, value in features:
