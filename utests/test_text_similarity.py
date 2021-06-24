@@ -1,4 +1,6 @@
 import os
+from previsionio.text_similarity import ModelEmbedding, TextSimilarityLang, TextSimilarityModels
+from previsionio.usecase_config import YesOrNo, YesOrNoOrAuto
 import time
 import pandas as pd
 import unittest
@@ -7,7 +9,7 @@ from .utils import get_testing_id
 
 TESTING_ID = get_testing_id()
 
-PROJECT_NAME = "sdk_test_usecase_" + str(TESTING_ID)
+PROJECT_NAME = "sdk_test_text_sim_usecase_" + str(TESTING_ID)
 PROJECT_ID = ""
 
 test_datasets = {}
@@ -104,7 +106,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
                                      description_column_config,
                                      metric=pio.metrics.TextSimilarity.accuracy_at_k,
                                      top_k=10,
-                                     lang='auto',
+                                     lang=TextSimilarityLang.Auto,
                                      queries_dataset=test_datasets['queries'],
                                      queries_column_config=queries_column_config)
 
@@ -126,17 +128,19 @@ class BaseTrainSearchDelete(unittest.TestCase):
         description_column_config = pio.DescriptionsColumnConfig(content_column='item_desc', id_column='item_id')
         queries_column_config = pio.QueriesColumnConfig(queries_dataset_content_column='query',
                                                         queries_dataset_matching_id_description_column='true_item_id')
-        usecase_config = [{'model_embedding': 'tf_idf',
-                           'preprocessing': {'word_stemming': 'yes',
-                                             'ignore_stop_word': 'auto',
-                                             'ignore_punctuation': 'no'},
-                           'models': ['brute_force', 'cluster_pruning']},
-                          {'model_embedding': 'transformer',
+        usecase_config = [{'model_embedding': ModelEmbedding.TFIDF,
+                           'preprocessing': {'word_stemming': YesOrNo.Yes,
+                                             'ignore_stop_word': YesOrNoOrAuto.Auto,
+                                             'ignore_punctuation': YesOrNo.No},
+                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.ClusterPruning]},
+                          {'model_embedding': ModelEmbedding.Transformer,
                            'preprocessing': {},
-                           'models': ['brute_force', 'lsh', 'hkm']},
-                          {'model_embedding': 'transformer_fine_tuned',
+                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
+                                      TextSimilarityModels.HKM]},
+                          {'model_embedding': ModelEmbedding.TransformerFineTuned,
                            'preprocessing': {},
-                           'models': ['brute_force', 'lsh', 'hkm']}]
+                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
+                                      TextSimilarityModels.HKM]}]
         models_parameters = pio.ListModelsParameters(usecase_config)
         uc = pio.TextSimilarity._fit(PROJECT_ID,
                                      'test_sdk_3_text_similarity_{}'.format(TESTING_ID),
@@ -144,7 +148,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
                                      description_column_config,
                                      metric=pio.metrics.TextSimilarity.accuracy_at_k,
                                      top_k=10,
-                                     lang='auto',
+                                     lang=TextSimilarityLang.Auto,
                                      queries_dataset=test_datasets['queries'],
                                      queries_column_config=queries_column_config,
                                      models_parameters=models_parameters)

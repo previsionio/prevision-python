@@ -1,64 +1,55 @@
-from typing import Union
+from enum import Enum
+from typing import Dict, List, Union
 from previsionio.dataset import Dataset
 import requests
-from .usecase_config import DataType, UsecaseConfig, TypeProblem
+from .usecase_config import DataType, UsecaseConfig, TypeProblem, YesOrNo, YesOrNoOrAuto
 from .prevision_client import client
-from .utils import handle_error_response, parse_json, EventTuple
+from .utils import parse_json, EventTuple, to_json
 from .model import TextSimilarityModel
 from .usecase_version import BaseUsecaseVersion
 import previsionio as pio
 
 
-class ModelEmbedding(object):
+class ModelEmbedding(Enum):
+    """Embedding models for Text Similarity"""
     TFIDF = 'tf_idf'
+    """Term Frequency - Inverse Document Frequency"""
     Transformer = 'transformer'
+    """Transformer"""
     TransformerFineTuned = 'transformer_fine_tuned'
+    """fine tuned Transformer"""
 
 
-class TextSimilarityModels(object):
+class TextSimilarityModels(Enum):
+    """Similarity search models for Text Similarity"""
     BruteForce = 'brute_force'
+    """Brute force search"""
     ClusterPruning = 'cluster_pruning'
+    """Cluster Pruning"""
     IVFOPQ = 'ivfopq'
+    """InVerted File system and Optimized Product Quantization"""
     HKM = 'hkm'
+    """Hierarchical K-Means"""
     LSH = 'lsh'
+    """Locality Sensitive Hashing"""
+
+
+class TextSimilarityLang(Enum):
+    Auto = 'auto'
+    French = 'fr'
+    English = 'en'
 
 
 class Preprocessing(object):
     config = {}
 
-    def __init__(self, word_stemming='yes', ignore_stop_word='auto', ignore_punctuation='no'):
+    def __init__(self,
+                 word_stemming: YesOrNo = YesOrNo.Yes,
+                 ignore_stop_word: YesOrNoOrAuto = YesOrNoOrAuto.Auto,
+                 ignore_punctuation: YesOrNo = YesOrNo.Yes):
         self.word_stemming = word_stemming
         self.ignore_stop_word = ignore_stop_word
         self.ignore_punctuation = ignore_punctuation
-
-
-class ListModelsParameters(UsecaseConfig):
-
-    config = {
-        'models_parameters': 'models_params'
-    }
-
-    def __init__(self, models_parameters=None):
-
-        if models_parameters is None:
-
-            models_parameters_1 = ModelsParameters(ModelEmbedding.TFIDF,
-                                                   Preprocessing(),
-                                                   [TextSimilarityModels.BruteForce,
-                                                    TextSimilarityModels.ClusterPruning])
-            models_parameters_2 = ModelsParameters(ModelEmbedding.Transformer,
-                                                   {},
-                                                   [TextSimilarityModels.BruteForce])
-            models_parameters_3 = ModelsParameters(ModelEmbedding.TransformerFineTuned,
-                                                   {},
-                                                   [TextSimilarityModels.BruteForce])
-            models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
-        self.models_parameters = []
-        for element in models_parameters:
-            if isinstance(element, ModelsParameters):
-                self.models_parameters.append(element)
-            else:
-                self.models_parameters.append(ModelsParameters(**element))
 
 
 class ModelsParameters(UsecaseConfig):
@@ -66,7 +57,17 @@ class ModelsParameters(UsecaseConfig):
     the wanted feature engineering, the selected models, the training speed...
 
     Args:
+        preprocessing (Preprocessing, optional): Dictionary of the text preprocessings to be applied
+            (only for "tf_idf" embedding model),
 
+            - *word_stemming*: default to "yes"
+            - *ignore_stop_word*: default to "auto", choice will be made depending on if the
+              text descriptions contain full sentences or not
+            - *ignore_punctuation*: default to "no".
+        model_embedding (ModelEmbedding, optional): Name of the embedding model to be used
+            (among: "tf_idf", "transformer", "transformer_fine_tuned").
+        models (list(TextSimilarityModels), optional): Names of the searching models to be used (among:
+            "brute_force", "cluster_pruning", "ivfopq", "hkm", "lsh").
     """
 
     config = {
@@ -76,9 +77,9 @@ class ModelsParameters(UsecaseConfig):
     }
 
     def __init__(self,
-                 model_embedding='tf_idf',
-                 preprocessing=Preprocessing(),
-                 models=['brute_force']):
+                 model_embedding: ModelEmbedding = ModelEmbedding.TFIDF,
+                 preprocessing: Preprocessing = Preprocessing(),
+                 models: List[TextSimilarityModels] = [TextSimilarityModels.BruteForce]):
         self.model_embedding = model_embedding
         if isinstance(preprocessing, Preprocessing):
             self.preprocessing = preprocessing
@@ -89,13 +90,43 @@ class ModelsParameters(UsecaseConfig):
         self.models = models
 
 
+class ListModelsParameters(UsecaseConfig):
+
+    config = {
+        'models_parameters': 'models_params'
+    }
+
+    def __init__(self, models_parameters: Union[List[ModelsParameters], List[Dict], None] = None):
+
+        if models_parameters is None:
+
+            models_parameters_1 = ModelsParameters(ModelEmbedding.TFIDF,
+                                                   Preprocessing(),
+                                                   [TextSimilarityModels.BruteForce,
+                                                    TextSimilarityModels.ClusterPruning])
+            models_parameters_2 = ModelsParameters(ModelEmbedding.Transformer,
+                                                   Preprocessing(),
+                                                   [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
+            models_parameters_3 = ModelsParameters(ModelEmbedding.TransformerFineTuned,
+                                                   Preprocessing(),
+                                                   [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
+            models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
+        self.models_parameters = []
+        for element in models_parameters:
+            if isinstance(element, ModelsParameters):
+                self.models_parameters.append(element)
+            else:
+                self.models_parameters.append(ModelsParameters(**element))
+
+
 class DescriptionsColumnConfig(UsecaseConfig):
     """ Description Column configuration for starting a usecase: this object defines
     the role of specific columns in the dataset.
 
     Args:
-        content_column (str, required): Name of the content column in the description dataset
-        id_column (str, optional): Name of the id column in the description dataset
+        content_column (str, required): Name of the column containing the text descriptions in the
+            description dataset.
+        id_column (str, optional): Name of the id column in the description dataset.
     """
 
     config = {
@@ -113,8 +144,9 @@ class QueriesColumnConfig(UsecaseConfig):
     the role of specific columns in the dataset.
 
     Args:
-        content_column (str, required): Name of the content column in the description dataset
-        id_column (str, optional): Name of the id column in the description dataset
+        content_column (str, required): Name of the column containing the text queries in the
+            description dataset.
+        id_column (str, optional): Name of the id column in the description dataset.
     """
 
     # config = {
@@ -132,38 +164,14 @@ class QueriesColumnConfig(UsecaseConfig):
         self.queries_dataset_id_column = queries_dataset_id_column
 
 
-def to_json(obj):
-    if isinstance(obj, bool):
-        return obj
-    elif isinstance(obj, str):
-        return obj
-    elif isinstance(obj, list):
-        obj_list = []
-        for e in obj:
-            obj_list.append(to_json(e))
-        return obj_list
-    elif isinstance(obj, dict):
-        obj_d = {}
-        for key, value in obj.items():
-            obj_d[key] = to_json(value)
-        return obj_d
-    elif hasattr(obj, '__dict__'):
-        obj_dict = {}
-        for key, value in obj.__dict__.items():
-            if key in obj.config:
-                key = obj.config[key]
-            obj_dict[key] = to_json(value)
-        return obj_dict
-    return dict()
-
-
 class TextSimilarity(BaseUsecaseVersion):
 
     default_metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k
     default_top_k: int = 10
-    data_type: str = DataType.Tabular
-    type_problem: str = TypeProblem.TextSimilarity
+    data_type: DataType = DataType.Tabular
+    training_type: TypeProblem = TypeProblem.TextSimilarity
     resource: str = 'usecase-versions'
+    model_class = TextSimilarityModel
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
@@ -173,7 +181,7 @@ class TextSimilarity(BaseUsecaseVersion):
         self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
             usecase_version_params.get('metric', self.default_metric))
         self.top_k: int = usecase_version_params.get('top_K', self.default_top_k)
-        self.lang: str = usecase_version_params.get('lang')
+        self.lang: TextSimilarityLang = TextSimilarityLang(usecase_version_params.get('lang', TextSimilarityLang.Auto))
 
         self.description_column_config = DescriptionsColumnConfig(
             content_column=usecase_version_params.get('content_column'),
@@ -201,8 +209,6 @@ class TextSimilarity(BaseUsecaseVersion):
         self.predictions = {}
         self.predict_token = None
 
-        self.model_class = TextSimilarityModel
-
         self._models = {}
 
     @classmethod
@@ -214,10 +220,20 @@ class TextSimilarity(BaseUsecaseVersion):
         return cls(**super()._load(pio_file))
 
     @classmethod
-    def _fit(cls, project_id: str, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
-             metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k, top_k: int = 10,
-             lang: str = 'auto', queries_dataset: Dataset = None, queries_column_config: QueriesColumnConfig = None,
-             models_parameters: ListModelsParameters = ListModelsParameters(), **kwargs) -> 'TextSimilarity':
+    def _fit(
+        cls,
+        project_id: str,
+        name: str,
+        dataset: Dataset,
+        description_column_config: DescriptionsColumnConfig,
+        metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k,
+        top_k: int = 10,
+        lang: TextSimilarityLang = TextSimilarityLang.Auto,
+        queries_dataset: Dataset = None,
+        queries_column_config: QueriesColumnConfig = None,
+        models_parameters: ListModelsParameters = ListModelsParameters(),
+        **kwargs
+    ) -> 'TextSimilarity':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
 
@@ -236,14 +252,11 @@ class TextSimilarity(BaseUsecaseVersion):
             :class:`.TextSimilarity`: Newly created supervised usecase object
         """
 
-        description_column_config_list = description_column_config.to_kwargs()
+        training_args = to_json(description_column_config)
+        assert isinstance(training_args, Dict)
         if queries_column_config:
-            queries_column_config_list = queries_column_config.to_kwargs()
-            training_args = dict(description_column_config_list + queries_column_config_list)
-        else:
-            training_args = dict(description_column_config.to_kwargs())
+            training_args.update(to_json(queries_column_config))
         training_args.update(to_json(models_parameters))
-        training_args.update()
 
         if queries_dataset:
             if isinstance(queries_dataset, str):
@@ -257,7 +270,7 @@ class TextSimilarity(BaseUsecaseVersion):
             top_k = cls.default_top_k
         training_args['metric'] = metric.value
         training_args['top_k'] = top_k
-        training_args['lang'] = lang
+        training_args['lang'] = lang.value
         if isinstance(dataset, str):
             dataset_id = dataset
         else:
@@ -265,10 +278,12 @@ class TextSimilarity(BaseUsecaseVersion):
 
         data = dict(name=name, dataset_id=dataset_id, **training_args)
 
-        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', cls.data_type, cls.type_problem)
-        start = client.request(endpoint, requests.post, data=data, content_type='application/json')
-
-        handle_error_response(start, endpoint, data, "text_similality usecase failed to start")
+        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', cls.data_type.value, cls.training_type.value)
+        start = client.request(endpoint,
+                               method=requests.post,
+                               data=data,
+                               content_type='application/json',
+                               message_prefix='Text similarity usecase start')
 
         start_response = parse_json(start)
         usecase = cls.from_id(start_response['_id'])
@@ -287,7 +302,7 @@ class TextSimilarity(BaseUsecaseVersion):
         description_column_config: DescriptionsColumnConfig = None,
         metric: pio.metrics.TextSimilarity = None,
         top_k: int = None,
-        lang: str = 'auto',
+        lang: TextSimilarityLang = TextSimilarityLang.Auto,
         queries_dataset: Dataset = None,
         queries_column_config: Union[QueriesColumnConfig, None] = None,
         models_parameters: ListModelsParameters = None,
@@ -339,21 +354,18 @@ class TextSimilarity(BaseUsecaseVersion):
         if not models_parameters:
             models_parameters = self.models_parameters
 
-        description_column_config_list = description_column_config.to_kwargs()
+        training_args = to_json(description_column_config)
+        assert isinstance(training_args, Dict)
         if queries_column_config:
-            queries_column_config_list = queries_column_config.to_kwargs()
-            training_args = dict(description_column_config_list + queries_column_config_list)
-        else:
-            training_args = dict(description_column_config.to_kwargs())
+            training_args.update(to_json(queries_column_config))
         training_args.update(to_json(models_parameters))
-        training_args.update()
 
         if queries_dataset_id:
             training_args['queries_dataset_id'] = queries_dataset_id
 
         training_args['metric'] = metric.value
         training_args['top_k'] = top_k
-        training_args['lang'] = lang
+        training_args['lang'] = lang.value
 
         data = dict(name=self.name, dataset_id=dataset_id, **training_args)
 
@@ -361,9 +373,11 @@ class TextSimilarity(BaseUsecaseVersion):
             data["description"] = description
 
         endpoint = "/usecases/{}/versions".format(self.usecase_id)
-        resp = client.request(endpoint=endpoint, data=data, method=requests.post)
-
-        handle_error_response(resp, endpoint, data, "text_similality usecase failed to start")
+        resp = client.request(endpoint=endpoint,
+                              data=data,
+                              method=requests.post,
+                              content_type='application/json',
+                              message_prefix='Text similarity usecase start')
 
         start_response = parse_json(resp)
         usecase = self.from_id(start_response['_id'])

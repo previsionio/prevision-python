@@ -9,7 +9,7 @@ from previsionio.usecase_config import ColumnConfig, DataType, TrainingConfig, T
 import requests
 
 from . import client
-from .utils import handle_error_response, parse_json, PrevisionException
+from .utils import parse_json, PrevisionException
 
 from .api_resource import ApiResource, UniqueResourceMixin
 from .datasource import DataSource
@@ -18,7 +18,8 @@ from .connector import Connector, SQLConnector, FTPConnector, \
     SFTPConnector, S3Connector, HiveConnector, GCPConnector
 from .supervised import Supervised
 from .timeseries import TimeSeries, TimeWindow
-from .text_similarity import DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig, TextSimilarity
+from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
+                              TextSimilarity, TextSimilarityLang)
 from .usecase import Usecase
 from pandas import DataFrame
 
@@ -109,8 +110,9 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         # FIXME GET datasource should not return a dict with a "data" key
         url = '/{}/{}'.format(cls.resource, _id)
-        resp = client.request(url, method=requests.get)
-        handle_error_response(resp, url)
+        resp = client.request(url,
+                              method=requests.get,
+                              message_prefix='Projects list')
         resp_json = parse_json(resp)
 
         return cls(**resp_json)
@@ -134,9 +136,9 @@ class Project(ApiResource, UniqueResourceMixin):
         """
 
         end_point = '/{}/{}/users'.format(self.resource, self._id)
-        response = client.request(endpoint=end_point, method=requests.get)
-        handle_error_response(response, end_point,
-                              message_prefix="Error while fetching user for project id {}".format(self._id))
+        response = client.request(endpoint=end_point,
+                                  method=requests.get,
+                                  message_prefix='Fetching user for project id {}'.format(self._id))
 
         res = parse_json(response)
         return res
@@ -182,7 +184,7 @@ class Project(ApiResource, UniqueResourceMixin):
 
     @classmethod
     def new(cls, name: str, description: str = None, color: ProjectColor = None) -> 'Project':
-        """ Create a new datasource object on the platform.
+        """ Create a new project on the platform.
 
         Args:
             name (str): Name of the project
@@ -208,9 +210,9 @@ class Project(ApiResource, UniqueResourceMixin):
         url = '/{}'.format(cls.resource)
         resp = client.request(url,
                               data=data,
-                              method=requests.post)
+                              method=requests.post,
+                              message_prefix='Project creation')
 
-        handle_error_response(resp, url, data)
         json = parse_json(resp)
 
         if '_id' not in json:
@@ -229,9 +231,9 @@ class Project(ApiResource, UniqueResourceMixin):
             PrevisionException: If the dataset does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/{}/{}'
-                              .format(self.resource, self.id),
-                              method=requests.delete)
+        resp = client.request(endpoint='/{}/{}'.format(self.resource, self.id),
+                              method=requests.delete,
+                              message_prefix='Project delete')
         return resp
 
     def create_dataset(self, name: str, datasource: DataSource = None, file_name: str = None,
@@ -508,7 +510,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return Supervised._fit(
             self._id, name,
             data_type=DataType.Tabular,
-            type_problem=TypeProblem.Regression,
+            training_type=TypeProblem.Regression,
             dataset=dataset,
             column_config=column_config,
             metric=metric,
@@ -542,7 +544,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return Supervised._fit(
             self._id, name,
             data_type=DataType.Tabular,
-            type_problem=TypeProblem.Classification,
+            training_type=TypeProblem.Classification,
             dataset=dataset,
             column_config=column_config,
             metric=metric,
@@ -576,7 +578,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return Supervised._fit(
             self._id, name,
             data_type=DataType.Tabular,
-            type_problem=TypeProblem.MultiClassification,
+            training_type=TypeProblem.MultiClassification,
             dataset=dataset,
             column_config=column_config,
             metric=metric,
@@ -610,7 +612,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return Supervised._fit(
             self._id, name,
             data_type=DataType.Images,
-            type_problem=TypeProblem.Regression,
+            training_type=TypeProblem.Regression,
             dataset=dataset,
             column_config=column_config,
             metric=metric,
@@ -644,7 +646,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return Supervised._fit(
             self._id, name,
             data_type=DataType.Images,
-            type_problem=TypeProblem.Classification,
+            training_type=TypeProblem.Classification,
             dataset=dataset,
             column_config=column_config,
             metric=metric,
@@ -686,7 +688,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return Supervised._fit(
             self._id, name,
             data_type=DataType.Images,
-            type_problem=TypeProblem.MultiClassification,
+            training_type=TypeProblem.MultiClassification,
             dataset=dataset,
             column_config=column_config,
             metric=metric,
@@ -732,7 +734,7 @@ class Project(ApiResource, UniqueResourceMixin):
 
     def fit_text_similarity(self, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
                             metric: metrics.TextSimilarity = metrics.TextSimilarity.accuracy_at_k, top_k: int = 10,
-                            lang: str = 'auto', queries_dataset: Dataset = None,
+                            lang: TextSimilarityLang = TextSimilarityLang.Auto, queries_dataset: Dataset = None,
                             queries_column_config: QueriesColumnConfig = None,
                             models_parameters: ListModelsParameters = ListModelsParameters()):
         """ Start a text similarity usecase training with a specific training configuration.
@@ -756,7 +758,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 on all the parameters)
 
         Returns:
-            :class:`.TextSimilarity`: Newly created TextSimilarity usecase version object
+            :class:`.previsionio.text_similarity.TextSimilarity`: Newly created TextSimilarity usecase version object
         """
         return TextSimilarity._fit(
             self._id,

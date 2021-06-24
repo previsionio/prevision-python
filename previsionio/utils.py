@@ -1,3 +1,4 @@
+from enum import Enum
 import operator
 from typing import Dict, List, Union
 import requests
@@ -9,7 +10,7 @@ import os
 from collections import namedtuple
 import numpy as np
 from requests.models import Response
-from . import logger
+from . import logger, config
 import datetime
 from math import ceil
 
@@ -63,6 +64,30 @@ def parse_json(json_response: Response) -> Dict:
         raise
 
 
+def to_json(obj):
+    if isinstance(obj, Enum):
+        return to_json(obj.value)
+    elif isinstance(obj, list):
+        obj_list = []
+        for e in obj:
+            obj_list.append(to_json(e))
+        return obj_list
+    elif isinstance(obj, dict):
+        obj_d = {}
+        for key, value in obj.items():
+            obj_d[key] = to_json(value)
+        return obj_d
+    elif hasattr(obj, '__dict__'):
+        obj_dict = {}
+        for key, value in obj.__dict__.items():
+            if value:
+                if hasattr(obj, 'config') and key in obj.config:
+                    key = obj.config[key]
+                obj_dict[key] = to_json(value)
+        return obj_dict
+    return obj
+
+
 def get_pred_from_multiclassification(row, pred_prefix: str = 'pred_'):
     d = row.to_dict()
     preds_probas = {k: float(v) for k, v in d.items() if pred_prefix in k}
@@ -90,24 +115,32 @@ def get_all_results(client, endpoint: str, method) -> List[Dict]:
     rows_per_page = meta['rowsPerPage']
     n_pages = ceil(total_items / rows_per_page)
     for n in range(1, n_pages + 1):
-        batch = client.request(endpoint + "?page={}".format(n), method=method)
+        url = endpoint + "?page={}".format(n)
+        batch = client.request(url, method=method)
         resources.extend(parse_json(batch)['items'])
     return resources
 
 
 def handle_error_response(
     resp: Response,
-    url: str, data: Union[Dict, List] = None,
+    url: str,
+    data: Union[Dict, List] = None,
+    files: Dict = None,
     message_prefix: str = None,
+    n_tries: int = 1,
     additional_log: str = None,
 ):
-    if resp.status_code != 200:
+    if resp.status_code not in config.success_codes:
         message = "Error {}: '{}' reaching url: '{}'".format(
             resp.status_code, resp.text, url)
+        if n_tries > 1:
+            message += " after {} tries".format(n_tries)
         if data:
             message += " with data: {}".format(data)
+        if files:
+            message += " with files: {}".format(files)
         if message_prefix:
-            message = message_prefix + '\n' + message
+            message = message_prefix + ' failure\n' + message
         logger.error(message)
         if additional_log:
             logger.error(additional_log)

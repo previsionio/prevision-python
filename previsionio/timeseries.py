@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+from typing import Dict
 
 import requests
-from previsionio.utils import EventTuple, handle_error_response, parse_json
+from previsionio.utils import EventTuple, parse_json, to_json
 from . import TrainingConfig
 from .usecase_config import DataType, UsecaseConfig, ColumnConfig, TypeProblem
 from .usecase_version import ClassicUsecaseVersion
@@ -20,7 +21,13 @@ class TimeWindowException(Exception):
 class TimeWindow(UsecaseConfig):
     """
     A time window object for representing either feature derivation window periods or
-    forecast window periods
+    forecast window periods.
+
+    Args:
+        derivation_start (int): Start of the derivation window (must be < 0)
+        derivation_end (int): End of the derivation window (must be < 0)
+        forecast_start (int): Start of the forecast window (must be > 0)
+        forecast_end (int): End of the forecast window (must be > 0)
     """
     config = {
         'derivation_start': 'start_dw',
@@ -30,14 +37,7 @@ class TimeWindow(UsecaseConfig):
     }
 
     def __init__(self, derivation_start: int, derivation_end: int, forecast_start: int, forecast_end: int):
-        """Instantiate a new :class:`.TimeWindow` util object.
-
-        Args:
-            derivation_start (int): Start of the derivation window (must be < 0)
-            derivation_end (int): End of the derivation window (must be < 0)
-            forecast_start (int): Start of the forecast window (must be > 0)
-            forecast_end (int): End of the forecast window (must be > 0)
-        """
+        """Instantiate a new :class:`.TimeWindow` util object."""
 
         if not derivation_start < derivation_end or not forecast_start < forecast_end:
             raise TimeWindowException('start must be smaller than end')
@@ -64,7 +64,7 @@ class TimeSeries(ClassicUsecaseVersion):
     """
     A TimeSeries usecase.
     """
-    type_problem = TypeProblem.Regression
+    training_type = TypeProblem.Regression
     metric_type = Regression
     default_metric = Regression.RMSE
     data_type = DataType.TimeSeries
@@ -85,21 +85,19 @@ class TimeSeries(ClassicUsecaseVersion):
         return cls(**super()._load(pio_file))
 
     @classmethod
-    def _fit(
-        cls,
-        project_id: str,
-        name: str,
-        dataset: Dataset,
-        column_config: ColumnConfig,
-        time_window: TimeWindow,
-        metric: Regression = None,
-        holdout_dataset: Dataset = None,
-        training_config: TrainingConfig = TrainingConfig(),
-    ) -> 'TimeSeries':
-        config_args = training_config.to_kwargs()
-        column_args = column_config.to_kwargs()
-        time_window_args = time_window.to_kwargs()
-        training_args = dict(config_args + column_args + time_window_args)
+    def _fit(cls, project_id: str,
+             name: str,
+             dataset: Dataset,
+             column_config: ColumnConfig,
+             time_window: TimeWindow,
+             metric: Regression = None,
+             holdout_dataset: Dataset = None,
+             training_config: TrainingConfig = TrainingConfig()) -> 'TimeSeries':
+        training_args = to_json(training_config)
+        assert isinstance(training_args, Dict)
+
+        training_args.update(to_json(column_config))
+        training_args.update(to_json(time_window))
 
         if holdout_dataset:
             training_args['holdout_dataset_id'] = holdout_dataset.id
@@ -111,7 +109,7 @@ class TimeSeries(ClassicUsecaseVersion):
                                             name=name,
                                             dataset_id=dataset.id,
                                             data_type=cls.data_type,
-                                            type_problem=cls.type_problem,
+                                            training_type=cls.training_type,
                                             metric=metric.value,
                                             **training_args)
 
@@ -179,16 +177,16 @@ class TimeSeries(ClassicUsecaseVersion):
         if not training_config:
             training_config = self.training_config
 
-        config_args = training_config.to_kwargs()
-        column_args = column_config.to_kwargs()
-        time_window_args = time_window.to_kwargs()
-        training_args = dict(config_args + column_args + time_window_args)
+        training_args = to_json(training_config)
+        assert isinstance(training_args, Dict)
+        training_args.update(to_json(column_config))
+        training_args.update(to_json(time_window))
 
         params = {'name': self.name,
                   'dataset_id': dataset_id,
                   'metric': metric.value,
                   'holdout_dataset': holdout_dataset_id,
-                  'type_problem': self.type_problem,
+                  'training_type': self.training_type.value,
                   'usecase_id': self._id,
                   'parent_version': self.version,
                   # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
@@ -201,16 +199,14 @@ class TimeSeries(ClassicUsecaseVersion):
 
         endpoint = "/usecases/{}/versions".format(self.usecase_id)
 
-        resp = client.request(endpoint=endpoint, data=params, method=requests.post)
-        handle_error_response(resp, endpoint, params)
+        resp = client.request(endpoint=endpoint,
+                              data=params,
+                              method=requests.post,
+                              content_type='application/json',
+                              message_prefix='Time series usecase start')
         json = parse_json(resp)
 
         usecase = self.from_id(json["_id"])
-        usecase.type_problem = TypeProblem.Regression
-        usecase.metric_type = Regression
-        usecase.default_metric = Regression.RMSE
-        usecase.data_type = DataType.TimeSeries
-        usecase.model_class = RegressionModel
 
         events_url = '/{}/{}'.format(self.resource, json['_id'])
         client.event_manager.wait_for_event(usecase.resource_id,

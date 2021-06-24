@@ -80,7 +80,7 @@ class EventManager:
 
     def check_resource_event(self, resource_id: str, endpoint: str, event_tuple: previsionio.utils.EventTuple,
                              semd: threading.Semaphore):
-        resp = self.client.request(endpoint=endpoint, method=requests.get)
+        resp = self.client.request(endpoint=endpoint, method=requests.get, check_response=False)
         json_response = parse_json(resp)
         for k, v in event_tuple.fail_checks:
             if json_response.get(k) == v:
@@ -212,7 +212,8 @@ class Client(object):
             raise PrevisionException('No url configured. Call client.init_client() to initialize')
 
     def request(self, endpoint: str, method, files: Dict = None, data: Dict = None, allow_redirects: bool = True,
-                content_type: str = None, no_retries: bool = False, **requests_kwargs) -> Response:
+                content_type: str = None, check_response: bool = True,
+                message_prefix: str = None, **requests_kwargs) -> Response:
         """
         Make a request on the desired endpoint with the specified method & data.
 
@@ -225,7 +226,8 @@ class Client(object):
             data (dict): for single predict
             content_type (str): force request content-type
             allow_redirects (bool): passed to requests method
-            no_retries (bool): force request to run the first time, or exit directly
+            check_response (bool): wether to handle error or not
+            message_prefix (str): prefix message in error logs
 
         Returns:
             request response
@@ -241,27 +243,40 @@ class Client(object):
 
         url = self.url + endpoint
 
-        retries = 1 if no_retries else config.request_retries
+        status_code = 502
+        retries = config.request_retries
+        n_tries = 0
 
-        for i in range(retries):
+        while (n_tries < retries) and (status_code in config.retry_codes):
+            n_tries += 1
+
             try:
-                req: Response = method(url,
-                                       headers=headers,
-                                       files=files,
-                                       allow_redirects=allow_redirects,
-                                       json=data,
-                                       **requests_kwargs)
-            except Exception as e:
-                logger.warning('failed to request ' + url + ' retrying ' + str(retries - i) + ' times: ' + e.__repr__())
-                if no_retries:
-                    raise PrevisionException('error requesting: {} (no retry allowed)'.format(url)) from None
-                time.sleep(config.request_retry_time)
-            else:
-                break
-        else:
-            raise Exception('failed to request')
+                resp: Response = method(url,
+                                        headers=headers,
+                                        files=files,
+                                        allow_redirects=allow_redirects,
+                                        json=data,
+                                        **requests_kwargs)
+                status_code = resp.status_code
 
-        return req
+            except Exception as e:
+                logger.warning(f'Failed to request {url} retrying {retries - n_tries} times: {e.__repr__()}')
+                if n_tries == retries:
+                    raise PrevisionException(f'Error requesting: {url} after {n_tries} retries')
+                continue
+
+            if status_code in config.retry_codes:
+                time.sleep(config.request_retry_time)
+
+        if check_response:
+            handle_error_response(resp=resp,
+                                  url=url,
+                                  data=data,
+                                  files=files,
+                                  message_prefix=message_prefix,
+                                  n_tries=n_tries)
+
+        return resp
 
     def update_user_info(self):
         user_info_response = requests.get(self.url + '/profile',
@@ -277,16 +292,15 @@ class Client(object):
         Init the client (and check that the connection is valid).
 
         Args:
-            prevision_url (str): URL of the Prevision.io platform. Should be
-                https://cloud.prevision.io if you're in the cloud, or a custom
-                IP address if installed on-premise.
+            prevision_url (str): URL of the Prevision.io platform. Should be of the form
+                https://<instance_name>.prevision.io, or a custom IP address if working on-premise.
 
             token (str): Your Prevision.io master token. Can be retrieved on
                 /dashboard/infos on the web interface or obtained programmatically through:
 
                 .. code-block:: python
 
-                    client.init_client_with_login(prevision_url, email, password)
+                    client.init_client(prevision_url, token)
         """
         self.prevision_url = prevision_url
         self.url = self.prevision_url + self.api_version
@@ -294,7 +308,7 @@ class Client(object):
         self.headers['Authorization'] = self.token
 
         # check for correct connection
-        resp = self.request('/version', requests.get, no_retries=True)
+        resp = self.request('/version', requests.get)
         handle_error_response(resp, '/version')
 
         logger.debug('subscribing to events manager')

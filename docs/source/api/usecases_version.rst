@@ -17,5 +17,6 @@ and of the usecase configuration options:
 
    usecases/base_usecase.rst
    usecases/supervised.rst
+   usecases/time_series.rst
    usecases/text_similarity.rst
    usecases/config.rst

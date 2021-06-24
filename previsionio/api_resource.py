@@ -1,6 +1,6 @@
 from typing import Dict
 import requests
-from .utils import handle_error_response, parse_json, PrevisionException, get_all_results
+from .utils import parse_json, get_all_results
 from .prevision_client import client
 from . import logger
 from enum import Enum
@@ -61,7 +61,8 @@ class ApiResource:
         else:
             url = specific_url
         # call api, add event to eventmanager events if available and return
-        resource_status = client.request(url, method=requests.get)
+        resource_status = client.request(url, method=requests.get,
+                                         message_prefix='Update status {}'.format(self.resource))
         resource_status_dict = parse_json(resource_status)
         resource_status_dict['event_type'] = 'update'
         resource_status_dict['event_name'] = 'update'
@@ -93,12 +94,10 @@ class ApiResource:
         Raises:
             PrevisionException: Any error while deleting data from the platform
         """
-        resp = client.request('/{}/{}'.format(self.resource, self._id), method=requests.delete)
-        if resp.status_code in [200, 204]:
-            logger.info('[Delete {} OK]'.format(self.resource))
-            return
-        else:
-            raise PrevisionException('[Delete {}] Error'.format(self.resource))
+        _ = client.request('/{}/{}'.format(self.resource, self._id),
+                           method=requests.delete,
+                           message_prefix='Delete {}'.format(self.resource))
+        logger.info('[Delete {} OK]'.format(self.resource))
 
     @classmethod
     def _from_id(cls, _id: str = None, specific_url: str = None) -> Dict:
@@ -124,9 +123,9 @@ class ApiResource:
             url = '/{}/{}'.format(cls.resource, _id)
         else:
             url = specific_url
-        resp = client.request(url, method=requests.get)
+        resp = client.request(url, method=requests.get,
+                              message_prefix='From id {}'.format(cls.resource))
 
-        handle_error_response(resp, url)
         resp_json = parse_json(resp)
         if _id is not None:
             logger.info('[Fetch {} OK] by id: "{}"'.format(cls.__name__, _id))
@@ -154,7 +153,8 @@ class ApiResource:
         if all:
             return get_all_results(client, url, method=requests.get)
         else:
-            resources = client.request(url, method=requests.get)
+            resources = client.request(url, method=requests.get,
+                                       message_prefix='List {}'.format(cls.resource))
             return parse_json(resources)['items']
 
     # def edit(self, **kwargs):
@@ -188,8 +188,6 @@ class ApiResource:
     #     resp = client.request(url,
     #                           body=update_fields,
     #                           method=requests.put)
-
-    #     handle_error_response(resp, url)
 
     #     resp_json = parse_json(resp)
 

@@ -2,14 +2,15 @@
 from __future__ import print_function
 from itertools import combinations
 from io import BytesIO, StringIO
+from previsionio.usecase_config import UsecaseState
 import numpy as np
 import pandas as pd
 import os
 import tempfile
-from zipfile import ZipFile
+import zipfile
 import previsionio.utils
 from . import client
-from .utils import handle_error_response, parse_json, zip_to_pandas, PrevisionException
+from .utils import parse_json, zip_to_pandas, PrevisionException
 from .api_resource import ApiResource
 from . import logger
 import previsionio as pio
@@ -61,16 +62,12 @@ class Dataset(ApiResource):
         if self._data is not None:
             return self._data
         else:
-            response = client.request(endpoint='/{}/{}/download'
-                                      .format(self.resource, self.id),
-                                      method=requests.get)
+            response = client.request(endpoint='/{}/{}/download'.format(self.resource, self.id),
+                                      method=requests.get,
+                                      message_prefix='Dataset download')
 
-            if response.ok:
-                pd_df = zip_to_pandas(response, separator=self.separator)
-                self._data = pd_df
-            else:
-                msg = 'Failed to download dataset {}: {}'.format(self.id, response.text)
-                raise PrevisionException(msg)
+            self._data = zip_to_pandas(response, separator=self.separator)
+
             return self._data
 
     data = property(to_pandas)
@@ -102,20 +99,20 @@ class Dataset(ApiResource):
 
     def update_status(self):
         url = '/{}/{}'.format(self.resource, self._id)
-        dset_resp = client.request(url, method=requests.get)
+        dset_resp = client.request(url, method=requests.get, message_prefix='Dataset status update')
         dset_json = parse_json(dset_resp)
         self.describe_state = dset_json['describe_state']
         self.drift_state = dset_json['drift_state']
         self.embeddings_state = dset_json['embeddings_state']
 
     def get_describe_status(self):
-        return self.describe_state
+        return UsecaseState(self.describe_state)
 
     def get_drift_status(self):
-        return self.drift_state
+        return UsecaseState(self.drift_state)
 
     def get_embedding_status(self):
-        return self.embeddings_state
+        return UsecaseState(self.embeddings_state)
 
     def delete(self):
         """Delete a dataset from the actual [client] workspace.
@@ -124,9 +121,9 @@ class Dataset(ApiResource):
             PrevisionException: If the dataset does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/{}/{}'
-                              .format(self.resource, self.id),
-                              method=requests.delete)
+        resp = client.request(endpoint='/{}/{}'.format(self.resource, self.id),
+                              method=requests.delete,
+                              message_prefix='Dataset delete')
         return resp
 
     def start_embedding(self):
@@ -137,9 +134,9 @@ class Dataset(ApiResource):
             requests.exceptions.ConnectionError: request error
         """
 
-        resp = client.request(endpoint='/{}/{}/analysis'
-                              .format(self.resource, self.id),
-                              method=requests.post)
+        resp = client.request(endpoint='/{}/{}/analysis'.format(self.resource, self.id),
+                              method=requests.post,
+                              message_prefix='Dataset start embedding')
 
         logger.info('Started embedding for dataset {}'.format(self.name))
         resp = parse_json(resp)
@@ -152,21 +149,17 @@ class Dataset(ApiResource):
             PrevisionException: DatasetNotFoundError
             requests.exceptions.ConnectionError: request error
         """
-        endpoint = '/{}/{}/explorer'.format(self.resource, self.id)
-        resp = client.request(endpoint=endpoint, method=requests.get)
-        if resp.status_code == 404 or resp.status_code == 501 or resp.status_code == 502:
-            logger.warning('Dataset {} has not been analyzed yet. '
-                           'Cannot retrieve embedding.'.format(self.name))
-        else:
-            handle_error_response(resp, endpoint)
+        resp = client.request(endpoint='/{}/{}/explorer'.format(self.resource, self.id),
+                              method=requests.get,
+                              message_prefix='Dataset get embedding')
 
         tensors_shape = parse_json(resp)['embeddings'][0]['tensorShape']
-        labels_resp = client.request(endpoint='/{}/{}/explorer/labels.bytes'
-                                     .format(self.resource, self.id),
-                                     method=requests.get)
-        tensors_resp = client.request(endpoint='/{}/{}/explorer/tensors.bytes'
-                                      .format(self.resource, self.id),
-                                      method=requests.get)
+        labels_resp = client.request(endpoint='/{}/{}/explorer/labels.bytes'.format(self.resource, self.id),
+                                     method=requests.get,
+                                     message_prefix='Dataset labels bytes')
+        tensors_resp = client.request(endpoint='/{}/{}/explorer/tensors.bytes'.format(self.resource, self.id),
+                                      method=requests.get,
+                                      message_prefix='Dataset tensors bytes')
 
         labels = pd.read_csv(StringIO(labels_resp.text), sep="\t")
         tensors = np.frombuffer(BytesIO(tensors_resp.content).read(),
@@ -190,16 +183,19 @@ class Dataset(ApiResource):
         """
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
         resp = client.request(endpoint=endpoint,
-                              method=requests.get)
-        handle_error_response(resp, endpoint)
+                              method=requests.get,
+                              message_prefix='Dataset download')
+
         if resp._content is None:
             raise PrevisionException('could not download dataset')
 
         if not download_path:
             download_path = os.getcwd()
         path = os.path.join(download_path, self.name + ".zip")
+
         with open(path, "wb") as file:
             file.write(resp._content)
+
         return path
 
     @classmethod
@@ -253,7 +249,8 @@ class Dataset(ApiResource):
             data['datasource_id'] = datasource.id
             create_resp = client.request(request_url,
                                          data=data,
-                                         method=requests.post)
+                                         method=requests.post,
+                                         message_prefix='Dataset upload from datasource')
 
         elif dataframe is not None:
             file_ext = '.zip'
@@ -262,11 +259,26 @@ class Dataset(ApiResource):
                 dataframe.to_csv(temp.name, index=False)
 
                 file_name = temp.name.replace('.csv', file_ext)
-                with ZipFile(file_name, 'w') as zip_file:
+                with zipfile.ZipFile(file_name, 'w') as zip_file:
                     zip_file.write(temp.name, arcname=name + '.csv')
+                assert zip_file.filename is not None
 
                 with open(zip_file.filename, 'rb') as f:
-                    files['file'] = (os.path.basename(file_name), f)
+                    files['file'] = (os.path.basename(file_name), f, 'application/zip')
+                    for k, v in data.items():
+                        files[k] = (None, v)
+
+                    create_resp = client.request(request_url,
+                                                 data=data,
+                                                 files=files,
+                                                 method=requests.post,
+                                                 message_prefix='Dataset upload from dataframe')
+
+        elif file_name is not None:
+
+            if zipfile.is_zipfile(file_name):
+                with open(file_name, 'rb') as f:
+                    files['file'] = (os.path.basename(file_name), f, 'application/zip')
 
                     for k, v in data.items():
                         files[k] = (None, v)
@@ -274,23 +286,26 @@ class Dataset(ApiResource):
                     create_resp = client.request(request_url,
                                                  data=data,
                                                  files=files,
-                                                 method=requests.post)
+                                                 method=requests.post,
+                                                 message_prefix='Dataset upload from zip file')
 
-        elif file_name is not None:
-            with open(file_name, 'r') as f:
-                files['file'] = (os.path.basename(file_name), f)
+            # If not a zip, assert it is a CSV
+            else:
+                with open(file_name, 'r') as f:
+                    files['file'] = (os.path.basename(file_name), f, 'text/csv')
 
-                for k, v in data.items():
-                    files[k] = (None, v)
+                    for k, v in data.items():
+                        files[k] = (None, v)
 
-                create_resp = client.request(request_url,
-                                             data=data,
-                                             files=files,
-                                             method=requests.post)
+                    create_resp = client.request(request_url,
+                                                 data=data,
+                                                 files=files,
+                                                 method=requests.post,
+                                                 message_prefix='Dataset upload from csv file')
+
         if create_resp is None:
-            raise PrevisionException('[Dataset] Uexpected case in dataset creation')
+            raise PrevisionException('[Dataset] Unexpected case in dataset creation')
 
-        handle_error_response(create_resp, request_url, data)
         create_json = parse_json(create_resp)
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
         event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'describe_state', 'done',
@@ -300,8 +315,12 @@ class Dataset(ApiResource):
                                                 event_tuple,
                                                 specific_url=url)
 
-        dset_resp = client.request(url, method=requests.get)
+        dset_resp = client.request(url, method=requests.get, message_prefix='Dataset loading')
         dset_json = parse_json(dset_resp)
+
+        if dataframe is not None:
+            os.remove(file_name)
+
         return cls(**dset_json)
 
 
@@ -338,9 +357,9 @@ class DatasetImages(ApiResource):
             PrevisionException: If the dataset images does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/{}/{}'
-                              .format(self.resource, self.id),
-                              method=requests.delete)
+        resp = client.request(endpoint='/{}/{}'.format(self.resource, self.id),
+                              method=requests.delete,
+                              message_prefix='Image folder delete')
         return resp
 
     @classmethod
@@ -394,10 +413,9 @@ class DatasetImages(ApiResource):
 
         create_resp = client.request(request_url,
                                      files=files,
-                                     method=requests.post)
+                                     method=requests.post,
+                                     message_prefix='Image folder upload')
         source.close()
-
-        handle_error_response(create_resp, request_url)
 
         create_json = parse_json(create_resp)
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
@@ -407,7 +425,7 @@ class DatasetImages(ApiResource):
                                                     'FOLDER_UPDATE', 'state', 'done', [('state', 'failed')]),
                                                 specific_url=url)
 
-        dset_resp = client.request(url, method=requests.get)
+        dset_resp = client.request(url, method=requests.get, message_prefix='Image folder loading')
         dset_json = parse_json(dset_resp)
         return cls(**dset_json)
 
@@ -428,8 +446,8 @@ class DatasetImages(ApiResource):
         """
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
         resp = client.request(endpoint=endpoint,
-                              method=requests.get)
-        handle_error_response(resp, endpoint)
+                              method=requests.get,
+                              message_prefix='Image folder download')
         if resp._content is None:
             raise PrevisionException('could not download dataset')
         if not download_path:

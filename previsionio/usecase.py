@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+from previsionio.usecase_config import DataType, TypeProblem
 from typing import List
 import requests
 
@@ -24,8 +25,8 @@ class Usecase(ApiResource):
         self._id = usecase_info.get('_id')
         self.name: str = usecase_info.get('name')
         self.project_id: str = usecase_info.get('project_id')
-        self.training_type: str = usecase_info.get('training_type')
-        self.data_type: str = usecase_info.get('data_type')
+        self.training_type: TypeProblem = TypeProblem(usecase_info.get('training_type'))
+        self.data_type: DataType = DataType(usecase_info.get('data_type'))
         self.version_ids: list = usecase_info.get('version_ids')
 
     @classmethod
@@ -73,7 +74,9 @@ class Usecase(ApiResource):
             list(dict): List of the usecase versions (as JSON metadata)
         """
         end_point = '/{}/{}/versions'.format(self.resource, self._id)
-        response = client.request(endpoint=end_point, method=requests.get)
+        response = client.request(endpoint=end_point,
+                                  method=requests.get,
+                                  message_prefix='Usecase versions listing')
         res = parse_json(response)
         # TODO create usecase version object
         return res['items']
@@ -85,5 +88,6 @@ class Usecase(ApiResource):
             dict: Deletion process results
         """
         response = client.request(endpoint='/usecases/{}'.format(self._id),
-                                  method=requests.delete)
+                                  method=requests.delete,
+                                  message_prefix='Usecase deletion')
         return response

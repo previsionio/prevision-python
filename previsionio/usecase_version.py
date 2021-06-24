@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import json
+from previsionio.model import Model
 from typing import Dict, List, Union
 import pandas as pd
 import requests
@@ -10,10 +11,11 @@ import os
 from functools import lru_cache
 
 from . import config
-from .usecase_config import DataType, TrainingConfig, ColumnConfig
+from .usecase_config import (AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel,
+                             TrainingConfig, ColumnConfig, TypeProblem, UsecaseState)
 from .logger import logger
 from .prevision_client import client
-from .utils import handle_error_response, parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
+from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
 from .api_resource import ApiResource
 from .dataset import Dataset
 from .usecase import Usecase
@@ -28,8 +30,9 @@ class BaseUsecaseVersion(ApiResource):
     id_key = 'usecase_id'
 
     resource = 'usecase-versions'
-    type_problem: str
-    data_type: str
+    training_type: TypeProblem
+    data_type: DataType
+    model_class: Model
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
@@ -116,8 +119,8 @@ class BaseUsecaseVersion(ApiResource):
         """
         end_point = '/{}/{}/graph'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
-                                  method=requests.get)
-        handle_error_response(response, end_point)
+                                  method=requests.get,
+                                  message_prefix='Usecase schema')
         uc_schema = json.loads(response.content.decode('utf-8'))
         return uc_schema
 
@@ -161,69 +164,69 @@ class BaseUsecaseVersion(ApiResource):
         return fastest_model
 
     @property
-    def done(self):
+    def done(self) -> bool:
         """ Get a flag indicating whether or not the usecase is currently done.
 
         Returns:
             bool: done status
         """
         status = self._status
-        return status['state'] == 'done'
+        return status['state'] == UsecaseState.Done.value
 
     @property
-    def running(self):
+    def running(self) -> bool:
         """ Get a flag indicating whether or not the usecase is currently running.
 
         Returns:
             bool: Running status
         """
         status = self._status
-        return status['state'] == 'running'
+        return status['state'] == UsecaseState.Running.value
 
     @property
-    def status(self):
+    def status(self) -> UsecaseState:
         """ Get a flag indicating whether or not the usecase is currently running.
 
         Returns:
             bool: Running status
         """
         status = self._status
-        return status['state']
+        return UsecaseState(status['state'])
 
     @property
-    def normal_models_list(self):
+    def advanced_models_list(self) -> List[AdvancedModel]:
+        """ Get the list of selected advanced models in the usecase.
+
+        Returns:
+            list(AdvancedModel): Names of the normal models selected for the usecase
+        """
+        return [AdvancedModel(f) for f in self._status['usecase_version_params'].get('normal_models', [])]
+
+    @property
+    def normal_models_list(self) -> List[NormalModel]:
         """ Get the list of selected normal models in the usecase.
 
         Returns:
-            list(str): Names of the normal models selected for the usecase
+            list(NormalModel): Names of the normal models selected for the usecase
         """
-        return self._status['usecase_version_params'].get('normal_models', [])
+        return [NormalModel(f) for f in self._status['usecase_version_params'].get('lite_models', [])]
 
     @property
-    def lite_models_list(self):
-        """ Get the list of selected lite models in the usecase.
-
-        Returns:
-            list(str): Names of the lite models selected for the usecase
-        """
-        return self._status['usecase_version_params'].get('lite_models', [])
-
-    @property
-    def simple_models_list(self):
+    def simple_models_list(self) -> List[SimpleModel]:
         """ Get the list of selected simple models in the usecase.
 
         Returns:
-            list(str): Names of the simple models selected for the usecase
+            list(SimpleModel): Names of the simple models selected for the usecase
         """
-        return self._status['usecase_version_params'].get('simple_models', [])
+        return [SimpleModel(f) for f in self._status['usecase_version_params'].get('simple_models', [])]
 
     def stop(self):
         """ Stop a usecase (stopping all nodes currently in progress). """
         logger.info('[Usecase] stopping usecase')
         end_point = '/{}/{}/stop'.format(self.resource, self._id)
         response = client.request(end_point,
-                                  requests.put)
-        handle_error_response(response, end_point)
+                                  requests.put,
+                                  message_prefix='Usecase stop')
         events_url = '/{}/{}'.format(self.resource, self._id)
         pio.client.event_manager.wait_for_event(self.resource_id,
                                                 self.resource,
@@ -286,8 +289,8 @@ class BaseUsecaseVersion(ApiResource):
         """
         end_point = '/usecase-versions/{}/holdout-predictions'.format(self._id)
         response = client.request(endpoint=end_point,
-                                  method=requests.get)
-        handle_error_response(response, end_point, message_prefix="Error fetching holdout predictions")
+                                  method=requests.get,
+                                  message_prefix='Holdout predictions listing')
         preds_list = (json.loads(response.content.decode('utf-8')))['items']
         preds_dict = {}
         for pred in preds_list:
@@ -295,8 +298,8 @@ class BaseUsecaseVersion(ApiResource):
             if full:
                 end_point = '/predictions/{}/download'.format(_id)
                 response = client.request(endpoint=end_point,
-                                          method=requests.get)
-                handle_error_response(response, end_point, message_prefix="Error fetching holdout predictions")
+                                          method=requests.get,
+                                          message_prefix='Predictions fetching')
                 preds_dict[_id] = zip_to_pandas(response)
             else:
                 preds_dict[_id] = pred
@@ -310,14 +313,16 @@ class BaseUsecaseVersion(ApiResource):
             full (boolean): If true, return full prediction objects (else only metadata)
         """
         response = client.request(endpoint='/usecases/{}/predictions'.format(self._id),
-                                  method=requests.get)
+                                  method=requests.get,
+                                  message_prefix='Predictions listing')
         preds_list = (json.loads(response.content.decode('utf-8')))['items']
         preds_dict = {}
         for pred in preds_list:
             _id = pred.pop('_id')
             if full:
                 response = client.request(endpoint='/predictions/{}/download'.format(_id),
-                                          method=requests.get)
+                                          method=requests.get,
+                                          message_prefix='Predictions fetching')
                 preds_dict[_id] = zip_to_pandas(response)
             else:
                 preds_dict[_id] = pred
@@ -332,9 +337,10 @@ class BaseUsecaseVersion(ApiResource):
         Returns:
             dict: Deletion process results
         """
-        response = client.request(endpoint='/usecases/{}/versions/{}/predictions/{}'.format(self._id, self.version,
-                                                                                            prediction_id),
-                                  method=requests.delete)
+        endpoint = '/usecases/{}/versions/{}/predictions/{}'.format(self._id, self.version, prediction_id)
+        response = client.request(endpoint=endpoint,
+                                  method=requests.delete,
+                                  message_prefix='Prediction delete')
         return (json.loads(response.content.decode('utf-8')))
 
     def delete_predictions(self):
@@ -344,7 +350,8 @@ class BaseUsecaseVersion(ApiResource):
             dict: Deletion process results
         """
         response = client.request(endpoint='/usecases/{}/versions/{}/predictions'.format(self._id, self.version),
-                                  method=requests.delete)
+                                  method=requests.delete,
+                                  message_prefix='Predictions delete')
         return (json.loads(response.content.decode('utf-8')))
 
     @property
@@ -395,20 +402,25 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                           apriori_columns=usecase_params.get('apriori_columns'),
                                           drop_list=usecase_params.get('drop_list'))
 
-        self.training_config = TrainingConfig(profile=usecase_params.get('profile'),
-                                              fe_selected_list=usecase_params.get(
-                                                  'features_engineering_selected_list'),
-                                              advanced_models=usecase_params.get('normal_models'),
-                                              normal_models=usecase_params.get('lite_models'),
-                                              simple_models=usecase_params.get('simple_models'))
+        self.training_config = TrainingConfig(profile=Profile(usecase_params.get('profile')),
+                                              features=[Feature(f) for f in usecase_params.get(
+                                                  'features_engineering_selected_list', [])],
+                                              advanced_models=[
+                                                  AdvancedModel(f) for f in usecase_params.get('normal_models', [])],
+                                              normal_models=[NormalModel(f)
+                                                             for f in usecase_params.get('lite_models', [])],
+                                              simple_models=[SimpleModel(f)
+                                                             for f in usecase_params.get('simple_models', [])],
+                                              feature_time_seconds=usecase_params.get('features_selection_time', 3600),
+                                              feature_number_kept=usecase_params.get('features_selection_count', None))
 
         self._id = usecase_info.get('_id')
         self.usecase_id = usecase_info.get('usecase_id')
         self.project_id = usecase_info.get('project_id')
         self.version = usecase_info.get('version', 1)
         self._usecase_info = usecase_info
-        self.data_type: str = usecase_info['usecase'].get('data_type')
-        self.training_type: str = usecase_info['usecase'].get('training_type')
+        self.data_type: DataType = DataType(usecase_info['usecase'].get('data_type'))
+        self.training_type: TypeProblem = TypeProblem(usecase_info['usecase'].get('training_type'))
         self.dataset_id = usecase_info.get('dataset_id')
         self.predictions = {}
         self.predict_token = None
@@ -430,8 +442,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         """
         end_point = '/{}/{}/correlation-matrix'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
-                                  method=requests.get)
-        handle_error_response(response, end_point, message_prefix="Error fetching the correlation matrix")
+                                  method=requests.get,
+                                  message_prefix='Correlation matrix fetching')
         corr = json.loads(response.content.decode('utf-8'))
         var_names = [d['name'] for d in corr]
         matrix = pd.DataFrame(0, index=var_names, columns=var_names)
@@ -470,7 +482,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         # todo pagination
         end_point = '/{}/{}/features-stats'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
-                                  method=requests.get)
+                                  method=requests.get,
+                                  message_prefix='Features stats fetching')
         return (json.loads(response.content.decode('utf-8')))
 
     @property
@@ -484,7 +497,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         # todo pagination
         end_point = '/{}/{}/dropped-features'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
-                                  method=requests.get)
+                                  method=requests.get,
+                                  message_prefix='Dropped features fetching')
         return (json.loads(response.content.decode('utf-8')))
 
     def get_feature_info(self, feature_name: str) -> Dict:
@@ -520,10 +534,9 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
             PrevisionException: If the given feature name does not match any feaure
         """
         endpoint = '/{}/{}/features/{}'.format(self.resource, self._id, feature_name)
-        response = client.request(
-            endpoint=endpoint,
-            method=requests.get)
-        handle_error_response(response, endpoint)
+        response = client.request(endpoint=endpoint,
+                                  method=requests.get,
+                                  message_prefix='Features info fetching')
 
         result = (json.loads(response.content.decode('utf-8')))
 
@@ -543,13 +556,14 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         return self._status['usecase_version_params'].get('drop_list', [])
 
     @property
-    def fe_selected_list(self) -> List[str]:
+    def feature_list(self) -> List[Feature]:
         """ Get the list of selected feature engineering modules in the usecase.
 
         Returns:
             list(str): Names of the feature engineering modules selected for the usecase
         """
-        return self._status['usecase_version_params'].get('features_engineering_selected_list', [])
+        res = [Feature(f) for f in self._status['usecase_version_params'].get('features_engineering_selected_list', [])]
+        return res
 
     def get_cv(self) -> pd.DataFrame:
         """ Get the cross validation dataset from the best model of the usecase.
@@ -564,7 +578,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
 
     @classmethod
     def _start_usecase(cls, project_id: str, name: str,
-                       dataset_id: Union[str, List[str]], data_type: str, type_problem: str, **kwargs):
+                       dataset_id: Union[str, List[str]], data_type: DataType, training_type: TypeProblem, **kwargs):
         """ Start a usecase of the given data type and problem type with a specific
         training configuration (on the platform).
 
@@ -573,7 +587,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
             dataset_id (str|tuple(str, str)): Unique id of the training dataset resource or a tuple of csv and folder id
             data_type (str): Type of data used in the usecase (among "tabular", "images"
                 and "timeseries")
-            type_problem: Type of problem to compute with the usecase (among "regression",
+            training_type: Type of problem to compute with the usecase (among "regression",
                 "classification", "multiclassification" and "object-detection")
             **kwargs:
 
@@ -589,9 +603,12 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
             data = dict(name=name, dataset_id=csv_id, folder_dataset_id=folder_id, **kwargs)
         else:
             raise PrevisionException('invalid data type: {}'.format(data_type))
-        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', data_type, type_problem)
-        start = client.request(endpoint, requests.post, data=data)
-        handle_error_response(start, endpoint, data, message_prefix="Error starting usecase")
+        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', data_type.value, training_type.value)
+        start = client.request(endpoint,
+                               method=requests.post,
+                               data=data,
+                               content_type='application/json',
+                               message_prefix='Usecase start')
         return parse_json(start)
 
     def predict_single(self,

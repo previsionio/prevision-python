@@ -14,21 +14,20 @@ PREVISION_TOKEN_URL = 'https://accounts.prevision.io/auth/realms/prevision.io/pr
 
 class DeployedModel(object):
 
-    """DeployedModel class to interact with a deployed model."""
+    """
+    DeployedModel class to interact with a deployed model.
+
+    Args:
+        prevision_app_url (str): URL of the App. Can be retrieved on your app dashbord.
+        client_id (str): Your app client id. Can be retrieved on your app dashbord.
+        client_secret (str): Your app client secret. Can be retrieved on your app dashbord.
+        prevision_token_url (str): URL of get token. Should be
+            https://accounts.prevision.io/auth/realms/prevision.io/protocol/openid-connect/token
+            if you're in the cloud, or a custom IP address if installed on-premise.
+    """
 
     def __init__(self, prevision_app_url: str, client_id: str, client_secret: str, prevision_token_url: str = None):
-        """
-        Init DeployedModel (and check that the connection is valid).
-
-        Args:
-            prevision_app_url (str): URL of the App. Can be retrieved on your app dashbord.
-            client_id (str): Your app client id. Can be retrieved on your app dashbord.
-            client_secret (str): Your app client secret. Can be retrieved on your app dashbord.
-            prevision_token_url (str): URL of get token. Should be
-                https://accounts.prevision.io/auth/realms/prevision.io/protocol/openid-connect/token
-                if you're in the cloud, or a custom
-                IP address if installed on-premise.
-        """
+        """Init DeployedModel (and check that the connection is valid)."""
         self.prevision_app_url = prevision_app_url
         self.client_id = client_id
         self.client_secret = client_secret
@@ -47,15 +46,12 @@ class DeployedModel(object):
 
         try:
             self._get_token()
-            about_resp = self.request('/about', method=requests.get, no_retries=True)
-            handle_error_response(about_resp, '/about')
+            about_resp = self.request('/about', method=requests.get)
             app_info = parse_json(about_resp)
             self.problem_type = app_info['problem_type']
-            inputs_resp = self.request('/inputs', method=requests.get, no_retries=True)
-            handle_error_response(inputs_resp, '/inputs')
+            inputs_resp = self.request('/inputs', method=requests.get)
             self.inputs = parse_json(inputs_resp)
-            outputs_resp = self.request('/outputs', method=requests.get, no_retries=True)
-            handle_error_response(outputs_resp, '/outputs')
+            outputs_resp = self.request('/outputs', method=requests.get)
             self.outputs = parse_json(outputs_resp)
         except Exception as e:
             logger.error(e)
@@ -92,16 +88,14 @@ class DeployedModel(object):
             elif self.token_creation_date and self.refresh_expires_in:
                 if time() < self.token_creation_date + self.refresh_expires_in:
                     # refresh token
-                    token = self._refresh_token()
+                    self._refresh_token()
                 else:
                     # generate token
-                    token = self._generate_token()
+                    self._generate_token()
             else:
-                token = self._generate_token()
+                self._generate_token()
         else:
-            token = self._generate_token()
-
-        return token
+            self._generate_token()
 
     def check_types(self, features):
         for feature, value in features:
@@ -119,7 +113,7 @@ class DeployedModel(object):
             raise PrevisionException('No client secret configured. Call client_app.init_client() to initialize')
 
     def request(self, endpoint, method, files=None, data=None, allow_redirects=True, content_type=None,
-                no_retries=False, **requests_kwargs):
+                check_response=True, message_prefix=None, **requests_kwargs):
         """
         Make a request on the desired endpoint with the specified method & data.
 
@@ -132,7 +126,6 @@ class DeployedModel(object):
             data (dict): for single predict
             content_type (str): force request content-type
             allow_redirects (bool): passed to requests method
-            no_retries (bool): force request to run the first time, or exit directly
 
         Returns:
             request response
@@ -144,9 +137,13 @@ class DeployedModel(object):
 
         url = self.prevision_app_url + endpoint
 
-        retries = 1 if no_retries else config.request_retries
+        status_code = 502
+        retries = config.request_retries
+        n_tries = 0
 
-        for i in range(retries):
+        while (n_tries < retries) and (status_code in config.retry_codes):
+            n_tries += 1
+
             try:
                 self._get_token()
                 headers = {
@@ -154,23 +151,28 @@ class DeployedModel(object):
                 }
                 if content_type:
                     headers['content-type'] = content_type
-                req = method(url,
-                             headers=headers,
-                             files=files,
-                             allow_redirects=allow_redirects,
-                             data=data,
-                             **requests_kwargs)
-            except Exception as e:
-                logger.warning('failed to request ' + url + ' retrying ' + str(retries - i) + ' times: ' + e.__repr__())
-                if no_retries:
-                    raise PrevisionException('error requesting: {} (no retry allowed)'.format(url)) from None
-                time.sleep(config.request_retry_time)
-            else:
-                break
-        else:
-            raise Exception('failed to request')
 
-        return req
+                resp = method(url,
+                              headers=headers,
+                              files=files,
+                              allow_redirects=allow_redirects,
+                              data=data,
+                              **requests_kwargs)
+                status_code = resp.status_code
+
+            except Exception as e:
+                logger.warning(f'Failed to request {url} retrying {retries - n_tries} times: {e.__repr__()}')
+                if n_tries == retries:
+                    raise PrevisionException(f'Error requesting: {url} after {n_tries} retries')
+                continue
+
+            if status_code in config.retry_codes:
+                time.sleep(config.request_retry_time)
+
+        if check_response:
+            handle_error_response(resp, url, data, message_prefix=message_prefix, n_tries=n_tries)
+
+        return resp
 
     def predict(self, predict_data: Dict, use_confidence: bool = False, explain: bool = False):
         """ Get a prediction on a single instance using the best model of the usecase.
@@ -206,9 +208,8 @@ class DeployedModel(object):
         resp = self.request(predict_url,
                             data=json.dumps(features, cls=NpEncoder),
                             method=requests.post,
-                            no_retries=True)
+                            message_prefix='Deployed model predict')
 
-        handle_error_response(resp, predict_url, features)
         pred_response = resp.json()
         target_name = self.outputs[0]['keyName']
         preds = pred_response['response']['predictions']

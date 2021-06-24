@@ -1,7 +1,7 @@
 from typing import Union
 import requests
 from . import client
-from .utils import parse_json, handle_error_response
+from .utils import parse_json
 from .api_resource import ApiResource, UniqueResourceMixin
 
 
@@ -84,6 +84,7 @@ class Connector(ApiResource, UniqueResourceMixin):
             'port': port,
             'type': conn_type
         }
+        message_prefix = 'New connector creation'
         if username:
             data['username'] = username
         if password:
@@ -91,10 +92,11 @@ class Connector(ApiResource, UniqueResourceMixin):
         if googleCredentials:
             data['googleCredentials'] = googleCredentials
             content_type = 'application/json'
-            resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=data,
-                                  method=requests.post, content_type=content_type)
+            resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=data, method=requests.post,
+                                  content_type=content_type, message_prefix=message_prefix)
         else:
-            resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=data, method=requests.post)
+            resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=data, method=requests.post,
+                                  message_prefix=message_prefix)
 
         resp_json = parse_json(resp)
         if '_id' not in resp_json:
@@ -112,7 +114,7 @@ class Connector(ApiResource, UniqueResourceMixin):
         Returns:
             dict: Test results
         """
-        resp = client.request('/connectors/{}/test'.format(self.id), method=requests.post)
+        resp = client.request('/connectors/{}/test'.format(self.id), method=requests.post, check_response=False)
         if resp.status_code == 200:
             return True
         else:
@@ -130,8 +132,7 @@ class DataTableBaseConnector(Connector):
             dict: Databases information
         """
         url = '/{}/{}/databases'.format(self.resource, self._id)
-        resp = client.request(url, requests.get)
-        handle_error_response(resp, url)
+        resp = client.request(url, requests.get, message_prefix='Databases listing')
         resp_json = parse_json(resp)
         return resp_json['items']
 
@@ -145,8 +146,7 @@ class DataTableBaseConnector(Connector):
             dict: Tables information
         """
         url = '/{}/{}/databases/{}/tables'.format(self.resource, self._id, database)
-        resp = client.request(url, requests.get)
-        handle_error_response(resp, url)
+        resp = client.request(url, requests.get, message_prefix='Tables listing')
         resp_json = parse_json(resp)
         return resp_json['items']
 
@@ -164,8 +164,7 @@ class DataFileBaseConnector(Connector):
             dict: files information
         """
         url = '/{}/{}/paths'.format(self.resource, self._id)
-        resp = client.request(url, requests.get)
-        handle_error_response(resp, url)
+        resp = client.request(url, requests.get, message_prefix='Datasource files listing')
         resp_json = parse_json(resp)
         return resp_json['items']
 
