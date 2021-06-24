@@ -112,7 +112,8 @@ def setup_usecase_class(request):
         lambda usecase: (len(usecase.models) > 0) or (usecase._status['state'] == 'failed'))
     assert uc.running
     uc.stop()
-    uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
+    uc.wait_until(lambda usecase: usecase._status['state'] == 'done', timeout=60)
+    assert uc._status['state'] == 'done'
     yield request.param, uc
     _ = uc.usecase.delete()
 
