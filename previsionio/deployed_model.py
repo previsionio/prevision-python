@@ -142,23 +142,29 @@ class DeployedModel(object):
         n_tries = 0
 
         while (n_tries < retries) and (status_code in config.retry_codes):
-
-            self._get_token()
-            headers = {
-                "Authorization": "Bearer " + self.token['access_token'],
-            }
-            if content_type:
-                headers['content-type'] = content_type
-
-            resp = method(url,
-                          headers=headers,
-                          files=files,
-                          allow_redirects=allow_redirects,
-                          data=data,
-                          **requests_kwargs)
-
             n_tries += 1
-            status_code = resp.status_code
+
+            try:
+                self._get_token()
+                headers = {
+                    "Authorization": "Bearer " + self.token['access_token'],
+                }
+                if content_type:
+                    headers['content-type'] = content_type
+
+                resp = method(url,
+                              headers=headers,
+                              files=files,
+                              allow_redirects=allow_redirects,
+                              data=data,
+                              **requests_kwargs)
+                status_code = resp.status_code
+
+            except Exception as e:
+                logger.warning(f'Failed to request {url} retrying {retries - n_tries} times: {e.__repr__()}')
+                if n_tries == retries:
+                    raise PrevisionException(f'Error requesting: {url} after {n_tries} retries')
+                continue
 
             if status_code in config.retry_codes:
                 time.sleep(config.request_retry_time)
