@@ -249,6 +249,7 @@ class Client(object):
 
         while (n_tries < retries) and (status_code in config.retry_codes):
             n_tries += 1
+
             try:
                 resp: Response = method(url,
                                         headers=headers,
@@ -256,13 +257,14 @@ class Client(object):
                                         allow_redirects=allow_redirects,
                                         json=data,
                                         **requests_kwargs)
+                status_code = resp.status_code
+
             except Exception as e:
                 logger.warning('failed to request ' + url + ' retrying ' + str(retries - n_tries) + ' times: ' + e.__repr__())
                 if n_tries == retries:
                     raise PrevisionException('error requesting: {} after {} retries'.format(url, n_tries))
                 continue
 
-            status_code = resp.status_code
             if status_code in config.retry_codes:
                 time.sleep(config.request_retry_time)
 
