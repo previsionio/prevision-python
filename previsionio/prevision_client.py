@@ -260,9 +260,9 @@ class Client(object):
                 status_code = resp.status_code
 
             except Exception as e:
-                logger.warning(f'failed to request {url} retrying {retries - n_tries} times: {e.__repr__()}')
+                logger.warning(f'Failed to request {url} retrying {retries - n_tries} times: {e.__repr__()}')
                 if n_tries == retries:
-                    raise PrevisionException('error requesting: {} after {} retries'.format(url, n_tries))
+                    raise PrevisionException(f'Error requesting: {url} after {n_tries} retries')
                 continue
 
             if status_code in config.retry_codes:
