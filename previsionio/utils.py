@@ -10,7 +10,7 @@ import os
 from collections import namedtuple
 import numpy as np
 from requests.models import Response
-from . import logger
+from . import logger, config
 import datetime
 from math import ceil
 
@@ -109,7 +109,6 @@ def is_null_value(value) -> bool:
 def get_all_results(client, endpoint: str, method) -> List[Dict]:
     resources = []
     batch: requests.Response = client.request(endpoint, method=method)
-    handle_error_response(batch, endpoint)
     json = parse_json(batch)
     meta = json['metaData']
     total_items = meta['totalItems']
@@ -118,24 +117,30 @@ def get_all_results(client, endpoint: str, method) -> List[Dict]:
     for n in range(1, n_pages + 1):
         url = endpoint + "?page={}".format(n)
         batch = client.request(url, method=method)
-        handle_error_response(batch, url)
         resources.extend(parse_json(batch)['items'])
     return resources
 
 
 def handle_error_response(
     resp: Response,
-    url: str, data: Union[Dict, List] = None,
+    url: str,
+    data: Union[Dict, List] = None,
+    files: Dict = None,
     message_prefix: str = None,
+    n_tries: int = 1,
     additional_log: str = None,
 ):
-    if resp.status_code != 200:
+    if resp.status_code not in config.success_codes:
         message = "Error {}: '{}' reaching url: '{}'".format(
             resp.status_code, resp.text, url)
+        if n_tries > 1:
+            message += " after {} tries".format(n_tries)
         if data:
             message += " with data: {}".format(data)
+        if files:
+            message += " with files: {}".format(files)
         if message_prefix:
-            message = message_prefix + '\n' + message
+            message = message_prefix + ' failure\n' + message
         logger.error(message)
         if additional_log:
             logger.error(additional_log)

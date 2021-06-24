@@ -1,8 +1,6 @@
 import copy
 from enum import Enum
-from sys import api_version
-from typing import Dict, List, Union
-from .utils import to_json
+from typing import List, Union
 
 
 def _drop_in_list(feature_list: List, param_to_drop: List):
@@ -219,8 +217,8 @@ class TrainingConfig(UsecaseConfig):
             at the end of the training by cherry-picking already trained models and fine-tuning
             hyperparameters (usually gives even better performance)
         feature_time_seconds (int, optional): feature selection take at most fsel_time in seconds
-        feature_number_kept (int, optional): a feature selection algorithm is launched to keep at most `feature_number_kept` features
-
+        feature_number_kept (int, optional): a feature selection algorithm is launched to keep at most
+            `feature_number_kept` features
     """
 
     config = {
@@ -250,7 +248,8 @@ class TrainingConfig(UsecaseConfig):
             features (Feature, optional): Names of the feature engineering modules to use
             with_blend (bool, optional): models selectioned are also launched as blend
             feature_time_seconds (int, optional): feature selection take at most fsel_time in seconds
-            feature_number_kept (int, optional): a feature selection algorithm is launched to keep at most `feature_number_kept` features
+            feature_number_kept (int, optional): a feature selection algorithm is launched to keep at most
+                `feature_number_kept` features
         """
 
         self.features = features

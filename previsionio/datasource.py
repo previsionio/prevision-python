@@ -3,7 +3,7 @@ from __future__ import print_function
 import requests
 
 from . import client
-from .utils import handle_error_response, parse_json, PrevisionException
+from .utils import parse_json, PrevisionException
 from .api_resource import ApiResource, UniqueResourceMixin
 
 
@@ -90,8 +90,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
         """
         # FIXME GET datasource should not return a dict with a "data" key
         url = '/{}/{}'.format(cls.resource, _id)
-        resp = client.request(url, method=requests.get)
-        handle_error_response(resp, url)
+        resp = client.request(url, method=requests.get, message_prefix='From id data source')
         resp_json = parse_json(resp)
 
         return cls(**resp_json)
@@ -135,8 +134,8 @@ class DataSource(ApiResource, UniqueResourceMixin):
         url = '/projects/{}/{}'.format(project_id, cls.resource)
         resp = client.request(url,
                               data=data,
-                              method=requests.post)
-        handle_error_response(resp, url, data)
+                              method=requests.post,
+                              message_prefix='Datasource creation')
         json = parse_json(resp)
 
         if '_id' not in json:

@@ -8,9 +8,8 @@ from previsionio.dataset import Dataset, DatasetImages
 from . import TrainingConfig
 from . import metrics
 from .usecase_version import ClassicUsecaseVersion
-from .model import Model, RegressionModel, \
-    ClassificationModel, MultiClassificationModel
-from .utils import EventTuple, handle_error_response, parse_json, to_json
+from .model import RegressionModel, ClassificationModel, MultiClassificationModel
+from .utils import EventTuple, parse_json, to_json
 from .prevision_client import client
 import previsionio as pio
 
@@ -188,8 +187,11 @@ class Supervised(ClassicUsecaseVersion):
 
         params.update(fit_params)
         endpoint = "/usecases/{}/versions".format(self.usecase_id)
-        resp = client.request(endpoint=endpoint, data=params, method=requests.post, content_type='application/json')
-        handle_error_response(resp, endpoint, params)
+        resp = client.request(endpoint=endpoint,
+                              data=params,
+                              method=requests.post,
+                              content_type='application/json',
+                              message_prefix='Usecase creation')
         json = parse_json(resp)
 
         usecase = self.from_id(json["_id"])

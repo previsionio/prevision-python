@@ -17,8 +17,7 @@ from .dataset import Dataset
 from .deployed_model import DeployedModel
 from .prevision_client import client
 from .api_resource import ApiResource
-from .utils import handle_error_response, parse_json, EventTuple, \
-    PrevisionException, zip_to_pandas
+from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas
 
 
 class Model(ApiResource):
@@ -89,8 +88,8 @@ class Model(ApiResource):
         """
         end_point = '/models/{}'.format(_id)
         response = client.request(endpoint=end_point,
-                                  method=requests.get)
-        handle_error_response(response, end_point)
+                                  method=requests.get,
+                                  message_prefix='Model from id')
         model = json.loads(response.content.decode('utf-8'))
         training_type = TypeProblem(model.get('training_type', model.get('type_problem')))
         if training_type == TypeProblem.Regression:
@@ -115,8 +114,8 @@ class Model(ApiResource):
         url = '/models/{}/hyperparameters/download'.format(self._id)
         response = client.request(
             endpoint=url,
-            method=requests.get)
-        handle_error_response(response, url)
+            method=requests.get,
+            message_prefix='Hyperparameters')
         return (json.loads(response.content.decode('utf-8')))
 
     def wait_for_prediction(self, prediction_id: str):
@@ -163,7 +162,9 @@ class Model(ApiResource):
             data['folder_dataset_id'] = dataset_folder_id
 
         predict_start = client.request('/usecase-versions/{}/predictions'.format(self.usecase_version_id),
-                                       requests.post, data=data)
+                                       method=requests.post,
+                                       data=data,
+                                       message_prefix='Bulk predict')
         predict_start_parsed = parse_json(predict_start)
 
         if '_id' not in predict_start_parsed:
@@ -184,9 +185,9 @@ class Model(ApiResource):
         """
         url = '/predictions/{}/download'.format(predict_id)
         pred_response = pio.client.request(url,
-                                           requests.get)
+                                           method=requests.get,
+                                           message_prefix='Predictions download')
         logger.debug('[Predict {0}] Downloading prediction file'.format(predict_id))
-        handle_error_response(pred_response, url)
 
         return zip_to_pandas(pred_response, separator=separator)
 
@@ -257,8 +258,8 @@ class Model(ApiResource):
     def enable_deploy(self):
         data = {"deploy": True}
         url = '/models/{}'.format(self._id)
-        response = client.request(url, requests.put, data=data)
-        handle_error_response(response, url, data, message_prefix="Error cannot enable deploy")
+        response = client.request(url, requests.put, data=data,
+                                  message_prefix="Enable deploy")
         self.deployable = True
         res = parse_json(response)
         return res
@@ -266,8 +267,8 @@ class Model(ApiResource):
     def disable_deploy(self):
         data = {"deploy": False}
         url = '/models/{}'.format(self._id)
-        response = client.request(url, requests.put, data=data)
-        handle_error_response(response, url, data, message_prefix="Error cannot disable deploy")
+        response = client.request(url, requests.put, data=data,
+                                  message_prefix="Disable deploy")
         self.deployable = False
         res = parse_json(response)
         return res
@@ -299,10 +300,9 @@ class ClassicModel(Model):
             PrevisionException: Any error while fetching data from the platform or parsing the result
         """
         endpoint = '/models/{}/features-importances/download'.format(self._id)
-        response = client.request(
-            endpoint=endpoint,
-            method=requests.get)
-        handle_error_response(response, endpoint, message_prefix="Error cannot fetch feature importance")
+        response = client.request(endpoint=endpoint,
+                                  method=requests.get,
+                                  message_prefix='Fetch feature importance')
 
         df_feat_importance = zip_to_pandas(response)
 
@@ -318,8 +318,8 @@ class ClassicModel(Model):
         logger.debug('getting cv, model_id: {}'.format(self.id))
         url = '/models/{}/cross-validation/download'.format(self._id)
         cv_response = client.request(url,
-                                     requests.get)
-        handle_error_response(cv_response, url, message_prefix="Error cannot fetch cross validation")
+                                     requests.get,
+                                     message_prefix="Fetch cross validation")
         df_cv = zip_to_pandas(cv_response)
 
         return df_cv
@@ -336,9 +336,8 @@ class ClassicModel(Model):
         endpoint = '/models/{}/analysis'.format(self._id)
         response = client.request(
             endpoint=endpoint,
-            method=requests.get)
-
-        handle_error_response(response, endpoint)
+            method=requests.get,
+            message_prefix='Model analysis')
 
         result = (json.loads(response.content.decode('utf-8')))
 
@@ -382,8 +381,8 @@ class ClassicModel(Model):
         response = client.request(url,
                                   requests.post,
                                   data=payload,
-                                  content_type='application/json')
-        handle_error_response(response, url, payload, message_prefix="Error while doing a predict")
+                                  content_type='application/json',
+                                  message_prefix="Unit predict")
         response_json = parse_json(response)
         return response_json
 
@@ -417,12 +416,7 @@ class ClassificationModel(ClassicModel):
         Raises:
             PrevisionException: Any error while fetching data from the platform or parsing the result
         """
-        endpoint = '/models/{}/analysis'.format(self._id)
-        response = client.request(endpoint=endpoint,
-                                  method=requests.get)
-        handle_error_response(response, endpoint)
-        resp = json.loads(response.content.decode('utf-8'))
-        return resp["optimal_proba"]
+        return self.chart()["optimal_proba"]
 
     def get_dynamic_performances(self, threshold: float = 0.5):
         """ Get model performance for the given threshold.
@@ -453,8 +447,8 @@ class ClassificationModel(ClassicModel):
         endpoint = '/models/{}/dynamic-analysis{}'.format(self._id, query)
 
         response = client.request(endpoint=endpoint,
-                                  method=requests.get)
-        handle_error_response(response, endpoint)
+                                  method=requests.get,
+                                  message_prefix='Dynamic analysis')
         resp = json.loads(response.content.decode('utf-8'))
 
         result['confusion_matrix'] = resp["confusion_matrix"]
@@ -523,8 +517,9 @@ class TextSimilarityModel(Model):
             data['queries_dataset_matching_id_description_column'] = matching_id_description_column
         endpoint = '/usecase-versions/{}/predictions'.format(self.usecase_version_id)
         predict_start = client.request(endpoint,
-                                       requests.post, data=data)
-        handle_error_response(predict_start, endpoint, data)
+                                       method=requests.post,
+                                       data=data,
+                                       message_prefix='Text-similarity bulk predict')
         predict_start_parsed = parse_json(predict_start)
 
         if '_id' not in predict_start_parsed:
