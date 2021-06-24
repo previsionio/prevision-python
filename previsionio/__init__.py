@@ -3,7 +3,7 @@ import logging
 from previsionio.logger import logger, event_logger
 
 
-__version__ = '11.0.0'
+__version__ = '11.1.0'
 
 
 def verbose(v, debug: bool = False, event_log: bool = False):
