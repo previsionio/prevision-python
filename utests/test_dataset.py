@@ -55,6 +55,25 @@ def test_upload_dataset_from_dataframe():
         assert ds.name in ds_names
 
 
+def test_upload_dataset_from_dataframe():
+    project = pio.Project.from_id(PROJECT_ID)
+    paths_df = {k: paths[k] for k in paths if k != 'zip_regression'}
+    for problem_type, p in paths_df.items():
+        dataset = project.create_dataset(p.split('/')[-1][:-4] + str(TESTING_ID),
+                                         dataframe=pd.read_csv(p), origin="sdk")
+        test_datasets[problem_type] = dataset
+
+    datasets = [ds for ds in project.list_datasets(all=True) if TESTING_ID in ds.name]
+    ds_names = [k + str(TESTING_ID) for k in paths_df]
+
+    assert len(datasets) == len(paths_df)
+    global N_DATASETS
+    N_DATASETS += len(datasets)
+
+    for ds in datasets:
+        assert ds.name in ds_names
+
+
 def test_upload_dataset_from_filename():
     project = pio.Project.from_id(PROJECT_ID)
     paths_files = {k: paths[k] for k in ('regression', 'zip_regression')}
