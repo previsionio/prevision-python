@@ -25,7 +25,7 @@ with open("README.md") as readme:
           long_description=readme.read(),
           url='https://github.com/previsionio/prevision-python',
           author='prevision.io',
-          author_email='prevision@prevision.io',
+          author_email='team-core@prevision.io',
           packages=find_packages(exclude=['ci*', 'utest*']),
           license="MIT License",
           install_requires=install_requires,
