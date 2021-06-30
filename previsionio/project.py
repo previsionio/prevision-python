@@ -21,6 +21,7 @@ from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
                               TextSimilarity, TextSimilarityLang)
 from .usecase import Usecase
+from .usecase_deployment import UsecaseDeployment
 from pandas import DataFrame
 
 
@@ -785,6 +786,26 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return Usecase.list(self._id, all=all)
 
+    def create_usecase_deployment(name: str, main_model, challenger_model=None, access_type: str = 'public'):
+        return UsecaseDeployment._new(
+            self._id,
+            name,
+            main_model,
+            challenger_model=challenger_model,
+            access_type=access_type
+        )
+
+    def list_usecase_deployments(self, all: bool = True):
+        """ List all the available usecase in the current project.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+        Returns:
+            list(:class:`.UsecaseDeployment`): Fetched usecase deployment objects
+        """
+        return UsecaseDeployment.list(self._id, all=all)
 
 connectors_names = {
     'SQL': "create_sql_connector",
