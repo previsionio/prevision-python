@@ -235,9 +235,11 @@ class Dataset(ApiResource):
         if not any([datasource is not None, file_name is not None, dataframe is not None]):
             raise Exception('at least one of [datasource, file_handle, data] must be specified')
 
+        valid_origin = ["kubeflow_auto", "kubeflow_output", "sdk"]
+
         data = {
             'name': name,
-            'kubeflow_dataset': kwargs.get('kubeflow_dataset', False)
+            'origin': kwargs.get('origin', None)
         }
 
         files = {
