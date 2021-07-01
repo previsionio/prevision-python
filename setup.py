@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 python_major = sys.version_info[0]
 
 install_requires = [
-    "pandas>=1.0.3",
+    "pandas>=0.25.3",
     "requests>=2.23.0",
     "scikit-learn>=0.22.2",
     "numpy>=1.18.4",
