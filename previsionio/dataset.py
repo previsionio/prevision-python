@@ -235,16 +235,18 @@ class Dataset(ApiResource):
         if not any([datasource is not None, file_name is not None, dataframe is not None]):
             raise Exception('at least one of [datasource, file_handle, data] must be specified')
 
-        valid_origin = ["file_upload", "datasource", "pipeline_output", "pipeline_intermediate_file"]
-
-        origin = kwargs.get('origin', "file_upload" if datasource is None else "datasource")
-        if origin not in valid_origin:
-            raise RuntimeError(f"invalid origin: {origin}")
-
         data = {
             'name': name,
-            'origin': origin
         }
+
+        if 'origin' in kwargs:
+            valid_origin = ["pipeline_output", "pipeline_intermediate_file"]
+            origin = kwargs.get('origin')
+            assert isinstance(origin, str)
+            if origin in valid_origin:
+                data['origin'] = origin
+            else:
+                raise RuntimeError(f"invalid origin: {origin}")
 
         files = {
 
