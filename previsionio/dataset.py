@@ -242,10 +242,9 @@ class Dataset(ApiResource):
         if 'origin' in kwargs:
             valid_origin = ["pipeline_output", "pipeline_intermediate_file"]
             origin = kwargs.get('origin')
-            if isinstance(origin, str) and origin in valid_origin:
-                data['origin'] = origin
-            else:
+            if not isinstance(origin, str) or origin not in valid_origin:
                 raise RuntimeError(f"invalid origin: {origin}")
+            data['origin'] = origin
 
         files = {
 
