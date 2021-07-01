@@ -239,7 +239,7 @@ class Dataset(ApiResource):
 
         origin = kwargs.get('origin', "file_upload")
         if origin not in valid_origin:
-            raise RuntimeError(f"ivalid origin: {origin}")
+            raise RuntimeError(f"invalid origin: {origin}")
 
         data = {
             'name': name,
