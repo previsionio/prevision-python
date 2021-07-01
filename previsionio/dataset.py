@@ -237,7 +237,7 @@ class Dataset(ApiResource):
 
         valid_origin = ["file_upload", "datasource", "pipeline_output", "pipeline_intermediate_file"]
 
-        origin = kwargs.get('origin', "file_upload")
+        origin = kwargs.get('origin', "file_upload" if datasource is None else "datasource")
         if origin not in valid_origin:
             raise RuntimeError(f"invalid origin: {origin}")
 
