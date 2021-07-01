@@ -55,12 +55,12 @@ def test_upload_dataset_from_dataframe():
         assert ds.name in ds_names
 
 
-def test_upload_dataset_from_dataframe():
+def test_upload_dataset_from_dataframe_with_origin():
     project = pio.Project.from_id(PROJECT_ID)
     paths_df = {k: paths[k] for k in paths if k != 'zip_regression'}
     for problem_type, p in paths_df.items():
         dataset = project.create_dataset(p.split('/')[-1][:-4] + str(TESTING_ID),
-                                         dataframe=pd.read_csv(p), origin="sdk")
+                                         dataframe=pd.read_csv(p), origin="pipeline_intermediate_file")
         test_datasets[problem_type] = dataset
 
     datasets = [ds for ds in project.list_datasets(all=True) if TESTING_ID in ds.name]

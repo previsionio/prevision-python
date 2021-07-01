@@ -235,11 +235,15 @@ class Dataset(ApiResource):
         if not any([datasource is not None, file_name is not None, dataframe is not None]):
             raise Exception('at least one of [datasource, file_handle, data] must be specified')
 
-        valid_origin = ["kubeflow_auto", "kubeflow_output", "sdk"]
+        valid_origin = ["file_upload", "datasource", "pipeline_output", "pipeline_intermediate_file"]
+
+        origin = kwargs.get('origin', "file_upload")
+        if origin not in valid_origin:
+            raise RuntimeError(f"ivalid origin: {origin}")
 
         data = {
             'name': name,
-            'origin': kwargs.get('origin', None)
+            'origin': origin
         }
 
         files = {
