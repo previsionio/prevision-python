@@ -18,6 +18,7 @@ from .deployed_model import DeployedModel
 from .prevision_client import client
 from .api_resource import ApiResource
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas
+from .prediction import Prediction
 
 
 class Model(ApiResource):
@@ -118,18 +119,6 @@ class Model(ApiResource):
             message_prefix='Hyperparameters')
         return (json.loads(response.content.decode('utf-8')))
 
-    def wait_for_prediction(self, prediction_id: str):
-        """ Wait for a specific prediction to finish.
-
-        Args:
-            predict_id (str): Unique id of the prediction to wait for
-        """
-        specific_url = '/predictions/{}'.format(prediction_id)
-        pio.client.event_manager.wait_for_event(prediction_id,
-                                                specific_url,
-                                                EventTuple('PREDICTION_UPDATE', 'state', 'done', [('state', 'failed')]),
-                                                specific_url=specific_url)
-
     def _predict_bulk(self,
                       dataset_id: str,
                       confidence: bool = False,
@@ -147,7 +136,7 @@ class Model(ApiResource):
                 if need be (default: ``None``)
 
         Returns:
-            str: A prediction job ID
+            str: A prediction object
 
         Raises:
             PrevisionException: Any error while starting the prediction on the platform or parsing the result
@@ -171,25 +160,7 @@ class Model(ApiResource):
             err = 'Error starting prediction: {}'.format(predict_start_parsed)
             logger.error(err)
             raise PrevisionException(err)
-
-        return predict_start_parsed['_id']
-
-    def _get_predictions(self, predict_id: str, separator=',') -> pd.DataFrame:
-        """ Get the result prediction dataframe from a given predict id.
-
-        Args:
-            predict_id (str): Prediction job ID
-
-        Returns:
-            ``pd.DataFrame``: Prediction dataframe.
-        """
-        url = '/predictions/{}/download'.format(predict_id)
-        pred_response = pio.client.request(url,
-                                           method=requests.get,
-                                           message_prefix='Predictions download')
-        logger.debug('[Predict {0}] Downloading prediction file'.format(predict_id))
-
-        return zip_to_pandas(pred_response, separator=separator)
+        return Prediction(**predict_start_parsed)
 
     def predict_from_dataset(self, dataset: Dataset,
                              confidence: bool = False,
@@ -207,27 +178,11 @@ class Model(ApiResource):
             ``pd.DataFrame``: Prediction results dataframe
         """
 
-        predict_id = self._predict_bulk(dataset.id,
+        prediction = self._predict_bulk(dataset.id,
                                         confidence=confidence,
                                         dataset_folder_id=dataset_folder.id if dataset_folder else None)
 
-        self.wait_for_prediction(predict_id)
-
-        # FIXME : wait_for_prediction() seems to be broken...
-        retry_count = 60
-        retry = 0
-        while retry < retry_count:
-            retry += 1
-            try:
-                preds = self._get_predictions(predict_id, separator=dataset.separator)
-                return preds
-            except Exception:
-                # FIXME:
-                # sometimes I observed error 500, with prediction on image usecase
-                logger.warning('wait_for_prediction has prolly exited {} seconds too early'
-                               .format(retry))
-                time.sleep(1)
-        return None
+        return prediction
 
     def predict(self, df: DataFrame, confidence: bool = False, prediction_dataset_name: str = None) -> pd.DataFrame:
         """ Make a prediction in a Scikit-learn blocking style.
@@ -249,11 +204,11 @@ class Model(ApiResource):
 
         dataset = Dataset._new(self.project_id, prediction_dataset_name, dataframe=df)
 
-        predict_id = self._predict_bulk(dataset.id,
+        prediction = self._predict_bulk(dataset.id,
                                         confidence=confidence)
-        self.wait_for_prediction(predict_id)
+        prediction._wait_for_prediction()
 
-        return self._get_predictions(predict_id, separator=dataset.separator)
+        return prediction.get_data()
 
     def enable_deploy(self):
         data = {"deploy": True}
@@ -273,16 +228,16 @@ class Model(ApiResource):
         res = parse_json(response)
         return res
 
-    def deploy(self) -> DeployedModel:
-        """ (Not Implemented yet) Deploy the model as a REST API app.
-
-        Keyword Arguments:
-            app_type {enum} -- it can be 'model', 'notebook', 'shiny', 'dash' or 'node' application
-
-        Returns:
-            str: Path of the deployed application
-        """
-        raise NotImplementedError
+    # def deploy(self) -> DeployedModel:
+    #     """ (Not Implemented yet) Deploy the model as a REST API app.
+    #
+    #     Keyword Arguments:
+    #         app_type {enum} -- it can be 'model', 'notebook', 'shiny', 'dash' or 'node' application
+    #
+    #     Returns:
+    #         str: Path of the deployed application
+    #     """
+    #     raise NotImplementedError
 
 
 class ClassicModel(Model):
@@ -527,7 +482,7 @@ class TextSimilarityModel(Model):
             logger.error(err)
             raise PrevisionException(err)
 
-        return predict_start_parsed['_id']
+        return Prediction(**predict_start_parsed)
 
     def predict_from_dataset(self, queries_dataset: Dataset, queries_dataset_content_column: str, top_k: int = 10,
                              queries_dataset_matching_id_description_column: str = None) -> Union[pd.DataFrame, None]:
@@ -543,23 +498,8 @@ class TextSimilarityModel(Model):
         Returns:
             ``pd.DataFrame``: Prediction results dataframe
         """
-        predict_id = self._predict_bulk(queries_dataset.id,
+        prediction = self._predict_bulk(queries_dataset.id,
                                         queries_dataset_content_column,
                                         top_k=top_k,
                                         matching_id_description_column=queries_dataset_matching_id_description_column)
-        self.wait_for_prediction(predict_id)
-        # FIXME : wait_for_prediction() seems to be broken...
-        retry_count = 60
-        retry = 0
-        while retry < retry_count:
-            retry += 1
-            try:
-                preds = self._get_predictions(predict_id, separator=queries_dataset.separator)
-                return preds
-            except Exception:
-                # FIXME:
-                # sometimes I observed error 500, with prediction on image usecase
-                logger.warning('wait_for_prediction has prolly exited {} seconds too early'
-                               .format(retry))
-                time.sleep(1)
-        return None
+        return prediction
