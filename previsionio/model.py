@@ -164,7 +164,7 @@ class Model(ApiResource):
 
     def predict_from_dataset(self, dataset: Dataset,
                              confidence: bool = False,
-                             dataset_folder: Dataset = None) -> Union[pd.DataFrame, None]:
+                             dataset_folder: Dataset = None) -> Prediction:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
@@ -175,7 +175,7 @@ class Model(ApiResource):
                 if necessary
 
         Returns:
-            ``pd.DataFrame``: Prediction results dataframe
+            ``pd.DataFrame``: Prediction object
         """
 
         prediction = self._predict_bulk(dataset.id,
@@ -206,7 +206,6 @@ class Model(ApiResource):
 
         prediction = self._predict_bulk(dataset.id,
                                         confidence=confidence)
-        prediction._wait_for_prediction()
 
         return prediction.get_data()
 
@@ -485,7 +484,28 @@ class TextSimilarityModel(Model):
         return Prediction(**predict_start_parsed)
 
     def predict_from_dataset(self, queries_dataset: Dataset, queries_dataset_content_column: str, top_k: int = 10,
-                             queries_dataset_matching_id_description_column: str = None) -> Union[pd.DataFrame, None]:
+                             queries_dataset_matching_id_description_column: str = None) -> Prediction:
+        """ Make a prediction for a dataset stored in the current active [client]
+        workspace (using the current SDK dataset object).
+
+        Args:
+            dataset (:class:`.Dataset`): Dataset resource to make a prediction for
+            queries_dataset_content_column (str): Content queries column name
+            top_k (integer): Number of the nearest description to predict
+            queries_dataset_matching_id_description_column (str): Matching id description column name
+
+        Returns:
+            ``pd.DataFrame``: Prediction object
+        """
+        prediction = self._predict_bulk(queries_dataset.id,
+                                        queries_dataset_content_column,
+                                        top_k=top_k,
+                                        matching_id_description_column=queries_dataset_matching_id_description_column)
+        return prediction
+
+    def predict(self, df: DataFrame, queries_dataset_content_column: str, top_k: int = 10,
+                queries_dataset_matching_id_description_column: str = None,
+                prediction_dataset_name: str = None) -> Union[pd.DataFrame, None]:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
@@ -498,8 +518,15 @@ class TextSimilarityModel(Model):
         Returns:
             ``pd.DataFrame``: Prediction results dataframe
         """
-        prediction = self._predict_bulk(queries_dataset.id,
+        if prediction_dataset_name is None:
+            prediction_dataset_name = 'test_{}_{}'.format(self.name, str(uuid.uuid4())[-6:])
+
+        dataset = Dataset._new(self.project_id, prediction_dataset_name, dataframe=df)
+        prediction = self._predict_bulk(dataset.id,
                                         queries_dataset_content_column,
                                         top_k=top_k,
                                         matching_id_description_column=queries_dataset_matching_id_description_column)
-        return prediction
+        prediction = self._predict_bulk(dataset.id,
+                                        confidence=confidence)
+
+        return prediction.get_data()
