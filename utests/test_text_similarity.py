@@ -69,7 +69,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
         uc.stop()
         uc.update_status()
         assert not uc.running
-        uc.usecase.delete()
+        pio.Usecase.from_id(uc.usecase_id).delete()
 
     def test_train_new_stop_delete_text_similarity(self):
 
@@ -93,7 +93,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
         uc.stop()
         uc.update_status()
         assert not uc.running
-        uc.usecase.delete()
+        pio.Usecase.from_id(uc.usecase_id).delete()
 
     def test_train_search_delete_text_similarity_with_queries_dataset(self):
 
@@ -122,7 +122,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
                                        queries_dataset_matching_id_description_column='true_item_id')
             nb_prediction += 1
         assert nb_prediction == nb_model
-        uc.usecase.delete()
+        pio.Usecase.from_id(uc.usecase_id).delete()
 
     def test_train_delete_text_similarity_with_queries_dataset_all_models(self):
         description_column_config = pio.DescriptionsColumnConfig(content_column='item_desc', id_column='item_id')
@@ -159,4 +159,4 @@ class BaseTrainSearchDelete(unittest.TestCase):
         uc.stop()
         uc.update_status()
         assert not uc.running
-        uc.usecase.delete()
+        pio.Usecase.from_id(uc.usecase_id).delete()

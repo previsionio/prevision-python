@@ -66,7 +66,7 @@ def test_delete_usecase():
     usecase_version = supervised_from_filename('regression', uc_name)
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name in [u.name for u in usecases]
-    usecase_version.usecase.delete()
+    pio.Usecase.from_id(usecase_version.usecase_id).delete()
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name not in [u.name for u in usecases]
 
@@ -135,7 +135,7 @@ def setup_usecase_class(request):
     uc.wait_until(lambda usecase: usecase._status['state'] == 'done', timeout=60)
     assert uc._status['state'] == 'done'
     yield request.param, uc
-    _ = uc.usecase.delete()
+    _ = pio.Usecase.from_id(uc.usecase_id).delete()
 
 
 options_parameters = ('options',

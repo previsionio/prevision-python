@@ -169,4 +169,4 @@ def setup_ts_class(request):
     usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
     usecase_version.stop()
     yield groups, usecase_version
-    usecase_version.usecase.delete()
+    pio.Usecase.from_id(usecase_version.usecase_id).delete()
