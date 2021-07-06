@@ -22,7 +22,7 @@ MODEL_CLASS_DICT = {
 
 class Supervised(ClassicUsecaseVersion):
 
-    """ A supervised usecase. """
+    """ A supervised usecase version, for tabular data """
 
     data_type = DataType.Tabular
 

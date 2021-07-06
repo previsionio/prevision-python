@@ -9,6 +9,7 @@ import time
 import previsionio as pio
 import os
 from functools import lru_cache
+from dateutil import parser
 
 from . import config
 from .usecase_config import (AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel,
@@ -42,6 +43,7 @@ class BaseUsecaseVersion(ApiResource):
         self.project_id = usecase_info.get('project_id')
         self.dataset_id = usecase_info.get('dataset_id')
         self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
+        self.created_at = parser.parse(usecase_info.get("created_at", ""))
         self._models = {}
         self.version = 1
 

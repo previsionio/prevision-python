@@ -165,6 +165,7 @@ class QueriesColumnConfig(UsecaseConfig):
 
 
 class TextSimilarity(BaseUsecaseVersion):
+    """ A text similarity usecase version """
 
     default_metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k
     default_top_k: int = 10

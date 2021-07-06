@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+
+from requests.models import Response
+from previsionio.text_similarity import TextSimilarity
+from previsionio.supervised import Supervised
+from previsionio.timeseries import TimeSeries
 from previsionio.usecase_config import DataType, TypeProblem
-from typing import List
+from typing import List, Text, Type, Union
 import requests
 
 from .prevision_client import client
@@ -37,7 +42,7 @@ class Usecase(ApiResource):
             _id (str): Unique id of the usecase version to retrieve
 
         Returns:
-            :class:`.BaseUsecaseVersion`: Fetched usecase
+            :class:`.Usecase`: Fetched usecase
 
         Raises:
             PrevisionException: Any error while fetching data from the platform
@@ -67,11 +72,42 @@ class Usecase(ApiResource):
         return [cls(**conn_data) for conn_data in resources]
 
     @property
-    def versions(self):
+    def usecase_version_class(self) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries]]:
+        default = {
+            DataType.Tabular: Supervised,
+            DataType.TimeSeries: TimeSeries
+        }
+        class_dict = {
+            TypeProblem.TextSimilarity: {DataType.Tabular: TextSimilarity},
+        }
+        class_type = class_dict.get(self.training_type, default).get(self.data_type)
+        assert class_type is not None
+        return class_type
+
+    @property
+    def latest_version(self) -> Union[TextSimilarity, Supervised, TimeSeries]:
+        """Get the latest version of this use case.
+
+        Returns:
+            latest UsecaseVersion in this Usecase
+        """
+        end_point = '/projects/{}/usecase-versions/latests'.format(self.project_id)
+        response = client.request(endpoint=end_point,
+                                  method=requests.get,
+                                  message_prefix="Latest usecase versions")
+        res = parse_json(response)
+        usecases_v = [self.usecase_version_class(**val) for val in res['items']]
+        for uc in usecases_v:
+            if uc.usecase_id == self._id:
+                return uc
+        raise RuntimeError("Usecase version not found")
+
+    @property
+    def versions(self) -> List[Union[TextSimilarity, Supervised, TimeSeries]]:
         """Get the list of all versions for the current use case.
 
         Returns:
-            list(dict): List of the usecase versions (as JSON metadata)
+            list(UsecaseVersion): List of the usecase versions (as JSON metadata)
         """
         end_point = '/{}/{}/versions'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
@@ -79,7 +115,7 @@ class Usecase(ApiResource):
                                   message_prefix='Usecase versions listing')
         res = parse_json(response)
         # TODO create usecase version object
-        return res['items']
+        return [self.usecase_version_class(**val) for val in res['items']]
 
     def delete(self):
         """ Delete a usecase from the actual [client] workspace.

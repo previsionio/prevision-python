@@ -84,7 +84,28 @@ def test_usecase_version():
     print("usecase_new_version.project_id", usecase_new_version.project_id)
     # usecases = pio.Usecase.list(PROJECT_ID)
     usecase_versions = usecase_version.usecase.versions
-    assert usecase_new_version._id in [u['_id'] for u in usecase_versions]
+    assert usecase_new_version._id in [u._id for u in usecase_versions]
+
+    usecase_new_version.usecase.delete()
+
+    usecases = pio.Usecase.list(PROJECT_ID)
+    assert uc_name not in [u.name for u in usecases]
+
+
+def test_usecase_latest_versions():
+    uc_name = TESTING_ID + '_file_del'
+    usecase_version: pio.Supervised = supervised_from_filename('regression', uc_name)
+    usecases = pio.Usecase.list(PROJECT_ID)
+    print("usecase_version.usecase_id", usecase_version.usecase_id)
+    print("usecase_version.project_id", usecase_version.project_id)
+    assert uc_name in [u.name for u in usecases]
+
+    usecase_new_version = usecase_version.new_version()
+    print("usecase_new_version.usecase_id", usecase_new_version.usecase_id)
+    print("usecase_new_version.project_id", usecase_new_version.project_id)
+    # usecases = pio.Usecase.list(PROJECT_ID)
+    latest_version = usecase_version.usecase.latest_version
+    assert usecase_new_version._id == latest_version._id
 
     usecase_new_version.usecase.delete()
 

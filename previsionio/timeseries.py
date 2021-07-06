@@ -61,9 +61,8 @@ class TimeWindow(UsecaseConfig):
 
 
 class TimeSeries(ClassicUsecaseVersion):
-    """
-    A TimeSeries usecase.
-    """
+    """ A supervised usecase version, for timeseries data """
+
     training_type = TypeProblem.Regression
     metric_type = Regression
     default_metric = Regression.RMSE
