@@ -37,7 +37,7 @@ class BaseUsecaseVersion(ApiResource):
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
-        self._id = usecase_info['_id']
+        self._id: str = usecase_info['_id']
         self.usecase_id: str = usecase_info['usecase_id']
         self.project_id: str = usecase_info['project_id']
         self.dataset_id: str = usecase_info['dataset_id']
