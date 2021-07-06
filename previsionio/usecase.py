@@ -138,7 +138,6 @@ class Usecase(ApiResource):
                                   method=requests.get,
                                   message_prefix='Usecase versions listing')
         res = parse_json(response)
-        # TODO create usecase version object
         return [self.usecase_version_class(**val) for val in res['items']]
 
     def delete(self):
