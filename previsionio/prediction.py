@@ -85,7 +85,7 @@ class Prediction(ApiResource):
                                        message_prefix='Predictions download')
 
         return zip_to_pandas(pred_response)
-        return response
+        return pred_response
 
 
     def _wait_for_prediction(self):
