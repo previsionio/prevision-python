@@ -78,8 +78,7 @@ def test_download():
     ds = pio.Dataset.from_id(ds._id)
     with TemporaryDirectory() as dir:
         path = ds.download(dir)
-    assert os.path.isfile(path)
-    os.remove(path)
+        assert os.path.isfile(path)
 
 
 def test_embedding():
