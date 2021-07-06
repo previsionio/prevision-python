@@ -125,7 +125,7 @@ class Usecase(ApiResource):
                 return uc
         raise RuntimeError("Usecase version not found")
 
-    @ property
+    @property
     def versions(self) -> List[Union[TextSimilarity, Supervised, TimeSeries]]:
         """Get the list of all versions for the current use case.
 
