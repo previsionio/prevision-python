@@ -49,7 +49,6 @@ class Usecase(ApiResource):
         self.project_id: str = usecase_info['project_id']
         self.training_type: TypeProblem = TypeProblem(usecase_info['training_type'])
         self.data_type: DataType = DataType(usecase_info['data_type'])
-        self.version_ids: list = usecase_info['version_ids']
 
     @classmethod
     def from_id(cls, _id: str) -> 'Usecase':
