@@ -36,7 +36,6 @@ class BaseUsecaseVersion(ApiResource):
     model_class: Model
 
     def __init__(self, **usecase_info):
-        print(usecase_info)
         super().__init__(**usecase_info)
         self._id = usecase_info['_id']
         self.usecase_id: str = usecase_info['usecase_id']
