@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
-from requests.models import Response
 from previsionio.text_similarity import TextSimilarity
 from previsionio.supervised import Supervised
 from previsionio.timeseries import TimeSeries
 from previsionio.usecase_config import DataType, TypeProblem
-from typing import List, Text, Type, Union
+from typing import List, Type, Union
 import requests
 
 from .prevision_client import client
@@ -73,6 +72,11 @@ class Usecase(ApiResource):
 
     @property
     def usecase_version_class(self) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries]]:
+        """ Get the type of UsecaseVersion class used by this Usecase
+
+        Returns:
+            (:type:`.TextSimilarity` | :type:`.Supervised` | :type:`.TimeSeries`): Type of UsecaseVersion
+        """
         default = {
             DataType.Tabular: Supervised,
             DataType.TimeSeries: TimeSeries
@@ -89,6 +93,7 @@ class Usecase(ApiResource):
         """Get the latest version of this use case.
 
         Returns:
+            (:class:`.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
             latest UsecaseVersion in this Usecase
         """
         end_point = '/projects/{}/usecase-versions/latests'.format(self.project_id)
@@ -107,7 +112,8 @@ class Usecase(ApiResource):
         """Get the list of all versions for the current use case.
 
         Returns:
-            list(UsecaseVersion): List of the usecase versions (as JSON metadata)
+            list(:class:`.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
+            List of the usecase versions (as JSON metadata)
         """
         end_point = '/{}/{}/versions'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
@@ -118,11 +124,7 @@ class Usecase(ApiResource):
         return [self.usecase_version_class(**val) for val in res['items']]
 
     def delete(self):
-        """ Delete a usecase from the actual [client] workspace.
-
-        Returns:
-            dict: Deletion process results
-        """
-        response = client.request(endpoint='/usecases/{}'.format(self._id),
-                                  method=requests.delete,
-                                  message_prefix='Usecase deletion')
+        """ Delete a usecase from the actual [client] workspace."""
+        _ = client.request(endpoint='/usecases/{}'.format(self._id),
+                           method=requests.delete,
+                           message_prefix='Usecase deletion')
