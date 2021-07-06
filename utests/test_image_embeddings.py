@@ -60,4 +60,4 @@ def test_run_image_embeddings():
                                                        metric=pio.metrics.Classification.AUC,
                                                        training_config=uc_config)
     usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
-    usecase_version.usecase.delete()
+    pio.Usecase.from_id(usecase_version.usecase_id).delete()

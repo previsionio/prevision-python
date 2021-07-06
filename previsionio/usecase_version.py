@@ -19,7 +19,7 @@ from .prevision_client import client
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
 from .api_resource import ApiResource
 from .dataset import Dataset
-from .usecase import Usecase
+# from .usecase import Usecase
 
 
 class BaseUsecaseVersion(ApiResource):
@@ -72,18 +72,18 @@ class BaseUsecaseVersion(ApiResource):
         """
         return super()._from_id(specific_url='/{}/{}'.format(cls.resource, _id))
 
-    @property
-    def usecase(self) -> 'Usecase':
-        """Get a usecase of current usecase version.
+    # @property
+    # def usecase(self) -> 'Usecase':
+    #     """Get a usecase of current usecase version.
 
-        Returns:
-            :class:`.Usecase`: Fetched usecase
+    #     Returns:
+    #         :class:`.Usecase`: Fetched usecase
 
-        Raises:
-            PrevisionException: Any error while fetching data from the platform
-                or parsing result
-        """
-        return Usecase.from_id(self.usecase_id)
+    #     Raises:
+    #         PrevisionException: Any error while fetching data from the platform
+    #             or parsing result
+    #     """
+    #     return Usecase.from_id(self.usecase_id)
 
     @property
     def models(self):

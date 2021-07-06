@@ -82,11 +82,10 @@ def test_usecase_version():
     usecase_new_version = usecase_version.new_version()
     print("usecase_new_version.usecase_id", usecase_new_version.usecase_id)
     print("usecase_new_version.project_id", usecase_new_version.project_id)
-    # usecases = pio.Usecase.list(PROJECT_ID)
-    usecase_versions = usecase_version.usecase.versions
+    usecase_versions = pio.Usecase.from_id(usecase_version.usecase_id).versions
     assert usecase_new_version._id in [u._id for u in usecase_versions]
 
-    usecase_new_version.usecase.delete()
+    pio.Usecase.from_id(usecase_new_version.usecase_id).delete()
 
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name not in [u.name for u in usecases]
@@ -104,14 +103,13 @@ def test_usecase_latest_versions():
     print("usecase_new_version.usecase_id", usecase_new_version.usecase_id)
     print("usecase_new_version.project_id", usecase_new_version.project_id)
     # usecases = pio.Usecase.list(PROJECT_ID)
-    latest_version = usecase_version.usecase.latest_version
+    latest_version = pio.Usecase.from_id(usecase_new_version.usecase_id).latest_version
     assert usecase_new_version._id == latest_version._id
 
-    usecase_new_version.usecase.delete()
+    pio.Usecase.from_id(usecase_new_version.usecase_id).delete()
 
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name not in [u.name for u in usecases]
-    usecase_new_version.usecase.delete()
 
 
 def test_stop_running_usecase():
