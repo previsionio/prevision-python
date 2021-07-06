@@ -6,6 +6,7 @@ import previsionio as pio
 from .datasets import make_supervised_datasets, remove_datasets
 from . import DATA_PATH
 from .utils import get_testing_id
+from tempfile import TemporaryDirectory
 
 TESTING_ID = get_testing_id()
 N_DATASETS = 0
@@ -75,7 +76,8 @@ def test_from_id_new():
 def test_download():
     ds = test_datasets['regression']
     ds = pio.Dataset.from_id(ds._id)
-    path = ds.download()
+    with TemporaryDirectory() as dir:
+        path = ds.download(dir)
     assert os.path.isfile(path)
     os.remove(path)
 
