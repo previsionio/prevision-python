@@ -44,7 +44,7 @@ class Usecase(ApiResource):
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
-        self._id = usecase_info['_id']
+        self._id: str = usecase_info['_id']
         self.name: str = usecase_info['name']
         self.project_id: str = usecase_info['project_id']
         self.training_type: TypeProblem = TypeProblem(usecase_info['training_type'])

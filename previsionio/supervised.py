@@ -27,9 +27,9 @@ class Supervised(ClassicUsecaseVersion):
     data_type = DataType.Tabular
 
     def __init__(self, **usecase_info):
-        self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
-
         super().__init__(**usecase_info)
+        self.holdout_dataset_id: Union[str, None] = usecase_info.get('holdout_dataset_id', None)
+
         self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
 
     @classmethod

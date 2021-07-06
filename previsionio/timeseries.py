@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from typing import Dict
+from typing import Dict, Union
 
 import requests
 from previsionio.utils import EventTuple, parse_json, to_json
@@ -70,8 +70,8 @@ class TimeSeries(ClassicUsecaseVersion):
     model_class = RegressionModel
 
     def __init__(self, **usecase_info):
-        self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
-        self.time_window = TimeWindow.from_dict(usecase_info['usecase_version_params'].get('timeseries_values'))
+        self.holdout_dataset_id: Union[str, None] = usecase_info.get('holdout_dataset_id', None)
+        self.time_window = TimeWindow.from_dict(usecase_info['usecase_version_params']['timeseries_values'])
 
         super().__init__(**usecase_info)
 
