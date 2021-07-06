@@ -495,7 +495,7 @@ You can decide to completely delete the usecase:
 
 .. code-block:: python
 
-    uc = usecase_version.usecase
+    uc = pio.Usecase.from_id(usecase_version.usecase_id)
     uc.delete()
 
 However be careful, in that case any detail about the usecase will be removed, and you won't be able to make predictions from it anymore.

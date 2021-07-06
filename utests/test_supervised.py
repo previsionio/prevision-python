@@ -121,7 +121,7 @@ def test_stop_running_usecase():
     usecase_version.stop()
     usecase_version.update_status()
     assert not usecase_version.running
-    usecase_version.usecase.delete()
+    pio.Usecase.from_id(usecase_version.usecase_id).delete()
 
 
 @pytest.fixture(scope='module', params=training_types)
