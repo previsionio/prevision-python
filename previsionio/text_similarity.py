@@ -176,7 +176,6 @@ class TextSimilarity(BaseUsecaseVersion):
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
-        self.name: str = usecase_info['name']
         self.dataset: str = usecase_info['dataset_id']
         usecase_version_params = usecase_info['usecase_version_params']
         self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
