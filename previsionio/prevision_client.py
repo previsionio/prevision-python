@@ -241,22 +241,24 @@ class Client(object):
         if content_type:
             headers['content-type'] = content_type
 
+        if self.url is None:
+            raise RuntimeError("client.url not properly initialized")
         url = self.url + endpoint
 
         status_code = 502
         retries = config.request_retries
         n_tries = 0
-
+        resp = None
         while (n_tries < retries) and (status_code in config.retry_codes):
             n_tries += 1
 
             try:
-                resp: Response = method(url,
-                                        headers=headers,
-                                        files=files,
-                                        allow_redirects=allow_redirects,
-                                        json=data,
-                                        **requests_kwargs)
+                resp = method(url,
+                              headers=headers,
+                              files=files,
+                              allow_redirects=allow_redirects,
+                              json=data,
+                              **requests_kwargs)
                 status_code = resp.status_code
 
             except Exception as e:
@@ -268,6 +270,7 @@ class Client(object):
             if status_code in config.retry_codes:
                 time.sleep(config.request_retry_time)
 
+        assert isinstance(resp, Response)
         if check_response:
             handle_error_response(resp=resp,
                                   url=url,
@@ -279,6 +282,7 @@ class Client(object):
         return resp
 
     def update_user_info(self):
+        assert self.url is not None
         user_info_response = requests.get(self.url + '/profile',
                                           headers=self.headers)
         result = parse_json(user_info_response)

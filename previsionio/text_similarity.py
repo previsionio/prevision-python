@@ -176,8 +176,8 @@ class TextSimilarity(BaseUsecaseVersion):
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
-        self.name: str = usecase_info.get('name')
-        self.dataset = usecase_info.get('dataset_id')
+        self.name: str = usecase_info['name']
+        self.dataset: str = usecase_info['dataset_id']
         usecase_version_params = usecase_info['usecase_version_params']
         self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
             usecase_version_params.get('metric', self.default_metric))
@@ -201,12 +201,12 @@ class TextSimilarity(BaseUsecaseVersion):
         models_parameters = usecase_version_params.get('models_params')
         self.models_parameters = ListModelsParameters(models_parameters=models_parameters)
 
-        self._id: str = usecase_info.get('_id')
-        self.usecase_id = usecase_info.get('usecase_id')
-        self.project_id = usecase_info.get('project_id')
-        self.version = usecase_info.get('version', 1)
+        self._id: str = usecase_info['_id']
+        self.usecase_id: str = usecase_info['usecase_id']
+        self.project_id: str = usecase_info['project_id']
+        self.version: int = usecase_info.get('version', 1)
         self._usecase_info = usecase_info
-        self.dataset_id: str = usecase_info.get('dataset_id')
+        self.dataset_id: str = usecase_info['dataset_id']
         self.predictions = {}
         self.predict_token = None
 
@@ -289,6 +289,7 @@ class TextSimilarity(BaseUsecaseVersion):
         start_response = parse_json(start)
         usecase = cls.from_id(start_response['_id'])
         events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
+        assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(usecase._id,
                                                 cls.resource,
                                                 EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
@@ -383,6 +384,7 @@ class TextSimilarity(BaseUsecaseVersion):
         start_response = parse_json(resp)
         usecase = self.from_id(start_response['_id'])
         events_url = '/{}/{}'.format(self.resource, start_response['_id'])
+        assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(usecase._id,
                                                 self.resource,
                                                 EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',

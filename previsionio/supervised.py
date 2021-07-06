@@ -106,6 +106,7 @@ class Supervised(ClassicUsecaseVersion):
                                             **training_args)
         usecase = cls.from_id(start_response['_id'])
         events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
+        assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(usecase.resource_id,
                                                 cls.resource,
                                                 EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
@@ -196,6 +197,7 @@ class Supervised(ClassicUsecaseVersion):
         usecase = self.from_id(json["_id"])
 
         events_url = '/{}/{}'.format(self.resource, json['_id'])
+        assert client.event_manager is not None
         client.event_manager.wait_for_event(usecase.resource_id,
                                             self.resource,
                                             EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',

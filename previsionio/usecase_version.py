@@ -37,13 +37,13 @@ class BaseUsecaseVersion(ApiResource):
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
-        self.name: str = usecase_info.get('name')
-        self._id = usecase_info.get('_id')
-        self.usecase_id: str = usecase_info.get('usecase_id')
-        self.project_id = usecase_info.get('project_id')
-        self.dataset_id = usecase_info.get('dataset_id')
+        self.name: str = usecase_info['name']
+        self._id = usecase_info['_id']
+        self.usecase_id: str = usecase_info['usecase_id']
+        self.project_id: str = usecase_info['project_id']
+        self.dataset_id: str = usecase_info['dataset_id']
         self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
-        self.created_at = parser.parse(usecase_info.get("created_at", ""))
+        self.created_at = parser.parse(usecase_info["created_at"])
         self._models = {}
         self.version = 1
 
@@ -230,6 +230,7 @@ class BaseUsecaseVersion(ApiResource):
                                   requests.put,
                                   message_prefix='Usecase stop')
         events_url = '/{}/{}'.format(self.resource, self._id)
+        assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(self.resource_id,
                                                 self.resource,
                                                 EventTuple('USECASE_VERSION_UPDATE', 'state',

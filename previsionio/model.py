@@ -125,6 +125,7 @@ class Model(ApiResource):
             predict_id (str): Unique id of the prediction to wait for
         """
         specific_url = '/predictions/{}'.format(prediction_id)
+        assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(prediction_id,
                                                 specific_url,
                                                 EventTuple('PREDICTION_UPDATE', 'state', 'done', [('state', 'failed')]),
