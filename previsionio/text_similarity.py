@@ -368,7 +368,7 @@ class TextSimilarity(BaseUsecaseVersion):
         training_args['top_k'] = top_k
         training_args['lang'] = lang.value
 
-        data = dict(name=self.name, dataset_id=dataset_id, **training_args)
+        data = dict(dataset_id=dataset_id, **training_args)
 
         if description:
             data["description"] = description
