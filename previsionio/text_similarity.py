@@ -176,7 +176,6 @@ class TextSimilarity(BaseUsecaseVersion):
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
-        self.dataset: str = usecase_info['dataset_id']
         usecase_version_params = usecase_info['usecase_version_params']
         self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
             usecase_version_params.get('metric', self.default_metric))
@@ -368,7 +367,7 @@ class TextSimilarity(BaseUsecaseVersion):
         training_args['top_k'] = top_k
         training_args['lang'] = lang.value
 
-        data = dict(dataset_id=dataset_id, **training_args)
+        data = dict(name=self.name, dataset_id=dataset_id, **training_args)
 
         if description:
             data["description"] = description

@@ -170,6 +170,7 @@ class Supervised(ClassicUsecaseVersion):
             holdout_dataset_id = holdout_dataset.id
 
         params = {
+            'name': self.name,
             'dataset_id': dataset_ids,
             'metric': metric_str,
             'holdout_dataset': holdout_dataset_id,

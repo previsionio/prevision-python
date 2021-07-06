@@ -37,6 +37,7 @@ class BaseUsecaseVersion(ApiResource):
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
+        self.name: str = usecase_info.get('name', usecase_info['usecase'].get('name'))
         self._id: str = usecase_info['_id']
         self.usecase_id: str = usecase_info['usecase_id']
         self.project_id: str = usecase_info['project_id']
@@ -392,7 +393,6 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
-        self.name: str = usecase_info['usecase'].get('name')
         self.metric: str = usecase_info['metric']
         usecase_params = usecase_info['usecase_version_params']
         self.column_config = ColumnConfig(target_column=usecase_params.get('target_column'),
