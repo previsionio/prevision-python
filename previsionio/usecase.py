@@ -126,4 +126,3 @@ class Usecase(ApiResource):
         response = client.request(endpoint='/usecases/{}'.format(self._id),
                                   method=requests.delete,
                                   message_prefix='Usecase deletion')
-        return response

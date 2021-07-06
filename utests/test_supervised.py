@@ -111,6 +111,7 @@ def test_usecase_latest_versions():
 
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name not in [u.name for u in usecases]
+    usecase_new_version.usecase.delete()
 
 
 def test_stop_running_usecase():
