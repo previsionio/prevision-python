@@ -5,12 +5,30 @@ from previsionio.text_similarity import TextSimilarity
 from previsionio.supervised import Supervised
 from previsionio.timeseries import TimeSeries
 from previsionio.usecase_config import DataType, TypeProblem
-from typing import List, Type, Union
+from typing import Dict, List, Type, Union
 import requests
 
 from .prevision_client import client
 from .utils import parse_json
 from .api_resource import ApiResource
+
+
+def get_usecase_version_class(training_type: TypeProblem, data_type: DataType) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries]]:
+    """ Get the type of UsecaseVersion class used by this Usecase
+
+    Returns:
+        (:type:`.TextSimilarity` | :type:`.Supervised` | :type:`.TimeSeries`): Type of UsecaseVersion
+    """
+    default: Dict[DataType, Union[Type[Supervised], Type[TimeSeries]]] = {
+        DataType.Tabular: Supervised,
+        DataType.TimeSeries: TimeSeries
+    }
+    class_dict = {
+        TypeProblem.TextSimilarity: {DataType.Tabular: TextSimilarity},
+    }
+    class_type = class_dict.get(training_type, default).get(data_type)
+    assert class_type is not None
+    return class_type
 
 
 class Usecase(ApiResource):
@@ -26,12 +44,12 @@ class Usecase(ApiResource):
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
-        self._id = usecase_info.get('_id')
-        self.name: str = usecase_info.get('name')
-        self.project_id: str = usecase_info.get('project_id')
-        self.training_type: TypeProblem = TypeProblem(usecase_info.get('training_type'))
-        self.data_type: DataType = DataType(usecase_info.get('data_type'))
-        self.version_ids: list = usecase_info.get('version_ids')
+        self._id = usecase_info['_id']
+        self.name: str = usecase_info['name']
+        self.project_id: str = usecase_info['project_id']
+        self.training_type: TypeProblem = TypeProblem(usecase_info['training_type'])
+        self.data_type: DataType = DataType(usecase_info['data_type'])
+        self.version_ids: list = usecase_info['version_ids']
 
     @classmethod
     def from_id(cls, _id: str) -> 'Usecase':
@@ -77,16 +95,7 @@ class Usecase(ApiResource):
         Returns:
             (:type:`.TextSimilarity` | :type:`.Supervised` | :type:`.TimeSeries`): Type of UsecaseVersion
         """
-        default = {
-            DataType.Tabular: Supervised,
-            DataType.TimeSeries: TimeSeries
-        }
-        class_dict = {
-            TypeProblem.TextSimilarity: {DataType.Tabular: TextSimilarity},
-        }
-        class_type = class_dict.get(self.training_type, default).get(self.data_type)
-        assert class_type is not None
-        return class_type
+        return get_usecase_version_class(self.training_type, self.data_type)
 
     @property
     def latest_version(self) -> Union[TextSimilarity, Supervised, TimeSeries]:
@@ -101,13 +110,23 @@ class Usecase(ApiResource):
                                   method=requests.get,
                                   message_prefix="Latest usecase versions")
         res = parse_json(response)
-        usecases_v = [self.usecase_version_class(**val) for val in res['items']]
+        usecases_v = []
+        for val in res['items']:
+            input = val['latest_usecase_version']
+            input.update({"usecase": {"name": val["name"],
+                                      'data_type': val['data_type'],
+                                      'training_type': val['training_type'],
+                                      }
+                          })
+            class_type = get_usecase_version_class(TypeProblem(val["training_type"]), DataType(val['data_type']))
+            usecases_v.append(class_type(**input))
+        usecases_v = [self.usecase_version_class(**val['latest_usecase_version']) for val in res['items']]
         for uc in usecases_v:
             if uc.usecase_id == self._id:
                 return uc
         raise RuntimeError("Usecase version not found")
 
-    @property
+    @ property
     def versions(self) -> List[Union[TextSimilarity, Supervised, TimeSeries]]:
         """Get the list of all versions for the current use case.
 

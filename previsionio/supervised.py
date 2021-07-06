@@ -105,7 +105,6 @@ class Supervised(ClassicUsecaseVersion):
                                             metric=metric if isinstance(metric, str) else metric.value,
                                             **training_args)
         usecase = cls.from_id(start_response['_id'])
-        print(usecase.training_type)
         events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
         pio.client.event_manager.wait_for_event(usecase.resource_id,
                                                 cls.resource,
