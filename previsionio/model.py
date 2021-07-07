@@ -4,21 +4,20 @@ from typing import Dict, Union
 
 from pandas.core.frame import DataFrame
 from previsionio.usecase_config import TypeProblem
-import time
 import json
 import uuid
 import requests
 import pandas as pd
-import previsionio as pio
 from functools import lru_cache
 
 from .logger import logger
 from .dataset import Dataset
-from .deployed_model import DeployedModel
+# from .deployed_model import DeployedModel
 from .prevision_client import client
 from .api_resource import ApiResource
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas
 from .prediction import ValidationPrediction
+
 
 
 class Model(ApiResource):

@@ -9,6 +9,7 @@ import time
 import previsionio as pio
 import os
 from functools import lru_cache
+from dateutil import parser
 
 from . import config
 from .usecase_config import (AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel,
@@ -18,7 +19,7 @@ from .prevision_client import client
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
 from .api_resource import ApiResource
 from .dataset import Dataset
-from .usecase import Usecase
+# from .usecase import Usecase
 
 
 class BaseUsecaseVersion(ApiResource):
@@ -36,12 +37,13 @@ class BaseUsecaseVersion(ApiResource):
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
-        self.name: str = usecase_info.get('name')
-        self._id = usecase_info.get('_id')
-        self.usecase_id: str = usecase_info.get('usecase_id')
-        self.project_id = usecase_info.get('project_id')
-        self.dataset_id = usecase_info.get('dataset_id')
-        self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
+        self.name: str = usecase_info.get('name', usecase_info['usecase'].get('name'))
+        self._id: str = usecase_info['_id']
+        self.usecase_id: str = usecase_info['usecase_id']
+        self.project_id: str = usecase_info['project_id']
+        self.dataset_id: str = usecase_info['dataset_id']
+        self.holdout_dataset_id: Union[str, None] = usecase_info.get('holdout_dataset_id', None)
+        self.created_at = parser.parse(usecase_info["created_at"])
         self._models = {}
         self.version = 1
 
@@ -70,18 +72,18 @@ class BaseUsecaseVersion(ApiResource):
         """
         return super()._from_id(specific_url='/{}/{}'.format(cls.resource, _id))
 
-    @property
-    def usecase(self) -> 'Usecase':
-        """Get a usecase of current usecase version.
+    # @property
+    # def usecase(self) -> 'Usecase':
+    #     """Get a usecase of current usecase version.
 
-        Returns:
-            :class:`.Usecase`: Fetched usecase
+    #     Returns:
+    #         :class:`.Usecase`: Fetched usecase
 
-        Raises:
-            PrevisionException: Any error while fetching data from the platform
-                or parsing result
-        """
-        return Usecase.from_id(self.usecase_id)
+    #     Raises:
+    #         PrevisionException: Any error while fetching data from the platform
+    #             or parsing result
+    #     """
+    #     return Usecase.from_id(self.usecase_id)
 
     @property
     def models(self):
@@ -228,6 +230,7 @@ class BaseUsecaseVersion(ApiResource):
                                   requests.put,
                                   message_prefix='Usecase stop')
         events_url = '/{}/{}'.format(self.resource, self._id)
+        assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(self.resource_id,
                                                 self.resource,
                                                 EventTuple('USECASE_VERSION_UPDATE', 'state',
@@ -390,8 +393,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
-        self.name: str = usecase_info['usecase'].get('name')
-        self.metric: str = usecase_info.get('metric')
+        self.metric: str = usecase_info['metric']
         usecase_params = usecase_info['usecase_version_params']
         self.column_config = ColumnConfig(target_column=usecase_params.get('target_column'),
                                           fold_column=usecase_params.get('fold_column'),
@@ -414,14 +416,14 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                               feature_time_seconds=usecase_params.get('features_selection_time', 3600),
                                               feature_number_kept=usecase_params.get('features_selection_count', None))
 
-        self._id = usecase_info.get('_id')
-        self.usecase_id = usecase_info.get('usecase_id')
-        self.project_id = usecase_info.get('project_id')
+        self._id: str = usecase_info['_id']
+        self.usecase_id: str = usecase_info['usecase_id']
+        self.project_id: str = usecase_info['project_id']
         self.version = usecase_info.get('version', 1)
         self._usecase_info = usecase_info
         self.data_type: DataType = DataType(usecase_info['usecase'].get('data_type'))
         self.training_type: TypeProblem = TypeProblem(usecase_info['usecase'].get('training_type'))
-        self.dataset_id = usecase_info.get('dataset_id')
+        self.dataset_id: str = usecase_info['dataset_id']
         self.predictions = {}
         self.predict_token = None
         self._models = {}

@@ -786,7 +786,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return Usecase.list(self._id, all=all)
 
-    def create_usecase_deployment(name: str, main_model, challenger_model=None, access_type: str = 'public'):
+    def create_usecase_deployment(self, name: str, main_model, challenger_model=None, access_type: str = 'public'):
         return UsecaseDeployment._new(
             self._id,
             name,
@@ -806,6 +806,7 @@ class Project(ApiResource, UniqueResourceMixin):
             list(:class:`.UsecaseDeployment`): Fetched usecase deployment objects
         """
         return UsecaseDeployment.list(self._id, all=all)
+
 
 connectors_names = {
     'SQL': "create_sql_connector",

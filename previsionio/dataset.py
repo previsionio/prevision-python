@@ -77,7 +77,7 @@ class Dataset(ApiResource):
         return cls(**super()._from_id(_id=_id))
 
     @classmethod
-    def list(cls, project_id, all: bool = True):
+    def list(cls, project_id: str, all: bool = True):
         """ List all the available datasets in the current active [client] workspace.
 
         .. warning::
@@ -317,6 +317,7 @@ class Dataset(ApiResource):
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
         event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'describe_state', 'done',
                                                    [('ready', 'failed'), ('drift', 'failed')])
+        assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(create_json['_id'],
                                                 cls.resource,
                                                 event_tuple,
@@ -325,7 +326,7 @@ class Dataset(ApiResource):
         dset_resp = client.request(url, method=requests.get, message_prefix='Dataset loading')
         dset_json = parse_json(dset_resp)
 
-        if dataframe is not None:
+        if dataframe is not None and file_name is not None:
             os.remove(file_name)
 
         return cls(**dset_json)
@@ -426,6 +427,7 @@ class DatasetImages(ApiResource):
 
         create_json = parse_json(create_resp)
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
+        assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(create_json['_id'],
                                                 cls.resource,
                                                 previsionio.utils.EventTuple(

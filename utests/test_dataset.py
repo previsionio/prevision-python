@@ -6,6 +6,7 @@ import previsionio as pio
 from .datasets import make_supervised_datasets, remove_datasets
 from . import DATA_PATH
 from .utils import get_testing_id
+from tempfile import TemporaryDirectory
 
 TESTING_ID = get_testing_id()
 PROJECT_NAME = "sdk_test_dataset_" + str(TESTING_ID)
@@ -100,9 +101,9 @@ def test_download():
     dataset = project.create_dataset(paths["regression"].split('/')[-1][:-4] + str(TESTING_ID),
                                      dataframe=pd.read_csv(paths["regression"]), origin="pipeline_intermediate_file")
     ds = pio.Dataset.from_id(dataset._id)
-    path = ds.download()
-    assert os.path.isfile(path)
-    os.remove(path)
+    with TemporaryDirectory() as dir:
+        path = ds.download(dir)
+        assert os.path.isfile(path)
     dataset.delete()
 
 

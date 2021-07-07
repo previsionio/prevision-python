@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from typing import Dict
+from typing import Dict, Union
 
 import requests
 from previsionio.utils import EventTuple, parse_json, to_json
@@ -61,9 +61,8 @@ class TimeWindow(UsecaseConfig):
 
 
 class TimeSeries(ClassicUsecaseVersion):
-    """
-    A TimeSeries usecase.
-    """
+    """ A supervised usecase version, for timeseries data """
+
     training_type = TypeProblem.Regression
     metric_type = Regression
     default_metric = Regression.RMSE
@@ -71,8 +70,8 @@ class TimeSeries(ClassicUsecaseVersion):
     model_class = RegressionModel
 
     def __init__(self, **usecase_info):
-        self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
-        self.time_window = TimeWindow.from_dict(usecase_info['usecase_version_params'].get('timeseries_values'))
+        self.holdout_dataset_id: Union[str, None] = usecase_info.get('holdout_dataset_id', None)
+        self.time_window = TimeWindow.from_dict(usecase_info['usecase_version_params']['timeseries_values'])
 
         super().__init__(**usecase_info)
 
@@ -115,6 +114,7 @@ class TimeSeries(ClassicUsecaseVersion):
 
         usecase = cls.from_id(start_response['_id'])
         events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
+        assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(usecase.resource_id,
                                                 cls.resource,
                                                 EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
@@ -182,15 +182,15 @@ class TimeSeries(ClassicUsecaseVersion):
         training_args.update(to_json(column_config))
         training_args.update(to_json(time_window))
 
-        params = {'name': self.name,
-                  'dataset_id': dataset_id,
-                  'metric': metric.value,
-                  'holdout_dataset': holdout_dataset_id,
-                  'training_type': self.training_type.value,
-                  'usecase_id': self._id,
-                  'parent_version': self.version,
-                  # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
-                  }
+        params = {
+            'dataset_id': dataset_id,
+            'metric': metric.value,
+            'holdout_dataset': holdout_dataset_id,
+            'training_type': self.training_type.value,
+            'usecase_id': self._id,
+            'parent_version': self.version,
+            # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
+        }
 
         if description:
             params["description"] = description
@@ -209,6 +209,7 @@ class TimeSeries(ClassicUsecaseVersion):
         usecase = self.from_id(json["_id"])
 
         events_url = '/{}/{}'.format(self.resource, json['_id'])
+        assert client.event_manager is not None
         client.event_manager.wait_for_event(usecase.resource_id,
                                             self.resource,
                                             EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',

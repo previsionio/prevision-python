@@ -1,4 +1,5 @@
 from typing import Dict
+from requests.models import Response
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import BackendApplicationClient
 from previsionio.utils import NpEncoder
@@ -140,12 +141,13 @@ class DeployedModel(object):
         status_code = 502
         retries = config.request_retries
         n_tries = 0
-
+        resp = None
         while (n_tries < retries) and (status_code in config.retry_codes):
             n_tries += 1
 
             try:
                 self._get_token()
+                assert self.token is not None
                 headers = {
                     "Authorization": "Bearer " + self.token['access_token'],
                 }
@@ -169,6 +171,7 @@ class DeployedModel(object):
             if status_code in config.retry_codes:
                 time.sleep(config.request_retry_time)
 
+        assert isinstance(resp, Response)
         if check_response:
             handle_error_response(resp, url, data, message_prefix=message_prefix, n_tries=n_tries)
 
