@@ -99,7 +99,7 @@ def test_ts_groups(groups):
     usecase_version = train_model(uc_name_asked, groups)
     usecase_version.wait_until(lambda usecase: len(usecase) > 0)
     usecase_version.stop()
-    usecase = usecase_version.usecase
+    usecase = pio.Usecase.from_id(usecase_version.usecase_id)
     project = pio.Project.from_id(PROJECT_ID)
     usecases = project.list_usecases()
     assert usecase.id in [uc.id for uc in usecases]
@@ -169,4 +169,4 @@ def setup_ts_class(request):
     usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
     usecase_version.stop()
     yield groups, usecase_version
-    usecase_version.usecase.delete()
+    pio.Usecase.from_id(usecase_version.usecase_id).delete()
