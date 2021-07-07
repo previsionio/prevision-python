@@ -526,7 +526,5 @@ class TextSimilarityModel(Model):
                                         queries_dataset_content_column,
                                         top_k=top_k,
                                         matching_id_description_column=queries_dataset_matching_id_description_column)
-        prediction = self._predict_bulk(dataset.id,
-                                        confidence=confidence)
 
         return prediction.get_data()
