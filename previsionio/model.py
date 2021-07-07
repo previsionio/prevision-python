@@ -18,7 +18,7 @@ from .deployed_model import DeployedModel
 from .prevision_client import client
 from .api_resource import ApiResource
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas
-from .prediction import Prediction
+from .prediction import ValidationPrediction
 
 
 class Model(ApiResource):
@@ -160,11 +160,11 @@ class Model(ApiResource):
             err = 'Error starting prediction: {}'.format(predict_start_parsed)
             logger.error(err)
             raise PrevisionException(err)
-        return Prediction(**predict_start_parsed)
+        return ValidationPrediction(**predict_start_parsed)
 
     def predict_from_dataset(self, dataset: Dataset,
                              confidence: bool = False,
-                             dataset_folder: Dataset = None) -> Prediction:
+                             dataset_folder: Dataset = None) -> ValidationPrediction:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
@@ -481,10 +481,10 @@ class TextSimilarityModel(Model):
             logger.error(err)
             raise PrevisionException(err)
 
-        return Prediction(**predict_start_parsed)
+        return ValidationPrediction(**predict_start_parsed)
 
     def predict_from_dataset(self, queries_dataset: Dataset, queries_dataset_content_column: str, top_k: int = 10,
-                             queries_dataset_matching_id_description_column: str = None) -> Prediction:
+                             queries_dataset_matching_id_description_column: str = None) -> ValidationPrediction:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
