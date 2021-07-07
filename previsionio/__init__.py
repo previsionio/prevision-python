@@ -94,6 +94,7 @@ from previsionio.text_similarity import (
 from previsionio.dataset import Dataset, DatasetImages
 from previsionio.analyzer import cv_classif_analysis
 from previsionio.deployed_model import DeployedModel
+from previsionio.usecase_deployment import UsecaseDeployment
 from previsionio.prediction import Prediction
 
 __all__ = [
@@ -137,5 +138,6 @@ __all__ = [
     'Preprocessing',
     'Project',
     'Usecase',
+    'UsecaseDeployment',
     'Prediction'
 ]
