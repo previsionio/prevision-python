@@ -200,7 +200,7 @@ class Dataset(ApiResource):
 
     @classmethod
     def _new(cls, project_id: str, name: str, datasource: DataSource = None,
-             file_name: str = None, dataframe: DataFrame = None):
+             file_name: str = None, dataframe: DataFrame = None, **kwargs):
         """ Register a new dataset in the workspace for further processing.
         You need to provide either a datasource, a file name or a dataframe
         (only one can be specified).
@@ -236,8 +236,15 @@ class Dataset(ApiResource):
             raise Exception('at least one of [datasource, file_handle, data] must be specified')
 
         data = {
-            'name': name
+            'name': name,
         }
+
+        if 'origin' in kwargs:
+            valid_origin = ["pipeline_output", "pipeline_intermediate_file"]
+            origin = kwargs.get('origin')
+            if not isinstance(origin, str) or origin not in valid_origin:
+                raise RuntimeError(f"invalid origin: {origin}")
+            data['origin'] = origin
 
         files = {
 
