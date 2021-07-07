@@ -77,7 +77,7 @@ class Dataset(ApiResource):
         return cls(**super()._from_id(_id=_id))
 
     @classmethod
-    def list(cls, project_id, all: bool = True):
+    def list(cls, project_id: str, all: bool = True):
         """ List all the available datasets in the current active [client] workspace.
 
         .. warning::

@@ -211,7 +211,8 @@ class Client(object):
         if not self.prevision_url:
             raise PrevisionException('No url configured. Call client.init_client() to initialize')
 
-    def request(self, endpoint: str, method, files: Dict = None, data: Dict = None, allow_redirects: bool = True,
+    def request(self, endpoint: str, method, files: Dict = None, data: Dict = None,
+                format: Dict = None, allow_redirects: bool = True,
                 content_type: str = None, check_response: bool = True,
                 message_prefix: str = None, **requests_kwargs) -> Response:
         """
@@ -243,6 +244,16 @@ class Client(object):
 
         if self.url is None:
             raise RuntimeError("client.url not properly initialized")
+
+        if format and len(format):
+            def format_bool(val):
+                if isinstance(val, bool):
+                    if val:
+                        return "true"
+                    return "false"
+                return val
+            endpoint += '?' + '&'.join(["{}={}".format(key, format_bool(val)) for key, val in format.items()])
+
         url = self.url + endpoint
 
         status_code = 502

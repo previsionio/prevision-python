@@ -104,26 +104,20 @@ class Usecase(ApiResource):
             (:class:`.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
             latest UsecaseVersion in this Usecase
         """
-        end_point = '/projects/{}/usecase-versions/latests'.format(self.project_id)
+        end_point = '/{}/{}/versions'.format(self.resource, self._id)
+        format = {
+            "rowsPerPage": 1,
+            "sortBy": "created_at",
+            "descending": True
+        }
+
         response = client.request(endpoint=end_point,
+                                  format=format,
                                   method=requests.get,
-                                  message_prefix="Latest usecase versions")
+                                  message_prefix='Latest usecase version')
         res = parse_json(response)
-        usecases_v = []
-        for val in res['items']:
-            input = val['latest_usecase_version']
-            input.update({"usecase": {"name": val["name"],
-                                      'data_type': val['data_type'],
-                                      'training_type': val['training_type'],
-                                      }
-                          })
-            class_type = get_usecase_version_class(TypeProblem(val["training_type"]), DataType(val['data_type']))
-            usecases_v.append(class_type(**input))
-        usecases_v = [self.usecase_version_class(**val['latest_usecase_version']) for val in res['items']]
-        for uc in usecases_v:
-            if uc.usecase_id == self._id:
-                return uc
-        raise RuntimeError("Usecase version not found")
+        assert len(res['items']) == 1
+        return self.usecase_version_class(**res['items'][0])
 
     @property
     def versions(self) -> List[Union[TextSimilarity, Supervised, TimeSeries]]:

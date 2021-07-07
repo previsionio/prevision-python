@@ -182,15 +182,15 @@ class TimeSeries(ClassicUsecaseVersion):
         training_args.update(to_json(column_config))
         training_args.update(to_json(time_window))
 
-        params = {'name': self.name,
-                  'dataset_id': dataset_id,
-                  'metric': metric.value,
-                  'holdout_dataset': holdout_dataset_id,
-                  'training_type': self.training_type.value,
-                  'usecase_id': self._id,
-                  'parent_version': self.version,
-                  # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
-                  }
+        params = {
+            'dataset_id': dataset_id,
+            'metric': metric.value,
+            'holdout_dataset': holdout_dataset_id,
+            'training_type': self.training_type.value,
+            'usecase_id': self._id,
+            'parent_version': self.version,
+            # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
+        }
 
         if description:
             params["description"] = description
