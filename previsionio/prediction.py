@@ -30,7 +30,7 @@ class ValidationPrediction(ApiResource):
         self._state = state
 
     @classmethod
-    def from_id(cls, _id: str) -> 'Prediction':
+    def from_id(cls, _id: str) -> 'ValidationPrediction':
         """Get a prediction from the platform by its unique id.
 
         Args:
