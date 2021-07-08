@@ -62,7 +62,7 @@ class ValidationPrediction(ApiResource):
                                   message_prefix='Prediction deletion')
         return response
 
-    def get_data(self):
+    def get_result(self):
         """Delete a prediction from the platform by its unique id.
 
         Raises:
@@ -140,11 +140,12 @@ class DeploymentPrediction(ApiResource):
                                   message_prefix='Prediction deletion')
         return response
 
-    def get_main_model_data(self):
+    def get_result(self):
         specific_url = '/{}/{}'.format(self.resource, self._id)
         client.event_manager.wait_for_event(self._id,
                                             specific_url,
-                                            EventTuple('DEPLOYMENT_PREDICTION_UPDATE', 'main_model_prediction_state', 'done', [('state', 'failed')]),
+                                            EventTuple('DEPLOYMENT_PREDICTION_UPDATE', 'main_model_prediction_state', 'done',
+                                                       [('main_model_prediction_state', 'failed')]),
                                             specific_url=specific_url)
         #
         url = '/{}/{}/download'.format(self.resource, self._id)
@@ -154,13 +155,14 @@ class DeploymentPrediction(ApiResource):
 
         return zip_to_pandas(pred_response)
 
-    def get_challenger_model_data(self):
+    def get_challenger_result(self):
         if self.challenger_model_id is None:
             PrevisionException('Challenger data not availbale for this prediction')
         specific_url = '/{}/{}'.format(self.resource, self._id)
         client.event_manager.wait_for_event(self._id,
                                             specific_url,
-                                            EventTuple('DEPLOYMENT_PREDICTION_UPDATE', 'challenger_model_prediction_state', 'done', [('state', 'failed')]),
+                                            EventTuple('DEPLOYMENT_PREDICTION_UPDATE', 'challenger_model_prediction_state', 'done',
+                                                       [('challenger_model_prediction_state', 'failed')]),
                                             specific_url=specific_url)
         #
         url = '/{}/{}/download'.format(self.resource, self._id)

@@ -206,7 +206,7 @@ class Model(ApiResource):
         prediction = self._predict_bulk(dataset.id,
                                         confidence=confidence)
 
-        return prediction.get_data()
+        return prediction.get_result()
 
     def enable_deploy(self):
         data = {"deploy": True}
@@ -526,4 +526,4 @@ class TextSimilarityModel(Model):
                                         top_k=top_k,
                                         matching_id_description_column=queries_dataset_matching_id_description_column)
 
-        return prediction.get_data()
+        return prediction.get_result()
