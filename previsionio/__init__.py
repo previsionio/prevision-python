@@ -95,7 +95,7 @@ from previsionio.dataset import Dataset, DatasetImages
 from previsionio.analyzer import cv_classif_analysis
 from previsionio.deployed_model import DeployedModel
 from previsionio.usecase_deployment import UsecaseDeployment
-from previsionio.prediction import Prediction
+from previsionio.prediction import ValidationPrediction, DeploymentPrediction
 
 __all__ = [
     'client',
@@ -139,5 +139,6 @@ __all__ = [
     'Project',
     'Usecase',
     'UsecaseDeployment',
-    'Prediction'
+    'ValidationPrediction',
+    'DeploymentPrediction'
 ]

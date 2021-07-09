@@ -4,7 +4,9 @@ import requests
 from .api_resource import ApiResource
 from . import client
 from .usecase_version import BaseUsecaseVersion
-from .utils import parse_json, PrevisionException
+from .utils import parse_json, PrevisionException, get_all_results
+from .prediction import DeploymentPrediction
+from .dataset import Dataset
 
 
 class UsecaseDeployment(ApiResource):
@@ -21,6 +23,7 @@ class UsecaseDeployment(ApiResource):
         self.name = name
         self._id = _id
         self.usecase_version_id = usecase_version_id
+        self.usecase_id = usecase_id
         self.current_version = current_version
         self.versions = versions
         self.deploy_state = deploy_state
@@ -40,7 +43,7 @@ class UsecaseDeployment(ApiResource):
         return cls(**super()._from_id(_id=_id, specific_url=url))
 
     @classmethod
-    def list(cls, project_id: str, all: bool = True) -> List['UsecaseDeployment']:
+    def list(cls, project_id:str, all: bool = True) -> List['UsecaseDeployment']:
         """ List all the available usecase in the current active [client] workspace.
 
         .. warning::
@@ -58,7 +61,7 @@ class UsecaseDeployment(ApiResource):
             list(:class:`.Usecase`): Fetched dataset objects
         """
         resources = super()._list(all=all, project_id=project_id)
-        return [cls(**usecase_deployment) for usecase_deployment in resources]
+        return [UsecaseDeployment(**usecase_deployment) for usecase_deployment in resources]
 
     @classmethod
     def _new(cls, project_id: str, name: str, main_model, challenger_model=None, access_type: str = 'public'):
@@ -192,3 +195,33 @@ class UsecaseDeployment(ApiResource):
                               message_prefix='UsecaseDeployment get api key')
         resp = parse_json(resp)
         return resp
+
+    def predict_from_dataset(self, dataset: Dataset) -> DeploymentPrediction:
+        """ Make a prediction for a dataset stored in the current active [client]
+        workspace (using the current SDK dataset object).
+
+        Args:
+            dataset (:class:`.Dataset`): Dataset resource to make a prediction for
+
+        Returns:
+            ``pd.DataFrame``: Prediction object
+        """
+        if self.training_type not in ['regression', 'classification', 'multiclassification']:
+            PrevisionException('Prediction not supported yet for training type {}', self.training_type)
+        data = {
+            'dataset_id': dataset._id,
+        }
+
+        predict_start = client.request('/deployments/{}/deployment-predictions'.format(self._id),
+                                       method=requests.post,
+                                       data=data,
+                                       message_prefix='Bulk predict')
+        predict_start_parsed = parse_json(predict_start)
+
+        return DeploymentPrediction(**predict_start_parsed)
+
+    def list_predictions(self, all: bool = True) -> List[DeploymentPrediction]:
+
+        end_point = '/deployments/{}/deployment-predictions'.format(self._id)
+        predictions = get_all_results(client, end_point, method=requests.get)
+        return [DeploymentPrediction(**prediction) for prediction in predictions['items']]
