@@ -128,18 +128,6 @@ class DeploymentPrediction(ApiResource):
         """
         return cls(**super()._from_id(specific_url='/{}/{}'.format(cls.resource, _id)))
 
-    def delete(self):
-        """Delete a prediction from the platform by its unique id.
-
-        Raises:
-            PrevisionException: Any error while fetching data from the platform
-                or parsing result
-        """
-        response = client.request(endpoint='/{}/{}'.format(self.resource, self._id),
-                                  method=requests.delete,
-                                  message_prefix='Prediction deletion')
-        return response
-
     def get_result(self):
         specific_url = '/{}/{}'.format(self.resource, self._id)
         client.event_manager.wait_for_event(self._id,
