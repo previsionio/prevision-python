@@ -26,8 +26,8 @@ class UsecaseDeployment(ApiResource):
         self.usecase_id = usecase_id
         self.current_version = current_version
         self.versions = versions
-        self.deploy_state = deploy_state
-        self.run_state = run_state
+        self._deploy_state = deploy_state
+        self._run_state = run_state
         self.access_type = access_type
         self.project_id = project_id
         self.training_type = training_type
@@ -41,6 +41,11 @@ class UsecaseDeployment(ApiResource):
     def from_id(cls, _id: str):
         url = '/{}/{}'.format('deployments', _id)
         return cls(**super()._from_id(_id=_id, specific_url=url))
+
+    @property
+    def run_state(self):
+        status = self._status
+        return status['_run_state']
 
     @classmethod
     def list(cls, project_id:str, all: bool = True) -> List['UsecaseDeployment']:
