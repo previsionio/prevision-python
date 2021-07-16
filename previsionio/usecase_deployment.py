@@ -1,10 +1,15 @@
 from typing import List
+import time
 import requests
 
+from . import config
+from .logger import logger
 from .api_resource import ApiResource
 from . import client
 from .usecase_version import BaseUsecaseVersion
-from .utils import parse_json, PrevisionException
+from .utils import parse_json, PrevisionException, get_all_results
+from .prediction import DeploymentPrediction
+from .dataset import Dataset
 
 
 class UsecaseDeployment(ApiResource):
@@ -14,17 +19,18 @@ class UsecaseDeployment(ApiResource):
 
     resource = 'model-deployments'
 
-    def __init__(self, _id: str, name: str, usecase_id, usecase_version_id, current_version,
+    def __init__(self, _id: str, name: str, usecase_id, current_version,
                  versions, deploy_state, run_state, access_type, project_id, training_type, models, url=None,
                   **kwargs):
 
         self.name = name
         self._id = _id
-        self.usecase_version_id = usecase_version_id
+        #self.usecase_version_id = usecase_version_id
+        self.usecase_id = usecase_id
         self.current_version = current_version
         self.versions = versions
-        self.deploy_state = deploy_state
-        self.run_state = run_state
+        self._deploy_state = deploy_state
+        self._run_state = run_state
         self.access_type = access_type
         self.project_id = project_id
         self.training_type = training_type
@@ -37,10 +43,21 @@ class UsecaseDeployment(ApiResource):
     @classmethod
     def from_id(cls, _id: str):
         url = '/{}/{}'.format('deployments', _id)
+        print(super()._from_id(_id=_id, specific_url=url))
         return cls(**super()._from_id(_id=_id, specific_url=url))
 
+    @property
+    def deploy_state(self):
+        usecase_deployment = self.from_id(self._id)
+        return usecase_deployment._deploy_state
+
+    @property
+    def run_state(self):
+        usecase_deployment = self.from_id(self._id)
+        return usecase_deployment._run_state
+
     @classmethod
-    def list(cls, project_id: str, all: bool = True) -> List['UsecaseDeployment']:
+    def list(cls, project_id:str, all: bool = True) -> List['UsecaseDeployment']:
         """ List all the available usecase in the current active [client] workspace.
 
         .. warning::
@@ -58,7 +75,7 @@ class UsecaseDeployment(ApiResource):
             list(:class:`.Usecase`): Fetched dataset objects
         """
         resources = super()._list(all=all, project_id=project_id)
-        return [cls(**usecase_deployment) for usecase_deployment in resources]
+        return [UsecaseDeployment(**usecase_deployment) for usecase_deployment in resources]
 
     @classmethod
     def _new(cls, project_id: str, name: str, main_model, challenger_model=None, access_type: str = 'public'):
@@ -165,6 +182,38 @@ class UsecaseDeployment(ApiResource):
                               message_prefix='UsecaseDeployment delete')
         return resp
 
+    def wait_until(self, condition, timeout: float = config.default_timeout):
+        """ Wait until condition is fulfilled, then break.
+
+        Args:
+            condition (func: (:class:`.BaseUsecaseVersion`) -> bool.): Function to use to check the
+                break condition
+            raise_on_error (bool, optional): If true then the function will stop on error,
+                otherwise it will continue waiting (default: ``True``)
+            timeout (float, optional): Maximal amount of time to wait before forcing exit
+
+        Example::
+
+            usecase.wait_until(lambda usecasev: len(usecasev.models) > 3)
+
+        Raises:
+            PrevisionException: If the resource could not be fetched or there was a timeout.
+        """
+        t0 = time.time()
+        while True:
+            if timeout is not None and time.time() - t0 > timeout:
+                raise PrevisionException('timeout while waiting on {}'.format(condition))
+            try:
+                if condition(self):
+                    break
+                elif self.deploy_state == 'failed' or self.run_state == 'failed':
+                    raise PrevisionException('Resource failed while waiting')
+            except PrevisionException as e:
+                logger.warning(e.__repr__())
+                raise
+
+            time.sleep(config.scheduler_refresh_rate)
+
     def create_api_key(self):
         """Get run logs of usecase deployement from the actual [client] workspace.
 
@@ -192,3 +241,32 @@ class UsecaseDeployment(ApiResource):
                               message_prefix='UsecaseDeployment get api key')
         resp = parse_json(resp)
         return resp
+
+    def predict_from_dataset(self, dataset: Dataset) -> DeploymentPrediction:
+        """ Make a prediction for a dataset stored in the current active [client]
+        workspace (using the current SDK dataset object).
+
+        Args:
+            dataset (:class:`.Dataset`): Dataset resource to make a prediction for
+
+        Returns:
+            ``pd.DataFrame``: Prediction object
+        """
+        if self.training_type not in ['regression', 'classification', 'multiclassification']:
+            PrevisionException('Prediction not supported yet for training type {}', self.training_type)
+        data = {
+            'dataset_id': dataset._id,
+        }
+
+        predict_start = client.request('/deployments/{}/deployment-predictions'.format(self._id),
+                                       method=requests.post,
+                                       data=data,
+                                       message_prefix='Bulk predict')
+        predict_start_parsed = parse_json(predict_start)
+        return DeploymentPrediction(**predict_start_parsed)
+
+    def list_predictions(self) -> List[DeploymentPrediction]:
+
+        end_point = '/deployments/{}/deployment-predictions'.format(self._id)
+        predictions = get_all_results(client, end_point, method=requests.get)
+        return [DeploymentPrediction(**prediction) for prediction in predictions]
