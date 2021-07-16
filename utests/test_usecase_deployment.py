@@ -63,9 +63,12 @@ def test_usecase_version():
     uc_best_model.enable_deploy()
     project = pio.Project.from_id(PROJECT_ID)
     usecase_deployment = project.create_usecase_deployment('test_sdk_'+ TESTING_ID, uc_best_model)
+
     uc_dataset_id = usecase_version.dataset_id
     prediction_dataset = pio.Dataset.from_id(uc_dataset_id)
-    wait(lambda: usecase_deployment.run_state = "done", timeout_seconds=600, waiting_for="waiting for deployment to be done")
+
+    usecase_deployment.wait_until(lambda usecase_deployment: usecase_deployment.run_state == 'done')
+
     deployement_prediction = usecase_deployment.predict_from_dataset(prediction_dataset)
     prediction_df = deployement_prediction.get_result()
     assert isinstance(prediction_df, pd.DataFrame)

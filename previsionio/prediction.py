@@ -96,7 +96,7 @@ class DeploymentPrediction(ApiResource):
 
     """
 
-    resource = 'deployment-prediction'
+    resource = 'deployment-predictions'
 
     def __init__(self, _id: str, project_id: str, deployment_id: str, state='running', main_model_id=None,
                  challenger_model_id=None, **kwargs):
@@ -108,8 +108,8 @@ class DeploymentPrediction(ApiResource):
         self.challenger_model_id = challenger_model_id
         self._state = state
         for k, v in kwargs.items():
-            print("k============", k)
-            print("v============", v)
+            #print("k============", k)
+            #print("v============", v)
             self.__setattr__(k, v)
 
     @classmethod

@@ -1,6 +1,9 @@
 from typing import List
+import time
 import requests
 
+from . import config
+from .logger import logger
 from .api_resource import ApiResource
 from . import client
 from .usecase_version import BaseUsecaseVersion
@@ -16,13 +19,13 @@ class UsecaseDeployment(ApiResource):
 
     resource = 'model-deployments'
 
-    def __init__(self, _id: str, name: str, usecase_id, usecase_version_id, current_version,
+    def __init__(self, _id: str, name: str, usecase_id, current_version,
                  versions, deploy_state, run_state, access_type, project_id, training_type, models, url=None,
                   **kwargs):
 
         self.name = name
         self._id = _id
-        self.usecase_version_id = usecase_version_id
+        #self.usecase_version_id = usecase_version_id
         self.usecase_id = usecase_id
         self.current_version = current_version
         self.versions = versions
@@ -40,12 +43,18 @@ class UsecaseDeployment(ApiResource):
     @classmethod
     def from_id(cls, _id: str):
         url = '/{}/{}'.format('deployments', _id)
+        print(super()._from_id(_id=_id, specific_url=url))
         return cls(**super()._from_id(_id=_id, specific_url=url))
 
     @property
+    def deploy_state(self):
+        usecase_deployment = self.from_id(self._id)
+        return usecase_deployment._deploy_state
+
+    @property
     def run_state(self):
-        status = self._status
-        return status['_run_state']
+        usecase_deployment = self.from_id(self._id)
+        return usecase_deployment._run_state
 
     @classmethod
     def list(cls, project_id:str, all: bool = True) -> List['UsecaseDeployment']:
@@ -173,6 +182,38 @@ class UsecaseDeployment(ApiResource):
                               message_prefix='UsecaseDeployment delete')
         return resp
 
+    def wait_until(self, condition, timeout: float = config.default_timeout):
+        """ Wait until condition is fulfilled, then break.
+
+        Args:
+            condition (func: (:class:`.BaseUsecaseVersion`) -> bool.): Function to use to check the
+                break condition
+            raise_on_error (bool, optional): If true then the function will stop on error,
+                otherwise it will continue waiting (default: ``True``)
+            timeout (float, optional): Maximal amount of time to wait before forcing exit
+
+        Example::
+
+            usecase.wait_until(lambda usecasev: len(usecasev.models) > 3)
+
+        Raises:
+            PrevisionException: If the resource could not be fetched or there was a timeout.
+        """
+        t0 = time.time()
+        while True:
+            if timeout is not None and time.time() - t0 > timeout:
+                raise PrevisionException('timeout while waiting on {}'.format(condition))
+            try:
+                if condition(self):
+                    break
+                elif self.deploy_state == 'failed' or self.run_state == 'failed':
+                    raise PrevisionException('Resource failed while waiting')
+            except PrevisionException as e:
+                logger.warning(e.__repr__())
+                raise
+
+            time.sleep(config.scheduler_refresh_rate)
+
     def create_api_key(self):
         """Get run logs of usecase deployement from the actual [client] workspace.
 
@@ -222,11 +263,10 @@ class UsecaseDeployment(ApiResource):
                                        data=data,
                                        message_prefix='Bulk predict')
         predict_start_parsed = parse_json(predict_start)
-
         return DeploymentPrediction(**predict_start_parsed)
 
-    def list_predictions(self, all: bool = True) -> List[DeploymentPrediction]:
+    def list_predictions(self) -> List[DeploymentPrediction]:
 
         end_point = '/deployments/{}/deployment-predictions'.format(self._id)
         predictions = get_all_results(client, end_point, method=requests.get)
-        return [DeploymentPrediction(**prediction) for prediction in predictions['items']]
+        return [DeploymentPrediction(**prediction) for prediction in predictions]
