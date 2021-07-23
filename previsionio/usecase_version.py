@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import json
+from previsionio import metrics
 from previsionio.model import Model
 from typing import Dict, List, Union
 import pandas as pd
@@ -393,8 +394,10 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
 
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
-        self.metric: str = usecase_info['metric']
         usecase_params = usecase_info['usecase_version_params']
+        self.metric: str = usecase_info.get('metric', None)
+        if self.metric is None or len(self.metric) == 0:
+            self.metric = usecase_params["metric"]
         self.column_config = ColumnConfig(target_column=usecase_params.get('target_column'),
                                           fold_column=usecase_params.get('fold_column'),
                                           id_column=usecase_params.get('id_column'),

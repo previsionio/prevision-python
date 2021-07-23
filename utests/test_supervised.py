@@ -101,6 +101,7 @@ def test_usecase_latest_versions():
     # usecases = pio.Usecase.list(PROJECT_ID)
     latest_version = pio.Usecase.from_id(usecase_new_version.usecase_id).latest_version
     assert usecase_new_version._id == latest_version._id
+    latest_version.new_version()
 
     pio.Usecase.from_id(usecase_new_version.usecase_id).delete()
 
