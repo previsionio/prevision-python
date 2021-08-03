@@ -252,7 +252,7 @@ class Dataset(ApiResource):
         request_url = '/projects/{}/{}/file'.format(project_id, cls.resource)
         create_resp = None
         if datasource is not None:
-            request_url = '/projects/{}/{}/data-sources'.format(project_id, cls.resource)
+            request_url = '/projects/{}/{}/data-source'.format(project_id, cls.resource)
             data['datasource_id'] = datasource.id
             create_resp = client.request(request_url,
                                          data=data,
