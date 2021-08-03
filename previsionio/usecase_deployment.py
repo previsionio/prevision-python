@@ -20,8 +20,8 @@ class UsecaseDeployment(ApiResource):
     resource = 'model-deployments'
 
     def __init__(self, _id: str, name: str, usecase_id, current_version,
-                 versions, deploy_state, run_state, access_type, project_id, training_type, models, url=None,
-                  **kwargs):
+                 versions, deploy_state, access_type, project_id, training_type, models, url=None,
+                 **kwargs):
 
         self.name = name
         self._id = _id
@@ -30,13 +30,13 @@ class UsecaseDeployment(ApiResource):
         self.current_version = current_version
         self.versions = versions
         self._deploy_state = deploy_state
-        self._run_state = run_state
         self.access_type = access_type
         self.project_id = project_id
         self.training_type = training_type
         self.models = models
         self.url = url
 
+        self._run_state = kwargs.get("main_model_run_state", kwargs.get("run_state", "error"))
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
@@ -57,7 +57,7 @@ class UsecaseDeployment(ApiResource):
         return usecase_deployment._run_state
 
     @classmethod
-    def list(cls, project_id:str, all: bool = True) -> List['UsecaseDeployment']:
+    def list(cls, project_id: str, all: bool = True) -> List['UsecaseDeployment']:
         """ List all the available usecase in the current active [client] workspace.
 
         .. warning::
