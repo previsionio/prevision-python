@@ -37,14 +37,17 @@ class UsecaseDeployment(ApiResource):
         self.url = url
 
         self._run_state = kwargs.get("main_model_run_state", kwargs.get("run_state", "error"))
+        kwargs.pop("main_model_run_state")
+        kwargs.pop("run_state")
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
     @classmethod
     def from_id(cls, _id: str):
         url = '/{}/{}'.format('deployments', _id)
-        print(super()._from_id(_id=_id, specific_url=url))
-        return cls(**super()._from_id(_id=_id, specific_url=url))
+        result = super()._from_id(_id=_id, specific_url=url)
+        logger.debug(result)
+        return cls(**result)
 
     @property
     def deploy_state(self):
