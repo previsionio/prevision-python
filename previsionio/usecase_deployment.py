@@ -36,9 +36,7 @@ class UsecaseDeployment(ApiResource):
         self.models = models
         self.url = url
 
-        self._run_state = kwargs.get("main_model_run_state", kwargs.get("run_state", "error"))
-        kwargs.pop("main_model_run_state")
-        kwargs.pop("run_state")
+        self._run_state = kwargs.pop("main_model_run_state", kwargs.pop("run_state", "error"))
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
