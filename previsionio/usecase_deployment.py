@@ -14,7 +14,6 @@ from .dataset import Dataset
 
 class UsecaseDeployment(ApiResource):
     """ UsecaseDeployment objects represent usecase deployment resource that will be explored by Prevision.io platform.
-
     """
 
     resource = 'model-deployments'
@@ -42,6 +41,18 @@ class UsecaseDeployment(ApiResource):
 
     @classmethod
     def from_id(cls, _id: str):
+        """Get a deployed usecase from the platform by its unique id.
+
+        Args:
+            _id (str): Unique id of the usecase version to retrieve
+
+        Returns:
+            :class:`.UsecaseDeployment`: Fetched deployed usecase
+
+        Raises:
+            PrevisionException: Any error while fetching data from the platform
+                or parsing result
+        """
         url = '/{}/{}'.format('deployments', _id)
         result = super()._from_id(_id=_id, specific_url=url)
         logger.debug(result)
@@ -64,16 +75,17 @@ class UsecaseDeployment(ApiResource):
         .. warning::
 
             Contrary to the parent ``list()`` function, this method
-            returns actual :class:`.Usecase` objects rather than
-            plain dictionaries with the corresponding data.
+            returns actual :class:`.UsecaseDeployment` objects rather
+            than plain dictionaries with the corresponding data.
 
         Args:
+            project_id (str): project id
             all (boolean, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
 
         Returns:
-            list(:class:`.Usecase`): Fetched dataset objects
+            list(:class:`.UsecaseDeployment`): Fetched dataset objects
         """
         resources = super()._list(all=all, project_id=project_id)
         return [UsecaseDeployment(**usecase_deployment) for usecase_deployment in resources]
@@ -216,7 +228,7 @@ class UsecaseDeployment(ApiResource):
             time.sleep(config.scheduler_refresh_rate)
 
     def create_api_key(self):
-        """Get run logs of usecase deployement from the actual [client] workspace.
+        """Create an api key of the usecase deployement from the actual [client] workspace.
 
         Raises:
             PrevisionException: If the dataset does not exist
@@ -230,7 +242,7 @@ class UsecaseDeployment(ApiResource):
         return resp
 
     def get_api_keys(self):
-        """Get run logs of usecase deployement from the actual [client] workspace.
+        """Fetch the api keys of the usecase deployement from the actual [client] workspace.
 
         Raises:
             PrevisionException: If the dataset does not exist
@@ -267,7 +279,11 @@ class UsecaseDeployment(ApiResource):
         return DeploymentPrediction(**predict_start_parsed)
 
     def list_predictions(self) -> List[DeploymentPrediction]:
+        """ List all the available predictions in the current active [client] workspace.
 
+        Returns:
+            list(:class:`.DeploymentPrediction`): Fetched deployed predictions objects
+        """
         end_point = '/deployments/{}/deployment-predictions'.format(self._id)
         predictions = get_all_results(client, end_point, method=requests.get)
         return [DeploymentPrediction(**prediction) for prediction in predictions]
