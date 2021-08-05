@@ -463,6 +463,41 @@ To make predictions from a dataset and a usecase, you need to wait until at leas
 
     The ``wait_until`` method takes a function that takes the usecase as an argument, and can therefore access any info relative to the usecase.
 
+Deployed usecases
+=================
+
+Prevision.io's SDK allows to deploy a usecase's models. Deployed models are made available for unit and bulk prediction through apis. Then you can follow the usage of a model and the evolution of its input features distribution.
+
+You first need to enable the deployment of a model from its usecase_version:
+
+.. code-block:: python
+
+    # enable deployment for the best model
+    uc_best_model = usecase_version.best_model
+    uc_best_model.enable_deploy()
+
+    # deploy the usecase model
+    usecase_deployment = project.create_usecase_deployment(
+        'my_deployed_usecase',
+        main_model=uc_best_model,
+        challenger_model=None,
+    )
+
+Then you can predict from your deployed model:
+
+.. code-block:: python
+    
+    # make prediction
+    deployement_prediction = usecase_deployment.predict_from_dataset(test_dataset)
+
+    # retrieve prediction from main model
+    prediction_df = deployement_prediction.get_result()
+
+    # retrieve prediction from challenger model (if any)
+    prediction_df = deployement_prediction.get_challenger_result()
+
+To get a full documentation check the api reference :ref:`usecase_deployement_reference`.
+
 Additional util methods
 =======================
 
@@ -500,14 +535,10 @@ You can decide to completely delete the usecase:
 
 However be careful, in that case any detail about the usecase will be removed, and you won't be able to make predictions from it anymore.
 
-Using deployed model
---------------------
+Using deployed usecase
+----------------------
 
-Prevision.io's SDK allows to make a prediction from a model deployed with the Prevision.io's platform.
-
-To deploy a model you need to log to the web interface of your instance, select a project and the usecase you want to work with. Then go to the ``Models`` tab and toggle on the models you want to use in production. Then click on the ``Deployments`` tab at the left of the screen, go to ``Deployments usecases`` at the top left of the screen and click on the ``Deploy a new usecase`` button at the top right of the screen. Fill in the different fields and click on ``Deploy``.
-
-Once the model is deployed and your on its main page, go to the bottom of the page and click on ``generate new key`` wich will create a ``Client Id`` and a ``Client secret``. You will need the ``url`` (displayed at the top of the page in the interface) the ``Client Id`` and the ``Client secret`` to call it via the python SDK:
+Prevision.io's SDK allows to predict from a deployed usecase. Log to the web interface of your instance, select a project and click on the ``Deployments`` tab at the left of the screen. Select a deployed usecase, go to the bottom of its page and click on ``generate new key`` wich will create a ``Client Id`` and a ``Client secret``. You will need the ``url`` (displayed at the top of the page in the interface) the ``Client Id`` and the ``Client secret`` to call it via the python SDK:
 
 .. code-block:: python
 

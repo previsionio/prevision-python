@@ -77,6 +77,7 @@ class Usecase(ApiResource):
             plain dictionaries with the corresponding data.
 
         Args:
+            project_id (str): project id
             all (boolean, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
