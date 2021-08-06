@@ -1,4 +1,7 @@
+from logging import DEBUG
+import logging
 import os
+from previsionio.logger import event_logger
 from previsionio.usecase_config import UsecaseState
 import time
 import pandas as pd
@@ -15,6 +18,9 @@ pio.config.zip_files = False
 pio.config.default_timeout = 1000
 
 paths = {}
+
+event_logger.setLevel(DEBUG)
+logging.getLogger().setLevel(DEBUG)
 
 
 def setup_module(module):

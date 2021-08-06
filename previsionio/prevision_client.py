@@ -1,5 +1,4 @@
 from __future__ import print_function
-import logging
 
 import os
 import copy
@@ -23,8 +22,8 @@ class EventManager:
         auth_headers = copy.deepcopy(auth_headers)
         self.headers = auth_headers
         self.client = client
-        # self.t = threading.Thread(target=self.update_events, daemon=True)
-        # self.t.start()
+        self.t = threading.Thread(target=self.update_events, daemon=True)
+        self.t.start()
 
         self._events = (threading.Semaphore(1), {})
 
@@ -52,7 +51,6 @@ class EventManager:
         t0 = time.time()
         while time.time() < t0 + config.default_timeout:
             reconnect_start = time.time()
-            self.update_events()
             semd, event_dict = self._events
             semd.acquire()
             if self.check_resource_event(resource_id, specific_url, event_tuple, semd):
@@ -60,7 +58,6 @@ class EventManager:
             semd.release()
             time.sleep(0.1)
             while time.time() < reconnect_start + 300:
-                self.update_events()
                 semd, event_dict = self._events
                 semd.acquire()
                 semi, event_list = event_dict[resource_id]
@@ -103,69 +100,69 @@ class EventManager:
         self.add_event(resource_id, payload)
 
     def update_events(self):
-        sse_timeout = 10
+        sse_timeout = 300
         event_data = None
         event_name = None
 
-        # while True:
-        sse = requests.get(self.event_endpoint,
-                           stream=True,
-                           headers=self.headers,
-                           timeout=sse_timeout)
+        while True:
+            sse = requests.get(self.event_endpoint,
+                               stream=True,
+                               headers=self.headers,
+                               timeout=sse_timeout)
 
-        try:
-            for line in sse.iter_lines(chunk_size=None):
-                if not line or len(line) == 0:
-                    # filter out keep-alive new lines
-                    time.sleep(0.1)
-                    continue
-
-                line = line.decode(encoding="UTF-8", errors='ignore')
-                if line.startswith(':'):
-                    # SSE comments can start with ":" character
-                    event_logger.debug('sse comment{}'.format(line))
-                    continue
-                elif line.startswith('id: '):
-                    # skip id message information
-                    continue
-                elif line.startswith('event: '):
-                    # get event name
-                    event_name = line[len('event: '):]
-                elif line.startswith('data: '):
-                    if event_name is None:
-                        # ignore event with unknown name
+            try:
+                for line in sse.iter_lines(chunk_size=None):
+                    if not line:
+                        # filter out keep-alive new lines
                         continue
 
-                    # get event data
-                    try:
-                        event_data = json.loads(line[len('data: '):])
-                    except Exception as e:
-                        # skip malformed event data
-                        event_logger.warning('failed to parse json: "{}" -- error: {}'.format(line, e.__repr__()))
+                    event_logger.debug('url: {} -- data: {}'.format(self.event_endpoint, line))
+                    line = line.decode()
+                    if line.startswith(':'):
+                        # SSE comments can start with ":" character
+                        event_logger.debug('sse comment{}'.format(line))
                         continue
-
-                    resource_id = event_data.get('_id', None)
-
-                    if not isinstance(resource_id, str):
-                        # ignore event with invalid resource id
+                    elif line.startswith('id '):
+                        # skip id message information
                         continue
+                    elif line.startswith('event: '):
+                        # get event name
+                        event_name = line[len('event: '):]
+                    elif line.startswith('data: '):
+                        if event_name is None:
+                            # ignore event with unknown name
+                            continue
 
-                    # add event only if monitored resource
-                    semd, event_dict = self._events
-                    if resource_id in event_dict:
+                        # get event data
+                        try:
+                            event_data = json.loads(line[len('data: '):])
+                        except Exception as e:
+                            # skip malformed event data
+                            event_logger.warning('failed to parse json: "{}" -- error: {}'.format(line, e.__repr__()))
+                            continue
+
+                        resource_id = event_data.get('_id', None)
+
+                        if not isinstance(resource_id, str):
+                            # ignore event with invalid resource id
+                            continue
+
+                        # add event only if monitored resource
+                        # semd, event_dict = self._events
+                        # if resource_id in event_dict:
                         payload = {'event': event_name, 'id': resource_id}
                         event_logger.debug('url: {} -- event: {} payload: {}'.format(self.event_endpoint,
                                                                                      event_name,
                                                                                      payload))
                         self.add_event(resource_id, payload)
-
-            logging.debug("end of line")
-        except requests.exceptions.ChunkedEncodingError:
-            event_logger.warning('closing connection to endpoint: "{}"'.format(self.event_endpoint))
-        except requests.exceptions.ConnectionError:
-            logger.warning('{}: no messages in {} seconds. reconnecting'.format(self.event_endpoint, sse_timeout))
-        except Exception as e:
-            logger.error(e)
+            except requests.exceptions.ChunkedEncodingError:
+                event_logger.warning('closing connection to endpoint: "{}"'.format(self.event_endpoint))
+            except requests.exceptions.ConnectionError:
+                logger.warning('{}: no messages in {} seconds. reconnecting'.format(self.event_endpoint, sse_timeout))
+            except Exception as e:
+                logger.error(e)
+            finally:
+                sse.close()
 
     def add_event(self, resource_id: str, payload: Union[None, Dict]):
         event_logger.debug('adding event for {}:\npayload = {}'.format(resource_id, payload))
