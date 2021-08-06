@@ -332,11 +332,9 @@ class Client(object):
 
 client = Client()
 
-os.environ["PREVISION_MASTER_TOKEN"] = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZyYW5jb2lzLmFuY2VsQHByZXZpc2lvbi5pbyIsInVzZXJfaWQiOiI4MDYxZTZjZS1iMjM0LTRhZDAtOWI2Ny05NTdlODUxNzBiNjkiLCJpc0FkbWluIjp0cnVlLCJpc0ZyZWVUcmlhbCI6ZmFsc2UsIm5vdGVib29rIjpmYWxzZSwiaXNzIjoicHJldmlzaW9uIiwiZXhwIjoxOTQxMDIwMjI4LCJleHBpcmVkIjpmYWxzZSwiaWF0IjoxNjI1NDg3NDI4fQ.6V04gvMulDPxZHNeIhcyHUtC0AoNC-OclWwGjW2P9Qs"
 
 if os.getenv('PREVISION_URL') and os.getenv('PREVISION_MASTER_TOKEN'):
     logger.info('Initializing Prevision.io client using environment variables')
     logger.debug('PREVISION_URL:' + os.getenv('PREVISION_URL', ""))
     logger.debug('PREVISION_MASTER_TOKEN:' + os.getenv('PREVISION_MASTER_TOKEN', ""))
     client.init_client(os.getenv('PREVISION_URL', ""), os.getenv('PREVISION_MASTER_TOKEN', ""))
-assert client.event_manager is not None
