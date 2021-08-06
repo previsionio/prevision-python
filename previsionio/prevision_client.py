@@ -68,7 +68,7 @@ class EventManager:
                         if name == event_tuple.name:
                             if self.check_resource_event(resource_id, specific_url, event_tuple, semd):
                                 return
-                        elif name != "REGISTER":
+                        else:
                             remaining_events.append(event)
 
                 event_dict[resource_id] = semi, remaining_events
