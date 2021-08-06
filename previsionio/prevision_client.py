@@ -64,10 +64,11 @@ class EventManager:
                 remaining_events = []
                 with semi:
                     for event in event_list:
-                        if event.get('event') == event_tuple.name:
+                        name = event.get('event')
+                        if name == event_tuple.name:
                             if self.check_resource_event(resource_id, specific_url, event_tuple, semd):
                                 return
-                        else:
+                        elif name != "REGISTER":
                             remaining_events.append(event)
 
                 event_dict[resource_id] = semi, remaining_events
@@ -82,14 +83,13 @@ class EventManager:
                              semd: threading.Semaphore):
         resp = self.client.request(endpoint=endpoint, method=requests.get, check_response=False)
         json_response = parse_json(resp)
-        for k, v in event_tuple.fail_checks:
-            if json_response.get(k) == v:
-                semd.release()
-                msg = 'Error on resource {}: {}\n{}'.format(resource_id,
-                                                            json_response.get('errorMessage', ''),
-                                                            json_response)
-                raise PrevisionException(msg)
-        if json_response.get(event_tuple.key) == event_tuple.value:
+        if event_tuple.is_failure(json=json_response):
+            semd.release()
+            msg = 'Error on resource {}: {}\n{}'.format(resource_id,
+                                                        json_response.get('errorMessage', ''),
+                                                        json_response)
+            raise PrevisionException(msg)
+        if event_tuple.is_success(json=json_response):
             semd.release()
             return True
         return False
@@ -332,9 +332,11 @@ class Client(object):
 
 client = Client()
 
+os.environ["PREVISION_MASTER_TOKEN"] = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZyYW5jb2lzLmFuY2VsQHByZXZpc2lvbi5pbyIsInVzZXJfaWQiOiI4MDYxZTZjZS1iMjM0LTRhZDAtOWI2Ny05NTdlODUxNzBiNjkiLCJpc0FkbWluIjp0cnVlLCJpc0ZyZWVUcmlhbCI6ZmFsc2UsIm5vdGVib29rIjpmYWxzZSwiaXNzIjoicHJldmlzaW9uIiwiZXhwIjoxOTQxMDIwMjI4LCJleHBpcmVkIjpmYWxzZSwiaWF0IjoxNjI1NDg3NDI4fQ.6V04gvMulDPxZHNeIhcyHUtC0AoNC-OclWwGjW2P9Qs"
 
 if os.getenv('PREVISION_URL') and os.getenv('PREVISION_MASTER_TOKEN'):
     logger.info('Initializing Prevision.io client using environment variables')
     logger.debug('PREVISION_URL:' + os.getenv('PREVISION_URL', ""))
     logger.debug('PREVISION_MASTER_TOKEN:' + os.getenv('PREVISION_MASTER_TOKEN', ""))
     client.init_client(os.getenv('PREVISION_URL', ""), os.getenv('PREVISION_MASTER_TOKEN', ""))
+assert client.event_manager is not None

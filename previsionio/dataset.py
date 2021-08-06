@@ -315,8 +315,14 @@ class Dataset(ApiResource):
 
         create_json = parse_json(create_resp)
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
-        event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'describe_state', 'done',
-                                                   [('ready', 'failed'), ('drift', 'failed')])
+        event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE',
+                                                   [('copy_state', 'done'),
+                                                       ('describe_state', 'done'),
+                                                       ('drift_state', 'done')],
+                                                   [('copy_state', 'failed'),
+                                                       ('describe_state', 'failed'),
+                                                       ('drift_state', 'failed'),
+                                                       ('embeddings_state', 'failed')])
         assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(create_json['_id'],
                                                 cls.resource,
@@ -431,7 +437,7 @@ class DatasetImages(ApiResource):
         pio.client.event_manager.wait_for_event(create_json['_id'],
                                                 cls.resource,
                                                 previsionio.utils.EventTuple(
-                                                    'FOLDER_UPDATE', 'state', 'done', [('state', 'failed')]),
+                                                    'FOLDER_UPDATE'),
                                                 specific_url=url)
 
         dset_resp = client.request(url, method=requests.get, message_prefix='Image folder loading')

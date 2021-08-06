@@ -1,13 +1,12 @@
 from enum import Enum
 import operator
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 import requests
 import uuid
 import json
 import zipfile
 import pandas as pd
 import os
-from collections import namedtuple
 import numpy as np
 from requests.models import Response
 from . import logger, config
@@ -96,8 +95,43 @@ def get_pred_from_multiclassification(row, pred_prefix: str = 'pred_'):
     return pred
 
 
-EventTuple = namedtuple('EventTuple', 'name key value fail_checks')
-EventTuple.__new__.__defaults__ = ((('state', 'failed'),),)
+class EventTuple():
+    def __init__(self, name: str,
+                 success_checks: Union[Tuple[str, str], List[Tuple[str, str]]] = ('state', 'done'),
+                 fail_checks: Union[Tuple[str, str], List[Tuple[str, str]]] = ('state', 'failed')):
+        assert name is not None
+        self.name = name
+
+        assert success_checks is not None
+        self.success_checks = success_checks
+        if isinstance(success_checks, Tuple):
+            self.success_checks = [success_checks]
+        assert len(set([key for key, _ in self.success_checks])) == len(
+            self.success_checks), "requiring same key for success check"
+
+        assert fail_checks is not None
+        self.fail_checks = fail_checks
+        if isinstance(fail_checks, Tuple):
+            self.fail_checks = [fail_checks]
+
+    def is_failure(self, json: Dict):
+        """
+            if any fail condition pass, it's a failure
+        """
+        for key, val in self.fail_checks:
+            if json.get(key) == val:
+                return True
+        return False
+
+    def is_success(self, json: Dict):
+        """
+            all success condition need to be there to pass
+        """
+        result = True
+        for key, val in self.success_checks:
+            if json.get(key) != val:
+                return False
+        return result
 
 
 def is_null_value(value) -> bool:

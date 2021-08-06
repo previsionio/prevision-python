@@ -109,8 +109,7 @@ class Supervised(ClassicUsecaseVersion):
         assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(usecase.resource_id,
                                                 cls.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
-                                                           [('state', 'failed')]),
+                                                EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
                                                 specific_url=events_url)
 
         return usecase
@@ -200,8 +199,7 @@ class Supervised(ClassicUsecaseVersion):
         assert client.event_manager is not None
         client.event_manager.wait_for_event(usecase.resource_id,
                                             self.resource,
-                                            EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
-                                                       [('state', 'failed')]),
+                                            EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
                                             specific_url=events_url)
 
         return usecase

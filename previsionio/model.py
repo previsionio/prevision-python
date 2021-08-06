@@ -15,9 +15,8 @@ from .dataset import Dataset
 # from .deployed_model import DeployedModel
 from .prevision_client import client
 from .api_resource import ApiResource
-from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas
+from .utils import parse_json, PrevisionException, zip_to_pandas
 from .prediction import ValidationPrediction
-
 
 
 class Model(ApiResource):
