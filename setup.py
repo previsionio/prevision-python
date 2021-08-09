@@ -20,7 +20,7 @@ if python_major == 2:
 
 with open("README.md") as readme:
     setup(name='previsionio',
-          version='11.1.6',
+          version='11.1.7',
           description='python wrapper for prevision api',
           long_description=readme.read(),
           url='https://github.com/previsionio/prevision-python',
