@@ -151,13 +151,13 @@ class EventManager:
                             continue
 
                         # add event only if monitored resource
-                        # semd, event_dict = self._events
-                        # if resource_id in event_dict:
-                        payload = {'event': event_name, 'id': resource_id}
-                        event_logger.debug('url: {} -- event: {} payload: {}'.format(self.event_endpoint,
-                                                                                     event_name,
-                                                                                     payload))
-                        self.add_event(resource_id, payload)
+                        semd, event_dict = self._events
+                        if resource_id in event_dict:
+                            payload = {'event': event_name, 'id': resource_id}
+                            event_logger.debug('url: {} -- event: {} payload: {}'.format(self.event_endpoint,
+                                                                                         event_name,
+                                                                                         payload))
+                            self.add_event(resource_id, payload)
             except requests.exceptions.ChunkedEncodingError:
                 event_logger.warning('closing connection to endpoint: "{}"'.format(self.event_endpoint))
             except requests.exceptions.ConnectionError:
