@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import json
-from previsionio import metrics
 from previsionio.model import Model
 from typing import Dict, List, Union
 import pandas as pd
