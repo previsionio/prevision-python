@@ -16,6 +16,7 @@ synchro:
   extends: .base
   image: $PREVISION_REGISTRY_ADDR/prevision/docker:19.03.1
   script:
+    - git checkout ${CI_COMMIT_BRANCH}
     - git pull https://github.com/previsionio/prevision-python.git
     - git push
 
