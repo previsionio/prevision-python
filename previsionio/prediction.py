@@ -1,4 +1,3 @@
-from typing import List
 import requests
 
 from .api_resource import ApiResource

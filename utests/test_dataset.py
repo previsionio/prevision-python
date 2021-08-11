@@ -44,9 +44,9 @@ def teardown_module(module):
 def test_upload_dataset_from_dataframe():
     project = pio.Project.from_id(PROJECT_ID)
     paths_df = {k: paths[k] for k in paths if k != 'zip_regression'}
-    for problem_type, p in paths_df.items():
-        dataset = project.create_dataset(p.split('/')[-1][:-4] + str(TESTING_ID),
-                                         dataframe=pd.read_csv(p))
+    for _, p in paths_df.items():
+        _ = project.create_dataset(p.split('/')[-1][:-4] + str(TESTING_ID),
+                                   dataframe=pd.read_csv(p))
 
     datasets = [ds for ds in project.list_datasets(all=True) if TESTING_ID in ds.name]
     ds_names = [k + str(TESTING_ID) for k in paths_df]
@@ -63,9 +63,9 @@ def test_upload_dataset_from_dataframe():
 def test_upload_dataset_from_dataframe_with_origin():
     project = pio.Project.from_id(PROJECT_ID)
     paths_df = {k: paths[k] for k in paths if k != 'zip_regression'}
-    for problem_type, p in paths_df.items():
-        dataset = project.create_dataset(p.split('/')[-1][:-4] + str(TESTING_ID),
-                                         dataframe=pd.read_csv(p), origin="pipeline_intermediate_file")
+    for _, p in paths_df.items():
+        _ = project.create_dataset(p.split('/')[-1][:-4] + str(TESTING_ID),
+                                   dataframe=pd.read_csv(p), origin="pipeline_intermediate_file")
 
     datasets = [ds for ds in project.list_datasets(all=True) if TESTING_ID in ds.name]
     ds_names = [k + str(TESTING_ID) for k in paths_df]

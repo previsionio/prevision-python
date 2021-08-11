@@ -1,10 +1,9 @@
 import pandas as pd
-import pytest
 import previsionio as pio
 
 from . import DATA_PATH
 from .datasets import make_supervised_datasets, remove_datasets
-from .utils import train_model, get_testing_id, DROP_COLS
+from .utils import train_model, get_testing_id
 
 TESTING_ID = get_testing_id()
 
