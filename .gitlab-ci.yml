@@ -13,6 +13,7 @@ variables:
 
 synchro:
   stage: sync
+  extends: .base
   script:
     - git pull git@github.com:previsionio/prevision-python.git
     - git push
