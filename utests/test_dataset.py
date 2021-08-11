@@ -95,7 +95,8 @@ def test_upload_dataset_from_filename():
 def test_from_id_new():
     project = pio.Project.from_id(PROJECT_ID)
     dataset = project.create_dataset(paths["classification"].split('/')[-1][:-4] + str(TESTING_ID),
-                                     dataframe=pd.read_csv(paths["classification"]), origin="pipeline_intermediate_file")
+                                     dataframe=pd.read_csv(paths["classification"]),
+                                     origin="pipeline_intermediate_file")
 
     new = pio.Dataset.from_id(dataset._id)
     assert new._id == dataset._id

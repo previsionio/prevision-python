@@ -25,12 +25,14 @@ training_type_2_pio_class = {
 }
 training_types = training_type_2_pio_class.keys()
 
+
 def make_pio_datasets(paths):
     for problem_type, p in paths.items():
         project = pio.Project.from_id(PROJECT_ID)
         dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
                                          dataframe=pd.read_csv(p))
         test_datasets[problem_type] = dataset
+
 
 def setup_module(module):
     project = pio.Project.new(name=PROJECT_NAME,
@@ -47,10 +49,12 @@ def teardown_module(module):
     project = pio.Project.from_id(PROJECT_ID)
     project.delete()
 
+
 def supervised_from_filename(training_type, uc_name):
     dataset = test_datasets[training_type]
     training_type_class = training_type_2_pio_class[training_type]
     return train_model(PROJECT_ID, uc_name, dataset, training_type, training_type_class, uc_config)
+
 
 def test_usecase_version():
     uc_name = TESTING_ID + '_file_del'
@@ -62,7 +66,7 @@ def test_usecase_version():
     uc_best_model = usecase_version.best_model
     uc_best_model.enable_deploy()
     project = pio.Project.from_id(PROJECT_ID)
-    usecase_deployment = project.create_usecase_deployment('test_sdk_'+ TESTING_ID, uc_best_model)
+    usecase_deployment = project.create_usecase_deployment('test_sdk_' + TESTING_ID, uc_best_model)
 
     uc_dataset_id = usecase_version.dataset_id
     prediction_dataset = pio.Dataset.from_id(uc_dataset_id)

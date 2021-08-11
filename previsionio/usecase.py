@@ -13,7 +13,9 @@ from .utils import parse_json
 from .api_resource import ApiResource
 
 
-def get_usecase_version_class(training_type: TypeProblem, data_type: DataType) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries]]:
+def get_usecase_version_class(
+        training_type: TypeProblem,
+        data_type: DataType) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries]]:
     """ Get the type of UsecaseVersion class used by this Usecase
 
     Returns:

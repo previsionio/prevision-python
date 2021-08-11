@@ -24,7 +24,7 @@ class UsecaseDeployment(ApiResource):
 
         self.name = name
         self._id = _id
-        #self.usecase_version_id = usecase_version_id
+        # self.usecase_version_id = usecase_version_id
         self.usecase_id = usecase_id
         self.current_version = current_version
         self.versions = versions
