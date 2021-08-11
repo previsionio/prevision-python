@@ -10,7 +10,7 @@ variables:
   image: python:3.6.8-slim-stretch
   tags: ["kube", "bel1-c2"]
 
-test-image:
+test-lint:
   stage: test
   extends: .base
   script:
@@ -19,7 +19,7 @@ test-image:
     - pycodestyle --config pep8lint.cfg --statistics --format=pylint *.py previsionio/*.py utests/*.py
     - pyflakes  *.py previsionio/*.py utests/*.py
 
-test-lint:
+test-image:
   stage: test
   extends: .base
   script:
