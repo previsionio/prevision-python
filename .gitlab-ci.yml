@@ -14,6 +14,7 @@ variables:
 synchro:
   stage: sync
   extends: .base
+  image: $PREVISION_REGISTRY_ADDR/prevision/docker:19.03.1
   script:
     - git pull git@github.com:previsionio/prevision-python.git
     - git push
