@@ -7,7 +7,7 @@ variables:
   PIO_TAG: ${CI_COMMIT_REF_SLUG}
 
 .base:
-  image: $PREVISION_REGISTRY_ADDR/prevision/infra/gitlab-job-python:20.10
+  image: $PREVISION_REGISTRY_ADDR/prevision/infra/gitlab-job-python:19.03
   tags: ["kube", "bel1-c2"]
 
 test-image:
