@@ -22,6 +22,7 @@ test-lint:
 test-image:
   stage: test
   extends: .base
+  interruptible: true
   script:
     - pip install --no-cache-dir -r requirements.txt
     - pip install --no-cache-dir -r utests/requirements.txt
