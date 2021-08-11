@@ -152,8 +152,10 @@ class DeploymentPrediction(ApiResource):
         specific_url = '/{}/{}'.format(self.resource, self._id)
         client.event_manager.wait_for_event(self._id,
                                             specific_url,
-                                            EventTuple('DEPLOYMENT_PREDICTION_UPDATE', ('challenger_model_prediction_state', 'done'),
-                                                       [('challenger_model_prediction_state', 'failed')]),
+                                            EventTuple(
+                                                'DEPLOYMENT_PREDICTION_UPDATE',
+                                                ('challenger_model_prediction_state', 'done'),
+                                                [('challenger_model_prediction_state', 'failed')]),
                                             specific_url=specific_url)
         #
         url = '/{}/{}/download'.format(self.resource, self._id)
