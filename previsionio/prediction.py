@@ -10,7 +10,7 @@ class ValidationPrediction(ApiResource):
 
     """
 
-    resource = 'validation-prediction'
+    resource = 'validation-predictions'
 
     def __init__(self, _id: str, usecase_id: str, usecase_version_id: str, project_id: str, state='running',
                  model_id=None, model_name=None, dataset_id=None, download_available=False, score=None, duration=None,
