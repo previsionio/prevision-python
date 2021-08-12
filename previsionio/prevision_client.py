@@ -1,4 +1,5 @@
 from __future__ import print_function
+import logging
 
 import os
 import copy
@@ -7,6 +8,7 @@ import requests
 import time
 import json
 import threading
+from datetime import datetime
 
 from requests.models import Response
 
@@ -83,6 +85,7 @@ class EventManager:
                              semd: threading.Semaphore):
         resp = self.client.request(endpoint=endpoint, method=requests.get, check_response=False)
         json_response = parse_json(resp)
+        logging.debug("{} - endpoint='{}' -> '{}".format(datetime.now(), endpoint, json_response))
         if event_tuple.is_failure(json=json_response):
             semd.release()
             msg = 'Error on resource {}: {}\n{}'.format(resource_id,

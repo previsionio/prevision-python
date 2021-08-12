@@ -1,4 +1,3 @@
-from typing import List
 import requests
 
 from .api_resource import ApiResource
@@ -13,8 +12,9 @@ class ValidationPrediction(ApiResource):
 
     resource = 'validation-prediction'
 
-    def __init__(self, _id: str, usecase_id: str, usecase_version_id: str, project_id: str, state='running', model_id=None, model_name=None,
-                 dataset_id=None, download_available=False, score=None, duration=None, predictions_count=None, **kwargs):
+    def __init__(self, _id: str, usecase_id: str, usecase_version_id: str, project_id: str, state='running',
+                 model_id=None, model_name=None, dataset_id=None, download_available=False, score=None, duration=None,
+                 predictions_count=None, **kwargs):
 
         self._id = _id
         self.usecase_id = usecase_id
@@ -108,8 +108,8 @@ class DeploymentPrediction(ApiResource):
         self.challenger_model_id = challenger_model_id
         self._state = state
         for k, v in kwargs.items():
-            #print("k============", k)
-            #print("v============", v)
+            # print("k============", k)
+            # print("v============", v)
             self.__setattr__(k, v)
 
     @classmethod
@@ -132,8 +132,10 @@ class DeploymentPrediction(ApiResource):
         specific_url = '/{}/{}'.format(self.resource, self._id)
         client.event_manager.wait_for_event(self._id,
                                             specific_url,
-                                            EventTuple('DEPLOYMENT_PREDICTION_UPDATE', ('main_model_prediction_state', 'done'),
-                                                       [('main_model_prediction_state', 'failed')]),
+                                            EventTuple(
+                                                'DEPLOYMENT_PREDICTION_UPDATE',
+                                                ('main_model_prediction_state', 'done'),
+                                                [('main_model_prediction_state', 'failed')]),
                                             specific_url=specific_url)
         #
         url = '/{}/{}/download'.format(self.resource, self._id)
@@ -149,8 +151,10 @@ class DeploymentPrediction(ApiResource):
         specific_url = '/{}/{}'.format(self.resource, self._id)
         client.event_manager.wait_for_event(self._id,
                                             specific_url,
-                                            EventTuple('DEPLOYMENT_PREDICTION_UPDATE', ('challenger_model_prediction_state', 'done'),
-                                                       [('challenger_model_prediction_state', 'failed')]),
+                                            EventTuple(
+                                                'DEPLOYMENT_PREDICTION_UPDATE',
+                                                ('challenger_model_prediction_state', 'done'),
+                                                [('challenger_model_prediction_state', 'failed')]),
                                             specific_url=specific_url)
         #
         url = '/{}/{}/download'.format(self.resource, self._id)
