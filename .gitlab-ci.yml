@@ -27,3 +27,4 @@ test-image:
     - pip install --no-cache-dir -r requirements.txt
     - pip install --no-cache-dir -r utests/requirements.txt
     - pytest utests/
+  timeout: 2h
