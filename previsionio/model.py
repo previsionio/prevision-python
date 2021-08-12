@@ -148,7 +148,7 @@ class Model(ApiResource):
         if dataset_folder_id is not None:
             data['folder_dataset_id'] = dataset_folder_id
 
-        predict_start = client.request('/usecase-versions/{}/predictions'.format(self.usecase_version_id),
+        predict_start = client.request('/usecase-versions/{}/validation-predictions'.format(self.usecase_version_id),
                                        method=requests.post,
                                        data=data,
                                        message_prefix='Bulk predict')
@@ -467,7 +467,7 @@ class TextSimilarityModel(Model):
         }
         if matching_id_description_column:
             data['queries_dataset_matching_id_description_column'] = matching_id_description_column
-        endpoint = '/usecase-versions/{}/predictions'.format(self.usecase_version_id)
+        endpoint = '/usecase-versions/{}/validation-predictions'.format(self.usecase_version_id)
         predict_start = client.request(endpoint,
                                        method=requests.post,
                                        data=data,
