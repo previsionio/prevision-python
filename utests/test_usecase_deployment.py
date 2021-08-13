@@ -63,7 +63,7 @@ def test_usecase_version():
     assert usecase_version.running
     usecase_version.stop()
     uc_best_model = usecase_version.best_model
-    uc_best_model.enable_deploy()
+
     project = pio.Project.from_id(PROJECT_ID)
     usecase_deployment = project.create_usecase_deployment('test_sdk_' + TESTING_ID, uc_best_model)
 

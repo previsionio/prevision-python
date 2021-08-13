@@ -207,35 +207,6 @@ class Model(ApiResource):
 
         return prediction.get_result()
 
-    def enable_deploy(self):
-        data = {"deploy": True}
-        url = '/models/{}'.format(self._id)
-        response = client.request(url, requests.put, data=data,
-                                  message_prefix="Enable deploy")
-        self.deployable = True
-        res = parse_json(response)
-        return res
-
-    def disable_deploy(self):
-        data = {"deploy": False}
-        url = '/models/{}'.format(self._id)
-        response = client.request(url, requests.put, data=data,
-                                  message_prefix="Disable deploy")
-        self.deployable = False
-        res = parse_json(response)
-        return res
-
-    # def deploy(self) -> DeployedModel:
-    #     """ (Not Implemented yet) Deploy the model as a REST API app.
-    #
-    #     Keyword Arguments:
-    #         app_type {enum} -- it can be 'model', 'notebook', 'shiny', 'dash' or 'node' application
-    #
-    #     Returns:
-    #         str: Path of the deployed application
-    #     """
-    #     raise NotImplementedError
-
 
 class ClassicModel(Model):
 
