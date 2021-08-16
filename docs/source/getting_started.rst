@@ -468,13 +468,10 @@ Deployed usecases
 
 Prevision.io's SDK allows to deploy a usecase's models. Deployed models are made available for unit and bulk prediction through apis. Then you can follow the usage of a model and the evolution of its input features distribution.
 
-You first need to enable the deployment of a model from its usecase_version:
-
 .. code-block:: python
 
-    # enable deployment for the best model
+    # retrieve the best model
     uc_best_model = usecase_version.best_model
-    uc_best_model.enable_deploy()
 
     # deploy the usecase model
     usecase_deployment = project.create_usecase_deployment(
