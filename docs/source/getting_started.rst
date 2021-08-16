@@ -488,15 +488,15 @@ Then you can predict from your deployed model:
 .. code-block:: python
     
     # make prediction
-    deployement_prediction = usecase_deployment.predict_from_dataset(test_dataset)
+    deployment_prediction = usecase_deployment.predict_from_dataset(test_dataset)
 
     # retrieve prediction from main model
-    prediction_df = deployement_prediction.get_result()
+    prediction_df = deployment_prediction.get_result()
 
     # retrieve prediction from challenger model (if any)
-    prediction_df = deployement_prediction.get_challenger_result()
+    prediction_df = deployment_prediction.get_challenger_result()
 
-To get a full documentation check the api reference :ref:`usecase_deployement_reference`.
+To get a full documentation check the api reference :ref:`usecase_deployment_reference`.
 
 Additional util methods
 =======================

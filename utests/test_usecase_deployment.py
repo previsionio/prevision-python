@@ -72,6 +72,6 @@ def test_usecase_version():
 
     usecase_deployment.wait_until(lambda usecase_deployment: usecase_deployment.run_state == 'done')
 
-    deployement_prediction = usecase_deployment.predict_from_dataset(prediction_dataset)
-    prediction_df = deployement_prediction.get_result()
+    deployment_prediction = usecase_deployment.predict_from_dataset(prediction_dataset)
+    prediction_df = deployment_prediction.get_result()
     assert isinstance(prediction_df, pd.DataFrame)

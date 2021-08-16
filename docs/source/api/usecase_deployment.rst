@@ -1,6 +1,6 @@
-.. _usecase_deployement_reference:
+.. _usecase_deployment_reference:
 
-Usecase Deployement
+Usecase Deployment
 ===================
 
 .. automodule:: previsionio.usecase_deployment
