@@ -142,3 +142,6 @@ __all__ = [
     'ValidationPrediction',
     'DeploymentPrediction'
 ]
+
+from . import _version
+__version__ = _version.get_versions()['version']

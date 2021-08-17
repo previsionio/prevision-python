@@ -1,6 +1,7 @@
 import sys
 from setuptools import setup, find_packages
 
+import versioneer
 
 python_major = sys.version_info[0]
 
@@ -20,7 +21,8 @@ if python_major == 2:
 
 with open("README.md") as readme:
     setup(name='previsionio',
-          version='11.1.7',
+          version=versioneer.get_version(),
+          cmdclass=versioneer.get_cmdclass(),
           description='python wrapper for prevision api',
           long_description=readme.read(),
           url='https://github.com/previsionio/prevision-python',
