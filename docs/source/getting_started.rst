@@ -468,9 +468,11 @@ Deployed usecases
 
 Prevision.io's SDK allows to deploy a usecase's models. Deployed models are made available for unit and bulk prediction through apis. Then you can follow the usage of a model and the evolution of its input features distribution.
 
+You first need to deploy a main model (and a challenger model) from an existing usecase:
+
 .. code-block:: python
 
-    # retrieve the best model
+    # retrieve the best model of your usecase
     uc_best_model = usecase_version.best_model
 
     # deploy the usecase model
@@ -480,11 +482,11 @@ Prevision.io's SDK allows to deploy a usecase's models. Deployed models are made
         challenger_model=None,
     )
 
-Then you can predict from your deployed model:
+Now you can make bulk predictions from your deployed model(s):
 
 .. code-block:: python
     
-    # make prediction
+    # make predictions
     deployment_prediction = usecase_deployment.predict_from_dataset(test_dataset)
 
     # retrieve prediction from main model
@@ -494,6 +496,32 @@ Then you can predict from your deployed model:
     prediction_df = deployment_prediction.get_challenger_result()
 
 To get a full documentation check the api reference :ref:`usecase_deployment_reference`.
+
+You can also make unitary predictions from the main model:
+
+.. code-block:: python
+
+    # create an api key for your model
+    usecase_deployment.create_api_key()
+
+    # retrieve the last client id and client secret
+    creds = usecase_deployment.get_api_keys()[-1]
+
+    # initialize the deployed model with its url, your client id and client secret
+    model = pio.DeployedModel(
+        prevision_app_url=usecase_deployment.url,
+        client_id=creds['client_id'],
+        client_secret=creds['client_secret'],
+    )
+
+    # make a prediction
+    prediction, confidance, explain = model.predict(
+        predict_data={'feature1': 0, 'feature2': 42},
+        use_confidence=True,
+        explain=True,
+    )
+
+To get a full documentation check the api reference :ref:`deployed_model_reference`.
 
 Additional util methods
 =======================
@@ -531,24 +559,3 @@ You can decide to completely delete the usecase:
     uc.delete()
 
 However be careful, in that case any detail about the usecase will be removed, and you won't be able to make predictions from it anymore.
-
-Using deployed usecase
-----------------------
-
-Prevision.io's SDK allows to predict from a deployed usecase. Log to the web interface of your instance, select a project and click on the ``Deployments`` tab at the left of the screen. Select a deployed usecase, go to the bottom of its page and click on ``generate new key`` wich will create a ``Client Id`` and a ``Client secret``. You will need the ``url`` (displayed at the top of the page in the interface) the ``Client Id`` and the ``Client secret`` to call it via the python SDK:
-
-.. code-block:: python
-
-    import previsionio as pio
-
-    # Initialize the deployed model object from the url of the model, your client id and client secret for this model, and your credentials
-    model = pio.DeployedModel(prevision_app_url, client_id, client_secret)
-
-    # Make a prediction
-    prediction, confidance, explain = model.predict(
-        predict_data={'feature1': 1, 'feature2': 2},
-        use_confidence=True,
-        explain=True,
-    )
-
-To get a full documentation check the api reference :ref:`deployed_model_reference`.
