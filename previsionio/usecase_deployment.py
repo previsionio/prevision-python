@@ -92,11 +92,11 @@ class UsecaseDeployment(ApiResource):
 
     @classmethod
     def _new(cls, project_id: str, name: str, main_model, challenger_model=None, access_type: str = 'public'):
-        """ Create a new usecase deployement object on the platform.
+        """ Create a new usecase deployment object on the platform.
 
         Args:
             project_id (str): project id
-            name (str): usecase deployement name
+            name (str): usecase deployment name
             main_model: main model
             challenger_model (optional): challenger model. main and challenger models should be in the same usecase
             access_type (str, optional): public/ fine_grained/ private
@@ -142,10 +142,10 @@ class UsecaseDeployment(ApiResource):
         return usecase_deployment
 
     def new_version(self, name: str, main_model, challenger_model=None):
-        """ Create a new usecase deployement version.
+        """ Create a new usecase deployment version.
 
         Args:
-            name (str): usecase deployement name
+            name (str): usecase deployment name
             main_model: main model
             challenger_model (optional): challenger model. main and challenger models should be in the same usecase
 
@@ -184,7 +184,7 @@ class UsecaseDeployment(ApiResource):
         return usecase_deployment
 
     def delete(self):
-        """Delete a usecase deployement from the actual [client] workspace.
+        """Delete a usecase deployment from the actual [client] workspace.
 
         Raises:
             PrevisionException: If the dataset does not exist
@@ -228,7 +228,7 @@ class UsecaseDeployment(ApiResource):
             time.sleep(config.scheduler_refresh_rate)
 
     def create_api_key(self):
-        """Create an api key of the usecase deployement from the actual [client] workspace.
+        """Create an api key of the usecase deployment from the actual [client] workspace.
 
         Raises:
             PrevisionException: If the dataset does not exist
@@ -242,18 +242,26 @@ class UsecaseDeployment(ApiResource):
         return resp
 
     def get_api_keys(self):
-        """Fetch the api keys of the usecase deployement from the actual [client] workspace.
+        """Fetch the api keys client id and cient secret of the usecase deployment from the actual [client] workspace.
 
         Raises:
             PrevisionException: If the dataset does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        print('/deployments/{}/api-keys'.format(self.id))
         resp = client.request(endpoint='/deployments/{}/api-keys'.format(self.id),
                               method=requests.get,
-                              message_prefix='UsecaseDeployment get api key')
+                              message_prefix='UsecaseDeployment get api key _id')
         resp = parse_json(resp)
-        return resp
+        api_keys_ids = [item['_id'] for item in resp['items']]
+        res = []
+        for api_keys_id in api_keys_ids:
+            resp = client.request(endpoint='/api-keys/{}/secret'.format(api_keys_id),
+                                  method=requests.get,
+                                  message_prefix='UsecaseDeployment get api key client_id and secret')
+            resp = parse_json(resp)
+            res.append({'client_id': resp['service_account_client_id'],
+                        'client_secret': resp['client_secret']})
+        return res
 
     def predict_from_dataset(self, dataset: Dataset) -> DeploymentPrediction:
         """ Make a prediction for a dataset stored in the current active [client]
