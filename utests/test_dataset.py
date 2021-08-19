@@ -19,7 +19,7 @@ pio.config.default_timeout = 1000
 
 paths = {}
 
-event_logger.setLevel(DEBUG)
+# event_logger.setLevel(DEBUG)
 logging.getLogger().setLevel(DEBUG)
 
 
