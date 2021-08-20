@@ -19,6 +19,7 @@ test-lint:
     - pip install --no-cache-dir -r utests/requirements.txt
     - pycodestyle --config pep8lint.cfg --statistics --format=pylint *.py previsionio/*.py utests/*.py
     - pyflakes  *.py previsionio/*.py utests/*.py
+  allow_failure: true
 
 test-image:
   stage: test
@@ -29,6 +30,7 @@ test-image:
     - pip install --no-cache-dir -r utests/requirements.txt
     - pytest utests/
   timeout: 3h
+  allow_failure: true
 
 build:
   stage: publish
