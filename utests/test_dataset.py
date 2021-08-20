@@ -1,7 +1,7 @@
 from logging import DEBUG
 import logging
 import os
-from previsionio.logger import event_logger
+# from previsionio.logger import event_logger
 from previsionio.usecase_config import UsecaseState
 import time
 import pandas as pd
