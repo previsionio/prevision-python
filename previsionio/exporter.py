@@ -8,11 +8,16 @@ from .connector import Connector, GCloud
 
 
 class ExporterWriteMode(Enum):
-    """ Write mode for exporters. """
+    """ Write mode for exporters.
+    """
     safe = 'safe'
+    """Fail if file already exists."""
     replace = 'replace'
+    """Replace existing file/table."""
     append = 'append'
+    """Append to existing table."""
     timestamp = 'timestamp'
+    """Append timestamp to the output filename."""
 
 
 class Exporter(ApiResource, UniqueResourceMixin):
@@ -31,8 +36,8 @@ class Exporter(ApiResource, UniqueResourceMixin):
         bucket (str, optional): Bucket of the file to write on via the exporter
         database (str, optional): Name of the database to write on via the exporter
         table (str, optional): Name of the table to write on via the exporter
-        g_cloud (:enum: `GCloud`, optional): Type of google cloud service
-        write_mode (:enum: `ExporterWriteMode`, optional): Write mode
+        g_cloud (:class:`.GCloud`, optional): Type of google cloud service
+        write_mode (:class:`ExporterWriteMode`, optional): Write mode
     """
 
     resource = 'exporters'
@@ -115,8 +120,8 @@ class Exporter(ApiResource, UniqueResourceMixin):
             bucket (str, optional): Bucket of the file to write on via the exporter
             database (str, optional): Name of the database to write on via the exporter
             table (str, optional): Name of the table to write on via the exporter
-            g_cloud (:enum: `GCloud`, optional): Type of google cloud service
-            write_mode (:enum: `ExporterWriteMode`, optional): Write mode
+            g_cloud (:class:`.GCloud`, optional): Type of google cloud service
+            write_mode (:class:`ExporterWriteMode`, optional): Write mode
 
         Returns:
             :class:`.Exporter`: The registered exporter object in the current workspace

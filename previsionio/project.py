@@ -450,7 +450,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 connector
             table (str, optional): Name of the table to fetch data from via the connector
             bucket (str, optional): Name of the bucket to fetch data from via the connector
-            gCloud (:enum: `GCloud`, optional): Type of google cloud service
+            gCloud (:class:`.GCloud`, optional): Type of google cloud service
             request (str, optional): Direct SQL request to use with the connector to fetch data
         Returns:
             :class:`.DataSource`: The registered datasource object in the current project
@@ -496,8 +496,8 @@ class Project(ApiResource, UniqueResourceMixin):
             path (str, optional): Path to the file to write on via the exporter
             database (str, optional): Name of the database to write on via the exporter
             table (str, optional): Name of the table to write on via the exporter
-            g_cloud (:enum: `GCloud`, optional): Type of google cloud service
-            write_mode (:enum: `ExporterWriteMode`, optional): Write mode
+            g_cloud (:class:`.GCloud`, optional): Type of google cloud service
+            write_mode (:class:`.ExporterWriteMode`, optional): Write mode
 
         Returns:
             :class:`.Exporter`: The registered exporter object in the current project
@@ -541,7 +541,8 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the usecase
+                (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -575,7 +576,8 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.Classification`, optional): Specific metric to use for the usecase
+                (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -609,7 +611,8 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the usecase
+                (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -643,7 +646,7 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the usecase (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -677,7 +680,8 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.Classification`, optional): Specific metric to use for the usecase
+                (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -717,7 +721,7 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (:enum: `metrics.MultiClassification`, optional): Specific metric to use for the usecase (default:
+            metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the usecase (default:
                 ``metrics.MultiClassification.log_loss``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
@@ -762,7 +766,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 on each possible column types)
             time_window (:class:`.TimeWindow`): Time configuration
                 (see the documentation of the :class:`.TimeWindow` resource for more details)
-            metric (:enum: `metrics.Regression`, optional): Specific metric to use for the usecase (default:
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the usecase (default:
                 ``metrics.Regression.RMSE``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
@@ -790,7 +794,8 @@ class Project(ApiResource, UniqueResourceMixin):
             description_column_config (:class:`.DescriptionsColumnConfig`): Description column configuration
                 (see the documentation of the :class:`.DescriptionsColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``accuracy_at_k``)
+            metric (:class:`.metrics.TextSimilarity`, optional): Specific metric to use for the usecase
+                (default: ``accuracy_at_k``)
             top_k (int, optional): top_k (default: ``10``)
             queries_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a queries dataset (default: ``None``)

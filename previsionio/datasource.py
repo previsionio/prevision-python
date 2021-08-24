@@ -25,7 +25,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
         table (str, optional): Name of the table  to fetch data from via the connector
         bucket (str, optional): Bucket of the file to fetch via the connector
         request (str, optional): Direct SQL request to use with the connector to fetch data
-        gCloud (:enum: `GCloud`, optional): Type of google cloud service
+        gCloud (:class:`.GCloud`, optional): Type of google cloud service
     """
 
     resource = 'data-sources'
@@ -113,7 +113,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
             table (str, optional): Name of the table  to fetch data from via the connector
             bucket (str, optional): Bucket of the file to fetch via the connector
             request (str, optional): Direct SQL request to use with the connector to fetch data
-            gCloud (:enum: `GCloud`, optional): Type of google cloud service
+            gCloud (:class:`.GCloud`, optional): Type of google cloud service
 
         Returns:
             :class:`.DataSource`: The registered datasource object in the current workspace

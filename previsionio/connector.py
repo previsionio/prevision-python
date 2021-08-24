@@ -7,9 +7,12 @@ from .api_resource import ApiResource, UniqueResourceMixin
 
 
 class GCloud(Enum):
-    """ GCP services. """
+    """
+    Google services."""
     big_query = 'BigQuery'
+    """Google BigQuery"""
     storage = 'Storage'
+    """Google Storage"""
 
 
 class Connector(ApiResource, UniqueResourceMixin):
