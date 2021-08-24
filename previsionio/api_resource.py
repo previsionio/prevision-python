@@ -16,6 +16,7 @@ class ApiResourceType(Enum):
     Usecase = 'usecases'
     Connector = 'connectors'
     DataSource = 'datasources'
+    Exporter = 'exporters'
     Project = 'projects'
 
 
