@@ -5,7 +5,7 @@ import requests
 from . import client
 from .utils import parse_json, PrevisionException
 from .api_resource import ApiResource, UniqueResourceMixin
-from connector import Connector, GCloud
+from .connector import Connector, GCloud
 
 
 class DataSource(ApiResource, UniqueResourceMixin):
