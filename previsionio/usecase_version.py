@@ -238,15 +238,14 @@ class BaseUsecaseVersion(ApiResource):
         logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                       for k, v in parse_json(response).items()))
 
-    # def delete(self):
-    #     """ Delete a usecase from the actual [client] workspace.
-    #
-    #     Returns:
-    #         dict: Deletion process results
-    #     """
-    #     response = client.request(endpoint='/usecases/{}'.format(self._id),
-    #                               method=requests.delete)
-    #     return (json.loads(response.content.decode('utf-8')))
+    def delete(self):
+        """Delete a usecase version from the actual [client] workspace.
+
+        Raises:
+            PrevisionException: If the usecase version does not exist
+            requests.exceptions.ConnectionError: Error processing the request
+        """
+        super().delete()
 
     def wait_until(self, condition, raise_on_error: bool = True, timeout: float = config.default_timeout):
         """ Wait until condition is fulfilled, then break.

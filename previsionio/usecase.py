@@ -138,7 +138,10 @@ class Usecase(ApiResource):
         return [self.usecase_version_class(**val) for val in res['items']]
 
     def delete(self):
-        """ Delete a usecase from the actual [client] workspace."""
-        _ = client.request(endpoint='/usecases/{}'.format(self._id),
-                           method=requests.delete,
-                           message_prefix='Usecase deletion')
+        """Delete a usecase from the actual [client] workspace.
+
+        Raises:
+            PrevisionException: If the usecase does not exist
+            requests.exceptions.ConnectionError: Error processing the request
+        """
+        super().delete()

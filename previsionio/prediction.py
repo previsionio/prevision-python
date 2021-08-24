@@ -54,13 +54,10 @@ class ValidationPrediction(ApiResource):
         """Delete a prediction from the platform by its unique id.
 
         Raises:
-            PrevisionException: Any error while fetching data from the platform
-                or parsing result
+            PrevisionException: If the prediction images does not exist
+            requests.exceptions.ConnectionError: Error processing the request
         """
-        response = client.request(endpoint='/{}/{}'.format(self.resource, self._id),
-                                  method=requests.delete,
-                                  message_prefix='Prediction deletion')
-        return response
+        super().delete()
 
     def get_result(self):
         """Delete a prediction from the platform by its unique id.

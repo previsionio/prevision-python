@@ -159,3 +159,12 @@ class Exporter(ApiResource, UniqueResourceMixin):
         return cls(json['_id'], connector._id, name, description=description, path=path,
                    bucket=bucket, database=database, table=table, write_mode=write_mode,
                    g_cloud=g_cloud)
+
+    def delete(self):
+        """Delete an exporter from the actual [client] workspace.
+
+        Raises:
+            PrevisionException: If the exporter does not exist
+            requests.exceptions.ConnectionError: Error processing the request
+        """
+        super().delete()

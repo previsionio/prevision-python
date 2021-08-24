@@ -149,3 +149,12 @@ class DataSource(ApiResource, UniqueResourceMixin):
             else:
                 raise Exception('unknown error: {}'.format(json))
         return cls(json['_id'], connector._id, name, path, database, table, request, gCloud)
+
+    def delete(self):
+        """Delete a datasource from the actual [client] workspace.
+
+        Raises:
+            PrevisionException: If the datasource does not exist
+            requests.exceptions.ConnectionError: Error processing the request
+        """
+        super().delete()

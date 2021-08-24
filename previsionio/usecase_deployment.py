@@ -187,13 +187,10 @@ class UsecaseDeployment(ApiResource):
         """Delete a usecase deployment from the actual [client] workspace.
 
         Raises:
-            PrevisionException: If the dataset does not exist
+            PrevisionException: If the usecase deployment does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/deployments/{}'.format(self.id),
-                              method=requests.delete,
-                              message_prefix='UsecaseDeployment delete')
-        return resp
+        super().delete()
 
     def wait_until(self, condition, timeout: float = config.default_timeout):
         """ Wait until condition is fulfilled, then break.

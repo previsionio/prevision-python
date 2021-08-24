@@ -127,6 +127,15 @@ class Connector(ApiResource, UniqueResourceMixin):
         else:
             return False
 
+    def delete(self):
+        """Delete a connector from the actual [client] workspace.
+
+        Raises:
+            PrevisionException: If the connector does not exist
+            requests.exceptions.ConnectionError: Error processing the request
+        """
+        super().delete()
+
 
 class DataTableBaseConnector(Connector):
 
