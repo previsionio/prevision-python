@@ -26,8 +26,9 @@ class Exporter(ApiResource, UniqueResourceMixin):
         connector_id (str): Reference to the associated connector (the resource
             to go through to get a data snapshot)
         name (str): Name of the exporter
-        bucket (str, optional): Bucket of the file to write on via the exporter
+        description (str, optional): Description of the exporter
         path (str, optional): Path to the file to write on via the exporter
+        bucket (str, optional): Bucket of the file to write on via the exporter
         database (str, optional): Name of the database to write on via the exporter
         table (str, optional): Name of the table to write on via the exporter
         write_mode (:enum: `ExporterWriteMode`, optional): Write mode
@@ -35,9 +36,9 @@ class Exporter(ApiResource, UniqueResourceMixin):
 
     resource = 'exporters'
 
-    def __init__(self, _id, connector_id: str, name: str, path: str = None, database: str = None,
-                 table: str = None, write_mode: ExporterWriteMode = ExporterWriteMode.timestamp,
-                 gCloud=None, **kwargs):
+    def __init__(self, _id, connector_id: str, name: str, description: str = None, path: str = None,
+                 bucket: str = None, database: str = None, table: str = None,
+                 write_mode: ExporterWriteMode = ExporterWriteMode.safe, gCloud=None, **kwargs):
         """ Instantiate a new :class:`.Exporter` object to manipulate an exporter resource
         on the platform. """
         super().__init__(_id=_id)
@@ -46,7 +47,9 @@ class Exporter(ApiResource, UniqueResourceMixin):
         self.connector = connector_id
 
         self.name = name
+        self.description = description
         self.path = path
+        self.bucket = bucket
         self.database = database
         self.table = table
         self.write_mode = write_mode
@@ -96,9 +99,9 @@ class Exporter(ApiResource, UniqueResourceMixin):
         return cls(**resp_json)
 
     @classmethod
-    def _new(cls, project_id: str, connector: Connector, name: str, path: str = None, database: str = None,
-             table: str = None, write_mode: ExporterWriteMode = ExporterWriteMode.timestamp, bucket: str = None,
-             gCloud: str = None):
+    def _new(cls, project_id: str, connector: Connector, name: str, description: str = None, path: str = None,
+             bucket: str = None, database: str = None, table: str = None, gCloud: str = None,
+             write_mode: ExporterWriteMode = ExporterWriteMode.safe):
         """ Create a new exporter object on the platform.
 
         Args:
@@ -106,8 +109,9 @@ class Exporter(ApiResource, UniqueResourceMixin):
             connector (:class:`.Connector`): Reference to the associated connector (the resource
                 to go through to get a data snapshot)
             name (str): Name of the exporter
-            bucket (str, optional): Bucket of the file to write on via the exporter
+            description (str, optional): Description of the exporter
             path (str, optional): Path to the file to write on via the exporter
+            bucket (str, optional): Bucket of the file to write on via the exporter
             database (str, optional): Name of the database to write on via the exporter
             table (str, optional): Name of the table to write on via the exporter
             write_mode (:enum: `ExporterWriteMode`, optional): Write mode
@@ -124,16 +128,17 @@ class Exporter(ApiResource, UniqueResourceMixin):
         data = {
             'connectorId': connector._id,
             'name': name,
-            'bucket': bucket,
+            'description': description,
             'filepath': path,
+            'bucket': bucket,
             'database': database,
             'table': table,
         }
 
         if database is not None:
-            data['databaseWriteMode'] = write_mode
+            data['database_write_mode'] = write_mode
         else:
-            data['fileWriteMode'] = write_mode
+            data['file_write_mode'] = write_mode
 
         if gCloud:
             data['g_cloud'] = gCloud
@@ -150,4 +155,7 @@ class Exporter(ApiResource, UniqueResourceMixin):
                 raise PrevisionException(json['message'])
             else:
                 raise Exception('unknown error: {}'.format(json))
-        return cls(json['_id'], connector, name, path, database, table)
+
+        return cls(json['_id'], connector._id, name, description=description, path=path,
+                   bucket=bucket, database=database, table=table, write_mode=write_mode,
+                   gCloud=gCloud)
