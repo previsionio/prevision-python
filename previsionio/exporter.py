@@ -4,7 +4,7 @@ from enum import Enum
 from . import client
 from .utils import parse_json, PrevisionException
 from .api_resource import ApiResource, UniqueResourceMixin
-from connector import Connector
+from connector import Connector, GCloud
 
 
 class ExporterWriteMode(Enum):
@@ -31,14 +31,15 @@ class Exporter(ApiResource, UniqueResourceMixin):
         bucket (str, optional): Bucket of the file to write on via the exporter
         database (str, optional): Name of the database to write on via the exporter
         table (str, optional): Name of the table to write on via the exporter
+        g_cloud (:enum: `GCloud`, optional): Type of google cloud service
         write_mode (:enum: `ExporterWriteMode`, optional): Write mode
     """
 
     resource = 'exporters'
 
     def __init__(self, _id, connector_id: str, name: str, description: str = None, path: str = None,
-                 bucket: str = None, database: str = None, table: str = None,
-                 write_mode: ExporterWriteMode = ExporterWriteMode.safe, gCloud=None, **kwargs):
+                 bucket: str = None, database: str = None, table: str = None, g_cloud: GCloud = None,
+                 write_mode: ExporterWriteMode = ExporterWriteMode.safe, **kwargs):
         """ Instantiate a new :class:`.Exporter` object to manipulate an exporter resource
         on the platform. """
         super().__init__(_id=_id)
@@ -52,8 +53,8 @@ class Exporter(ApiResource, UniqueResourceMixin):
         self.bucket = bucket
         self.database = database
         self.table = table
+        self.g_cloud = g_cloud
         self.write_mode = write_mode
-        self.gCloud = gCloud
 
         self.other_params = kwargs
 
@@ -100,7 +101,7 @@ class Exporter(ApiResource, UniqueResourceMixin):
 
     @classmethod
     def _new(cls, project_id: str, connector: Connector, name: str, description: str = None, path: str = None,
-             bucket: str = None, database: str = None, table: str = None, gCloud: str = None,
+             bucket: str = None, database: str = None, table: str = None, g_cloud: GCloud = None,
              write_mode: ExporterWriteMode = ExporterWriteMode.safe):
         """ Create a new exporter object on the platform.
 
@@ -114,6 +115,7 @@ class Exporter(ApiResource, UniqueResourceMixin):
             bucket (str, optional): Bucket of the file to write on via the exporter
             database (str, optional): Name of the database to write on via the exporter
             table (str, optional): Name of the table to write on via the exporter
+            g_cloud (:enum: `GCloud`, optional): Type of google cloud service
             write_mode (:enum: `ExporterWriteMode`, optional): Write mode
 
         Returns:
@@ -132,6 +134,7 @@ class Exporter(ApiResource, UniqueResourceMixin):
             'filepath': path,
             'bucket': bucket,
             'database': database,
+            'g_cloud': g_cloud,
             'table': table,
         }
 
@@ -139,9 +142,6 @@ class Exporter(ApiResource, UniqueResourceMixin):
             data['database_write_mode'] = write_mode
         else:
             data['file_write_mode'] = write_mode
-
-        if gCloud:
-            data['g_cloud'] = gCloud
 
         url = '/projects/{}/{}'.format(project_id, cls.resource)
         resp = client.request(url,
@@ -158,4 +158,4 @@ class Exporter(ApiResource, UniqueResourceMixin):
 
         return cls(json['_id'], connector._id, name, description=description, path=path,
                    bucket=bucket, database=database, table=table, write_mode=write_mode,
-                   gCloud=gCloud)
+                   g_cloud=g_cloud)

@@ -1,8 +1,15 @@
+from enum import Enum
 from typing import Union
 import requests
 from . import client
 from .utils import parse_json
 from .api_resource import ApiResource, UniqueResourceMixin
+
+
+class GCloud(Enum):
+    """ GCP services. """
+    big_query = 'BigQuery'
+    storage = 'Storage'
 
 
 class Connector(ApiResource, UniqueResourceMixin):
