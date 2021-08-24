@@ -148,4 +148,4 @@ class DataSource(ApiResource, UniqueResourceMixin):
                 raise PrevisionException(json['message'])
             else:
                 raise Exception('unknown error: {}'.format(json))
-        return cls(json['_id'], connector, name, path, database, table, request)
+        return cls(json['_id'], connector._id, name, path, database, table, request, gCloud)
