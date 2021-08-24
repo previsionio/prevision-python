@@ -5,7 +5,7 @@ import requests
 from . import client
 from .utils import parse_json, PrevisionException
 from .api_resource import ApiResource, UniqueResourceMixin
-from connector import Connector
+from connector import Connector, GCloud
 
 
 class DataSource(ApiResource, UniqueResourceMixin):
@@ -25,12 +25,13 @@ class DataSource(ApiResource, UniqueResourceMixin):
         table (str, optional): Name of the table  to fetch data from via the connector
         bucket (str, optional): Bucket of the file to fetch via the connector
         request (str, optional): Direct SQL request to use with the connector to fetch data
+        gCloud (:enum: `GCloud`, optional): Type of google cloud service
     """
 
     resource = 'data-sources'
 
     def __init__(self, _id, connector_id: str, name: str, path: str = None, database: str = None,
-                 table: str = None, request: str = None, gCloud=None, **kwargs):
+                 table: str = None, request: str = None, gCloud: GCloud = None, **kwargs):
         """ Instantiate a new :class:`.DataSource` object to manipulate a datasource resource
         on the platform. """
         super().__init__(_id=_id,
@@ -99,7 +100,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
 
     @classmethod
     def _new(cls, project_id: str, connector: Connector, name: str, path: str = None, database: str = None,
-             table: str = None, bucket: str = None, request: str = None, gCloud: str = None):
+             table: str = None, bucket: str = None, request: str = None, gCloud: GCloud = None):
         """ Create a new datasource object on the platform.
 
         Args:
@@ -112,6 +113,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
             table (str, optional): Name of the table  to fetch data from via the connector
             bucket (str, optional): Bucket of the file to fetch via the connector
             request (str, optional): Direct SQL request to use with the connector to fetch data
+            gCloud (:enum: `GCloud`, optional): Type of google cloud service
 
         Returns:
             :class:`.DataSource`: The registered datasource object in the current workspace
