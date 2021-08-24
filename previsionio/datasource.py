@@ -5,6 +5,7 @@ import requests
 from . import client
 from .utils import parse_json, PrevisionException
 from .api_resource import ApiResource, UniqueResourceMixin
+from connector import Connector
 
 
 class DataSource(ApiResource, UniqueResourceMixin):
@@ -15,13 +16,14 @@ class DataSource(ApiResource, UniqueResourceMixin):
 
     Args:
         _id (str): Unique id of the datasource
-        connector (:class:`.Connector`): Reference to the associated connector (the resource
+        connector_id (str): Reference to the associated connector (the resource
             to go through to get a data snapshot)
         name (str): Name of the datasource
         path (str, optional): Path to the file to fetch via the connector
         database (str, optional): Name of the database to fetch data from via the
             connector
         table (str, optional): Name of the table  to fetch data from via the connector
+        bucket (str, optional): Bucket of the file to fetch via the connector
         request (str, optional): Direct SQL request to use with the connector to fetch data
     """
 
@@ -96,8 +98,8 @@ class DataSource(ApiResource, UniqueResourceMixin):
         return cls(**resp_json)
 
     @classmethod
-    def _new(cls, project_id: str, connector, name: str, path: str = None, database: str = None, table: str = None,
-             bucket=None, request=None, gCloud=None):
+    def _new(cls, project_id: str, connector: Connector, name: str, path: str = None, database: str = None,
+             table: str = None, bucket: str = None, request: str = None, gCloud: str = None):
         """ Create a new datasource object on the platform.
 
         Args:
@@ -108,6 +110,7 @@ class DataSource(ApiResource, UniqueResourceMixin):
             database (str, optional): Name of the database to fetch data from via the
                 connector
             table (str, optional): Name of the table  to fetch data from via the connector
+            bucket (str, optional): Bucket of the file to fetch via the connector
             request (str, optional): Direct SQL request to use with the connector to fetch data
 
         Returns:
