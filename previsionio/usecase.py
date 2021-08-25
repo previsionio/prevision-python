@@ -17,7 +17,7 @@ def get_usecase_version_class(
     """ Get the type of UsecaseVersion class used by this Usecase
 
     Returns:
-        (:class:`.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`): Type of UsecaseVersion
+        (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`): Type of UsecaseVersion
     """
     default: Dict[DataType, Union[Type[Supervised], Type[TimeSeries]]] = {
         DataType.Tabular: Supervised,
@@ -93,7 +93,7 @@ class Usecase(ApiResource):
         """ Get the type of UsecaseVersion class used by this Usecase
 
         Returns:
-            (:class:`.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`): Type of UsecaseVersion
+            (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`): Type of UsecaseVersion
         """
         return get_usecase_version_class(self.training_type, self.data_type)
 
@@ -102,7 +102,7 @@ class Usecase(ApiResource):
         """Get the latest version of this use case.
 
         Returns:
-            (:class:`.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
+            (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
             latest UsecaseVersion in this Usecase
         """
         end_point = '/{}/{}/versions'.format(self.resource, self._id)
@@ -125,7 +125,7 @@ class Usecase(ApiResource):
         """Get the list of all versions for the current use case.
 
         Returns:
-            list(:class:`.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
+            list(:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
             List of the usecase versions (as JSON metadata)
         """
         end_point = '/{}/{}/versions'.format(self.resource, self._id)
