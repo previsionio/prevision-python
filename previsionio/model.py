@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 from typing import Dict, Union
 
 from pandas.core.frame import DataFrame

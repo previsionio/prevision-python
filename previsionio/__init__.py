@@ -1,4 +1,3 @@
-from __future__ import print_function
 import logging
 from previsionio.logger import logger, event_logger
 

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 from itertools import combinations
 from io import BytesIO, StringIO
 from previsionio.usecase_config import UsecaseState
