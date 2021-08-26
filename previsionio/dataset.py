@@ -77,7 +77,7 @@ class Dataset(ApiResource):
         return cls(**super()._from_id(_id=_id))
 
     @classmethod
-    def list(cls, project_id, all: bool = True):
+    def list(cls, project_id: str, all: bool = True):
         """ List all the available datasets in the current active [client] workspace.
 
         .. warning::
@@ -200,7 +200,7 @@ class Dataset(ApiResource):
 
     @classmethod
     def _new(cls, project_id: str, name: str, datasource: DataSource = None,
-             file_name: str = None, dataframe: DataFrame = None):
+             file_name: str = None, dataframe: DataFrame = None, **kwargs):
         """ Register a new dataset in the workspace for further processing.
         You need to provide either a datasource, a file name or a dataframe
         (only one can be specified).
@@ -236,8 +236,15 @@ class Dataset(ApiResource):
             raise Exception('at least one of [datasource, file_handle, data] must be specified')
 
         data = {
-            'name': name
+            'name': name,
         }
+
+        if 'origin' in kwargs:
+            valid_origin = ["pipeline_output", "pipeline_intermediate_file"]
+            origin = kwargs.get('origin')
+            if not isinstance(origin, str) or origin not in valid_origin:
+                raise RuntimeError(f"invalid origin: {origin}")
+            data['origin'] = origin
 
         files = {
 
@@ -245,7 +252,7 @@ class Dataset(ApiResource):
         request_url = '/projects/{}/{}/file'.format(project_id, cls.resource)
         create_resp = None
         if datasource is not None:
-            request_url = '/projects/{}/{}/data-sources'.format(project_id, cls.resource)
+            request_url = '/projects/{}/{}/data-source'.format(project_id, cls.resource)
             data['datasource_id'] = datasource.id
             create_resp = client.request(request_url,
                                          data=data,
@@ -308,8 +315,15 @@ class Dataset(ApiResource):
 
         create_json = parse_json(create_resp)
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
-        event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE', 'describe_state', 'done',
-                                                   [('ready', 'failed'), ('drift', 'failed')])
+        event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE',
+                                                   [('copy_state', 'done'),
+                                                       ('describe_state', 'done'),
+                                                       ('drift_state', 'done')],
+                                                   [('copy_state', 'failed'),
+                                                       ('describe_state', 'failed'),
+                                                       ('drift_state', 'failed'),
+                                                       ('embeddings_state', 'failed')])
+        assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(create_json['_id'],
                                                 cls.resource,
                                                 event_tuple,
@@ -318,7 +332,7 @@ class Dataset(ApiResource):
         dset_resp = client.request(url, method=requests.get, message_prefix='Dataset loading')
         dset_json = parse_json(dset_resp)
 
-        if dataframe is not None:
+        if dataframe is not None and file_name is not None:
             os.remove(file_name)
 
         return cls(**dset_json)
@@ -419,10 +433,11 @@ class DatasetImages(ApiResource):
 
         create_json = parse_json(create_resp)
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
+        assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(create_json['_id'],
                                                 cls.resource,
                                                 previsionio.utils.EventTuple(
-                                                    'FOLDER_UPDATE', 'state', 'done', [('state', 'failed')]),
+                                                    'FOLDER_UPDATE'),
                                                 specific_url=url)
 
         dset_resp = client.request(url, method=requests.get, message_prefix='Image folder loading')

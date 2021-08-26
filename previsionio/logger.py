@@ -40,7 +40,7 @@ class ColoredFormatter(logging.Formatter):
         return logging.Formatter.format(self, record)
 
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
 formatter = ColoredFormatter('[%(module)s.%(funcName)s] (L.%(lineno)d) - %(levelname)s - %(asctime)s - %(message)s')
 logger.propagate = False

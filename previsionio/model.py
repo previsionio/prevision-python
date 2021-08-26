@@ -4,20 +4,19 @@ from typing import Dict, Union
 
 from pandas.core.frame import DataFrame
 from previsionio.usecase_config import TypeProblem
-import time
 import json
 import uuid
 import requests
 import pandas as pd
-import previsionio as pio
 from functools import lru_cache
 
 from .logger import logger
 from .dataset import Dataset
-from .deployed_model import DeployedModel
+# from .deployed_model import DeployedModel
 from .prevision_client import client
 from .api_resource import ApiResource
-from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas
+from .utils import parse_json, PrevisionException, zip_to_pandas
+from .prediction import ValidationPrediction
 
 
 class Model(ApiResource):
@@ -118,18 +117,6 @@ class Model(ApiResource):
             message_prefix='Hyperparameters')
         return (json.loads(response.content.decode('utf-8')))
 
-    def wait_for_prediction(self, prediction_id: str):
-        """ Wait for a specific prediction to finish.
-
-        Args:
-            predict_id (str): Unique id of the prediction to wait for
-        """
-        specific_url = '/predictions/{}'.format(prediction_id)
-        pio.client.event_manager.wait_for_event(prediction_id,
-                                                specific_url,
-                                                EventTuple('PREDICTION_UPDATE', 'state', 'done', [('state', 'failed')]),
-                                                specific_url=specific_url)
-
     def _predict_bulk(self,
                       dataset_id: str,
                       confidence: bool = False,
@@ -147,7 +134,7 @@ class Model(ApiResource):
                 if need be (default: ``None``)
 
         Returns:
-            str: A prediction job ID
+            str: A prediction object
 
         Raises:
             PrevisionException: Any error while starting the prediction on the platform or parsing the result
@@ -161,7 +148,7 @@ class Model(ApiResource):
         if dataset_folder_id is not None:
             data['folder_dataset_id'] = dataset_folder_id
 
-        predict_start = client.request('/usecase-versions/{}/predictions'.format(self.usecase_version_id),
+        predict_start = client.request('/usecase-versions/{}/validation-predictions'.format(self.usecase_version_id),
                                        method=requests.post,
                                        data=data,
                                        message_prefix='Bulk predict')
@@ -171,29 +158,11 @@ class Model(ApiResource):
             err = 'Error starting prediction: {}'.format(predict_start_parsed)
             logger.error(err)
             raise PrevisionException(err)
-
-        return predict_start_parsed['_id']
-
-    def _get_predictions(self, predict_id: str, separator=',') -> pd.DataFrame:
-        """ Get the result prediction dataframe from a given predict id.
-
-        Args:
-            predict_id (str): Prediction job ID
-
-        Returns:
-            ``pd.DataFrame``: Prediction dataframe.
-        """
-        url = '/predictions/{}/download'.format(predict_id)
-        pred_response = pio.client.request(url,
-                                           method=requests.get,
-                                           message_prefix='Predictions download')
-        logger.debug('[Predict {0}] Downloading prediction file'.format(predict_id))
-
-        return zip_to_pandas(pred_response, separator=separator)
+        return ValidationPrediction(**predict_start_parsed)
 
     def predict_from_dataset(self, dataset: Dataset,
                              confidence: bool = False,
-                             dataset_folder: Dataset = None) -> Union[pd.DataFrame, None]:
+                             dataset_folder: Dataset = None) -> ValidationPrediction:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
@@ -204,30 +173,14 @@ class Model(ApiResource):
                 if necessary
 
         Returns:
-            ``pd.DataFrame``: Prediction results dataframe
+            ``pd.DataFrame``: Prediction object
         """
 
-        predict_id = self._predict_bulk(dataset.id,
+        prediction = self._predict_bulk(dataset.id,
                                         confidence=confidence,
                                         dataset_folder_id=dataset_folder.id if dataset_folder else None)
 
-        self.wait_for_prediction(predict_id)
-
-        # FIXME : wait_for_prediction() seems to be broken...
-        retry_count = 60
-        retry = 0
-        while retry < retry_count:
-            retry += 1
-            try:
-                preds = self._get_predictions(predict_id, separator=dataset.separator)
-                return preds
-            except Exception:
-                # FIXME:
-                # sometimes I observed error 500, with prediction on image usecase
-                logger.warning('wait_for_prediction has prolly exited {} seconds too early'
-                               .format(retry))
-                time.sleep(1)
-        return None
+        return prediction
 
     def predict(self, df: DataFrame, confidence: bool = False, prediction_dataset_name: str = None) -> pd.DataFrame:
         """ Make a prediction in a Scikit-learn blocking style.
@@ -249,40 +202,10 @@ class Model(ApiResource):
 
         dataset = Dataset._new(self.project_id, prediction_dataset_name, dataframe=df)
 
-        predict_id = self._predict_bulk(dataset.id,
+        prediction = self._predict_bulk(dataset.id,
                                         confidence=confidence)
-        self.wait_for_prediction(predict_id)
 
-        return self._get_predictions(predict_id, separator=dataset.separator)
-
-    def enable_deploy(self):
-        data = {"deploy": True}
-        url = '/models/{}'.format(self._id)
-        response = client.request(url, requests.put, data=data,
-                                  message_prefix="Enable deploy")
-        self.deployable = True
-        res = parse_json(response)
-        return res
-
-    def disable_deploy(self):
-        data = {"deploy": False}
-        url = '/models/{}'.format(self._id)
-        response = client.request(url, requests.put, data=data,
-                                  message_prefix="Disable deploy")
-        self.deployable = False
-        res = parse_json(response)
-        return res
-
-    def deploy(self) -> DeployedModel:
-        """ (Not Implemented yet) Deploy the model as a REST API app.
-
-        Keyword Arguments:
-            app_type {enum} -- it can be 'model', 'notebook', 'shiny', 'dash' or 'node' application
-
-        Returns:
-            str: Path of the deployed application
-        """
-        raise NotImplementedError
+        return prediction.get_result()
 
 
 class ClassicModel(Model):
@@ -515,7 +438,7 @@ class TextSimilarityModel(Model):
         }
         if matching_id_description_column:
             data['queries_dataset_matching_id_description_column'] = matching_id_description_column
-        endpoint = '/usecase-versions/{}/predictions'.format(self.usecase_version_id)
+        endpoint = '/usecase-versions/{}/validation-predictions'.format(self.usecase_version_id)
         predict_start = client.request(endpoint,
                                        method=requests.post,
                                        data=data,
@@ -527,10 +450,31 @@ class TextSimilarityModel(Model):
             logger.error(err)
             raise PrevisionException(err)
 
-        return predict_start_parsed['_id']
+        return ValidationPrediction(**predict_start_parsed)
 
     def predict_from_dataset(self, queries_dataset: Dataset, queries_dataset_content_column: str, top_k: int = 10,
-                             queries_dataset_matching_id_description_column: str = None) -> Union[pd.DataFrame, None]:
+                             queries_dataset_matching_id_description_column: str = None) -> ValidationPrediction:
+        """ Make a prediction for a dataset stored in the current active [client]
+        workspace (using the current SDK dataset object).
+
+        Args:
+            dataset (:class:`.Dataset`): Dataset resource to make a prediction for
+            queries_dataset_content_column (str): Content queries column name
+            top_k (integer): Number of the nearest description to predict
+            queries_dataset_matching_id_description_column (str): Matching id description column name
+
+        Returns:
+            ``pd.DataFrame``: Prediction object
+        """
+        prediction = self._predict_bulk(queries_dataset.id,
+                                        queries_dataset_content_column,
+                                        top_k=top_k,
+                                        matching_id_description_column=queries_dataset_matching_id_description_column)
+        return prediction
+
+    def predict(self, df: DataFrame, queries_dataset_content_column: str, top_k: int = 10,
+                queries_dataset_matching_id_description_column: str = None,
+                prediction_dataset_name: str = None) -> Union[pd.DataFrame, None]:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
@@ -543,23 +487,13 @@ class TextSimilarityModel(Model):
         Returns:
             ``pd.DataFrame``: Prediction results dataframe
         """
-        predict_id = self._predict_bulk(queries_dataset.id,
+        if prediction_dataset_name is None:
+            prediction_dataset_name = 'test_{}_{}'.format(self.name, str(uuid.uuid4())[-6:])
+
+        dataset = Dataset._new(self.project_id, prediction_dataset_name, dataframe=df)
+        prediction = self._predict_bulk(dataset.id,
                                         queries_dataset_content_column,
                                         top_k=top_k,
                                         matching_id_description_column=queries_dataset_matching_id_description_column)
-        self.wait_for_prediction(predict_id)
-        # FIXME : wait_for_prediction() seems to be broken...
-        retry_count = 60
-        retry = 0
-        while retry < retry_count:
-            retry += 1
-            try:
-                preds = self._get_predictions(predict_id, separator=queries_dataset.separator)
-                return preds
-            except Exception:
-                # FIXME:
-                # sometimes I observed error 500, with prediction on image usecase
-                logger.warning('wait_for_prediction has prolly exited {} seconds too early'
-                               .format(retry))
-                time.sleep(1)
-        return None
+
+        return prediction.get_result()

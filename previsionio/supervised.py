@@ -22,14 +22,14 @@ MODEL_CLASS_DICT = {
 
 class Supervised(ClassicUsecaseVersion):
 
-    """ A supervised usecase. """
+    """ A supervised usecase version, for tabular data """
 
     data_type = DataType.Tabular
 
     def __init__(self, **usecase_info):
-        self.holdout_dataset_id = usecase_info.get('holdout_dataset_id', None)
-
         super().__init__(**usecase_info)
+        self.holdout_dataset_id: Union[str, None] = usecase_info.get('holdout_dataset_id', None)
+
         self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
 
     @classmethod
@@ -105,12 +105,11 @@ class Supervised(ClassicUsecaseVersion):
                                             metric=metric if isinstance(metric, str) else metric.value,
                                             **training_args)
         usecase = cls.from_id(start_response['_id'])
-        print(usecase.training_type)
         events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
+        assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(usecase.resource_id,
                                                 cls.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
-                                                           [('state', 'failed')]),
+                                                EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
                                                 specific_url=events_url)
 
         return usecase
@@ -197,10 +196,10 @@ class Supervised(ClassicUsecaseVersion):
         usecase = self.from_id(json["_id"])
 
         events_url = '/{}/{}'.format(self.resource, json['_id'])
+        assert client.event_manager is not None
         client.event_manager.wait_for_event(usecase.resource_id,
                                             self.resource,
-                                            EventTuple('USECASE_VERSION_UPDATE', 'state', 'running',
-                                                       [('state', 'failed')]),
+                                            EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
                                             specific_url=events_url)
 
         return usecase

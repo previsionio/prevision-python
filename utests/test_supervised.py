@@ -66,7 +66,7 @@ def test_delete_usecase():
     usecase_version = supervised_from_filename('regression', uc_name)
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name in [u.name for u in usecases]
-    usecase_version.usecase.delete()
+    pio.Usecase.from_id(usecase_version.usecase_id).delete()
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name not in [u.name for u in usecases]
 
@@ -75,18 +75,35 @@ def test_usecase_version():
     uc_name = TESTING_ID + '_file_del'
     usecase_version: pio.Supervised = supervised_from_filename('regression', uc_name)
     usecases = pio.Usecase.list(PROJECT_ID)
-    print("usecase_version.usecase_id", usecase_version.usecase_id)
-    print("usecase_version.project_id", usecase_version.project_id)
     assert uc_name in [u.name for u in usecases]
 
     usecase_new_version = usecase_version.new_version()
-    print("usecase_new_version.usecase_id", usecase_new_version.usecase_id)
-    print("usecase_new_version.project_id", usecase_new_version.project_id)
-    # usecases = pio.Usecase.list(PROJECT_ID)
-    usecase_versions = usecase_version.usecase.versions
-    assert usecase_new_version._id in [u['_id'] for u in usecase_versions]
+    usecase_versions = pio.Usecase.from_id(usecase_version.usecase_id).versions
+    assert usecase_new_version._id in [u._id for u in usecase_versions]
 
-    usecase_new_version.usecase.delete()
+    pio.Usecase.from_id(usecase_new_version.usecase_id).delete()
+
+    usecases = pio.Usecase.list(PROJECT_ID)
+    assert uc_name not in [u.name for u in usecases]
+
+
+def test_usecase_latest_versions():
+    uc_name = TESTING_ID + '_file_del'
+    usecase_version: pio.Supervised = supervised_from_filename('regression', uc_name)
+    usecases = pio.Usecase.list(PROJECT_ID)
+    assert uc_name in [u.name for u in usecases]
+
+    usecase_new_version = usecase_version.new_version()
+    assert usecase_version._id != usecase_new_version._id
+    assert usecase_version.usecase_id == usecase_new_version.usecase_id
+    assert usecase_version.project_id == usecase_new_version.project_id
+
+    # usecases = pio.Usecase.list(PROJECT_ID)
+    latest_version = pio.Usecase.from_id(usecase_new_version.usecase_id).latest_version
+    assert usecase_new_version._id == latest_version._id
+    latest_version.new_version()
+
+    pio.Usecase.from_id(usecase_new_version.usecase_id).delete()
 
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name not in [u.name for u in usecases]
@@ -101,7 +118,7 @@ def test_stop_running_usecase():
     usecase_version.stop()
     usecase_version.update_status()
     assert not usecase_version.running
-    usecase_version.usecase.delete()
+    pio.Usecase.from_id(usecase_version.usecase_id).delete()
 
 
 @pytest.fixture(scope='module', params=training_types)
@@ -115,7 +132,7 @@ def setup_usecase_class(request):
     uc.wait_until(lambda usecase: usecase._status['state'] == 'done', timeout=60)
     assert uc._status['state'] == 'done'
     yield request.param, uc
-    _ = uc.usecase.delete()
+    _ = pio.Usecase.from_id(uc.usecase_id).delete()
 
 
 options_parameters = ('options',

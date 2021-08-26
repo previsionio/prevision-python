@@ -1,57 +1,47 @@
 stages:
-  - build
   - test
-  - deploy
+  - publish
 
-# WARN: global before script gets overwritten by per job before_script
-before_script:
-  - export IMAGE_TAG=${CI_COMMIT_TAG:-$CI_COMMIT_REF_SLUG}
+variables:
+  DOCKER_HOST: tcp://pio-gitlab-runner-components-dind.gitlab-runner-components.svc.cluster.local:2375
+  DOCKER_TLS_CERTDIR: ""
+  PIO_TAG: ${CI_COMMIT_REF_SLUG}
 
-build-images:
-  image: $PREVISION_REGISTRY_ADDR/prevision/docker:19.03.1
-  stage: build
-  script:
-    - cd ci
-    - export TAG=$IMAGE_TAG
-    - sh Makefile
-    - docker push $PREVISION_REGISTRY_ADDR/prevision/prevision-python-tests:$CI_COMMIT_REF_SLUG
+.base:
+  image: python:3.6.8-slim-stretch
+  tags: ["kube", "bel1-c2"]
 
-lint-python-sdk:
-  image: $PREVISION_REGISTRY_ADDR/prevision/prevision-python-tests:$CI_COMMIT_REF_SLUG
+test-lint:
   stage: test
+  extends: .base
   script:
-    - make lint
+    - pip install --no-cache-dir -r requirements.txt
+    - pip install --no-cache-dir -r utests/requirements.txt
+    - pycodestyle --config pep8lint.cfg --statistics --format=pylint *.py previsionio/*.py utests/*.py
+    - pyflakes  *.py previsionio/*.py utests/*.py
+  allow_failure: true
 
-coverage-python-sdk:
-  image: $PREVISION_REGISTRY_ADDR/prevision/prevision-python-tests:$CI_COMMIT_REF_SLUG
+test-image:
   stage: test
+  extends: .base
+  interruptible: true
   script:
-    - cat $connectors_config > utests/connectors_config.py
-    - make utests-ci
-  coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
+    - pip install --no-cache-dir -r requirements.txt
+    - pip install --no-cache-dir -r utests/requirements.txt
+    - pytest utests/
+  timeout: 3h
+  allow_failure: true
+
+build:
+  stage: publish
+  extends: .base
+  script:
+    - pip install versioneer twine
+    - python setup.py sdist bdist_wheel
+    - twine upload --repository-url $PYPI_URL -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
+    - curl -L --output /usr/local/bin/release-cli "https://release-cli-downloads.s3.amazonaws.com/latest/release-cli-linux-amd64"; chmod +x /usr/local/bin/release-cli
   only:
     - tags
-    - web
-    - schedules
-  artifacts:
-    paths:
-      - utests/coverage_html_report/
-      - utests/test_results.xml
-    reports:
-      junit: utests/test_results.xml
-
-pages:
-  stage: deploy
-  dependencies:
-    - coverage-python-sdk
-  script:
-    - mv utests/coverage_html_report/ public/
-  only:
-    - tags
-    - web
-    - schedules
-  artifacts:
-    paths:
-        - public
-    expire_in: 30 days
-    
+  release:
+    tag_name: $CI_COMMIT_TAG
+    description: "new version"

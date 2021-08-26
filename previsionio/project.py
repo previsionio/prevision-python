@@ -21,6 +21,7 @@ from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
                               TextSimilarity, TextSimilarityLang)
 from .usecase import Usecase
+from .usecase_deployment import UsecaseDeployment
 from pandas import DataFrame
 
 
@@ -237,7 +238,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return resp
 
     def create_dataset(self, name: str, datasource: DataSource = None, file_name: str = None,
-                       dataframe: DataFrame = None):
+                       dataframe: DataFrame = None, **kwargs):
         """ Register a new dataset in the workspace for further processing.
         You need to provide either a datasource, a file name or a dataframe
         (only one can be specified).
@@ -265,7 +266,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.Dataset`: The registered dataset object in the current workspace.
         """
-        return Dataset._new(self._id, name, datasource=datasource, file_name=file_name, dataframe=dataframe)
+        return Dataset._new(self._id, name, datasource=datasource, file_name=file_name, dataframe=dataframe, **kwargs)
 
     def list_datasets(self, all: bool = True):
         """ List all the available datasets in the current active project.
@@ -784,6 +785,27 @@ class Project(ApiResource, UniqueResourceMixin):
             list(:class:`.Usecase`): Fetched usecase objects
         """
         return Usecase.list(self._id, all=all)
+
+    def create_usecase_deployment(self, name: str, main_model, challenger_model=None, access_type: str = 'public'):
+        return UsecaseDeployment._new(
+            self._id,
+            name,
+            main_model,
+            challenger_model=challenger_model,
+            access_type=access_type
+        )
+
+    def list_usecase_deployments(self, all: bool = True):
+        """ List all the available usecase in the current project.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+        Returns:
+            list(:class:`.UsecaseDeployment`): Fetched usecase deployment objects
+        """
+        return UsecaseDeployment.list(self._id, all=all)
 
 
 connectors_names = {

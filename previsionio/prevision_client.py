@@ -1,4 +1,5 @@
 from __future__ import print_function
+import logging
 
 import os
 import copy
@@ -7,6 +8,7 @@ import requests
 import time
 import json
 import threading
+from datetime import datetime
 
 from requests.models import Response
 
@@ -64,7 +66,8 @@ class EventManager:
                 remaining_events = []
                 with semi:
                     for event in event_list:
-                        if event.get('event') == event_tuple.name:
+                        name = event.get('event')
+                        if name == event_tuple.name:
                             if self.check_resource_event(resource_id, specific_url, event_tuple, semd):
                                 return
                         else:
@@ -82,14 +85,14 @@ class EventManager:
                              semd: threading.Semaphore):
         resp = self.client.request(endpoint=endpoint, method=requests.get, check_response=False)
         json_response = parse_json(resp)
-        for k, v in event_tuple.fail_checks:
-            if json_response.get(k) == v:
-                semd.release()
-                msg = 'Error on resource {}: {}\n{}'.format(resource_id,
-                                                            json_response.get('errorMessage', ''),
-                                                            json_response)
-                raise PrevisionException(msg)
-        if json_response.get(event_tuple.key) == event_tuple.value:
+        logging.debug("{} - endpoint='{}' -> '{}".format(datetime.now(), endpoint, json_response))
+        if event_tuple.is_failure(json=json_response):
+            semd.release()
+            msg = 'Error on resource {}: {}\n{}'.format(resource_id,
+                                                        json_response.get('errorMessage', ''),
+                                                        json_response)
+            raise PrevisionException(msg)
+        if event_tuple.is_success(json=json_response):
             semd.release()
             return True
         return False
@@ -211,7 +214,8 @@ class Client(object):
         if not self.prevision_url:
             raise PrevisionException('No url configured. Call client.init_client() to initialize')
 
-    def request(self, endpoint: str, method, files: Dict = None, data: Dict = None, allow_redirects: bool = True,
+    def request(self, endpoint: str, method, files: Dict = None, data: Dict = None,
+                format: Dict = None, allow_redirects: bool = True,
                 content_type: str = None, check_response: bool = True,
                 message_prefix: str = None, **requests_kwargs) -> Response:
         """
@@ -241,22 +245,34 @@ class Client(object):
         if content_type:
             headers['content-type'] = content_type
 
+        if self.url is None:
+            raise RuntimeError("client.url not properly initialized")
+
+        if format and len(format):
+            def format_bool(val):
+                if isinstance(val, bool):
+                    if val:
+                        return "true"
+                    return "false"
+                return val
+            endpoint += '?' + '&'.join(["{}={}".format(key, format_bool(val)) for key, val in format.items()])
+
         url = self.url + endpoint
 
         status_code = 502
         retries = config.request_retries
         n_tries = 0
-
+        resp = None
         while (n_tries < retries) and (status_code in config.retry_codes):
             n_tries += 1
 
             try:
-                resp: Response = method(url,
-                                        headers=headers,
-                                        files=files,
-                                        allow_redirects=allow_redirects,
-                                        json=data,
-                                        **requests_kwargs)
+                resp = method(url,
+                              headers=headers,
+                              files=files,
+                              allow_redirects=allow_redirects,
+                              json=data,
+                              **requests_kwargs)
                 status_code = resp.status_code
 
             except Exception as e:
@@ -268,6 +284,7 @@ class Client(object):
             if status_code in config.retry_codes:
                 time.sleep(config.request_retry_time)
 
+        assert isinstance(resp, Response)
         if check_response:
             handle_error_response(resp=resp,
                                   url=url,
@@ -279,6 +296,7 @@ class Client(object):
         return resp
 
     def update_user_info(self):
+        assert self.url is not None
         user_info_response = requests.get(self.url + '/profile',
                                           headers=self.headers)
         result = parse_json(user_info_response)
