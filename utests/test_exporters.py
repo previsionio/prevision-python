@@ -47,7 +47,7 @@ def test_exporter_FTP():
                                        path='titanic_765765.csv',
                                        write_mode=pio.ExporterWriteMode.safe)
     assert exporter is not None
-    exporter.apply_file('utests/data/titanic.csv', 'titanic')
+    #exporter.apply_file('utests/data/titanic.csv', 'titanic')
 
 
 def test_exporter_SFTP():
@@ -57,8 +57,13 @@ def test_exporter_SFTP():
                                               sftp_config['password'])
     exporter = project.create_exporter(connector, 'test_sftp_exporter',
                                        description="test_sftp_exporter description",
-                                       path='titanic.csv',
+                                       path='/upload/titanic.csv',
                                        write_mode=pio.ExporterWriteMode.safe)
+    print("exporter._id", exporter._id)
+    #dataset = project.create_dataset('test_exporter',
+    #                                file_name='utests/data/titanic.csv')
+    #exporter.apply_dataset(dataset)
+    exporter.apply_file('utests/data/titanic.csv', 'titanic')
     assert exporter is not None
 
 

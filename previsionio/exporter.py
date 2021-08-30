@@ -6,6 +6,9 @@ from . import client
 from .utils import parse_json, PrevisionException
 from .api_resource import ApiResource, UniqueResourceMixin
 from .connector import Connector, GCloud
+from .export import Export
+from .dataset import Dataset
+from .prediction import DeploymentPrediction
 
 
 class ExporterWriteMode(Enum):
@@ -177,6 +180,21 @@ class Exporter(ApiResource, UniqueResourceMixin):
         """
         super().delete()
 
+    def apply_file(self, file_path: str, name: str, origin: str = None,
+                   pipeline_scheduled_run_id: str = None, encoding: str = None,
+                   separator: str = None, decimal: str = None, thousands: str = None):
+        return Export.apply_file(self._id, file_path=file_path, name=name, origin=origin,
+                                 pipeline_scheduled_run_id=pipeline_scheduled_run_id,
+                                 encoding=encoding, separator=separator, decimal=decimal,
+                                 thousands=thousands)
+
+    def apply_dataset(self, dataset: Dataset):
+        return Export.apply_dataset(exporter_id=self._id, dataset=dataset)
+
+    def apply_prediction(self, prediction: DeploymentPrediction):
+        return Export.apply_prediction(self._id, prediction=prediction)
+
+    """
     def apply_file(self, file_path, name):
         data = {
             'name': name,
@@ -192,3 +210,13 @@ class Exporter(ApiResource, UniqueResourceMixin):
                                      message_prefix='Export file')
         create_json = parse_json(create_resp)
         print("create_json===", create_json)
+    
+    def apply_dataset(self, dataset_id):
+
+        request_url = '/exporters/{}/dataset/{}'.format(self._id, dataset_id)
+        create_resp = client.request(request_url,
+                                     method=requests.post,
+                                     message_prefix='Export dataset')
+        create_json = parse_json(create_resp)
+        print("create_json===", create_json)
+    """
