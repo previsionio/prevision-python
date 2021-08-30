@@ -1,3 +1,4 @@
+import os
 import requests
 from enum import Enum
 
@@ -50,7 +51,7 @@ class Exporter(ApiResource, UniqueResourceMixin):
         super().__init__(_id=_id)
 
         self._id = _id
-        self.connector = connector_id
+        self.connector_id = connector_id
 
         self.name = name
         self.description = description
@@ -62,6 +63,8 @@ class Exporter(ApiResource, UniqueResourceMixin):
         self.write_mode = write_mode
 
         self.other_params = kwargs
+
+
 
     @classmethod
     def list(cls, project_id: str, all: bool = False):
@@ -133,7 +136,7 @@ class Exporter(ApiResource, UniqueResourceMixin):
         """
 
         data = {
-            'connectorId': connector._id,
+            'connector_id': connector._id,
             'name': name,
             'description': description,
             'filepath': path,
@@ -144,9 +147,9 @@ class Exporter(ApiResource, UniqueResourceMixin):
         }
 
         if database is not None:
-            data['database_write_mode'] = write_mode
+            data['database_write_mode'] = write_mode.value
         else:
-            data['file_write_mode'] = write_mode
+            data['file_write_mode'] = write_mode.value
 
         url = '/projects/{}/{}'.format(project_id, cls.resource)
         resp = client.request(url,
@@ -173,3 +176,19 @@ class Exporter(ApiResource, UniqueResourceMixin):
             requests.exceptions.ConnectionError: Error processing the request
         """
         super().delete()
+
+    def apply_file(self, file_path, name):
+        data = {
+            'name': name,
+        }
+        files = {}
+        with open(file_path, 'r') as f:
+            files['file'] = (os.path.basename(file_path), f, 'text/csv')
+        request_url = '/exporters/{}/file'.format(self._id)
+        create_resp = client.request(request_url,
+                                     data=data,
+                                     files=files,
+                                     method=requests.post,
+                                     message_prefix='Export file')
+        create_json = parse_json(create_resp)
+        print("create_json===", create_json)

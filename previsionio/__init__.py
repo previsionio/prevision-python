@@ -65,7 +65,7 @@ import previsionio.metrics as metrics
 
 from previsionio.connector import Connector
 from previsionio.datasource import DataSource
-from previsionio.exporter import Exporter
+from previsionio.exporter import Exporter, ExporterWriteMode
 from previsionio.project import Project
 from previsionio.usecase import Usecase
 from previsionio.supervised import Supervised
@@ -116,6 +116,7 @@ __all__ = [
     'Connector',
     'DataSource',
     'Exporter',
+    'ExporterWriteMode',
     'Supervised',
     'TimeSeries',
     'TimeWindow',
