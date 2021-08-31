@@ -17,7 +17,8 @@ def get_usecase_version_class(
     """ Get the type of UsecaseVersion class used by this Usecase
 
     Returns:
-        (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`): Type of UsecaseVersion
+        (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
+        Type of UsecaseVersion
     """
     default: Dict[DataType, Union[Type[Supervised], Type[TimeSeries]]] = {
         DataType.Tabular: Supervised,
@@ -93,7 +94,8 @@ class Usecase(ApiResource):
         """ Get the type of UsecaseVersion class used by this Usecase
 
         Returns:
-            (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`): Type of UsecaseVersion
+            (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
+            Type of UsecaseVersion
         """
         return get_usecase_version_class(self.training_type, self.data_type)
 
