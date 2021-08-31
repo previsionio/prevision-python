@@ -3,7 +3,7 @@ import requests
 from typing import Union
 
 from . import client
-from .utils import parse_json, PrevisionException, get_all_results #  , EventTuple
+from .utils import parse_json, PrevisionException, get_all_results  # , EventTuple
 from .api_resource import ApiResource, UniqueResourceMixin
 from .dataset import Dataset
 from .prediction import DeploymentPrediction, ValidationPrediction
