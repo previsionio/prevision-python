@@ -1,6 +1,6 @@
-import os
 import requests
 from enum import Enum
+from typing import Union
 
 from . import client
 from .utils import parse_json, PrevisionException
@@ -8,7 +8,7 @@ from .api_resource import ApiResource, UniqueResourceMixin
 from .connector import Connector, GCloud
 from .export import Export
 from .dataset import Dataset
-from .prediction import DeploymentPrediction
+from .prediction import DeploymentPrediction, ValidationPrediction
 
 
 class ExporterWriteMode(Enum):
@@ -67,17 +67,9 @@ class Exporter(ApiResource, UniqueResourceMixin):
 
         self.other_params = kwargs
 
-
-
     @classmethod
     def list(cls, project_id: str, all: bool = False):
         """ List all the available exporters in the current active [client] workspace.
-
-        .. warning::
-
-            Contrary to the parent ``list()`` function, this method
-            returns actual :class:`.Exporter` objects rather than
-            plain dictionaries with the corresponding data.
 
         Args:
             all (boolean, optional): Whether to force the SDK to load all items of
@@ -85,7 +77,7 @@ class Exporter(ApiResource, UniqueResourceMixin):
                 the query will only return the first page of result.
 
         Returns:
-            list(:class:`.Exporter`): fetched exporter objects
+            list(:class:`.Exporter`): The fetched exporter objects
         """
         resources = super()._list(all=all, project_id=project_id)
         return [cls(**source_data) for source_data in resources]
@@ -95,19 +87,16 @@ class Exporter(ApiResource, UniqueResourceMixin):
         """Get an exporter from the instance by its unique id.
 
         Args:
-            _id (str): Unique id of the resource to retrieve
+            _id (str): Unique id of the exporter to retrieve
 
         Returns:
-            :class:`.Exporter`: the fetched exporter
+            :class:`.Exporter`: The fetched exporter
 
         Raises:
             PrevisionException: Any error while fetching data from the platform
                 or parsing the result
         """
-        url = '/{}/{}'.format(cls.resource, _id)
-        resp = client.request(url, method=requests.get, message_prefix='From id exporter')
-        resp_json = parse_json(resp)
-
+        resp_json = super()._from_id(_id=_id)
         return cls(**resp_json)
 
     @classmethod
@@ -186,43 +175,50 @@ class Exporter(ApiResource, UniqueResourceMixin):
         """
         super().delete()
 
-    def apply_file(self, file_path: str, name: str, origin: str = None,
-                   pipeline_scheduled_run_id: str = None, encoding: str = None,
-                   separator: str = None, decimal: str = None, thousands: str = None):
-        return Export.apply_file(self._id, file_path=file_path, name=name, origin=origin,
-                                 pipeline_scheduled_run_id=pipeline_scheduled_run_id,
-                                 encoding=encoding, separator=separator, decimal=decimal,
-                                 thousands=thousands)
+    def apply_file(self, file_path: str, encoding: str = None, separator: str = None,
+                   decimal: str = None, thousands: str = None, **kwargs):
+        """ Upload a CSV file using the exporter.
+
+        Args:
+            file_path (str): Path of the file to upload
+            encoding (str, optional): Encoding of the file to upload
+            separator (str, optional): Separator of the file to upload
+            decimal (str, optional): Decimal of the file to upload
+            thousands (str, optional): Thousands of the file to upload
+
+        Returns:
+            :class:`.Export`: The registered export object
+        """
+        return Export.apply_file(self._id, file_path=file_path, encoding=encoding, separator=separator,
+                                 decimal=decimal, thousands=thousands, **kwargs)
 
     def apply_dataset(self, dataset: Dataset):
+        """ Upload a :class:`.Dataset` from the current active project using the exporter.
+
+        Args:
+            dataset (:class:`.Dataset`): dataset to upload
+
+        Returns:
+            :class:`.Export`: The registered export object
+        """
         return Export.apply_dataset(exporter_id=self._id, dataset=dataset)
 
-    def apply_prediction(self, prediction: DeploymentPrediction):
+    def apply_prediction(self, prediction: Union[DeploymentPrediction, ValidationPrediction]):
+        """ Upload a :class:`.DeploymentPrediction` or a :class:`.ValidationPrediction`
+        from the current active project using the exporter.
+
+        Args:
+            dataset (:class:`.DeploymentPrediction`|:class:`.ValidationPrediction`): prediction to upload
+
+        Returns:
+            :class:`.Export`: The registered export object
+        """
         return Export.apply_prediction(self._id, prediction=prediction)
 
-    """
-    def apply_file(self, file_path, name):
-        data = {
-            'name': name,
-        }
-        files = {}
-        with open(file_path, 'r') as f:
-            files['file'] = (os.path.basename(file_path), f, 'text/csv')
-        request_url = '/exporters/{}/file'.format(self._id)
-        create_resp = client.request(request_url,
-                                     data=data,
-                                     files=files,
-                                     method=requests.post,
-                                     message_prefix='Export file')
-        create_json = parse_json(create_resp)
-        print("create_json===", create_json)
-    
-    def apply_dataset(self, dataset_id):
+    def list_exports(self):
+        """ List all the available exports given the exporter id.
 
-        request_url = '/exporters/{}/dataset/{}'.format(self._id, dataset_id)
-        create_resp = client.request(request_url,
-                                     method=requests.post,
-                                     message_prefix='Export dataset')
-        create_json = parse_json(create_resp)
-        print("create_json===", create_json)
-    """
+        Returns:
+            list(:class:`.Export`): The fetched export objects
+        """
+        return Export.list(self._id)
