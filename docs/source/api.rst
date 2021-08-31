@@ -16,6 +16,7 @@ This section gathers all the available classes, functions and tools offered by P
    api/dataset.rst
    api/datasource.rst
    api/exporter.rst
+   api/export.rst
    api/connector.rst
    api/usecases_version.rst
    api/model.rst
