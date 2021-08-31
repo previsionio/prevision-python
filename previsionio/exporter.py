@@ -150,8 +150,14 @@ class Exporter(ApiResource, UniqueResourceMixin):
         }
 
         if database is not None:
+            if write_mode.value not in ['replace', 'append']:
+                raise PrevisionException('Write mode \"{}\" is not compatible with database connectors '
+                                         .format(write_mode.value))
             data['database_write_mode'] = write_mode.value
         else:
+            if write_mode.value not in ['timestamp', 'safe', 'replace']:
+                raise PrevisionException('Write mode \"{}\" is not compatible with file connectors'
+                                         .format(write_mode.value))
             data['file_write_mode'] = write_mode.value
 
         url = '/projects/{}/{}'.format(project_id, cls.resource)

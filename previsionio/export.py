@@ -42,7 +42,6 @@ class Export(ApiResource, UniqueResourceMixin):
         self.created_at = created_at
         self.exporter_id = exporter_id
         self.dataset_id = dataset_id
-
         self.other_params = kwargs
 
     @classmethod

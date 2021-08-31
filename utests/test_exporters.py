@@ -45,7 +45,7 @@ def test_exporter_FTP():
     exporter = project.create_exporter(connector, 'test_ftp_exporter',
                                        description="test_ftp_exporter description",
                                        path='titanic_765765.csv',
-                                       write_mode=pio.ExporterWriteMode.safe)
+                                       write_mode=pio.ExporterWriteMode.timestamp)
     assert exporter is not None
     #exporter.apply_file('utests/data/titanic.csv', 'titanic')
 
@@ -57,24 +57,49 @@ def test_exporter_SFTP():
                                               sftp_config['password'])
     exporter = project.create_exporter(connector, 'test_sftp_exporter',
                                        description="test_sftp_exporter description",
-                                       path='/upload/titanic.csv',
-                                       write_mode=pio.ExporterWriteMode.safe)
+                                       path='/upload/test_sqk/titanic.csv',
+                                       write_mode=pio.ExporterWriteMode.timestamp)
+    assert exporter is not None
     print("exporter._id", exporter._id)
     #dataset = project.create_dataset('test_exporter',
     #                                file_name='utests/data/titanic.csv')
     #exporter.apply_dataset(dataset)
-    exporter.apply_file('utests/data/titanic.csv', 'titanic')
-    assert exporter is not None
+    export = exporter.apply_file('utests/data/titanic.csv', 'titanic')
+
 
 
 def test_exporter_MySQL():
     project = pio.Project.from_id(PROJECT_ID)
-    connector = project.create_sql_connector("test_sql_connector", mysql_config['host'],
+    connector = project.create_sql_connector("test_sftp_connector", mysql_config['host'],
                                               mysql_config['port'], mysql_config['username'],
                                               mysql_config['password'])
-    exporter = project.create_exporter(connector, 'test_sql_exporter',
+    exporter = project.create_exporter(connector, 'test_sftp_exporter',
                                        description="test_sftp_exporter description",
                                        database=mysql_config['database'],
                                        table=mysql_config['table'],
                                        write_mode=pio.ExporterWriteMode.append)
+    assert exporter is not None
+
+
+def test_exporter_S3():
+    project = pio.Project.from_id(PROJECT_ID)
+    connector = project.create_s3_connector("test_s3_connector", username=S3_config['username'],
+                                            password=S3_config['password'])
+    exporter = project.create_exporter(connector, 'test_s3_exporter',
+                                       description="test_s3_exporter description",
+                                       bucket=S3_config['bucket'],
+                                       path='/test_sdk/titanic.csv',
+                                       write_mode=pio.ExporterWriteMode.timestamp)
+    assert exporter is not None
+
+
+def test_exporter_GCP_bucket():
+    project = pio.Project.from_id(PROJECT_ID)
+    connector = project.create_gcp_connector("test_gcp_connector",
+                                             googleCredentials=gcp_config['googleCredentials'])
+    exporter = project.create_exporter(connector, 'test_gcp_exporter',
+                                       description="test_gcp_exporter description",
+                                       bucket=gcp_config['bucket'],
+                                       path='/test_sdk/titanic.csv',
+                                       write_mode=pio.ExporterWriteMode.timestamp)
     assert exporter is not None
