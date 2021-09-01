@@ -91,6 +91,7 @@ class Export(ApiResource, UniqueResourceMixin):
                 or parsing the result
             Exception: For any other unknown error
         """
+        data = {}
 
         if dataset is not None:
             request_url = '/exporters/{}/dataset/{}'.format(exporter_id, dataset._id)
@@ -100,12 +101,20 @@ class Export(ApiResource, UniqueResourceMixin):
 
         elif prediction is not None:
             request_url = '/exporters/{}/prediction/{}'.format(exporter_id, prediction._id)
+            if isinstance(prediction, DeploymentPrediction):
+                data['prediction_type'] = 'deployment'
+            elif isinstance(prediction, ValidationPrediction):
+                data['prediction_type'] = 'usecase'
+            else:
+                msg = 'prediction must be of type DeploymentPrediction or ValidationPrediction,'
+                msg += f' got: {type(prediction)}'
+                raise PrevisionException(msg)
             create_resp = client.request(request_url,
+                                         data=data,
                                          method=requests.post,
                                          message_prefix='Export prediction')
 
         elif file_path is not None:
-            data = {}
             if origin is not None:
                 data['origin'] = origin
             if pipeline_scheduled_run_id is not None:
@@ -134,14 +143,26 @@ class Export(ApiResource, UniqueResourceMixin):
         create_resp = parse_json(create_resp)
 
         if wait_for_export:
-            specific_url = '/{}/{}'.format('exports', create_resp['_id'])
-            client.event_manager.wait_for_event(create_resp['_id'],
-                                                cls.resource,
-                                                EventTuple(
-                                                    'EXPORT_UPDATE',
-                                                    ('status', 'done'),
-                                                    [('status', 'failed')]),
-                                                specific_url=specific_url)
+            try:
+                specific_url = '/{}/{}'.format('exports', create_resp['_id'])
+                client.event_manager.wait_for_event(create_resp['_id'],
+                                                    cls.resource,
+                                                    EventTuple(
+                                                        'EXPORT_UPDATE',
+                                                        ('status', 'done'),
+                                                        [('status', 'failed')]),
+                                                    specific_url=specific_url)
+
+            except PrevisionException:
+                # Extract log if failure
+                resp_json = super()._from_id(_id=create_resp['_id'])
+                msg = f'Export failure.\nLogs: {resp_json["logs"]}\nurl: {request_url}'
+                if data:
+                    msg += f'\ndata: {data}'
+                raise PrevisionException(msg)
+
+            except Exception:
+                raise
 
         return cls.from_id(create_resp['_id'])
 
