@@ -3,7 +3,7 @@ import requests
 from typing import Union
 
 from . import client
-from .utils import parse_json, get_all_results, EventTuple
+from .utils import parse_json, get_all_results, PrevisionException, EventTuple
 from .api_resource import ApiResource, UniqueResourceMixin
 from .dataset import Dataset
 from .prediction import DeploymentPrediction, ValidationPrediction
@@ -129,7 +129,7 @@ class Export(ApiResource, UniqueResourceMixin):
                                              message_prefix='Export file')
 
         else:
-            raise ValueError('Need to specify one of: dataset, prediction or file_path')
+            raise PrevisionException('Need to specify one of: dataset, prediction or file_path')
 
         create_resp = parse_json(create_resp)
 
