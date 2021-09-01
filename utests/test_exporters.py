@@ -1,11 +1,11 @@
-import copy
-import pytest
+# import pytest
 import previsionio as pio
-from previsionio.project import connectors_names
 from .utils import get_testing_id
 
-from .connectors_config import ftp_config, sftp_config, mysql_config, \
-        hive_config, S3_config, gcp_config
+from .connectors_config import (ftp_config, sftp_config, mysql_config,
+                                hive_config, S3_config, gcp_config)
+
+
 TESTING_ID = get_testing_id()
 TESTING_ID_CONNECTOR = get_testing_id()
 TESTING_ID_EXPORTER = get_testing_id()
@@ -22,19 +22,19 @@ def setup_module(module):
     PROJECT_ID = project._id
 
 
-#def teardown_module(module):
-#    project = pio.Project.from_id(PROJECT_ID)
-#    project.delete()
+# def teardown_module(module):
+#     project = pio.Project.from_id(PROJECT_ID)
+#     project.delete()
 
 
 connectors = {
-        'FTP': ftp_config,
-        'SFTP': sftp_config,
-        'SQL': mysql_config,
-        'HIVE': hive_config,
-        'S3': S3_config,
-        'GCP': gcp_config
-    }
+    'FTP': ftp_config,
+    'SFTP': sftp_config,
+    'SQL': mysql_config,
+    'HIVE': hive_config,
+    'S3': S3_config,
+    'GCP': gcp_config,
+}
 
 
 def test_exporter_FTP():
@@ -47,7 +47,10 @@ def test_exporter_FTP():
                                        path='titanic_765765.csv',
                                        write_mode=pio.ExporterWriteMode.timestamp)
     assert exporter is not None
-    #exporter.apply_file('utests/data/titanic.csv', 'titanic')
+
+    export = exporter.apply_file('utests/data/titanic.csv', 'titanic',
+                                 wait_for_export=True)
+    assert export is not None
 
 
 def test_exporter_SFTP():
@@ -60,19 +63,22 @@ def test_exporter_SFTP():
                                        path='/upload/test_sqk/titanic.csv',
                                        write_mode=pio.ExporterWriteMode.timestamp)
     assert exporter is not None
-    print("exporter._id", exporter._id)
-    #dataset = project.create_dataset('test_exporter',
-    #                                file_name='utests/data/titanic.csv')
-    #exporter.apply_dataset(dataset)
-    export = exporter.apply_file('utests/data/titanic.csv', 'titanic')
 
+    dataset = project.create_dataset('test_exporter',
+                                     file_name='utests/data/titanic.csv')
+    export = exporter.apply_dataset(dataset, wait_for_export=True)
+    assert export is not None
+
+    export = exporter.apply_file('utests/data/titanic.csv', 'titanic',
+                                 wait_for_export=True)
+    assert export is not None
 
 
 def test_exporter_MySQL():
     project = pio.Project.from_id(PROJECT_ID)
     connector = project.create_sql_connector("test_sftp_connector", mysql_config['host'],
-                                              mysql_config['port'], mysql_config['username'],
-                                              mysql_config['password'])
+                                             mysql_config['port'], mysql_config['username'],
+                                             mysql_config['password'])
     exporter = project.create_exporter(connector, 'test_sftp_exporter',
                                        description="test_sftp_exporter description",
                                        database=mysql_config['database'],
