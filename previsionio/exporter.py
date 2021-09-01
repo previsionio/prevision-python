@@ -154,12 +154,6 @@ class Exporter(ApiResource, UniqueResourceMixin):
                               message_prefix='Exporter creation')
         json = parse_json(resp)
 
-        # if '_id' not in json:
-        #     if 'message' in json:
-        #         raise PrevisionException(json['message'])
-        #     else:
-        #         raise Exception('unknown error: {}'.format(json))
-
         return cls(json['_id'], connector._id, name, description=description, path=path,
                    bucket=bucket, database=database, table=table, write_mode=write_mode,
                    g_cloud=g_cloud)
