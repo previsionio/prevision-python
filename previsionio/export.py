@@ -3,7 +3,7 @@ import requests
 from typing import Union
 
 from . import client
-from .utils import parse_json, PrevisionException, get_all_results  # , EventTuple
+from .utils import parse_json, get_all_results, EventTuple
 from .api_resource import ApiResource, UniqueResourceMixin
 from .dataset import Dataset
 from .prediction import DeploymentPrediction, ValidationPrediction
@@ -68,7 +68,8 @@ class Export(ApiResource, UniqueResourceMixin):
     @classmethod
     def _new(cls, exporter_id: str, prediction: Union[DeploymentPrediction, ValidationPrediction] = None,
              dataset: Dataset = None, file_path: str = None, encoding: str = None, separator: str = None,
-             decimal: str = None, thousands: str = None, origin: str = None, pipeline_scheduled_run_id: str = None):
+             decimal: str = None, thousands: str = None, wait_for_export: bool = True, origin: str = None,
+             pipeline_scheduled_run_id: str = None):
         """ Create a new exporter object on the platform.
 
         Args:
@@ -80,6 +81,7 @@ class Export(ApiResource, UniqueResourceMixin):
             separator (str, optional): Separator of the file to upload
             decimal (str, optional): Decimal of the file to upload
             thousands (str, optional): Thousands of the file to upload
+            wait_for_export (bool, optional): Wether to wait until the export is complete or not
 
         Returns:
             :class:`.Export`: The registered export object
@@ -130,24 +132,22 @@ class Export(ApiResource, UniqueResourceMixin):
             raise ValueError('Need to specify one of: dataset, prediction or file_path')
 
         create_resp = parse_json(create_resp)
-        if '_id' not in create_resp:
-            if 'message' in create_resp:
-                raise PrevisionException(create_resp['message'])
-            else:
-                raise Exception('unknown error: {}'.format(create_resp))
-        # specific_url = '/{}/{}'.format('exports', create_resp['_id'])
-        # client.event_manager.wait_for_event(create_resp['_id'],
-        #                                    specific_url,
-        #                                    EventTuple(
-        #                                        'EXPORT_UPDATE',
-        #                                        ('status', 'done'),
-        #                                        [('status', 'failed')]),
-        #                                    specific_url=specific_url)
+
+        if wait_for_export:
+            specific_url = '/{}/{}'.format('exports', create_resp['_id'])
+            client.event_manager.wait_for_event(create_resp['_id'],
+                                                cls.resource,
+                                                EventTuple(
+                                                    'EXPORT_UPDATE',
+                                                    ('status', 'done'),
+                                                    [('status', 'failed')]),
+                                                specific_url=specific_url)
+
         return cls.from_id(create_resp['_id'])
 
     @classmethod
     def apply_file(cls, exporter_id: str, file_path: str, encoding: str = None, separator: str = None,
-                   decimal: str = None, thousands: str = None, **kwargs):
+                   decimal: str = None, thousands: str = None, wait_for_export: bool = True, **kwargs):
         """ Upload a CSV file using an exporter.
 
         Args:
@@ -157,36 +157,40 @@ class Export(ApiResource, UniqueResourceMixin):
             separator (str, optional): Separator of the file to upload
             decimal (str, optional): Decimal of the file to upload
             thousands (str, optional): Thousands of the file to upload
+            wait_for_export (bool, optional): Wether to wait until the export is complete or not
 
         Returns:
             :class:`.Export`: The registered export object
         """
         return cls._new(exporter_id, file_path=file_path, encoding=encoding, separator=separator,
-                        decimal=decimal, thousands=thousands, **kwargs)
+                        decimal=decimal, thousands=thousands, wait_for_export=wait_for_export, **kwargs)
 
     @classmethod
-    def apply_dataset(cls, exporter_id, dataset: Dataset):
+    def apply_dataset(cls, exporter_id, dataset: Dataset, wait_for_export: bool = True):
         """ Upload a :class:`.Dataset` from the current active project using an exporter.
 
         Args:
             exporter_id (str): Unique exporter id on which to create the export
             dataset (:class:`.Dataset`): Dataset to upload
+            wait_for_export (bool, optional): Wether to wait until the export is complete or not
 
         Returns:
             :class:`.Export`: The registered export object
         """
-        return cls._new(exporter_id, dataset=dataset)
+        return cls._new(exporter_id, dataset=dataset, wait_for_export=wait_for_export)
 
     @classmethod
-    def apply_prediction(cls, exporter_id, prediction: Union[DeploymentPrediction, ValidationPrediction]):
+    def apply_prediction(cls, exporter_id, prediction: Union[DeploymentPrediction, ValidationPrediction],
+                         wait_for_export: bool = True):
         """ Upload a :class:`.DeploymentPrediction` or a :class:`.ValidationPrediction`
         from the current active project using an exporter.
 
         Args:
             exporter_id (str): Unique exporter id on which to create the export
             prediction (:class:`.DeploymentPrediction`|:class:`.ValidationPrediction`): Prediction to upload
+            wait_for_export (bool, optional): Wether to wait until the export is complete or not
 
         Returns:
             :class:`.Export`: The registered export object
         """
-        return cls._new(exporter_id, prediction=prediction)
+        return cls._new(exporter_id, prediction=prediction, wait_for_export=wait_for_export)
