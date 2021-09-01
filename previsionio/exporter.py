@@ -139,15 +139,13 @@ class Exporter(ApiResource, UniqueResourceMixin):
         }
 
         if database is not None:
-            if write_mode.value not in ['replace', 'append']:
-                raise PrevisionException('Write mode \"{}\" is not compatible with database connectors '
-                                         .format(write_mode.value))
-            data['database_write_mode'] = write_mode.value
+            if write_mode not in ['replace', 'append']:
+                raise PrevisionException(f'Write mode "{write_mode}" is not compatible with database connector')
+            data['database_write_mode'] = write_mode
         else:
-            if write_mode.value not in ['timestamp', 'safe', 'replace']:
-                raise PrevisionException('Write mode \"{}\" is not compatible with file connectors'
-                                         .format(write_mode.value))
-            data['file_write_mode'] = write_mode.value
+            if write_mode not in ['timestamp', 'safe', 'replace']:
+                raise PrevisionException(f'Write mode "{write_mode}" is not compatible with file connectors')
+            data['file_write_mode'] = write_mode
 
         url = '/projects/{}/{}'.format(project_id, cls.resource)
         resp = client.request(url,
@@ -156,11 +154,11 @@ class Exporter(ApiResource, UniqueResourceMixin):
                               message_prefix='Exporter creation')
         json = parse_json(resp)
 
-        if '_id' not in json:
-            if 'message' in json:
-                raise PrevisionException(json['message'])
-            else:
-                raise Exception('unknown error: {}'.format(json))
+        # if '_id' not in json:
+        #     if 'message' in json:
+        #         raise PrevisionException(json['message'])
+        #     else:
+        #         raise Exception('unknown error: {}'.format(json))
 
         return cls(json['_id'], connector._id, name, description=description, path=path,
                    bucket=bucket, database=database, table=table, write_mode=write_mode,
