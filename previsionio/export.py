@@ -68,7 +68,7 @@ class Export(ApiResource, UniqueResourceMixin):
     @classmethod
     def _new(cls, exporter_id: str, prediction: Union[DeploymentPrediction, ValidationPrediction] = None,
              dataset: Dataset = None, file_path: str = None, encoding: str = None, separator: str = None,
-             decimal: str = None, thousands: str = None, wait_for_export: bool = True, origin: str = None,
+             decimal: str = None, thousands: str = None, wait_for_export: bool = False, origin: str = None,
              pipeline_scheduled_run_id: str = None):
         """ Create a new exporter object on the platform.
 
@@ -147,7 +147,7 @@ class Export(ApiResource, UniqueResourceMixin):
 
     @classmethod
     def apply_file(cls, exporter_id: str, file_path: str, encoding: str = None, separator: str = None,
-                   decimal: str = None, thousands: str = None, wait_for_export: bool = True, **kwargs):
+                   decimal: str = None, thousands: str = None, wait_for_export: bool = False, **kwargs):
         """ Upload a CSV file using an exporter.
 
         Args:
@@ -166,7 +166,7 @@ class Export(ApiResource, UniqueResourceMixin):
                         decimal=decimal, thousands=thousands, wait_for_export=wait_for_export, **kwargs)
 
     @classmethod
-    def apply_dataset(cls, exporter_id, dataset: Dataset, wait_for_export: bool = True):
+    def apply_dataset(cls, exporter_id, dataset: Dataset, wait_for_export: bool = False):
         """ Upload a :class:`.Dataset` from the current active project using an exporter.
 
         Args:
@@ -181,7 +181,7 @@ class Export(ApiResource, UniqueResourceMixin):
 
     @classmethod
     def apply_prediction(cls, exporter_id, prediction: Union[DeploymentPrediction, ValidationPrediction],
-                         wait_for_export: bool = True):
+                         wait_for_export: bool = False):
         """ Upload a :class:`.DeploymentPrediction` or a :class:`.ValidationPrediction`
         from the current active project using an exporter.
 
