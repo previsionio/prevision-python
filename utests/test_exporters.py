@@ -84,7 +84,7 @@ def test_exporter_MySQL():
                                        description="test_sftp_exporter description",
                                        database=mysql_config['database'],
                                        table=mysql_config['table'],
-                                       write_mode=pio.ExporterWriteMode.append)
+                                       write_mode=pio.ExporterWriteMode.replace)
     check_exporter_and_exports(exporter)
 
 
