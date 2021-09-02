@@ -138,6 +138,7 @@ class Exporter(ApiResource, UniqueResourceMixin):
             'table': table,
         }
 
+        write_mode = write_mode.value
         if database is not None:
             if write_mode not in ['replace', 'append']:
                 raise PrevisionException(f'Write mode "{write_mode}" is not compatible with database connector')
