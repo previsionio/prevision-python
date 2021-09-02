@@ -168,8 +168,8 @@ class Exporter(ApiResource, UniqueResourceMixin):
         """
         super().delete()
 
-    def apply_file(self, file_path: str, encoding: str = None, separator: str = None, decimal: str = None,
-                   thousands: str = None, wait_for_export: bool = False, **kwargs):
+    def export_file(self, file_path: str, encoding: str = None, separator: str = None, decimal: str = None,
+                    thousands: str = None, wait_for_export: bool = False, **kwargs):
         """ Upload a CSV file using the exporter.
 
         Args:
@@ -183,11 +183,11 @@ class Exporter(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.Export`: The registered export object
         """
-        return Export.apply_file(self._id, file_path=file_path, encoding=encoding, separator=separator,
-                                 decimal=decimal, thousands=thousands, wait_for_export=wait_for_export,
-                                 **kwargs)
+        return Export.export_file(self._id, file_path=file_path, encoding=encoding, separator=separator,
+                                  decimal=decimal, thousands=thousands, wait_for_export=wait_for_export,
+                                  **kwargs)
 
-    def apply_dataset(self, dataset: Dataset, wait_for_export: bool = False):
+    def export_dataset(self, dataset: Dataset, wait_for_export: bool = False):
         """ Upload a :class:`.Dataset` from the current active project using the exporter.
 
         Args:
@@ -197,10 +197,10 @@ class Exporter(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.Export`: The registered export object
         """
-        return Export.apply_dataset(exporter_id=self._id, dataset=dataset, wait_for_export=wait_for_export)
+        return Export.export_dataset(exporter_id=self._id, dataset=dataset, wait_for_export=wait_for_export)
 
-    def apply_prediction(self, prediction: Union[DeploymentPrediction, ValidationPrediction],
-                         wait_for_export: bool = False):
+    def export_prediction(self, prediction: Union[DeploymentPrediction, ValidationPrediction],
+                          wait_for_export: bool = False):
         """ Upload a :class:`.DeploymentPrediction` or a :class:`.ValidationPrediction`
         from the current active project using the exporter.
 
@@ -211,7 +211,7 @@ class Exporter(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.Export`: The registered export object
         """
-        return Export.apply_prediction(self._id, prediction=prediction, wait_for_export=wait_for_export)
+        return Export.export_prediction(self._id, prediction=prediction, wait_for_export=wait_for_export)
 
     def list_exports(self):
         """ List all the available exports given the exporter id.

@@ -167,8 +167,8 @@ class Export(ApiResource, UniqueResourceMixin):
         return cls.from_id(create_resp['_id'])
 
     @classmethod
-    def apply_file(cls, exporter_id: str, file_path: str, encoding: str = None, separator: str = None,
-                   decimal: str = None, thousands: str = None, wait_for_export: bool = False, **kwargs):
+    def export_file(cls, exporter_id: str, file_path: str, encoding: str = None, separator: str = None,
+                    decimal: str = None, thousands: str = None, wait_for_export: bool = False, **kwargs):
         """ Upload a CSV file using an exporter.
 
         Args:
@@ -187,7 +187,7 @@ class Export(ApiResource, UniqueResourceMixin):
                         decimal=decimal, thousands=thousands, wait_for_export=wait_for_export, **kwargs)
 
     @classmethod
-    def apply_dataset(cls, exporter_id, dataset: Dataset, wait_for_export: bool = False):
+    def export_dataset(cls, exporter_id, dataset: Dataset, wait_for_export: bool = False):
         """ Upload a :class:`.Dataset` from the current active project using an exporter.
 
         Args:
@@ -201,8 +201,8 @@ class Export(ApiResource, UniqueResourceMixin):
         return cls._new(exporter_id, dataset=dataset, wait_for_export=wait_for_export)
 
     @classmethod
-    def apply_prediction(cls, exporter_id, prediction: Union[DeploymentPrediction, ValidationPrediction],
-                         wait_for_export: bool = False):
+    def export_prediction(cls, exporter_id, prediction: Union[DeploymentPrediction, ValidationPrediction],
+                          wait_for_export: bool = False):
         """ Upload a :class:`.DeploymentPrediction` or a :class:`.ValidationPrediction`
         from the current active project using an exporter.
 

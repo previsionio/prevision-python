@@ -34,12 +34,11 @@ def check_exporter_and_exports(exporter):
     exporters_id = [exprtr._id for exprtr in exporters]
     assert exporter._id in exporters_id
 
-    export = exporter.apply_dataset(dataset, wait_for_export=True)
+    export = exporter.export_dataset(dataset, wait_for_export=True)
     check_export(exporter, export)
 
     time.sleep(1)
-    export = exporter.apply_file('utests/data/titanic.csv',
-                                 wait_for_export=True)
+    export = exporter.export_file('utests/data/titanic.csv', wait_for_export=True)
     check_export(exporter, export)
 
     exporter.delete()
