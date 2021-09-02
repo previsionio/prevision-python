@@ -46,6 +46,15 @@ You can either set the token and the instance name as environment variables, by 
         event_log=False, # whether to activate detailed event managers debug logging
     )
 
+    # You can manage the duration you wish to wait for an asynchronous response
+    pio.config.default_timeout = 3600
+
+    # You can manage the number of retries for each call to the Prevision.io API
+    pio.config.request_retries = 6
+
+    # You can manage the duration of retry for each call to the Prevision.io API
+    pio.config.request_retry_time = 10
+
 Create a project
 ================
 
@@ -75,6 +84,8 @@ Datasources and connectors are Prevision.io's way of keeping a link to a source 
 - GCP
 
 Connectors hold the credentials to connect to the distant data sources. Then you can specify the exact resource to extract from a data source (be it the path to the file to load, the name of the database table to parse, ...).
+
+.. _creating connector:
 
 Creating a connector
 ~~~~~~~~~~~~~~~~~~~~
@@ -181,8 +192,8 @@ If you already uploaded a dataset on the platform and want to grab it locally, s
 
     dataset = pio.Dataset.from_id('5ebaad70a7271000e7b28ea0')
 
-Regression/Classification/Multi-classification usecase
-======================================================
+Regression/Classification/Multi-classification usecases
+=======================================================
 
 Configuring the dataset
 -----------------------
@@ -274,8 +285,8 @@ To make predictions from a dataset and a usecase, you need to wait until at leas
 
     The ``wait_until`` method takes a function that takes the usecase as an argument, and can therefore access any info relative to the usecase.
 
-Time Series usecase
-===================
+Time Series usecases
+====================
 
 A time series usecase is very similar to a regression usecase. The main differences rely in the dataset configuration, and the specification of a time window.
 
@@ -341,8 +352,8 @@ Making predictions
 
 The predictions workflow is the same as for a regression usecase (detailed in :ref:`making prediction`).
 
-Text Similarity usecase
-=======================
+Text Similarity usecases
+========================
 
 A Text Similarity usecase matches the most similar texts between a dataset containing descriptions (can be seen as a catalog) and a dataset containing queries. It first converts texts to numerical vectors (text embeddings) and then performs a similarity search to retrieve the most similar documents to a query.
 
@@ -522,6 +533,48 @@ You can also make unitary predictions from the main model:
     )
 
 To get a full documentation check the api reference :ref:`deployed_model_reference`.
+
+Exporters
+=========
+
+Once you trained a model and made predictions from it you might want to export your results on a remote filesystem/database. To do so you will need a registered connector on your project (described in section :ref:`creating connector`).
+
+Creating an exporter
+--------------------
+
+The first step is to create an exporter in your project:
+
+.. code-block:: python
+
+    exporter = project.create_exporter(
+        connector=connector,
+        name = 'my_exporter',
+        path='remote/file/path.csv',
+        write_mode = pio.ExporterWriteMode.timestamp,
+    )
+
+To get a full documentation check the api reference :ref:`exporter_reference`.
+
+Exporting
+---------
+
+Once your exporter is operational you can export your datasets or predictions:
+
+.. code-block:: python
+
+    # export a dataset stored in your project
+    export = exporter.export_dataset(
+        dataset=dataset,
+        wait_for_export=False,
+    )
+
+    # export a prediction stored in your project
+    export = exporter.export_prediction(
+        prediction=deployment_prediction,
+        wait_for_export=False,
+    )
+
+To get a full documentation check the api reference :ref:`export_reference`.
 
 Additional util methods
 =======================
