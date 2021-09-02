@@ -28,7 +28,7 @@ test-image:
   script:
     - pip install --no-cache-dir -r requirements.txt
     - pip install --no-cache-dir -r utests/requirements.txt
-    - pytest utests/
+    - pytest -k 'not exporter' utests/
   timeout: 3h
   allow_failure: true
 
