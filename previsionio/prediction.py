@@ -153,7 +153,7 @@ class DeploymentPrediction(ApiResource):
         """
         if self.challenger_model_id is None:
             PrevisionException('Challenger data not availbale for this prediction')
-        specific_url = '/{}/{}'.format(self.resource, self._id)
+        specific_url = '/{}/{}'.format(self.resource, self.challenger_model_id)
         client.event_manager.wait_for_event(self._id,
                                             specific_url,
                                             EventTuple(
@@ -162,7 +162,7 @@ class DeploymentPrediction(ApiResource):
                                                 [('challenger_model_prediction_state', 'failed')]),
                                             specific_url=specific_url)
 
-        url = '/{}/{}/download'.format(self.resource, self._id)
+        url = '/{}/{}/download'.format(self.resource, self.challenger_model_id)
         pred_response = client.request(url,
                                        method=requests.get,
                                        message_prefix='Predictions download')
