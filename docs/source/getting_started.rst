@@ -24,7 +24,7 @@ Get the package
 Set up your client
 ==================
 
-Prevision.io's SDK client uses a specific master token to authenticate with the instance's server and allows you to perform various requests. To get your master token, log in the online interface on your instance, navigate to the admin page and copy the token.
+Prevision.io's SDK client uses a specific master token to authenticate with the instance's server and allows you to perform various requests. To get your master token, log in the online interface of your instance, navigate to the admin page and copy the token.
 
 You can either set the token and the instance name as environment variables, by specifying
 ``PREVISION_URL`` and ``PREVISION_MASTER_TOKEN``, or at the beginning of your script:
@@ -124,7 +124,7 @@ You can then create datasets from this datasource as explained in :ref:`Uploadin
 Listing available connectors and data sources
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Connectors and datasources already registered on the platform can be listed
+Connectors and datasources already registered on your workspace can be listed
 using the ``list_connectors()`` and ``list_datasource()`` method from project class:
 
 .. code-block:: py
@@ -162,13 +162,12 @@ You can upload data from three different sources: a path to a local (``csv``, ``
     image_folder_path = 'path/to/your/image_data.zip'
     image_folder = project.create_image_folder(name='helloworld', file_name=image_folder_path)
 
-
-This will automatically upload the data as a new dataset on your Prevision.io's instance. If you go to the online interface, you will see this new dataset in the list of datasets (in the "Data" tab).
+This will automatically upload the data as a new dataset in your workspace. If you go to the online interface, you will see this new dataset in the list of datasets (in the "Data" tab).
 
 Listing available datasets
 --------------------------
 
-To get a list of all the datasets currently available on the platform (in your workspace), use the ``list_datasets()``
+To get a list of all the datasets currently available in your workspace, use the ``list_datasets()``
 method:
 
 .. code-block:: py
@@ -183,14 +182,14 @@ method:
     for folder in image_folders:
         print(folder.name)
 
-Downloading data from the platform
-----------------------------------
+Downloading data from your workspace
+------------------------------------
 
-If you already uploaded a dataset on the platform and want to grab it locally, simply use the ``Dataset.from_id()`` SDK method:
+If you created or uploaded a dataset in your workspace and want to grab it locally, simply use the ``Dataset.download`` method:
 
 .. code-block:: py
 
-    dataset = pio.Dataset.from_id('5ebaad70a7271000e7b28ea0')
+    out_path = dataset.download(download_path="your/local/path")
 
 Regression/Classification/Multi-classification usecases
 =======================================================
@@ -275,15 +274,24 @@ To make predictions from a dataset and a usecase, you need to wait until at leas
     usecase_version.print_info()
     print('Current (best model) score:', usecase_version.score)
 
-    # predict from uploaded dataset on the plateform
-    preds = usecase_version.predict_from_dataset(test_dataset)
-
-    # or predict from a `pandas.DataFrame`
-    preds = usecase_version.predict(test_dataframe)
-
 .. note::
 
     The ``wait_until`` method takes a function that takes the usecase as an argument, and can therefore access any info relative to the usecase.
+
+Then you have to options:
+
+1.  you can predict from a dataset of your workspace, which returns a ``previsionio.ValidationPrediction`` object. It allows you to keep on working even if the prediction isn't complete
+2.  you can predict from a ``pd.DataFrame``, which returns a ``pd.DataFrame`` once the prediction is complete
+
+.. code-block:: python
+
+    # predict from a dataset of your workspace
+    validation_prediction = usecase_version.predict_from_dataset(test_dataset)
+    # get the result at a pandas.DataFrame
+    prediction_df = validation_prediction.get_result()
+
+    # predict from a pandas.DataFrame
+    prediction_df = usecase_version.predict(test_dataframe)
 
 Time Series usecases
 ====================
@@ -350,7 +358,7 @@ To get a full documentation check the api reference :ref:`time_series_reference`
 Making predictions
 ------------------
 
-The predictions workflow is the same as for a regression usecase (detailed in :ref:`making prediction`).
+The prediction workflow is the same as for a classic usecase (detailed in :ref:`making prediction`).
 
 Text Similarity usecases
 ========================
@@ -360,7 +368,7 @@ A Text Similarity usecase matches the most similar texts between a dataset conta
 Configuring the datasets
 ------------------------
 
-To start a usecase you need to specify the datasets to be used and their configuration. Note that a *DescriptionsDataset* is required while a *QueriesDataset* is optional during training (used for scoring). To get a full documentation check the api reference of the :class:`.DescriptionsColumnConfig` and the :class:`.QueriesColumnConfig` in :ref:`text_similarity_reference`.
+To start a usecase you need to specify the datasets to be used and their configuration. Note that a *DescriptionsDataset* is required while a *QueriesDataset* is optional during training (used for scoring).
 
 .. code-block:: python
 
@@ -376,10 +384,12 @@ To start a usecase you need to specify the datasets to be used and their configu
         id_column='ID',
     )
 
+To get a full documentation check the api reference of :class:`.DescriptionsColumnConfig` and :class:`.QueriesColumnConfig`.
+
 Configuring the training parameters
 -----------------------------------
 
-If you want, you can also specify some training parameters, such as which embedding models, searching models and preprocessing are used. To get a full documentation check the api reference of the :class:`.ModelsParameters` in :ref:`text_similarity_reference`. Here you need to specify one configuration per embedding model you want to use:
+If you want, you can also specify some training parameters, such as which embedding models, searching models and preprocessing are used. Here you need to specify one configuration per embedding model you want to use:
 
 .. code-block:: python
 
@@ -408,6 +418,7 @@ If you want, you can also specify some training parameters, such as which embedd
     models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
     models_parameters = pio.ListModelsParameters(models_parameters=models_parameters)
 
+To get a full documentation check the api reference of :class:`.ModelsParameters`.
 
 .. note::
 
@@ -429,7 +440,7 @@ You can then create a new text similarity usecase based on:
  - (optional) a queries dataset
  - (optional) a queries column config
  - (optional) a metric type
- - (optional) the number of *top k* results tou want per query
+ - (optional) the number of *top k* results you want per query
  - (optional) a language
  - (optional) a models parameters list
 
@@ -446,33 +457,16 @@ You can then create a new text similarity usecase based on:
         models_parameters=models_parameters,
     )
 
-To get an exhaustive list of the available metrics go to the class :class:`.previsionio.metrics.TextSimilarity` in the api reference :ref:`metrics_reference`.
+To get a full documentation check the api reference of :class:`.previsionio.metrics.TextSimilarity`.
 
 Making predictions
 ------------------
 
-To make predictions from a dataset and a usecase, you need to wait until at least one model is trained. This can be achieved in the following way:
+The prediction workflow is very similar to a classic usecase (detailed in :ref:`making prediction`).
 
-.. code-block:: python
+The only differences are the specific parameters ``top_k`` and ``queries_dataset_matching_id_description_column`` which are optional.
 
-    # block until there is at least 1 model trained
-    usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
-
-    # check out the usecase status and other info
-    usecase_version.print_info()
-    print('Current (best model) score:', usecase_version.score)
-
-    # predict from uploaded dataset on the plateform
-    preds = usecase_version.predict_from_dataset(
-        queries_dataset=queries_dataset,
-        queries_dataset_content_column='queries',
-        top_k=10,
-        queries_dataset_matching_id_description_column=None, # Optional
-    )
-
-.. note::
-
-    The ``wait_until`` method takes a function that takes the usecase as an argument, and can therefore access any info relative to the usecase.
+To get a full documentation check the api reference of :class:`.TextSimilarityModel` prediction methods.
 
 Deployed usecases
 =================
