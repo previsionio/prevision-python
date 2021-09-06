@@ -653,7 +653,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                 predictions, if necessary
 
         Returns:
-            :class:`previsionio.prediction.ValidationPrediction`: The registered prediction object in the current workspace
+            :class:`previsionio.prediction.ValidationPrediction`: The registered prediction object in the current
+            workspace
         """
 
         best = self.best_model
