@@ -60,6 +60,9 @@ def check_exporter_and_exports(exporter):
     export = exporter.export_file('utests/data/titanic.csv', wait_for_export=True)
     check_export(exporter, export)
 
+    exporter2 = pio.Exporter.from_id(exporter._id)
+    assert exporter2._id == exporter._id
+
     exporter.delete()
     exporters = project.list_exporter(True)
     exporters_id = [exprtr._id for exprtr in exporters]
