@@ -133,7 +133,7 @@ class Model(ApiResource):
                 if need be (default: ``None``)
 
         Returns:
-            str: A prediction object
+            :class:`.ValidationPrediction`: The registered prediction object in the current workspace
 
         Raises:
             PrevisionException: Any error while starting the prediction on the platform or parsing the result
@@ -172,7 +172,7 @@ class Model(ApiResource):
                 if necessary
 
         Returns:
-            ``pd.DataFrame``: Prediction object
+            :class:`.ValidationPrediction`: The registered prediction object in the current workspace
         """
 
         prediction = self._predict_bulk(dataset.id,
@@ -424,7 +424,7 @@ class TextSimilarityModel(Model):
             queries_dataset_matching_id_description_column (str): Matching id description column name
             top_k (integer): Number of the nearest description to predict
         Returns:
-            str: A prediction job ID
+            :class:`.ValidationPrediction`: The registered prediction object in the current workspace
 
         Raises:
             PrevisionException: Any error while starting the prediction on the platform or parsing the result
@@ -463,7 +463,7 @@ class TextSimilarityModel(Model):
             queries_dataset_matching_id_description_column (str): Matching id description column name
 
         Returns:
-            ``pd.DataFrame``: Prediction object
+            :class:`.ValidationPrediction`: The registered prediction object in the current workspace
         """
         prediction = self._predict_bulk(queries_dataset.id,
                                         queries_dataset_content_column,

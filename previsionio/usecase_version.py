@@ -653,7 +653,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                 predictions, if necessary
 
         Returns:
-            ``pd.DataFrame``: Predictions as a ``pandas`` dataframe
+            :class:`previsionio.prediction.ValidationPrediction`: The registered prediction object in the current workspace
         """
 
         best = self.best_model
@@ -675,7 +675,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                 (default: ``False``)
 
         Returns:
-            tuple(pd.DataFrame, str): Prediction data (as ``pandas`` dataframe) and prediction job ID.
+            ``pd.DataFrame``: Prediction results dataframe
         """
 
         best = self.best_model

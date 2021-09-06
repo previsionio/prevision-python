@@ -268,7 +268,7 @@ class UsecaseDeployment(ApiResource):
             dataset (:class:`.Dataset`): Dataset resource to make a prediction for
 
         Returns:
-            ``pd.DataFrame``: Prediction object
+            :class:`.DeploymentPrediction`: The registered prediction object in the current workspace
         """
         if self.training_type not in ['regression', 'classification', 'multiclassification']:
             PrevisionException('Prediction not supported yet for training type {}', self.training_type)
