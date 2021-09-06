@@ -61,6 +61,9 @@ class ValidationPrediction(ApiResource):
     def get_result(self):
         """Get the prediction result.
 
+        Returns:
+            ``pd.DataFrame``: Prediction results dataframe
+
         Raises:
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
@@ -124,6 +127,9 @@ class DeploymentPrediction(ApiResource):
     def get_result(self):
         """Get the prediction result of the main model.
 
+        Returns:
+            ``pd.DataFrame``: Prediction results dataframe
+
         Raises:
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
@@ -146,6 +152,9 @@ class DeploymentPrediction(ApiResource):
 
     def get_challenger_result(self):
         """Get the prediction result of the challenger model.
+
+        Returns:
+            ``pd.DataFrame``: Prediction results dataframe
 
         Raises:
             PrevisionException: Any error while fetching data from the platform
