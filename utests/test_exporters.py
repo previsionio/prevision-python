@@ -8,10 +8,7 @@ from .connectors_config import (ftp_config, sftp_config, mysql_config,
 
 
 TESTING_ID = get_testing_id()
-TESTING_ID_CONNECTOR = get_testing_id()
-TESTING_ID_EXPORTER = get_testing_id()
 PROJECT_NAME = "sdk_test_exporter_" + str(TESTING_ID)
-PROJECT_ID = ""
 
 pio.config.default_timeout = 120
 
@@ -24,6 +21,24 @@ def setup_module(module):
     dataset = project.create_dataset('test_exporter',
                                      file_name='utests/data/titanic.csv')
 
+    training_config = pio.TrainingConfig(advanced_models=[],
+                                         normal_models=[],
+                                         simple_models=[pio.SimpleModel.DecisionTree],
+                                         features=[],
+                                         profile=pio.Profile.Quick)
+    column_config = pio.ColumnConfig(target_column='Survived', id_column='PassengerId')
+    usecase_version = project.fit_classification(
+        name='test_exporter_classif',
+        dataset=dataset,
+        column_config=column_config,
+        metric=pio.metrics.Classification.AUC,
+        training_config=training_config,
+        holdout_dataset=None,
+    )
+    usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
+    global prediction
+    prediction = usecase_version.predict_from_dataset(dataset)
+
 
 def teardown_module(module):
     project.delete()
@@ -35,6 +50,10 @@ def check_exporter_and_exports(exporter):
     assert exporter._id in exporters_id
 
     export = exporter.export_dataset(dataset, wait_for_export=True)
+    check_export(exporter, export)
+
+    time.sleep(1)
+    export = exporter.export_prediction(prediction, wait_for_export=True)
     check_export(exporter, export)
 
     time.sleep(1)
