@@ -41,7 +41,7 @@ def setup_module(module):
     )
 
     # Create validation_prediction
-    usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
+    usecase_version.wait_until(lambda usecasev: (len(usecasev.models) > 0) or (usecasev._status['state'] == 'failed'))
     global validation_prediction
     validation_prediction = usecase_version.predict_from_dataset(dataset)
 
