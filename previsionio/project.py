@@ -14,7 +14,7 @@ from .datasource import DataSource
 from .exporter import Exporter, ExporterWriteMode
 from .dataset import Dataset, DatasetImages
 from .connector import (Connector, SQLConnector, FTPConnector, SFTPConnector,
-                        S3Connector, HiveConnector, GCPConnector, GCloud)
+                        S3Connector, GCPConnector, GCloud)
 from .supervised import Supervised
 from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
@@ -385,22 +385,6 @@ class Project(ApiResource, UniqueResourceMixin):
             :class:`.S3Connector`: The registered connector object in the current project.
         """
         return S3Connector._new(self._id, name, host, port, 'S3', username=username, password=password)
-
-    def create_hive_connector(self, name: str, host: str, port: int = 10000, username: str = '', password: str = ''):
-        """ A connector to interact with a distant source of data (and
-        easily get data snapshots using an associated :class:`.DataSource`
-        resource).
-
-        Args:
-            name (str): Name of the connector
-            host (str): Url of the connector
-            port (int): Port of the connector
-            username (str, optional): Username to use connect to the remote data source
-            password (str, optional): Password to use connect to the remote data source
-        Returns:
-            :class:`.HiveConnector`: The registered connector object in the current project.
-        """
-        return HiveConnector._new(self._id, name, host, port, 'HIVE', username=username, password=password)
 
     def create_gcp_connector(self, name: str = '', host: str = '', port=None, username: str = '', password: str = '',
                              googleCredentials: str = ''):
@@ -860,6 +844,5 @@ connectors_names = {
     'FTP': "create_ftp_connector",
     'SFTP': "create_sftp_connector",
     'S3': "create_s3_connector",
-    'HIVE': "create_hive_connector",
-    'GCP': "create_gcp_connector"
+    'GCP': "create_gcp_connector",
 }

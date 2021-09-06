@@ -25,8 +25,7 @@ class Connector(ApiResource, UniqueResourceMixin):
         name (str): Name of the connector
         host (str): Url of the connector
         port (int): Port of the connector
-        conn_type (str): Type of the connector, among "FTP", "SFTP", "SQL", "S3",
-            "HIVE", "HBASE", "GCP"
+        conn_type (str): Type of the connector, among "FTP", "SFTP", "SQL", "S3", "GCP"
         username (str, optional): Username to use connect to the remote data source
         password (str, optional): Password to use connect to the remote data source
     """
@@ -80,8 +79,7 @@ class Connector(ApiResource, UniqueResourceMixin):
             name (str): Name of the connector
             host (str): Url of the connector
             port (int): Port of the connector
-            conn_type (str): Type of the connector, among "FTP", "SFTP", "SQL", "S3",
-                "HIVE", "HBASE" or "GCP"
+            conn_type (str): Type of the connector, among "FTP", "SFTP", "SQL", "S3", "GCP"
             username (str, optional): Username to use connect to the remote data source
             password (str, optional): Password to use connect to the remote data source
 
@@ -209,11 +207,11 @@ class SQLConnector(DataTableBaseConnector):
     conn_type = 'SQL'
 
 
-class HiveConnector(DataTableBaseConnector):
+# class HiveConnector(DataTableBaseConnector):
 
-    """ A specific type of connector to interact with a Hive database client (containing databases and tables). """
+#     """ A specific type of connector to interact with a Hive database client (containing databases and tables). """
 
-    conn_type = 'HIVE'
+#     conn_type = 'HIVE'
 
 
 # class HBaseConnector(DataBaseConnector):
@@ -258,6 +256,5 @@ connectors_names = {
     'FTP': FTPConnector,
     'SFTP': SFTPConnector,
     'S3': S3Connector,
-    'HIVE': HiveConnector,
-    'GCP': GCPConnector
+    'GCP': GCPConnector,
 }

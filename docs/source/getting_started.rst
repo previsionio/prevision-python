@@ -77,7 +77,6 @@ Managing datasources & connectors
 Datasources and connectors are Prevision.io's way of keeping a link to a source of data and taking snapshots when needed. The avaible data sources are:
 
 - SQL
-- HIVE
 - FTP
 - SFTP
 - S3
