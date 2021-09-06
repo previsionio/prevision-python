@@ -1,4 +1,3 @@
-# import pytest
 import time
 import previsionio as pio
 from .utils import get_testing_id
