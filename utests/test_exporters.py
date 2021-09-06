@@ -14,13 +14,17 @@ pio.config.default_timeout = 120
 
 
 def setup_module(module):
+    # Create project
     global project
     project = pio.Project.new(name=PROJECT_NAME,
                               description="description test sdk")
+
+    # Create dataset
     global dataset
     dataset = project.create_dataset('test_exporter',
                                      file_name='utests/data/titanic.csv')
 
+    # Train one model
     training_config = pio.TrainingConfig(advanced_models=[],
                                          normal_models=[],
                                          simple_models=[pio.SimpleModel.DecisionTree],
@@ -35,9 +39,20 @@ def setup_module(module):
         training_config=training_config,
         holdout_dataset=None,
     )
+
+    # Create validation_prediction
     usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
-    global prediction
-    prediction = usecase_version.predict_from_dataset(dataset)
+    global validation_prediction
+    validation_prediction = usecase_version.predict_from_dataset(dataset)
+
+    # Create usecase deployment
+    uc_best_model = usecase_version.best_model
+    usecase_deployment = project.create_usecase_deployment('test_sdk_' + TESTING_ID, uc_best_model)
+
+    # Create deployment_prediction
+    usecase_deployment.wait_until(lambda usecase_deployment: usecase_deployment.run_state == 'done')
+    global deployment_prediction
+    deployment_prediction = usecase_deployment.predict_from_dataset(dataset)
 
 
 def teardown_module(module):
@@ -53,11 +68,15 @@ def check_exporter_and_exports(exporter):
     check_export(exporter, export)
 
     time.sleep(1)
-    export = exporter.export_prediction(prediction, wait_for_export=True)
+    export = exporter.export_file('utests/data/titanic.csv', wait_for_export=True)
     check_export(exporter, export)
 
     time.sleep(1)
-    export = exporter.export_file('utests/data/titanic.csv', wait_for_export=True)
+    export = exporter.export_prediction(validation_prediction, wait_for_export=True)
+    check_export(exporter, export)
+
+    time.sleep(1)
+    export = exporter.export_prediction(deployment_prediction, wait_for_export=True)
     check_export(exporter, export)
 
     exporter2 = pio.Exporter.from_id(exporter._id)
@@ -82,7 +101,7 @@ def test_exporter_FTP():
     exporter = project.create_exporter(connector, 'test_ftp_exporter',
                                        description="test_ftp_exporter description",
                                        path='titanic_765765.csv',
-                                       write_mode=pio.ExporterWriteMode.timestamp)
+                                       write_mode=pio.ExporterWriteMode.replace)
     check_exporter_and_exports(exporter)
 
 
@@ -93,7 +112,7 @@ def test_exporter_SFTP():
     exporter = project.create_exporter(connector, 'test_sftp_exporter',
                                        description="test_sftp_exporter description",
                                        path='/upload/test_sqk/titanic.csv',
-                                       write_mode=pio.ExporterWriteMode.timestamp)
+                                       write_mode=pio.ExporterWriteMode.replace)
     check_exporter_and_exports(exporter)
 
 
@@ -116,7 +135,7 @@ def test_exporter_S3():
                                        description="test_s3_exporter description",
                                        bucket=S3_config['bucket'],
                                        path='/test_sdk/titanic.csv',
-                                       write_mode=pio.ExporterWriteMode.timestamp)
+                                       write_mode=pio.ExporterWriteMode.replace)
     check_exporter_and_exports(exporter)
 
 
@@ -127,5 +146,5 @@ def test_exporter_GCP_bucket():
                                        description="test_gcp_exporter description",
                                        bucket=gcp_config['bucket'],
                                        path='/test_sdk/titanic.csv',
-                                       write_mode=pio.ExporterWriteMode.timestamp)
+                                       write_mode=pio.ExporterWriteMode.replace)
     check_exporter_and_exports(exporter)
