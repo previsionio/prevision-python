@@ -49,7 +49,7 @@ def setup_module(module):
     usecase_deployment = project.create_usecase_deployment('test_sdk_' + TESTING_ID, uc_best_model)
 
     # Create deployment_prediction
-    usecase_deployment.wait_until(lambda usecase_deployment: usecase_deployment.run_state == 'done')
+    usecase_deployment.wait_until(lambda usecased: usecased.deploy_state in ['done', 'error'])
     global deployment_prediction
     deployment_prediction = usecase_deployment.predict_from_dataset(dataset)
 
