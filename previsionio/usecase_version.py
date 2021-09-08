@@ -597,13 +597,19 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         """
         logger.info('[Usecase] Starting usecase')
 
+        data = {
+            'name': name,
+            'data_type': data_type.value,
+            'training_type': training_type.value,
+            'provider': 'prevision-auto-ml',
+        }
+        data.update(kwargs)
         if data_type == DataType.Tabular or data_type == DataType.TimeSeries:
-            data = dict(name=name, data_type=data_type.value, training_type=training_type.value,
-                        dataset_id=dataset_id, **kwargs)
+            data['dataset_id'] = dataset_id
         elif data_type == DataType.Images:
             csv_id, folder_id = dataset_id
-            data = dict(name=name, data_type=data_type.value, training_type=training_type.value,
-                        dataset_id=csv_id, folder_dataset_id=folder_id, **kwargs)
+            data['dataset_id'] = csv_id
+            data['folder_dataset_id'] = folder_id
         else:
             raise PrevisionException('invalid data type: {}'.format(data_type))
         endpoint = '/projects/{}/{}'.format(project_id, 'usecases')
