@@ -612,13 +612,29 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
             data['folder_dataset_id'] = folder_id
         else:
             raise PrevisionException('invalid data type: {}'.format(data_type))
-        endpoint = '/projects/{}/{}'.format(project_id, 'usecases')
-        start = client.request(endpoint,
-                               method=requests.post,
-                               data=data,
-                               content_type='application/json',
-                               message_prefix='Usecase start')
-        return parse_json(start)
+        usecase_creation_endpoint = '/projects/{}/{}'.format(project_id, 'usecases')
+        usecase_creation_response = client.request(usecase_creation_endpoint,
+                                                   method=requests.post,
+                                                   data=data,
+                                                   content_type='application/json',
+                                                   message_prefix='Usecase creation')
+        usecase_creation_response = parse_json(usecase_creation_response)
+        print("usecase_creation_response:")
+        print(usecase_creation_response)
+
+        usecase_id = usecase_creation_response['_id']
+        usecase_version_creation_endpoint = f'/usecases/{usecase_id}/versions'
+        usecase_version_creation_response = client.request(usecase_version_creation_endpoint,
+                                                           method=requests.post,
+                                                           data=data,
+                                                           content_type='application/json',
+                                                           message_prefix='Usecase version creation')
+        usecase_version_creation_response = parse_json(usecase_version_creation_response)
+        print("usecase_version_creation_response:")
+        print(usecase_version_creation_response)
+
+        #return parse_json(start)
+        return usecase_version_creation_response
 
     def predict_single(self,
                        data,
