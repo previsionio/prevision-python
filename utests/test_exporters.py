@@ -9,7 +9,7 @@ from .connectors_config import (ftp_config, sftp_config, mysql_config,
 TESTING_ID = get_testing_id()
 PROJECT_NAME = "sdk_test_exporter_" + str(TESTING_ID)
 
-pio.config.default_timeout = 120
+pio.config.default_timeout = 600
 
 
 def setup_module(module):
@@ -41,6 +41,8 @@ def setup_module(module):
 
     # Create validation_prediction
     usecase_version.wait_until(lambda usecasev: (len(usecasev.models) > 0) or (usecasev._status['state'] == 'failed'))
+    if usecase_version._status['state'] == 'failed':
+        raise 'Could not train usecase'
     global validation_prediction
     validation_prediction = usecase_version.predict_from_dataset(dataset)
 
@@ -49,7 +51,9 @@ def setup_module(module):
     usecase_deployment = project.create_usecase_deployment('test_sdk_' + TESTING_ID, uc_best_model)
 
     # Create deployment_prediction
-    usecase_deployment.wait_until(lambda usecased: usecased.deploy_state in ['done', 'error'])
+    usecase_deployment.wait_until(lambda usecased: usecased.run_state in ['done', 'error'])
+    if usecase_deployment.run_state == 'error':
+        raise Exception('Could not deploy usecase')
     global deployment_prediction
     deployment_prediction = usecase_deployment.predict_from_dataset(dataset)
 
