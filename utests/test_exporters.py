@@ -51,9 +51,7 @@ def setup_module(module):
     usecase_deployment = project.create_usecase_deployment('test_sdk_' + TESTING_ID, uc_best_model)
 
     # Create deployment_prediction
-    usecase_deployment.wait_until(lambda usecased: usecased.run_state in ['done', 'error'])
-    if usecase_deployment.run_state == 'error':
-        raise Exception('Could not deploy usecase')
+    usecase_deployment.wait_until(lambda usecased: usecased.run_state == 'done')
     global deployment_prediction
     deployment_prediction = usecase_deployment.predict_from_dataset(dataset)
 
