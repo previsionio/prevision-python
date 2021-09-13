@@ -612,6 +612,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
             data['folder_dataset_id'] = folder_id
         else:
             raise PrevisionException('invalid data type: {}'.format(data_type))
+
+        # NOTE: write this call in a method Usecase.new maybe...
         usecase_creation_endpoint = '/projects/{}/{}'.format(project_id, 'usecases')
         usecase_creation_response = client.request(usecase_creation_endpoint,
                                                    method=requests.post,
@@ -633,8 +635,18 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         print("usecase_version_creation_response:")
         print(usecase_version_creation_response)
 
-        #return parse_json(start)
-        return usecase_version_creation_response
+        usecase_version_id = usecase_version_creation_response['_id']
+
+        usecase_version_confirm_endpoint = f'/usecase-versions/{usecase_version_id}/confirm'
+        usecase_version_confirm_response = client.request(usecase_version_confirm_endpoint,
+                                                          method=requests.put,
+                                                          content_type='application/json',
+                                                          message_prefix='Usecase version confirmation')
+        usecase_version_confirm_response = parse_json(usecase_version_confirm_response)
+        print("usecase_version_confirm_response:")
+        print(usecase_version_confirm_response)
+
+        return usecase_version_confirm_response
 
     def predict_single(self,
                        data,
