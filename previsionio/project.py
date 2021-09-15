@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 from enum import Enum
-from typing import Dict, Tuple
+from typing import List, Dict, Tuple
 
 from requests.models import Response
 from previsionio import metrics
@@ -17,6 +17,7 @@ from .dataset import Dataset, DatasetImages
 from .connector import Connector, SQLConnector, FTPConnector, \
     SFTPConnector, S3Connector, HiveConnector, GCPConnector
 from .supervised import Supervised
+from .external_models import ExternalUsecaseVersion
 from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
                               TextSimilarity, TextSimilarityLang)
@@ -518,6 +519,43 @@ class Project(ApiResource, UniqueResourceMixin):
             holdout_dataset=holdout_dataset,
             training_config=training_config,
             **kwargs
+        )
+
+    def create_external_regression(self, usecase_name: str, holdout_dataset: Dataset,
+                                   target_column: str,
+                                   external_models: List[Tuple],
+                                   metric: metrics.Regression = metrics.Regression.RMSE,
+                                   dataset: Dataset = None,
+                                   usecase_version_description: str = None):
+        """ Create a tabular regression usecase version from external models
+
+        Args:
+            usecase_name (str): Name of the usecase to create
+            holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
+            target_column: The name of the target column for this usecase version
+            external_models (list(tuple)): the external models to add in the usecase version to create
+                Each tuple contains 3 items describing an external model as follows:
+                - name of the model
+                - a path to the model in onnx format
+                - a path to a yaml file containing metadata about the model
+            metric (str, optional): Specific metric to use for the usecase (default: ``rmse``)
+            dataset (:class:`.Dataset`, optional): Reference to the dataset object that
+                has been used to train the model (default: ``None``)
+            usecase_version_description (str): Description of the usecase version to create
+
+        Returns:
+            :class:`.external_models.ExternalUsecaseVersion`: Newly created external usecase version object
+        """
+        return ExternalUsecaseVersion._fit(
+            self._id, usecase_name,
+            DataType.Tabular,
+            TypeProblem.Regression,
+            holdout_dataset,
+            target_column,
+            external_models,
+            metric=metric,
+            dataset=dataset,
+            usecase_version_description=usecase_version_description,
         )
 
     def fit_classification(self, name: str, dataset: Dataset, column_config: ColumnConfig,
