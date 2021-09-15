@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import os
-from typing import List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 import requests
 from dateutil import parser
 
 from . import metrics
+from .usecase import Usecase
 from .usecase_version import BaseUsecaseVersion
 from .usecase_config import DataType, TypeProblem
 from .logger import logger
@@ -55,6 +56,7 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
              usecase_version_description: str = None) -> 'ExternalUsecaseVersion': # NOTE: in fact it does not return a string...
 
         holdout_dataset_id = holdout_dataset.id
+        dataset_id = None if dataset is None else dataset.id
         js_usecase_version = cls._start_usecase(project_id,
                                                 name,
                                                 data_type,
@@ -63,7 +65,7 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
                                                 target_column,
                                                 external_models,
                                                 metric if isinstance(metric, str) else metric.value,
-                                                dataset=dataset,
+                                                dataset_id=dataset_id,
                                                 usecase_version_description=usecase_version_description)
 
         # NOTE: we already have all the info about the usecase_version from the response of confirm api
@@ -85,12 +87,175 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
         return usecase_version
 
     @classmethod
+    def _create_usecase(cls, project_id: str, name: str, data_type: DataType, training_type: TypeProblem) -> Usecase:
+        """ Create a usecase of the given data type and problem type with a specific
+        training configuration (on the platform).
+
+        Args:
+            name (str): Registration name for the usecase to create
+            holdout_datset_id (str|tuple(str, str)): Unique id of the training dataset resource or a tuple of csv and folder id
+            data_type (str): Type of data used in the usecase (among "tabular", "images"
+                and "timeseries")
+            training_type: Type of problem to compute with the usecase (among "regression",
+                "classification", "multiclassification" and "object-detection")
+            **kwargs:
+
+        Returns:
+            :class:`.usecase.Usecase`: Newly created usecase object
+        """
+        usecase_creation_data = {
+            'data_type': data_type.value,
+            'training_type': training_type.value,
+            'name': name,
+            'provider': 'external',
+        }
+        usecase_creation_endpoint = '/projects/{}/{}'.format(project_id, 'usecases')
+        print(f'\ncall to {usecase_creation_endpoint}:\ndata={usecase_creation_data}')
+        usecase_creation_response = client.request(usecase_creation_endpoint,
+                                                   method=requests.post,
+                                                   data=usecase_creation_data,
+                                                   content_type='application/json',
+                                                   message_prefix='Usecase creation')
+        js_usecase = parse_json(usecase_creation_response)
+        print("\nusecase_creation_response:")
+        print(usecase_creation_response)
+
+        usecase = Usecase(**js_usecase)
+
+        return usecase
+
+    @classmethod
+    def _create_usecase_version(cls, usecase_id: str,
+                                holdout_dataset_id: str,
+                                metric: str,
+                                target_column: str,
+                                dataset_id: str = None,
+                                usecase_version_description: str = None) -> Dict:
+        usecase_version_creation_data = {
+            'description': usecase_version_description,
+            'holdout_dataset_id': holdout_dataset_id,
+            'dataset_id': dataset_id,
+            'metric': metric,
+            'target_column': target_column,
+        }
+        usecase_version_creation_endpoint = f'/usecases/{usecase_id}/versions'
+        print(f'\ncall to {usecase_version_creation_endpoint}:\ndata={usecase_version_creation_data}')
+        usecase_version_creation_response = client.request(usecase_version_creation_endpoint,
+                                                           method=requests.post,
+                                                           data=usecase_version_creation_data,
+                                                           # content_type='application/json',
+                                                           message_prefix='Usecase version creation')
+        js_usecase_version = parse_json(usecase_version_creation_response)
+        print("\njs_usecase_version:")
+        print(js_usecase_version)
+
+        return js_usecase_version
+
+    @classmethod
+    def _add_external_model_to_usecase_version(cls, usecase_version_id: str, external_model: Tuple) -> Dict:
+        external_model_upload_endpoint = f'/usecase-versions/{usecase_version_id}/external-models'
+        external_model_upload_method = requests.post
+        external_model_message_prefix = 'External model uploading'
+        name_key = 'name'
+        onnx_key = 'onnx_file'
+        yaml_key = 'yaml_file'
+        onnx_content_type = 'application/octet-stream'
+        yaml_content_type = 'text/x-yaml'
+
+        name, onnx_file, yaml_file = external_model
+        onnx_filename = os.path.basename(onnx_file)
+        yaml_filename = os.path.basename(yaml_file)
+        with open(onnx_file, 'rb') as onnx_fd, open(yaml_file, 'rb') as yaml_fd:
+            external_model_upload_files = [
+                (name_key, (None, name)),
+                (onnx_key, (onnx_filename, onnx_fd, onnx_content_type)),
+                (yaml_key, (yaml_filename, yaml_fd, yaml_content_type)),
+            ]
+            print(f'\ncall to {external_model_upload_endpoint}:\nfiles={external_model_upload_files}')
+            external_model_upload_response = client.request(external_model_upload_endpoint,
+                                                            method=external_model_upload_method,
+                                                            files=external_model_upload_files,
+                                                            message_prefix=external_model_message_prefix,
+                                                            )
+        js_usecase_version = parse_json(external_model_upload_response)
+        return js_usecase_version
+
+    @classmethod
+    def _add_external_models_to_usecase_version(cls, usecase_version_id: str, external_models: List[Tuple]) -> Dict:
+        """ Start a usecase of the given data type and problem type with a specific
+        training configuration (on the platform).
+
+        Args:
+            name (str): Registration name for the usecase to create
+            holdout_datset_id (str|tuple(str, str)): Unique id of the training dataset resource or a tuple of csv and folder id
+            data_type (str): Type of data used in the usecase (among "tabular", "images"
+                and "timeseries")
+            training_type: Type of problem to compute with the usecase (among "regression",
+                "classification", "multiclassification" and "object-detection")
+            **kwargs:
+
+        Returns:
+            :class:`.BaseUsecaseVersion`: Newly created usecase object
+        """
+        for external_model in external_models:
+            js_usecase_version = cls._add_external_model_to_usecase_version(usecase_version_id, external_model)
+        return js_usecase_version
+
+    @classmethod
+    def _confirm_usecase_version(cls, usecase_version_id: str) -> Dict:
+        usecase_version_confirm_endpoint = f'/usecase-versions/{usecase_version_id}/confirm'
+        print(f'\ncall to {usecase_version_confirm_endpoint}...')
+        usecase_version_confirm_response = client.request(usecase_version_confirm_endpoint,
+                                                          method=requests.put,
+                                                          message_prefix='Usecase version confirmation')
+        js_usecase_version = parse_json(usecase_version_confirm_response)
+        print("\njs_usecase_version:")
+        print(js_usecase_version)
+
+        return js_usecase_version
+
+    @classmethod
+    def _start_usecase_version(cls, usecase_id: str,
+                               holdout_dataset_id: str,
+                               target_column: str,
+                               external_models: List[Tuple],
+                               metric: str,
+                               dataset_id: str = None,
+                               usecase_version_description: str = None):
+        """ Start a usecase of the given data type and problem type with a specific
+        training configuration (on the platform).
+
+        Args:
+            name (str): Registration name for the usecase to create
+            holdout_datset_id (str|tuple(str, str)): Unique id of the training dataset resource or a tuple of csv and folder id
+            data_type (str): Type of data used in the usecase (among "tabular", "images"
+                and "timeseries")
+            training_type: Type of problem to compute with the usecase (among "regression",
+                "classification", "multiclassification" and "object-detection")
+            **kwargs:
+
+        Returns:
+            :class:`.BaseUsecaseVersion`: Newly created usecase object
+        """
+        js_usecase_version = cls._create_usecase_version(usecase_id,
+                                                         holdout_dataset_id,
+                                                         metric,
+                                                         target_column,
+                                                         dataset_id=dataset_id,
+                                                         usecase_version_description=usecase_version_description)
+        usecase_version_id = js_usecase_version['_id']
+        js_usecase_version = cls._add_external_models_to_usecase_version(usecase_version_id, external_models)
+        js_usecase_version = cls._confirm_usecase_version(usecase_version_id)
+
+        return js_usecase_version
+
+    @classmethod
     def _start_usecase(cls, project_id: str, name: str, data_type: DataType, training_type: TypeProblem,
-                       holdout_dataset_id: Dataset,
+                       holdout_dataset_id: str,
                        target_column: str,
                        external_models: List[Tuple],
                        metric: str,
-                       dataset: Dataset = None,
+                       dataset_id: str = None,
                        usecase_version_description: str = None):
         """ Start a usecase of the given data type and problem type with a specific
         training configuration (on the platform).
@@ -109,82 +274,15 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
         """
         logger.info('[Usecase] Starting usecase')
 
-        usecase_creation_data = {
-            'data_type': data_type.value,
-            'training_type': training_type.value,
-            'name': name,
-            'provider': 'external',
-        }
-        usecase_creation_endpoint = '/projects/{}/{}'.format(project_id, 'usecases')
-        print(f'\ncall to {usecase_creation_endpoint}:\ndata={usecase_creation_data}')
-        usecase_creation_response = client.request(usecase_creation_endpoint,
-                                                   method=requests.post,
-                                                   data=usecase_creation_data,
-                                                   content_type='application/json',
-                                                   message_prefix='Usecase creation')
-        usecase_creation_response = parse_json(usecase_creation_response)
-        print("\nusecase_creation_response:")
-        print(usecase_creation_response)
+        usecase = cls._create_usecase(project_id, name, data_type, training_type)
+        usecase_id = usecase.id
 
-        usecase_id = usecase_creation_response['_id']
+        js_usecase_version = cls._start_usecase_version(usecase_id,
+                                                        holdout_dataset_id,
+                                                        target_column,
+                                                        external_models,
+                                                        metric,
+                                                        dataset_id=dataset_id,
+                                                        usecase_version_description=usecase_version_description)
 
-        usecase_version_creation_data = {
-            'description': usecase_version_description,
-            'holdout_dataset_id': holdout_dataset_id,
-            'metric': metric,
-            'target_column': target_column,
-        }
-        usecase_version_creation_endpoint = f'/usecases/{usecase_id}/versions'
-        print(f'\ncall to {usecase_version_creation_endpoint}:\ndata={usecase_version_creation_data}')
-        usecase_version_creation_response = client.request(usecase_version_creation_endpoint,
-                                                           method=requests.post,
-                                                           data=usecase_version_creation_data,
-                                                           content_type='application/json',
-                                                           message_prefix='Usecase version creation')
-        usecase_version_creation_response = parse_json(usecase_version_creation_response)
-        print("\nusecase_version_creation_response:")
-        print(usecase_version_creation_response)
-
-        usecase_version_id = usecase_version_creation_response['_id']
-
-        external_model_upload_endpoint = f'/usecase-versions/{usecase_version_id}/external-models'
-        external_model_upload_method = requests.post
-        external_model_message_prefix = 'External model uploading'
-        onnx_key = 'onnx_file'
-        yaml_key = 'yaml_file'
-        onnx_content_type = 'application/octet-stream'
-        yaml_content_type = 'text/x-yaml'
-        for external_model in external_models:
-            name, onnx_file, yaml_file = external_model
-            external_model_upload_data = {
-                'name': name,
-            }
-            onnx_filename = os.path.basename(onnx_file)
-            yaml_filename = os.path.basename(yaml_file)
-            with open(onnx_file, 'rb') as onnx_fd, open(yaml_file, 'rb') as yaml_fd:
-                external_model_upload_files = [
-                    ('name', (None, name)),
-                    (onnx_key, (onnx_filename, onnx_fd, onnx_content_type)),
-                    (yaml_key, (yaml_filename, yaml_fd, yaml_content_type)),
-                ]
-                print(f'\ncall to {external_model_upload_endpoint}:\ndata={external_model_upload_data}\nfiles={external_model_upload_files}')
-                external_model_upload_response = client.request(external_model_upload_endpoint,
-                                                                method=external_model_upload_method,
-                                                                files=external_model_upload_files,
-                                                                message_prefix=external_model_message_prefix,
-                                                                )
-            external_model_upload_response = parse_json(external_model_upload_response)
-            print("\nexternal_model_upload_response:")
-            print(external_model_upload_response)
-
-        usecase_version_confirm_endpoint = f'/usecase-versions/{usecase_version_id}/confirm'
-        print(f'\ncall to {usecase_version_confirm_endpoint}...')
-        usecase_version_confirm_response = client.request(usecase_version_confirm_endpoint,
-                                                          method=requests.put,
-                                                          content_type='application/json',
-                                                          message_prefix='Usecase version confirmation')
-        usecase_version_confirm_response = parse_json(usecase_version_confirm_response)
-        print("\nusecase_version_confirm_response:")
-        print(usecase_version_confirm_response)
-
-        return usecase_version_confirm_response
+        return js_usecase_version
