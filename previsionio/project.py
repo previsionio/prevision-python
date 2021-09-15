@@ -546,6 +546,8 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.external_models.ExternalUsecaseVersion`: Newly created external usecase version object
         """
+        if len(external_models) == 0:
+            raise PrevisionException('You must provide at least one external model')
         return ExternalUsecaseVersion._fit(
             self._id, usecase_name,
             DataType.Tabular,
