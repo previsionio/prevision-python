@@ -48,7 +48,7 @@ def teardown_module(module):
     # project.delete()
 
 
-def create_external(project_id, uc_name, training_type, usecase_version_description=None):
+def create_external_usecase_version(project_id, uc_name, training_type, usecase_version_description=None):
     project = pio.Project.from_id(project_id)
     holdout_dataset = test_datasets[training_type]
     training_type_class = training_type_2_pio_projet_method_name[training_type]
@@ -75,8 +75,12 @@ def create_external(project_id, uc_name, training_type, usecase_version_descript
 
 def test_usecase_version():
     uc_name = TESTING_ID + '_file_del'
-    usecase_version: pio.ExternalUsecaseVersion = create_external(PROJECT_ID, uc_name, 'regression',
-                                                                  usecase_version_description='This is an external regression usecase_version')
+    usecase_version: pio.ExternalUsecaseVersion = create_external_usecase_version(
+        PROJECT_ID,
+        uc_name,
+        'regression',
+        usecase_version_description='This is an external regression usecase_version'
+    )
     """
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name in [u.name for u in usecases]
