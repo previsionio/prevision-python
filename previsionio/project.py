@@ -64,10 +64,10 @@ class Project(ApiResource, UniqueResourceMixin):
                  dataset_count: int = 0, **kwargs):
         """ Instantiate a new :class:`.Project` object to manipulate a project resource
         on the platform. """
-        super().__init__(_id=_id,
-                         name=name,
-                         description=description,
-                         color=color)
+        super().__init__(_id=_id)
+                         # name=name,
+                         # description=description,
+                         # color=color)
 
         self._id = _id
         self.name = name
@@ -548,16 +548,19 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
+        usecase = Usecase.new(self._id, 'external', usecase_name, DataType.Tabular, TypeProblem.Regression)
         return ExternalUsecaseVersion._fit(
-            self._id, usecase_name,
-            DataType.Tabular,
-            TypeProblem.Regression,
+            # self._id,
+            #usecase_name,
+            #DataType.Tabular,
+            #TypeProblem.Regression,
+            usecase.id,
             holdout_dataset,
             target_column,
             external_models,
-            metric=metric,
+            metric,
             dataset=dataset,
-            usecase_version_description=usecase_version_description,
+            description=usecase_version_description,
         )
 
     def fit_classification(self, name: str, dataset: Dataset, column_config: ColumnConfig,

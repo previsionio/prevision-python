@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+import pprint
 import json
 from previsionio.model import Model
 from typing import Dict, List, Union
 import pandas as pd
 import requests
 import time
+import datetime
 import previsionio as pio
 import os
 from functools import lru_cache
 from dateutil import parser
 
 from . import config
+#from .usecase import Usecase
 from .usecase_config import (AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel,
                              TrainingConfig, ColumnConfig, TypeProblem, UsecaseState)
 from .logger import logger
@@ -35,6 +38,7 @@ class BaseUsecaseVersion(ApiResource):
     data_type: DataType
     model_class: Model
 
+    """
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
         self.name: str = usecase_info.get('name', usecase_info['usecase'].get('name'))
@@ -46,6 +50,94 @@ class BaseUsecaseVersion(ApiResource):
         self.created_at = parser.parse(usecase_info["created_at"])
         self._models = {}
         self.version = 1
+    """
+
+    def __init__(self, **usecase_version_info):
+        super().__init__(usecase_version_info['_id'])
+        self._populate(**usecase_version_info)
+
+        self.created_at = parser.parse(usecase_version_info["created_at"])
+        self._models = {}
+        self.version = 1
+
+    def _populate(self, **usecase_version_info):
+        self.project_id: str = usecase_version_info.get('project_id')
+        self.usecase_id: str = usecase_version_info.get('usecase_id')
+        self.description: str = usecase_version_info.get('description')
+        if 'usecase' in usecase_version_info and 'data_type' in usecase_version_info['usecase']:
+            self.data_type: DataType = DataType(usecase_version_info['usecase']['data_type'])
+        else:
+            self.data_type = None
+        if 'usecase' in usecase_version_info and 'training_type' in usecase_version_info['usecase']:
+            self.training_type: TypeProblem = TypeProblem(usecase_version_info['usecase']['training_type'])
+        else:
+            self.training_type = None
+        self.created_at: datetime.datetime = parser.parse(usecase_version_info.get('created_at'))
+
+    @staticmethod
+    def _build_new_usecase_version_data(**kwargs) -> Dict:
+        data = {
+            'description': kwargs['description'],
+        }
+        return data
+
+    @classmethod
+    def new(cls, usecase_id, **kwargs) -> 'BaseUsecaseVersion':
+        endpoint = f'/usecases/{usecase_id}/versions'
+        data = cls._build_new_usecase_version_data(**kwargs)
+        print(f'\ncall to {endpoint}:\ndata={data}')
+        response = client.request(endpoint,
+                                  method=requests.post,
+                                  data=data,
+                                  message_prefix='Usecase version creation')
+        usecase_version_info = parse_json(response)
+        print("\nusecase_version:")
+        pprint.pprint(usecase_version_info)
+        usecase_version = cls(**usecase_version_info)
+        return usecase_version
+
+    def _draft(self, **kwargs):
+        pass
+
+    def __confirm(self) -> None:
+        endpoint = f'/usecase-versions/{self._id}/confirm'
+        print(f'\ncall to {endpoint}...')
+        response = client.request(endpoint,
+                                  method=requests.put,
+                                  message_prefix='Usecase version confirmation')
+        usecase_version_info = parse_json(response)
+        print("\nusecase_version_info:")
+        pprint.pprint(usecase_version_info)
+        self._populate(**usecase_version_info)
+
+    @classmethod
+    # NOTE: why not pass the id for holdout_dataset and dataset like for usecase ? certainly for the doc
+    def _fit(cls, usecase_id: str,
+             description: str = None,
+             **kwargs) -> 'BaseUsecaseVersion':
+
+        usecase_version = cls.new(usecase_id,
+                                  description=description,
+                                  **kwargs)
+        usecase_version._draft(**kwargs)
+        usecase_version.__confirm()
+
+        # NOTE: why wait for usecase_version running ?
+        """
+        events_url = '/{}/{}'.format(cls.resource, usecase_version_id)
+        assert pio.client.event_manager is not None
+        pio.client.event_manager.wait_for_event(usecase_version.resource_id,
+                                                cls.resource,
+                                                EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
+                                                specific_url=events_url)
+        """
+
+        # NOTE: maybe populate like that to be sure to have all the correct info of the resource
+        # usecase_version._populate(**cls._from_id(usecase_version._id))
+
+        print("usecase_version.__dict__ at end of fit")
+        pprint.pprint(usecase_version.__dict__)
+        return usecase_version
 
     def __len__(self):
         return len(self.models)

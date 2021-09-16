@@ -44,13 +44,46 @@ class Usecase(ApiResource):
 
     resource = 'usecases'
 
+    """
     def __init__(self, **usecase_info):
         super().__init__(**usecase_info)
-        self._id: str = usecase_info['_id']
+         self._id: str = usecase_info['_id']
         self.name: str = usecase_info['name']
         self.project_id: str = usecase_info['project_id']
         self.training_type: TypeProblem = TypeProblem(usecase_info['training_type'])
         self.data_type: DataType = DataType(usecase_info['data_type'])
+    """
+    def __init__(self, _id: str, name: str, project_id:str, training_type: TypeProblem, data_type: DataType):
+        super().__init__(_id=_id)
+        self._id = _id
+        self.name = name
+        self.project_id = project_id
+        self.training_type = training_type
+        self.data_type = data_type
+
+    # TODO: build a class enum for possible providers
+    @classmethod
+    def new(cls,
+            project_id: str,
+            provider: str,
+            name: str,
+            data_type: DataType,
+            training_type: TypeProblem) -> 'Usecase':
+        url = f'/projects/{project_id}/usecases'
+        data = {
+            'provider': provider,
+            'name': name,
+            'data_type': data_type.value,
+            'training_type': training_type.value,
+        }
+        print(f'\ncall to {url}:\ndata={data}')
+        response = client.request(url,
+                                  method=requests.post,
+                                  data=data,
+                                  message_prefix='Usecase creation')
+        js = parse_json(response)
+        usecase = cls(js['_id'], js['name'], js['project_id'], js['training_type'], js['data_type'])
+        return usecase
 
     @classmethod
     def from_id(cls, _id: str) -> 'Usecase':

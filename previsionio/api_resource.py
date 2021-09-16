@@ -38,10 +38,19 @@ class ApiResource:
     resource_params = []
     id_key = '_id'
 
+    """
     def __init__(self, **params):
         self._id: str = params.get('_id', "")
         if self._id == "":
             raise RuntimeError("Invalid _id received from {}".format(str(params)))
+        self.resource_id = self._id
+        # self.event_manager: Optional[EventManager] = None
+    """
+
+    def __init__(self, _id: str):
+        if _id == "":
+            raise RuntimeError(f'Invalid _id received: {_id}')
+        self._id = _id
         self.resource_id = self._id
         # self.event_manager: Optional[EventManager] = None
 
