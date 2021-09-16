@@ -88,21 +88,6 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
 
     @classmethod
     def _create_usecase(cls, project_id: str, name: str, data_type: DataType, training_type: TypeProblem) -> Usecase:
-        """ Create a usecase of the given data type and problem type with a specific
-        training configuration (on the platform).
-
-        Args:
-            name (str): Registration name for the usecase to create
-            holdout_datset_id (str|tuple(str, str)): Unique id of the training dataset resource or a tuple of csv and folder id
-            data_type (str): Type of data used in the usecase (among "tabular", "images"
-                and "timeseries")
-            training_type: Type of problem to compute with the usecase (among "regression",
-                "classification", "multiclassification" and "object-detection")
-            **kwargs:
-
-        Returns:
-            :class:`.usecase.Usecase`: Newly created usecase object
-        """
         usecase_creation_data = {
             'data_type': data_type.value,
             'training_type': training_type.value,
@@ -114,7 +99,6 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
         usecase_creation_response = client.request(usecase_creation_endpoint,
                                                    method=requests.post,
                                                    data=usecase_creation_data,
-                                                   content_type='application/json',
                                                    message_prefix='Usecase creation')
         js_usecase = parse_json(usecase_creation_response)
         print("\nusecase_creation_response:")
@@ -143,7 +127,6 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
         usecase_version_creation_response = client.request(usecase_version_creation_endpoint,
                                                            method=requests.post,
                                                            data=usecase_version_creation_data,
-                                                           # content_type='application/json',
                                                            message_prefix='Usecase version creation')
         js_usecase_version = parse_json(usecase_version_creation_response)
         print("\njs_usecase_version:")
@@ -182,21 +165,6 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
 
     @classmethod
     def _add_external_models_to_usecase_version(cls, usecase_version_id: str, external_models: List[Tuple]) -> Dict:
-        """ Start a usecase of the given data type and problem type with a specific
-        training configuration (on the platform).
-
-        Args:
-            name (str): Registration name for the usecase to create
-            holdout_datset_id (str|tuple(str, str)): Unique id of the training dataset resource or a tuple of csv and folder id
-            data_type (str): Type of data used in the usecase (among "tabular", "images"
-                and "timeseries")
-            training_type: Type of problem to compute with the usecase (among "regression",
-                "classification", "multiclassification" and "object-detection")
-            **kwargs:
-
-        Returns:
-            :class:`.BaseUsecaseVersion`: Newly created usecase object
-        """
         for external_model in external_models:
             js_usecase_version = cls._add_external_model_to_usecase_version(usecase_version_id, external_model)
         return js_usecase_version
@@ -222,21 +190,7 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
                                metric: str,
                                dataset_id: str = None,
                                usecase_version_description: str = None):
-        """ Start a usecase of the given data type and problem type with a specific
-        training configuration (on the platform).
 
-        Args:
-            name (str): Registration name for the usecase to create
-            holdout_datset_id (str|tuple(str, str)): Unique id of the training dataset resource or a tuple of csv and folder id
-            data_type (str): Type of data used in the usecase (among "tabular", "images"
-                and "timeseries")
-            training_type: Type of problem to compute with the usecase (among "regression",
-                "classification", "multiclassification" and "object-detection")
-            **kwargs:
-
-        Returns:
-            :class:`.BaseUsecaseVersion`: Newly created usecase object
-        """
         js_usecase_version = cls._create_usecase_version(usecase_id,
                                                          holdout_dataset_id,
                                                          metric,
