@@ -521,7 +521,9 @@ class Project(ApiResource, UniqueResourceMixin):
             **kwargs
         )
 
-    def create_external_regression(self, usecase_name: str, holdout_dataset: Dataset,
+    def create_external_regression(self,
+                                   usecase_name: str,
+                                   holdout_dataset: Dataset,
                                    target_column: str,
                                    external_models: List[Tuple],
                                    metric: metrics.Regression = metrics.Regression.RMSE,
@@ -550,10 +552,6 @@ class Project(ApiResource, UniqueResourceMixin):
             raise PrevisionException('You must provide at least one external model')
         usecase = Usecase.new(self._id, 'external', usecase_name, DataType.Tabular, TypeProblem.Regression)
         return ExternalUsecaseVersion._fit(
-            # self._id,
-            #usecase_name,
-            #DataType.Tabular,
-            #TypeProblem.Regression,
             usecase.id,
             holdout_dataset,
             target_column,
