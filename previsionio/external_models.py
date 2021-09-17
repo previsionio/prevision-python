@@ -15,17 +15,17 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
 
     def __init__(self, **usecase_version_info):
         super().__init__(**usecase_version_info)
-        self._populate(**usecase_version_info)
+        self._update(**usecase_version_info)
 
-    def _populate(self, **usecase_version_info):
-        super()._populate(**usecase_version_info)
+    def _update(self, **usecase_version_info):
+        super()._update(**usecase_version_info)
         self.holdout_dataset_id: str = usecase_version_info.get('holdout_dataset_id')
         self.dataset_id: Union[str, None] = usecase_version_info.get('dataset_id', None)
 
         usecase_version_params = usecase_version_info['usecase_version_params']
         self.metric: str = usecase_version_params['metric']
 
-    def _draft(self, **kwargs):
+    def _update_draft(self, **kwargs):
         external_models = kwargs['external_models']
         self.__add_external_models(external_models)
 
@@ -47,7 +47,7 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
              dataset: Dataset = None,
              description: str = None) -> 'ExternalUsecaseVersion':
         return super()._fit(usecase_id,
-                            description,
+                            description=description,
                             holdout_dataset=holdout_dataset,
                             target_column=target_column,
                             external_models=external_models,
@@ -79,7 +79,7 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
                                                             message_prefix=external_model_message_prefix,
                                                             )
         usecase_version_info = parse_json(external_model_upload_response)
-        self._populate(**usecase_version_info)
+        self._update(**usecase_version_info)
 
     def __add_external_models(self, external_models: List[Tuple]) -> None:
         for external_model in external_models:

@@ -54,13 +54,13 @@ class BaseUsecaseVersion(ApiResource):
 
     def __init__(self, **usecase_version_info):
         super().__init__(usecase_version_info['_id'])
-        self._populate(**usecase_version_info)
+        self._update(**usecase_version_info)
 
         self.created_at = parser.parse(usecase_version_info["created_at"])
         self._models = {}
         self.version = 1
 
-    def _populate(self, **usecase_version_info):
+    def _update(self, **usecase_version_info):
         self.project_id: str = usecase_version_info.get('project_id')
         self.usecase_id: str = usecase_version_info.get('usecase_id')
         self.description: str = usecase_version_info.get('description')
@@ -96,10 +96,10 @@ class BaseUsecaseVersion(ApiResource):
         usecase_version = cls(**usecase_version_info)
         return usecase_version
 
-    def _draft(self, **kwargs):
-        pass
+    def _update_draft(self, **kwargs):
+        return self
 
-    def __confirm(self) -> None:
+    def __confirm(self) -> 'BaseUsecaseVersion':
         endpoint = f'/usecase-versions/{self._id}/confirm'
         print(f'\ncall to {endpoint}...')
         response = client.request(endpoint,
@@ -108,7 +108,8 @@ class BaseUsecaseVersion(ApiResource):
         usecase_version_info = parse_json(response)
         print("\nusecase_version_info:")
         pprint.pprint(usecase_version_info)
-        self._populate(**usecase_version_info)
+        self._update(**usecase_version_info)
+        return self
 
     @classmethod
     # NOTE: why not pass the id for holdout_dataset and dataset like for usecase ? certainly for the doc
@@ -116,11 +117,11 @@ class BaseUsecaseVersion(ApiResource):
              description: str = None,
              **kwargs) -> 'BaseUsecaseVersion':
 
-        usecase_version = cls.new(usecase_id,
+        usecase_version_draft = cls.new(usecase_id,
                                   description=description,
                                   **kwargs)
-        usecase_version._draft(**kwargs)
-        usecase_version.__confirm()
+        usecase_version_draft._update_draft(**kwargs)
+        usecase_version = usecase_version_draft.__confirm()
 
         # NOTE: why wait for usecase_version running ?
         """
@@ -132,8 +133,8 @@ class BaseUsecaseVersion(ApiResource):
                                                 specific_url=events_url)
         """
 
-        # NOTE: maybe populate like that to be sure to have all the correct info of the resource
-        # usecase_version._populate(**cls._from_id(usecase_version._id))
+        # NOTE: maybe update like that to be sure to have all the correct info of the resource
+        # usecase_version._update(**cls._from_id(usecase_version._id))
 
         print("usecase_version.__dict__ at end of fit")
         pprint.pprint(usecase_version.__dict__)
