@@ -14,7 +14,6 @@ from functools import lru_cache
 from dateutil import parser
 
 from . import config
-#from .usecase import Usecase
 from .usecase_config import (AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel,
                              TrainingConfig, ColumnConfig, TypeProblem, UsecaseState)
 from .logger import logger
@@ -22,7 +21,6 @@ from .prevision_client import client
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
 from .api_resource import ApiResource
 from .dataset import Dataset
-# from .usecase import Usecase
 
 
 class BaseUsecaseVersion(ApiResource):
@@ -37,20 +35,6 @@ class BaseUsecaseVersion(ApiResource):
     training_type: TypeProblem
     data_type: DataType
     model_class: Model
-
-    """
-    def __init__(self, **usecase_info):
-        super().__init__(**usecase_info)
-        self.name: str = usecase_info.get('name', usecase_info['usecase'].get('name'))
-        self._id: str = usecase_info['_id']
-        self.usecase_id: str = usecase_info['usecase_id']
-        self.project_id: str = usecase_info['project_id']
-        self.dataset_id: str = usecase_info['dataset_id']
-        self.holdout_dataset_id: Union[str, None] = usecase_info.get('holdout_dataset_id', None)
-        self.created_at = parser.parse(usecase_info["created_at"])
-        self._models = {}
-        self.version = 1
-    """
 
     def __init__(self, **usecase_version_info):
         super().__init__(usecase_version_info['_id'])
@@ -74,7 +58,8 @@ class BaseUsecaseVersion(ApiResource):
         self._models = {}
         self.version = usecase_version_info['version']
 
-
+    # NOTE: this method is just here to parse raw_data (objects) and build the corresponding data (strings)
+    #       that can be sent directly to the endpoint
     @staticmethod
     def _build_new_usecase_version_data(**kwargs) -> Dict:
         data = {
@@ -83,12 +68,6 @@ class BaseUsecaseVersion(ApiResource):
         }
         return data
 
-    # NOTE: this method is just here to parse raw_data (objects) and build the corresponding data (_ids)
-    #       that can be sent directly to the endpoint
-    @classmethod
-    def __new_from_raw_kwargs(cls, usecase_id, **kwargs) -> 'BaseUsecaseVersion':
-        data = cls._build_new_usecase_version_data(**kwargs)
-        return cls.new(usecase_id, data)
 
     @classmethod
     def new(cls, usecase_id, data) -> 'BaseUsecaseVersion':
@@ -124,9 +103,9 @@ class BaseUsecaseVersion(ApiResource):
              description: str = None,
              **kwargs) -> 'BaseUsecaseVersion':
 
-        usecase_version_draft = cls.__new_from_raw_kwargs(usecase_id,
-                                                          description=description,
-                                                          **kwargs)
+        usecase_version_creation_data = cls._build_new_usecase_version_data(description=description,
+                                                                            **kwargs)
+        usecase_version_draft = cls.new(usecase_id, usecase_version_creation_data)
         usecase_version_draft._update_draft(**kwargs)
         usecase_version = usecase_version_draft._confirm()
 
