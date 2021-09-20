@@ -39,7 +39,8 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
         return data
 
     @classmethod
-    def _fit(cls, usecase_id: str,
+    def _fit(cls,
+             usecase_id: str,
              holdout_dataset: Dataset,
              target_column: str,
              external_models: List[Tuple],
