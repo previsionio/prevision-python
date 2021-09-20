@@ -174,44 +174,6 @@ class TextSimilarity(BaseUsecaseVersion):
     resource: str = 'usecase-versions'
     model_class = TextSimilarityModel
 
-    """
-    def __init__(self, **usecase_info):
-        super().__init__(**usecase_info)
-        usecase_version_params = usecase_info['usecase_version_params']
-        self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
-            usecase_version_params.get('metric', self.default_metric))
-        self.top_k: int = usecase_version_params.get('top_K', self.default_top_k)
-        self.lang: TextSimilarityLang = TextSimilarityLang(usecase_version_params.get('lang', TextSimilarityLang.Auto))
-
-        self.description_column_config = DescriptionsColumnConfig(
-            content_column=usecase_version_params.get('content_column'),
-            id_column=usecase_version_params.get('id_column'))
-        if usecase_info.get('queries_dataset_id'):
-            self.queries_dataset = usecase_info.get('queries_dataset_id')
-            content_column = usecase_version_params.get('queries_dataset_content_column')
-            matching_id = usecase_version_params.get('queries_dataset_matching_id_description_column')
-            queries_dataset_id_column = usecase_version_params.get('queries_dataset_id_column', None)
-            self.queries_column_config = QueriesColumnConfig(queries_dataset_content_column=content_column,
-                                                             queries_dataset_matching_id_description_column=matching_id,
-                                                             queries_dataset_id_column=queries_dataset_id_column)
-        else:
-            self.queries_dataset = None
-            self.queries_column_config = None
-        models_parameters = usecase_version_params.get('models_params')
-        self.models_parameters = ListModelsParameters(models_parameters=models_parameters)
-
-        self._id: str = usecase_info['_id']
-        self.usecase_id: str = usecase_info['usecase_id']
-        self.project_id: str = usecase_info['project_id']
-        self.version: int = usecase_info.get('version', 1)
-        self._usecase_info = usecase_info
-        self.dataset_id: str = usecase_info['dataset_id']
-        self.predictions = {}
-        self.predict_token = None
-
-        self._models = {}
-    """
-
     def __init__(self, **usecase_version_info):
         super().__init__(**usecase_version_info)
         self._update(**usecase_version_info)
@@ -282,23 +244,11 @@ class TextSimilarity(BaseUsecaseVersion):
             queries_dataset_id = None
         data['queries_dataset_id'] = queries_dataset_id
 
-        """
-        if not metric:
-            metric = cls.default_metric
-        if not top_k:
-            top_k = cls.default_top_k
-        """
         data['metric'] = kwargs['metric'].value
         data['top_k'] = kwargs['top_k']
         data['lang'] = kwargs['lang'].value
+
         return data
-        """
-        if isinstance(dataset, str):
-            dataset_id = dataset
-        else:
-            dataset_id = dataset.id
-        data = dict(name=name, dataset_id=dataset_id, **training_args)
-        """
 
     @classmethod
     def _fit(
@@ -343,51 +293,6 @@ class TextSimilarity(BaseUsecaseVersion):
             queries_column_config=queries_column_config,
             models_parameters=models_parameters,
         )
-        """
-
-        training_args = to_json(description_column_config)
-        assert isinstance(training_args, Dict)
-        if queries_column_config:
-            training_args.update(to_json(queries_column_config))
-        training_args.update(to_json(models_parameters))
-
-        if queries_dataset:
-            if isinstance(queries_dataset, str):
-                training_args['queries_dataset_id'] = queries_dataset
-            else:
-                training_args['queries_dataset_id'] = queries_dataset.id
-
-        if not metric:
-            metric = cls.default_metric
-        if not top_k:
-            top_k = cls.default_top_k
-        training_args['metric'] = metric.value
-        training_args['top_k'] = top_k
-        training_args['lang'] = lang.value
-        if isinstance(dataset, str):
-            dataset_id = dataset
-        else:
-            dataset_id = dataset.id
-
-        data = dict(name=name, dataset_id=dataset_id, **training_args)
-
-        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', cls.data_type.value, cls.training_type.value)
-        start = client.request(endpoint,
-                               method=requests.post,
-                               data=data,
-                               content_type='application/json',
-                               message_prefix='Text similarity usecase start')
-
-        start_response = parse_json(start)
-        usecase = cls.from_id(start_response['_id'])
-        events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
-        assert pio.client.event_manager is not None
-        pio.client.event_manager.wait_for_event(usecase._id,
-                                                cls.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
-                                                specific_url=events_url)
-        return usecase
-        """
 
     def new_version(
         self,
