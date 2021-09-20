@@ -217,8 +217,8 @@ class TextSimilarity(BaseUsecaseVersion):
         return cls(**super()._load(pio_file))
 
     @staticmethod
-    def _build_new_usecase_version_data(**kwargs) -> Dict:
-        data = super(TextSimilarity, TextSimilarity)._build_new_usecase_version_data(**kwargs)
+    def _build_usecase_version_creation_data(**kwargs) -> Dict:
+        data = super(TextSimilarity, TextSimilarity)._build_usecase_version_creation_data(**kwargs)
 
         dataset = kwargs['dataset']
         if isinstance(dataset, str):

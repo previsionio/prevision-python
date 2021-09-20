@@ -30,8 +30,8 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
         self.__add_external_models(external_models)
 
     @staticmethod
-    def _build_new_usecase_version_data(**kwargs) -> Dict:
-        data = super(ExternalUsecaseVersion, ExternalUsecaseVersion)._build_new_usecase_version_data(**kwargs)
+    def _build_usecase_version_creation_data(**kwargs) -> Dict:
+        data = super(ExternalUsecaseVersion, ExternalUsecaseVersion)._build_usecase_version_creation_data(**kwargs)
         data['holdout_dataset_id'] = kwargs['holdout_dataset'].id
         data['dataset_id'] = None if kwargs['dataset'] is None else kwargs['dataset'].id
         data['metric'] = kwargs['metric'].value

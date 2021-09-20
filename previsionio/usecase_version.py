@@ -61,7 +61,7 @@ class BaseUsecaseVersion(ApiResource):
     # NOTE: this method is just here to parse raw_data (objects) and build the corresponding data (strings)
     #       that can be sent directly to the endpoint
     @staticmethod
-    def _build_new_usecase_version_data(**kwargs) -> Dict:
+    def _build_usecase_version_creation_data(**kwargs) -> Dict:
         data = {
             'description': kwargs['description'],
             'parent_version': kwargs.get('parent_version'),
@@ -103,7 +103,7 @@ class BaseUsecaseVersion(ApiResource):
              description: str = None,
              **kwargs) -> 'BaseUsecaseVersion':
 
-        usecase_version_creation_data = cls._build_new_usecase_version_data(description=description,
+        usecase_version_creation_data = cls._build_usecase_version_creation_data(description=description,
                                                                             **kwargs)
         usecase_version_draft = cls.new(usecase_id, usecase_version_creation_data)
         usecase_version_draft._update_from_dict_draft(**kwargs)

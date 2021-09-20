@@ -87,8 +87,8 @@ class TimeSeries(ClassicUsecaseVersion):
         return cls(**super()._load(pio_file))
 
     @staticmethod
-    def _build_new_usecase_version_data(**kwargs) -> Dict:
-        data = super(TimeSeries, TimeSeries)._build_new_usecase_version_data(**kwargs)
+    def _build_usecase_version_creation_data(**kwargs) -> Dict:
+        data = super(TimeSeries, TimeSeries)._build_usecase_version_creation_data(**kwargs)
 
         dataset = kwargs['dataset']
         if isinstance(dataset, str):
