@@ -779,17 +779,62 @@ class Project(ApiResource, UniqueResourceMixin):
         return TimeSeries._fit(self._id, name, dataset, column_config, time_window, metric=metric,
                                holdout_dataset=holdout_dataset, training_config=training_config)
 
-    def fit_text_similarity(self, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
-                            metric: metrics.TextSimilarity = metrics.TextSimilarity.accuracy_at_k, top_k: int = 10,
-                            lang: TextSimilarityLang = TextSimilarityLang.Auto, queries_dataset: Dataset = None,
-                            queries_column_config: QueriesColumnConfig = None,
-                            models_parameters: ListModelsParameters = ListModelsParameters()):
-        """ Start a text similarity usecase training with a specific training configuration.
+    def _fit_regression(self,
+                        usecase_name: str,
+                        dataset: Dataset,
+                        column_config: ColumnConfig,
+                        metric: metrics.Regression = metrics.Regression.RMSE,
+                        holdout_dataset=None,
+                        training_config=TrainingConfig(),
+                        usecase_version_description: str = None):
+        """ Start a tabular regression usecase version training
 
         Args:
-            name (str): Name of the usecase to create
+            usecase_name (str): Name of the usecase to create
             dataset (:class:`.Dataset`): Reference to the dataset
                 object to use for as training dataset
+            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
+                (see the documentation of the :class:`.ColumnConfig` resource for more details
+                on each possible column types)
+            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
+                use as a holdout dataset (default: ``None``)
+            training_config (:class:`.TrainingConfig`): Specific training configuration
+                (see the documentation of the :class:`.TrainingConfig` resource for more details
+                on all the parameters)
+            usecase_version_description (str): Description of the usecase version to create
+
+        Returns:
+            :class:`.supervised.Regression`: Newly created Regression usecase version object
+        """
+        usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.Tabular, TypeProblem.Regression)
+        return Supervised._fit(
+            usecase.id,
+            dataset,
+            column_config,
+            metric,
+            holdout_dataset=holdout_dataset,
+            training_config=training_config,
+            description=usecase_version_description,
+        )
+
+    # def fit_text_similarity(self, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
+    def fit_text_similarity(self,
+                            usecase_name: str,
+                            dataset: Dataset,
+                            description_column_config: DescriptionsColumnConfig,
+                            metric: metrics.TextSimilarity = metrics.TextSimilarity.accuracy_at_k,
+                            top_k: int = 10,
+                            lang: TextSimilarityLang = TextSimilarityLang.Auto,
+                            queries_dataset: Dataset = None,
+                            queries_column_config: QueriesColumnConfig = None,
+                            models_parameters: ListModelsParameters = ListModelsParameters(),
+                            usecase_version_description: str = None):
+        """ Start a text similarity usecase version training with a specific training configuration.
+
+        Args:
+            usecase_name (str): Name of the usecase to create
+            dataset (:class:`.Dataset`): Reference to the dataset object to use for as training dataset
             description_column_config (:class:`.DescriptionsColumnConfig`): Description column configuration
                 (see the documentation of the :class:`.DescriptionsColumnConfig` resource for more details
                 on each possible column types)
@@ -803,13 +848,14 @@ class Project(ApiResource, UniqueResourceMixin):
             models_parameters (:class:`.ListModelsParameters`): Specific training configuration
                 (see the documentation of the :class:`.ListModelsParameters` resource for more details
                 on all the parameters)
+            usecase_version_description (str): Description of the usecase version to create
 
         Returns:
             :class:`.previsionio.text_similarity.TextSimilarity`: Newly created TextSimilarity usecase version object
         """
+        usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.Tabular, TypeProblem.TextSimilarity)
         return TextSimilarity._fit(
-            self._id,
-            name,
+            usecase.id,
             dataset,
             description_column_config,
             metric=metric,
