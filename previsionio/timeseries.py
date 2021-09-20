@@ -71,10 +71,10 @@ class TimeSeries(ClassicUsecaseVersion):
 
     def __init__(self, **usecase_version_info):
         super().__init__(**usecase_version_info)
-        self._update(**usecase_version_info)
+        self._update_from_dict(**usecase_version_info)
 
-    def _update(self, **usecase_version_info):
-        super()._update(**usecase_version_info)
+    def _update_from_dict(self, **usecase_version_info):
+        super()._update_from_dict(**usecase_version_info)
         self.holdout_dataset_id: Union[str, None] = usecase_version_info.get('holdout_dataset_id', None)
         self.time_window = TimeWindow.from_dict(usecase_version_info['usecase_version_params']['timeseries_values'])
 
@@ -218,6 +218,6 @@ class TimeSeries(ClassicUsecaseVersion):
 
         new_usecase_version_draft = self.new(self.usecase_id,
                                              params)
-        # new_usecase_version_draft._update_draft(**params) # _draft do nothing in this class
+        # new_usecase_version_draft._update_from_dict_draft(**params) # _draft do nothing in this class
         new_usecase_version = new_usecase_version_draft._confirm()
         return new_usecase_version

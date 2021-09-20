@@ -176,10 +176,10 @@ class TextSimilarity(BaseUsecaseVersion):
 
     def __init__(self, **usecase_version_info):
         super().__init__(**usecase_version_info)
-        self._update(**usecase_version_info)
+        self._update_from_dict(**usecase_version_info)
 
-    def _update(self, **usecase_version_info):
-        super()._update(**usecase_version_info)
+    def _update_from_dict(self, **usecase_version_info):
+        super()._update_from_dict(**usecase_version_info)
         usecase_version_params = usecase_version_info['usecase_version_params']
         self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
             usecase_version_params.get('metric', self.default_metric))

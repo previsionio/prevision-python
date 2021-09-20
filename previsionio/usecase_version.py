@@ -38,9 +38,9 @@ class BaseUsecaseVersion(ApiResource):
 
     def __init__(self, **usecase_version_info):
         super().__init__(usecase_version_info['_id'])
-        self._update(**usecase_version_info)
+        self._update_from_dict(**usecase_version_info)
 
-    def _update(self, **usecase_version_info):
+    def _update_from_dict(self, **usecase_version_info):
         self.project_id: str = usecase_version_info.get('project_id')
         self.usecase_id: str = usecase_version_info.get('usecase_id')
         self.description: str = usecase_version_info.get('description')
@@ -83,7 +83,7 @@ class BaseUsecaseVersion(ApiResource):
         usecase_version = cls(**usecase_version_info)
         return usecase_version
 
-    def _update_draft(self, **kwargs):
+    def _update_from_dict_draft(self, **kwargs):
         return self
 
     def _confirm(self) -> 'BaseUsecaseVersion':
@@ -95,7 +95,7 @@ class BaseUsecaseVersion(ApiResource):
         usecase_version_info = parse_json(response)
         print("\nusecase_version_info:")
         pprint.pprint(usecase_version_info)
-        self._update(**usecase_version_info)
+        self._update_from_dict(**usecase_version_info)
         return self
 
     @classmethod
@@ -106,7 +106,7 @@ class BaseUsecaseVersion(ApiResource):
         usecase_version_creation_data = cls._build_new_usecase_version_data(description=description,
                                                                             **kwargs)
         usecase_version_draft = cls.new(usecase_id, usecase_version_creation_data)
-        usecase_version_draft._update_draft(**kwargs)
+        usecase_version_draft._update_from_dict_draft(**kwargs)
         usecase_version = usecase_version_draft._confirm()
 
         # NOTE: why wait for usecase_version running ?
@@ -120,7 +120,7 @@ class BaseUsecaseVersion(ApiResource):
         """
 
         # NOTE: maybe update like that to be sure to have all the correct info of the resource
-        # usecase_version._update(**cls._from_id(usecase_version._id))
+        # usecase_version._update_from_dict(**cls._from_id(usecase_version._id))
 
         print("usecase_version.__dict__ at end of fit")
         pprint.pprint(usecase_version.__dict__)
@@ -471,10 +471,10 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
 
     def __init__(self, **usecase_version_info):
         super().__init__(**usecase_version_info)
-        self._update(**usecase_version_info)
+        self._update_from_dict(**usecase_version_info)
 
-    def _update(self, **usecase_version_info):
-        super()._update(**usecase_version_info)
+    def _update_from_dict(self, **usecase_version_info):
+        super()._update_from_dict(**usecase_version_info)
         usecase_params = usecase_version_info['usecase_version_params']
         self.metric: str = usecase_params['metric']
         self.column_config = ColumnConfig(target_column=usecase_params.get('target_column'),
