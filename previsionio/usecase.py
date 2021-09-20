@@ -58,8 +58,8 @@ class Usecase(ApiResource):
         self._id = _id
         self.name = name
         self.project_id = project_id
-        self.training_type = training_type
-        self.data_type = data_type
+        self.training_type: TypeProblem = TypeProblem(training_type)
+        self.data_type: DataType = DataType(data_type)
 
     # TODO: build a class enum for possible providers
     @classmethod
@@ -82,6 +82,11 @@ class Usecase(ApiResource):
                                   data=data,
                                   message_prefix='Usecase creation')
         js = parse_json(response)
+        usecase = cls.from_js(js)
+        return usecase
+
+    @classmethod
+    def from_js(cls, js: Dict) -> 'Usecase':
         usecase = cls(js['_id'], js['name'], js['project_id'], js['training_type'], js['data_type'])
         return usecase
 
@@ -99,7 +104,9 @@ class Usecase(ApiResource):
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
         """
-        return cls(**super()._from_id(specific_url='/{}/{}'.format(cls.resource, _id)))
+        js = super()._from_id(_id)
+        usecase = cls.from_js(js)
+        return usecase
 
     @classmethod
     def list(cls, project_id: str, all: bool = True) -> List['Usecase']:
@@ -120,8 +127,8 @@ class Usecase(ApiResource):
         Returns:
             list(:class:`.Usecase`): Fetched dataset objects
         """
-        resources = super()._list(all=all, project_id=project_id)
-        return [cls(**conn_data) for conn_data in resources]
+        js_list = super()._list(all=all, project_id=project_id)
+        return [cls.from_js(js) for js in js_list]
 
     @property
     def usecase_version_class(self) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries]]:
