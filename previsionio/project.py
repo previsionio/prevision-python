@@ -743,42 +743,6 @@ class Project(ApiResource, UniqueResourceMixin):
             training_config=training_config,
             **kwargs
         )
-
-    def fit_timeseries_regression(
-        self,
-        name: str,
-        dataset: Dataset,
-        column_config: ColumnConfig,
-        time_window: TimeWindow,
-        metric: metrics.Regression = metrics.Regression.RMSE,
-        holdout_dataset: Dataset = None,
-        training_config=TrainingConfig()
-    ) -> TimeSeries:
-        """ Start a timeseries regression usecase version training
-
-        Args:
-            name (str): Name of the usecase to create
-            dataset (:class:`.Dataset`): Reference to the dataset
-                object to use for as training dataset
-            column_config (:class:`.ColumnConfig`): Column configuration for the usecase version
-                (see the documentation of the :class:`.ColumnConfig` resource for more details
-                on each possible column types)
-            time_window (:class:`.TimeWindow`): Time configuration
-                (see the documentation of the :class:`.TimeWindow` resource for more details)
-            metric (:enum: `metrics.Regression`, optional): Specific metric to use for the usecase (default:
-                ``metrics.Regression.RMSE``)
-            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
-                use as a holdout dataset (default: ``None``)
-            training_config (:class:`.TrainingConfig`): Specific training configuration
-                (see the documentation of the :class:`.TrainingConfig` resource for more details
-                on all the parameters)
-
-        Returns:
-            :class:`.TimeSeries`: Newly created TimeSeries usecase version object
-        """
-        return TimeSeries._fit(self._id, name, dataset, column_config, time_window, metric=metric,
-                               holdout_dataset=holdout_dataset, training_config=training_config)
-
     def _fit_regression(self,
                         usecase_name: str,
                         dataset: Dataset,
@@ -818,7 +782,53 @@ class Project(ApiResource, UniqueResourceMixin):
             description=usecase_version_description,
         )
 
-    # def fit_text_similarity(self, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
+
+    def fit_timeseries_regression(
+        self,
+        usecase_name: str,
+        dataset: Dataset,
+        column_config: ColumnConfig,
+        time_window: TimeWindow,
+        metric: metrics.Regression = metrics.Regression.RMSE,
+        holdout_dataset: Dataset = None,
+        training_config=TrainingConfig(),
+        usecase_version_description: str = None,
+    ) -> TimeSeries:
+        usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.TimeSeries, TypeProblem.Regression)
+        """ Start a timeseries regression usecase version training
+
+        Args:
+            usecase_name (str): Name of the usecase to create
+            dataset (:class:`.Dataset`): Reference to the dataset
+                object to use for as training dataset
+            column_config (:class:`.ColumnConfig`): Column configuration for the usecase version
+                (see the documentation of the :class:`.ColumnConfig` resource for more details
+                on each possible column types)
+            time_window (:class:`.TimeWindow`): Time configuration
+                (see the documentation of the :class:`.TimeWindow` resource for more details)
+            metric (:enum: `metrics.Regression`, optional): Specific metric to use for the usecase (default:
+                ``metrics.Regression.RMSE``)
+            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
+                use as a holdout dataset (default: ``None``)
+            training_config (:class:`.TrainingConfig`): Specific training configuration
+                (see the documentation of the :class:`.TrainingConfig` resource for more details
+                on all the parameters)
+            usecase_version_description (str): Description of the usecase version to create
+
+        Returns:
+            :class:`.TimeSeries`: Newly created TimeSeries usecase version object
+        """
+        return TimeSeries._fit(
+            usecase.id,
+            dataset,
+            column_config,
+            time_window,
+            metric,
+            holdout_dataset=holdout_dataset,
+            training_config=training_config,
+            description=usecase_version_description,
+        )
+
     def fit_text_similarity(self,
                             usecase_name: str,
                             dataset: Dataset,

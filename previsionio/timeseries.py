@@ -69,11 +69,14 @@ class TimeSeries(ClassicUsecaseVersion):
     data_type = DataType.TimeSeries
     model_class = RegressionModel
 
-    def __init__(self, **usecase_info):
-        self.holdout_dataset_id: Union[str, None] = usecase_info.get('holdout_dataset_id', None)
-        self.time_window = TimeWindow.from_dict(usecase_info['usecase_version_params']['timeseries_values'])
+    def __init__(self, **usecase_version_info):
+        super().__init__(**usecase_version_info)
+        self._update(**usecase_version_info)
 
-        super().__init__(**usecase_info)
+    def _update(self, **usecase_version_info):
+        super()._update(**usecase_version_info)
+        self.holdout_dataset_id: Union[str, None] = usecase_version_info.get('holdout_dataset_id', None)
+        self.time_window = TimeWindow.from_dict(usecase_version_info['usecase_version_params']['timeseries_values'])
 
     @classmethod
     def from_id(cls, _id: str) -> 'TimeSeries':
@@ -83,43 +86,60 @@ class TimeSeries(ClassicUsecaseVersion):
     def load(cls, pio_file: str) -> 'TimeSeries':
         return cls(**super()._load(pio_file))
 
+    @staticmethod
+    def _build_new_usecase_version_data(**kwargs) -> Dict:
+        data = super(TimeSeries, TimeSeries)._build_new_usecase_version_data(**kwargs)
+
+        dataset = kwargs['dataset']
+        if isinstance(dataset, str):
+            # NOTE: we shoul not authorize to pass directly the dataset_id is _fit(...
+            dataset_id = dataset
+        elif isinstance(dataset, tuple):
+            dataset_id = [d.id for d in dataset]
+        else:
+            dataset_id = dataset.id
+        data['dataset_id'] = dataset_id
+
+        data.update(to_json(kwargs['column_config']))
+        data.update(to_json(kwargs['time_window']))
+        data['metric'] = kwargs['metric'].value
+
+        holdout_dataset = kwargs['holdout_dataset']
+        if holdout_dataset is not None:
+            if isinstance(holdout_dataset, str):
+                # NOTE: we shoul not authorize to pass directly the holdout_dataset_id is _fit(...
+                holdout_dataset_id = holdout_dataset
+            else:
+                holdout_dataset_id = holdout_dataset.id
+        else:
+            holdout_dataset_id = None
+        data['holdout_dataset_id'] = holdout_dataset_id
+
+        data.update(to_json(kwargs['training_config']))
+
+        return data
+
     @classmethod
-    def _fit(cls, project_id: str,
-             name: str,
+    def _fit(cls,
+             usecase_id: str,
              dataset: Dataset,
              column_config: ColumnConfig,
              time_window: TimeWindow,
              metric: Regression = None,
              holdout_dataset: Dataset = None,
-             training_config: TrainingConfig = TrainingConfig()) -> 'TimeSeries':
-        training_args = to_json(training_config)
-        assert isinstance(training_args, Dict)
+             training_config: TrainingConfig = TrainingConfig(),
+             description: str = None) -> 'TimeSeries':
 
-        training_args.update(to_json(column_config))
-        training_args.update(to_json(time_window))
-
-        if holdout_dataset:
-            training_args['holdout_dataset_id'] = holdout_dataset.id
-
-        if not metric:
-            metric = cls.default_metric
-
-        start_response = cls._start_usecase(project_id=project_id,
-                                            name=name,
-                                            dataset_id=dataset.id,
-                                            data_type=cls.data_type,
-                                            training_type=cls.training_type,
-                                            metric=metric.value,
-                                            **training_args)
-
-        usecase = cls.from_id(start_response['_id'])
-        events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
-        assert pio.client.event_manager is not None
-        pio.client.event_manager.wait_for_event(usecase.resource_id,
-                                                cls.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
-                                                specific_url=events_url)
-        return usecase
+        return super()._fit(
+            usecase_id,
+            description=description,
+            dataset=dataset,
+            column_config=column_config,
+            time_window=time_window,
+            metric=metric,
+            holdout_dataset=holdout_dataset,
+            training_config=training_config,
+        )
 
     def new_version(
         self,
@@ -196,22 +216,8 @@ class TimeSeries(ClassicUsecaseVersion):
 
         params.update(training_args)
 
-        endpoint = "/usecases/{}/versions".format(self.usecase_id)
-
-        resp = client.request(endpoint=endpoint,
-                              data=params,
-                              method=requests.post,
-                              content_type='application/json',
-                              message_prefix='Time series usecase start')
-        json = parse_json(resp)
-
-        usecase = self.from_id(json["_id"])
-
-        events_url = '/{}/{}'.format(self.resource, json['_id'])
-        assert client.event_manager is not None
-        client.event_manager.wait_for_event(usecase.resource_id,
-                                            self.resource,
-                                            EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
-                                            specific_url=events_url)
-
-        return usecase
+        new_usecase_version_draft = self.new(self.usecase_id,
+                                             params)
+        # new_usecase_version_draft._update_draft(**params) # _draft do nothing in this class
+        new_usecase_version = new_usecase_version_draft._confirm()
+        return new_usecase_version
