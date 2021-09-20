@@ -487,13 +487,18 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return DataSource.list(self._id, all=all)
 
-    def fit_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig,
-                       metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
-                       training_config=TrainingConfig(), **kwargs):
+    def fit_regression(self,
+                       usecase_name: str,
+                       dataset: Dataset,
+                       column_config: ColumnConfig,
+                       metric: metrics.Regression = metrics.Regression.RMSE,
+                       holdout_dataset=None,
+                       training_config=TrainingConfig(),
+                       usecase_version_description: str = None):
         """ Start a tabular regression usecase version training
 
         Args:
-            name (str): Name of the usecase to create
+            usecase_name (str): Name of the usecase to create
             dataset (:class:`.Dataset`): Reference to the dataset
                 object to use for as training dataset
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
@@ -505,20 +510,20 @@ class Project(ApiResource, UniqueResourceMixin):
             training_config (:class:`.TrainingConfig`): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
+            usecase_version_description (str): Description of the usecase version to create
 
         Returns:
             :class:`.supervised.Regression`: Newly created Regression usecase version object
         """
+        usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.Tabular, TypeProblem.Regression)
         return Supervised._fit(
-            self._id, name,
-            data_type=DataType.Tabular,
-            training_type=TypeProblem.Regression,
-            dataset=dataset,
-            column_config=column_config,
-            metric=metric,
+            usecase.id,
+            dataset,
+            column_config,
+            metric,
             holdout_dataset=holdout_dataset,
             training_config=training_config,
-            **kwargs
+            description=usecase_version_description,
         )
 
     def create_external_regression(self,

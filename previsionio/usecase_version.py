@@ -56,10 +56,6 @@ class BaseUsecaseVersion(ApiResource):
         super().__init__(usecase_version_info['_id'])
         self._update(**usecase_version_info)
 
-        self.created_at = parser.parse(usecase_version_info["created_at"])
-        self._models = {}
-        self.version = 1
-
     def _update(self, **usecase_version_info):
         self.project_id: str = usecase_version_info.get('project_id')
         self.usecase_id: str = usecase_version_info.get('usecase_id')
@@ -72,19 +68,31 @@ class BaseUsecaseVersion(ApiResource):
             self.training_type: TypeProblem = TypeProblem(usecase_version_info['usecase']['training_type'])
         else:
             self.training_type = None
+
         self.created_at: datetime.datetime = parser.parse(usecase_version_info.get('created_at'))
+
+        self._models = {}
+        self.version = usecase_version_info['version']
+
 
     @staticmethod
     def _build_new_usecase_version_data(**kwargs) -> Dict:
         data = {
             'description': kwargs['description'],
+            'parent_version': kwargs.get('parent_version'),
         }
         return data
 
+    # NOTE: this method is just here to parse raw_data (objects) and build the corresponding data (_ids)
+    #       that can be sent directly to the endpoint
     @classmethod
-    def new(cls, usecase_id, **kwargs) -> 'BaseUsecaseVersion':
-        endpoint = f'/usecases/{usecase_id}/versions'
+    def __new_from_raw_kwargs(cls, usecase_id, **kwargs) -> 'BaseUsecaseVersion':
         data = cls._build_new_usecase_version_data(**kwargs)
+        return cls.new(usecase_id, data)
+
+    @classmethod
+    def new(cls, usecase_id, data) -> 'BaseUsecaseVersion':
+        endpoint = f'/usecases/{usecase_id}/versions'
         print(f'\ncall to {endpoint}:\ndata={data}')
         response = client.request(endpoint,
                                   method=requests.post,
@@ -99,7 +107,7 @@ class BaseUsecaseVersion(ApiResource):
     def _update_draft(self, **kwargs):
         return self
 
-    def __confirm(self) -> 'BaseUsecaseVersion':
+    def _confirm(self) -> 'BaseUsecaseVersion':
         endpoint = f'/usecase-versions/{self._id}/confirm'
         print(f'\ncall to {endpoint}...')
         response = client.request(endpoint,
@@ -112,16 +120,15 @@ class BaseUsecaseVersion(ApiResource):
         return self
 
     @classmethod
-    # NOTE: why not pass the id for holdout_dataset and dataset like for usecase ? certainly for the doc
     def _fit(cls, usecase_id: str,
              description: str = None,
              **kwargs) -> 'BaseUsecaseVersion':
 
-        usecase_version_draft = cls.new(usecase_id,
-                                  description=description,
-                                  **kwargs)
+        usecase_version_draft = cls.__new_from_raw_kwargs(usecase_id,
+                                                          description=description,
+                                                          **kwargs)
         usecase_version_draft._update_draft(**kwargs)
-        usecase_version = usecase_version_draft.__confirm()
+        usecase_version = usecase_version_draft._confirm()
 
         # NOTE: why wait for usecase_version running ?
         """
@@ -483,9 +490,13 @@ class BaseUsecaseVersion(ApiResource):
 
 class ClassicUsecaseVersion(BaseUsecaseVersion):
 
-    def __init__(self, **usecase_info):
-        super().__init__(**usecase_info)
-        usecase_params = usecase_info['usecase_version_params']
+    def __init__(self, **usecase_version_info):
+        super().__init__(**usecase_version_info)
+        self._update(**usecase_version_info)
+
+    def _update(self, **usecase_version_info):
+        super()._update(**usecase_version_info)
+        usecase_params = usecase_version_info['usecase_version_params']
         self.metric: str = usecase_params['metric']
         self.column_config = ColumnConfig(target_column=usecase_params.get('target_column'),
                                           fold_column=usecase_params.get('fold_column'),
@@ -508,14 +519,10 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                               feature_time_seconds=usecase_params.get('features_selection_time', 3600),
                                               feature_number_kept=usecase_params.get('features_selection_count', None))
 
-        self._id: str = usecase_info['_id']
-        self.usecase_id: str = usecase_info['usecase_id']
-        self.project_id: str = usecase_info['project_id']
-        self.version = usecase_info.get('version', 1)
-        self._usecase_info = usecase_info
-        self.data_type: DataType = DataType(usecase_info['usecase'].get('data_type'))
-        self.training_type: TypeProblem = TypeProblem(usecase_info['usecase'].get('training_type'))
-        self.dataset_id: str = usecase_info['dataset_id']
+        # self._usecase_info = usecase_info
+        # self.data_type: DataType = DataType(usecase_info['usecase'].get('data_type'))
+        # self.training_type: TypeProblem = TypeProblem(usecase_info['usecase'].get('training_type'))
+        self.dataset_id: str = usecase_version_info['dataset_id']
         self.predictions = {}
         self.predict_token = None
         self._models = {}

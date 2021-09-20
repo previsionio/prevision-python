@@ -26,11 +26,48 @@ class Supervised(ClassicUsecaseVersion):
 
     data_type = DataType.Tabular
 
-    def __init__(self, **usecase_info):
-        super().__init__(**usecase_info)
-        self.holdout_dataset_id: Union[str, None] = usecase_info.get('holdout_dataset_id', None)
+    def __init__(self, **usecase_version_info):
+        super().__init__(**usecase_version_info)
+        self._update(**usecase_version_info)
 
-        self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
+    def _update(self, **usecase_version_info):
+        super()._update(**usecase_version_info)
+        from .usecase_config import (AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel,
+                             TrainingConfig, ColumnConfig, TypeProblem, UsecaseState)
+
+        usecase_params = usecase_version_info['usecase_version_params']
+        self.metric: str = usecase_params['metric']
+        self.column_config = ColumnConfig(target_column=usecase_params.get('target_column'),
+                                          fold_column=usecase_params.get('fold_column'),
+                                          id_column=usecase_params.get('id_column'),
+                                          weight_column=usecase_params.get('weight_column'),
+                                          time_column=usecase_params.get('time_column', None),
+                                          group_columns=usecase_params.get('group_columns'),
+                                          apriori_columns=usecase_params.get('apriori_columns'),
+                                          drop_list=usecase_params.get('drop_list'))
+
+        self.training_config = TrainingConfig(profile=Profile(usecase_params.get('profile')),
+                                              features=[Feature(f) for f in usecase_params.get(
+                                                  'features_engineering_selected_list', [])],
+                                              advanced_models=[
+                                                  AdvancedModel(f) for f in usecase_params.get('normal_models', [])],
+                                              normal_models=[NormalModel(f)
+                                                             for f in usecase_params.get('lite_models', [])],
+                                              simple_models=[SimpleModel(f)
+                                                             for f in usecase_params.get('simple_models', [])],
+                                              feature_time_seconds=usecase_params.get('features_selection_time', 3600),
+                                              feature_number_kept=usecase_params.get('features_selection_count', None))
+
+        # self._usecase_version_info = usecase_version_info
+        # self.data_type: DataType = DataType(usecase_version_info['usecase'].get('data_type'))
+        # self.training_type: TypeProblem = TypeProblem(usecase_version_info['usecase'].get('training_type'))
+        self.dataset_id: str = usecase_version_info['dataset_id']
+        self.predictions = {}
+        self.predict_token = None
+
+        self.holdout_dataset_id: Union[str, None] = usecase_version_info.get('holdout_dataset_id', None)
+
+        # self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
 
     @classmethod
     def from_id(cls, _id: str) -> 'Supervised':
@@ -54,30 +91,76 @@ class Supervised(ClassicUsecaseVersion):
     def load(cls, pio_file: str) -> 'Supervised':
         return cls(**super()._load(pio_file))
 
+    @staticmethod
+    def _build_new_usecase_version_data(**kwargs) -> Dict:
+        data = super(Supervised, Supervised)._build_new_usecase_version_data(**kwargs)
+
+        dataset = kwargs['dataset']
+        if isinstance(dataset, str):
+            # NOTE: we shoul not authorize to pass directly the dataset_id is _fit(...
+            dataset_id = dataset
+        elif isinstance(dataset, tuple):
+            dataset_id = [d.id for d in dataset]
+        else:
+            dataset_id = dataset.id
+        data['dataset_id'] = dataset_id
+
+        data.update(to_json(kwargs['column_config']))
+        data['metric'] = kwargs['metric'].value
+
+        holdout_dataset = kwargs['holdout_dataset']
+        if holdout_dataset is not None:
+            if isinstance(holdout_dataset, str):
+                # NOTE: we shoul not authorize to pass directly the holdout_dataset_id is _fit(...
+                holdout_dataset_id = holdout_dataset
+            else:
+                holdout_dataset_id = holdout_dataset.id
+        else:
+            holdout_dataset_id = None
+        data['holdout_dataset_id'] = holdout_dataset_id
+
+        data.update(to_json(kwargs['training_config']))
+
+        return data
+
     @classmethod
-    def _fit(cls, project_id: str, name: str, data_type: DataType, training_type: TypeProblem,
-             dataset: Union[Dataset, Tuple[Dataset, DatasetImages]], column_config: ColumnConfig,
-             metric: metrics.Enum, holdout_dataset: Dataset = None,
-             training_config: TrainingConfig = TrainingConfig(), **kwargs) -> 'Supervised':
+    def _fit(cls,
+             usecase_id: str,
+             dataset: Union[Dataset, Tuple[Dataset, DatasetImages]],
+             column_config: ColumnConfig,
+             metric: metrics.Enum,
+             holdout_dataset: Dataset = None,
+             training_config: TrainingConfig = TrainingConfig(),
+             description: str = None) -> 'Supervised':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
 
         Args:
-            name (str): Name of the usecase to create
             dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the dataset
                 object to use for as training dataset
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (str): Specific metric to use for the usecase (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
-            training_config (:class:`.TrainingConfig`): Specific training configuration
+            training_config (:class:`.TrainingConfig`, optional): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
+            description (str, optional): The description of this usecase version (default: ``None``)
+
 
         Returns:
-            :class:`.Supervised`: Newly created supervised usecase object
+            :class:`.Supervised`: Newly created supervised usecase version object
+        """
+        return super()._fit(usecase_id,
+                            description=description,
+                            dataset=dataset,
+                            column_config=column_config,
+                            metric=metric,
+                            holdout_dataset=holdout_dataset,
+                            training_config=training_config)
+
         """
         training_args = to_json(training_config)
         assert isinstance(training_args, Dict)
@@ -113,6 +196,7 @@ class Supervised(ClassicUsecaseVersion):
                                                 specific_url=events_url)
 
         return usecase
+        """
 
     def new_version(
         self,
@@ -122,7 +206,7 @@ class Supervised(ClassicUsecaseVersion):
         metric: metrics.Enum = None,
         holdout_dataset: Dataset = None,
         training_config: TrainingConfig = None,
-        **fit_params
+        #**fit_params
     ) -> 'Supervised':
         """ Start a supervised usecase training to create a new version of the usecase (on the
         platform): the training configs are copied from the current version and then overridden
@@ -144,6 +228,7 @@ class Supervised(ClassicUsecaseVersion):
         Returns:
             :class:`.Supervised`: Newly created supervised usecase object (new version)
         """
+        print("new_version function called")
 
         if column_config is None:
             column_config = self.column_config
@@ -173,18 +258,28 @@ class Supervised(ClassicUsecaseVersion):
             'metric': metric_str,
             'holdout_dataset': holdout_dataset_id,
             'training_type': self.training_type.value,
-            'usecase_id': self._id,
+            # 'usecase_id': self._id,
             'parent_version': self.version,
             # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
         }
 
-        if description:
-            params["description"] = description
+        # if description:
+        #    params["description"] = description
 
         params.update(to_json(column_config))
         params.update(to_json(training_config))
 
-        params.update(fit_params)
+        # params.update(fit_params)
+
+        # NOTE: need to refactor this function
+
+        new_usecase_version_draft = self.new(self.usecase_id,
+                                             params)
+        # new_usecase_version_draft._update_draft(**params) # _draft do nothing in this class
+        new_usecase_version = new_usecase_version_draft._confirm()
+
+        """
+
         endpoint = "/usecases/{}/versions".format(self.usecase_id)
         resp = client.request(endpoint=endpoint,
                               data=params,
@@ -201,8 +296,9 @@ class Supervised(ClassicUsecaseVersion):
                                             self.resource,
                                             EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
                                             specific_url=events_url)
+        """
 
-        return usecase
+        return new_usecase_version
 
     def _save_json(self):
         json_dict = {
