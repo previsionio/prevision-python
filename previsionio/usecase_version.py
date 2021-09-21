@@ -498,7 +498,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                               feature_time_seconds=usecase_params.get('features_selection_time', 3600),
                                               feature_number_kept=usecase_params.get('features_selection_count', None))
 
-        # self._usecase_info = usecase_info
+        self._usecase_version_info = usecase_version_info
         # self.data_type: DataType = DataType(usecase_info['usecase'].get('data_type'))
         # self.training_type: TypeProblem = TypeProblem(usecase_info['usecase'].get('training_type'))
         self.dataset_id: str = usecase_version_info['dataset_id']
@@ -508,7 +508,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
 
     def print_info(self):
         """ Print all info on the usecase. """
-        for k, v in self._usecase_info.items():
+        # NOTE: maybe not set self._usecase_version_info and print each object attribut
+        for k, v in self._usecase_version_info.items():
             print(str(k) + ': ' + str(v))
 
     @property
