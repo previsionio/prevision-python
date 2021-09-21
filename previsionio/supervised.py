@@ -28,6 +28,8 @@ class Supervised(ClassicUsecaseVersion):
 
     def _update_from_dict(self, **usecase_version_info):
         super()._update_from_dict(**usecase_version_info)
+        if 'folder_dataset_id' in usecase_version_info:
+            self.folder_dataset_id: Dataset = DatasetImages.from_id(usecase_version_info['folder_dataset_id'])
         self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
 
     @classmethod
@@ -64,11 +66,10 @@ class Supervised(ClassicUsecaseVersion):
 
         # because if Image there is the dataset and the images zip
         if isinstance(dataset, tuple):
-            dataset_id = [d.id for d in dataset]
+            data['dataset_id'], data['folder_dataset_id'] = dataset[0].id, dataset[1].id
         else:
-            dataset_id = dataset.id
+            data['dataset_id'] = dataset.id
 
-        data['dataset_id'] = dataset_id
         data.update(to_json(column_config))
         data['metric'] = metric if isinstance(metric, str) else metric.value
         data['holdout_dataset_id'] = holdout_dataset.id if holdout_dataset is not None else None
@@ -149,7 +150,8 @@ class Supervised(ClassicUsecaseVersion):
         """
         return Supervised._fit(
                                self.usecase_id,
-                               dataset if dataset is not None else self.dataset,
+                               # NOTE: we should be able to overridde only one of the dataset...
+                               dataset if dataset is not None else (self.dataset, self.folder_dataset),
                                column_config if column_config is not None else self.column_config,
                                metric if metric is not None else self.metric,
                                holdout_dataset=holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
