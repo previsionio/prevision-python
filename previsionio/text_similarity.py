@@ -104,10 +104,12 @@ class ListModelsParameters(UsecaseConfig):
                                                     TextSimilarityModels.ClusterPruning])
             models_parameters_2 = ModelsParameters(ModelEmbedding.Transformer,
                                                    Preprocessing(),
-                                                   [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
+                                                   # [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
+                                                   [TextSimilarityModels.BruteForce])
             models_parameters_3 = ModelsParameters(ModelEmbedding.TransformerFineTuned,
                                                    Preprocessing(),
-                                                   [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
+                                                   #" [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
+                                                   [TextSimilarityModels.BruteForce])
             models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
         self.models_parameters = []
         for element in models_parameters:
@@ -187,7 +189,7 @@ class TextSimilarity(BaseUsecaseVersion):
         usecase_version_params = usecase_version_info['usecase_version_params']
 
         dataset_id: str = usecase_version_info['dataset_id']
-        self.dataset_id: str = Dataset.from_id(dataset_id)
+        self.dataset: Dataset = Dataset.from_id(dataset_id)
         self.description_column_config = DescriptionsColumnConfig(
             content_column=usecase_version_params.get('content_column'),
             id_column=usecase_version_params.get('id_column'))
@@ -198,7 +200,7 @@ class TextSimilarity(BaseUsecaseVersion):
 
         if usecase_version_info.get('queries_dataset_id'):
             queries_dataset_id = usecase_version_info['queries_dataset_id']
-            self.queries_dataset = Dataset.from_id(queries_dataset_id)
+            self.queries_dataset: Dataset = Dataset.from_id(queries_dataset_id)
             content_column = usecase_version_params.get('queries_dataset_content_column')
             matching_id = usecase_version_params.get('queries_dataset_matching_id_description_column')
             queries_dataset_id_column = usecase_version_params.get('queries_dataset_id_column', None)
