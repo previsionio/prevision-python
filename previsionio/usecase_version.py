@@ -69,7 +69,6 @@ class BaseUsecaseVersion(ApiResource):
         }
         return data
 
-
     @classmethod
     def new(cls, usecase_id, data) -> 'BaseUsecaseVersion':
         endpoint = f'/usecases/{usecase_id}/versions'
@@ -126,6 +125,9 @@ class BaseUsecaseVersion(ApiResource):
         print("usecase_version.__dict__ at end of fit")
         pprint.pprint(usecase_version.__dict__)
         return usecase_version
+
+    def new_version(self, **kwargs):
+        raise NotImplementedError
 
     def __len__(self):
         return len(self.models)
