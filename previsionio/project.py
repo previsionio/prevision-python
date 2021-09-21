@@ -513,7 +513,7 @@ class Project(ApiResource, UniqueResourceMixin):
             usecase_version_description (str): Description of the usecase version to create
 
         Returns:
-            :class:`.supervised.Regression`: Newly created Regression usecase version object
+            :class:`.supervised.Supervised`: Newly created Supervised usecase version object
         """
         usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.Tabular, TypeProblem.Regression)
         return Supervised._fit(
@@ -526,53 +526,18 @@ class Project(ApiResource, UniqueResourceMixin):
             description=usecase_version_description,
         )
 
-    def create_external_regression(self,
-                                   usecase_name: str,
-                                   holdout_dataset: Dataset,
-                                   target_column: str,
-                                   external_models: List[Tuple],
-                                   metric: metrics.Regression = metrics.Regression.RMSE,
-                                   dataset: Dataset = None,
-                                   usecase_version_description: str = None):
-        """ Create a tabular regression usecase version from external models
-
-        Args:
-            usecase_name (str): Name of the usecase to create
-            holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
-            target_column: The name of the target column for this usecase version
-            external_models (list(tuple)): the external models to add in the usecase version to create
-                Each tuple contains 3 items describing an external model as follows:
-                - name of the model
-                - a path to the model in onnx format
-                - a path to a yaml file containing metadata about the model
-            metric (str, optional): Specific metric to use for the usecase (default: ``rmse``)
-            dataset (:class:`.Dataset`, optional): Reference to the dataset object that
-                has been used to train the model (default: ``None``)
-            usecase_version_description (str): Description of the usecase version to create
-
-        Returns:
-            :class:`.external_models.ExternalUsecaseVersion`: Newly created external usecase version object
-        """
-        if len(external_models) == 0:
-            raise PrevisionException('You must provide at least one external model')
-        usecase = Usecase.new(self._id, 'external', usecase_name, DataType.Tabular, TypeProblem.Regression)
-        return ExternalUsecaseVersion._fit(
-            usecase.id,
-            holdout_dataset,
-            target_column,
-            external_models,
-            metric,
-            dataset=dataset,
-            description=usecase_version_description,
-        )
-
-    def fit_classification(self, name: str, dataset: Dataset, column_config: ColumnConfig,
-                           metric: metrics.Classification = metrics.Classification.AUC, holdout_dataset=None,
-                           training_config=TrainingConfig(), **kwargs):
+    def fit_classification(self,
+                           usecase_name: str,
+                           dataset: Dataset,
+                           column_config: ColumnConfig,
+                           metric: metrics.Classification = metrics.Classification.AUC,
+                           holdout_dataset=None,
+                           training_config=TrainingConfig(),
+                           usecase_version_description: str = None):
         """ Start a tabular classification usecase version training
 
         Args:
-            name (str): Name of the usecase to create
+            usecase_name (str): Name of the usecase to create
             dataset (:class:`.Dataset`): Reference to the dataset
                 object to use for as training dataset
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
@@ -584,174 +549,31 @@ class Project(ApiResource, UniqueResourceMixin):
             training_config (:class:`.TrainingConfig`): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
+            usecase_version_description (str): Description of the usecase version to create
 
         Returns:
-            :class:`.supervised.Classification`: Newly created Classification usecase version object
+            :class:`.supervised.Supervised`: Newly created Supervised usecase version object
         """
+        usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.Tabular, TypeProblem.Classification)
         return Supervised._fit(
-            self._id, name,
-            data_type=DataType.Tabular,
-            training_type=TypeProblem.Classification,
-            dataset=dataset,
-            column_config=column_config,
-            metric=metric,
+            usecase.id,
+            dataset,
+            column_config,
+            metric,
             holdout_dataset=holdout_dataset,
             training_config=training_config,
-            **kwargs
+            description=usecase_version_description,
         )
 
-    def fit_multiclassification(self, name: str, dataset: Dataset, column_config: ColumnConfig,
+    def fit_multiclassification(self,
+                                usecase_name: str,
+                                dataset: Dataset,
+                                column_config: ColumnConfig,
                                 metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
-                                holdout_dataset: Dataset = None, training_config=TrainingConfig(), **kwargs):
+                                holdout_dataset=None,
+                                training_config=TrainingConfig(),
+                                usecase_version_description: str = None):
         """ Start a tabular multiclassification usecase version training
-
-        Args:
-            name (str): Name of the usecase to create
-            dataset (:class:`.Dataset`): Reference to the dataset
-                object to use for as training dataset
-            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
-                (see the documentation of the :class:`.ColumnConfig` resource for more details
-                on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
-            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
-                use as a holdout dataset (default: ``None``)
-            training_config (:class:`.TrainingConfig`): Specific training configuration
-                (see the documentation of the :class:`.TrainingConfig` resource for more details
-                on all the parameters)
-
-        Returns:
-            :class:`.supervised.MultiClassification`: Newly created MultiClassification usecase version object
-        """
-        return Supervised._fit(
-            self._id, name,
-            data_type=DataType.Tabular,
-            training_type=TypeProblem.MultiClassification,
-            dataset=dataset,
-            column_config=column_config,
-            metric=metric,
-            holdout_dataset=holdout_dataset,
-            training_config=training_config,
-            **kwargs
-        )
-
-    def fit_image_regression(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig,
-                             metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset: Dataset = None,
-                             training_config=TrainingConfig(), **kwargs):
-        """ Start an image regression usecase version training
-
-        Args:
-            name (str): Name of the usecase to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the dataset
-                object to use for as training dataset
-            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
-                (see the documentation of the :class:`.ColumnConfig` resource for more details
-                on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
-            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
-                use as a holdout dataset (default: ``None``)
-            training_config (:class:`.TrainingConfig`): Specific training configuration
-                (see the documentation of the :class:`.TrainingConfig` resource for more details
-                on all the parameters)
-
-        Returns:
-            :class:`.supervised.RegressionImages`: Newly created RegressionImages usecase version object
-        """
-        return Supervised._fit(
-            self._id, name,
-            data_type=DataType.Images,
-            training_type=TypeProblem.Regression,
-            dataset=dataset,
-            column_config=column_config,
-            metric=metric,
-            holdout_dataset=holdout_dataset,
-            training_config=training_config,
-            **kwargs
-        )
-
-    def fit_image_classification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig,
-                                 metric: metrics.Classification = metrics.Classification.AUC,
-                                 holdout_dataset: Dataset = None, training_config=TrainingConfig(), **kwargs):
-        """ Start an image classification usecase version training
-
-        Args:
-            name (str): Name of the usecase to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the dataset
-                object to use for as training dataset
-            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
-                (see the documentation of the :class:`.ColumnConfig` resource for more details
-                on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
-            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
-                use as a holdout dataset (default: ``None``)
-            training_config (:class:`.TrainingConfig`): Specific training configuration
-                (see the documentation of the :class:`.TrainingConfig` resource for more details
-                on all the parameters)
-
-        Returns:
-            :class:`.supervised.ClassificationImages`: Newly created ClassificationImages usecase version object
-        """
-        return Supervised._fit(
-            self._id, name,
-            data_type=DataType.Images,
-            training_type=TypeProblem.Classification,
-            dataset=dataset,
-            column_config=column_config,
-            metric=metric,
-            holdout_dataset=holdout_dataset,
-            training_config=training_config,
-            **kwargs
-        )
-
-    def fit_image_multiclassification(
-        self, name: str,
-        dataset: Tuple[Dataset, DatasetImages],
-        column_config: ColumnConfig,
-        metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
-        holdout_dataset: Dataset = None,
-        training_config=TrainingConfig(),
-        **kwargs
-    ) -> Supervised:
-        """ Start an image multiclassification usecase version training
-
-        Args:
-            name (str): Name of the usecase to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the dataset
-                object to use for as training dataset
-            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
-                (see the documentation of the :class:`.ColumnConfig` resource for more details
-                on each possible column types)
-            metric (:enum: `metrics.MultiClassification`, optional): Specific metric to use for the usecase (default:
-                ``metrics.MultiClassification.log_loss``)
-            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
-                use as a holdout dataset (default: ``None``)
-            training_config (:class:`.TrainingConfig`): Specific training configuration
-                (see the documentation of the :class:`.TrainingConfig` resource for more details
-                on all the parameters)
-
-        Returns:
-            :class:`.supervised.MultiClassificationImages`: Newly created MultiClassificationImages usecase version
-                object
-        """
-        return Supervised._fit(
-            self._id, name,
-            data_type=DataType.Images,
-            training_type=TypeProblem.MultiClassification,
-            dataset=dataset,
-            column_config=column_config,
-            metric=metric,
-            holdout_dataset=holdout_dataset,
-            training_config=training_config,
-            **kwargs
-        )
-    def _fit_regression(self,
-                        usecase_name: str,
-                        dataset: Dataset,
-                        column_config: ColumnConfig,
-                        metric: metrics.Regression = metrics.Regression.RMSE,
-                        holdout_dataset=None,
-                        training_config=TrainingConfig(),
-                        usecase_version_description: str = None):
-        """ Start a tabular regression usecase version training
 
         Args:
             usecase_name (str): Name of the usecase to create
@@ -769,9 +591,9 @@ class Project(ApiResource, UniqueResourceMixin):
             usecase_version_description (str): Description of the usecase version to create
 
         Returns:
-            :class:`.supervised.Regression`: Newly created Regression usecase version object
+            :class:`.supervised.Supervised`: Newly created Supervised usecase version object
         """
-        usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.Tabular, TypeProblem.Regression)
+        usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.Tabular, TypeProblem.MultiClassification)
         return Supervised._fit(
             usecase.id,
             dataset,
@@ -782,6 +604,122 @@ class Project(ApiResource, UniqueResourceMixin):
             description=usecase_version_description,
         )
 
+    def fit_image_regression(self,
+                             usecase_name: str,
+                             dataset: Tuple[Dataset, DatasetImages],
+                             column_config: ColumnConfig,
+                             metric: metrics.Regression = metrics.Regression.RMSE,
+                             holdout_dataset=None,
+                             training_config=TrainingConfig(),
+                             usecase_version_description: str = None):
+        """ Start an image regression usecase version training
+
+        Args:
+            usecase_name (str): Name of the usecase to create
+            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the datasets
+                objects to use for as training datasets
+            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
+                (see the documentation of the :class:`.ColumnConfig` resource for more details
+                on each possible column types)
+            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
+                use as a holdout dataset (default: ``None``)
+            training_config (:class:`.TrainingConfig`): Specific training configuration
+                (see the documentation of the :class:`.TrainingConfig` resource for more details
+                on all the parameters)
+            usecase_version_description (str): Description of the usecase version to create
+
+        Returns:
+            :class:`.supervised.Supervised`: Newly created Supervised usecase version object
+        """
+        usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.Images, TypeProblem.Regression)
+        return Supervised._fit(
+            usecase.id,
+            dataset,
+            column_config,
+            metric,
+            holdout_dataset=holdout_dataset,
+            training_config=training_config,
+            description=usecase_version_description,
+        )
+
+    def fit_image_classification(self,
+                                 usecase_name: str,
+                                 dataset: Tuple[Dataset, DatasetImages],
+                                 column_config: ColumnConfig,
+                                 metric: metrics.Classification = metrics.Classification.AUC,
+                                 holdout_dataset=None,
+                                 training_config=TrainingConfig(),
+                                 usecase_version_description: str = None):
+        """ Start an image classification usecase version training
+
+        Args:
+            usecase_name (str): Name of the usecase to create
+            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the datasets
+                objects to use for as training datasets
+            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
+                (see the documentation of the :class:`.ColumnConfig` resource for more details
+                on each possible column types)
+            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
+                use as a holdout dataset (default: ``None``)
+            training_config (:class:`.TrainingConfig`): Specific training configuration
+                (see the documentation of the :class:`.TrainingConfig` resource for more details
+                on all the parameters)
+            usecase_version_description (str): Description of the usecase version to create
+
+        Returns:
+            :class:`.supervised.Supervised`: Newly created Supervised usecase version object
+        """
+        usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.Images, TypeProblem.Classification)
+        return Supervised._fit(
+            usecase.id,
+            dataset,
+            column_config,
+            metric,
+            holdout_dataset=holdout_dataset,
+            training_config=training_config,
+            description=usecase_version_description,
+        )
+
+    def fit_image_multiclassification(self,
+                                      usecase_name: str,
+                                      dataset: Tuple[Dataset, DatasetImages],
+                                      column_config: ColumnConfig,
+                                      metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
+                                      holdout_dataset=None,
+                                      training_config=TrainingConfig(),
+                                      usecase_version_description: str = None):
+        """ Start an image multiclassification usecase version training
+
+        Args:
+            usecase_name (str): Name of the usecase to create
+            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the datasets
+                objects to use for as training datasets
+            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
+                (see the documentation of the :class:`.ColumnConfig` resource for more details
+                on each possible column types)
+            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
+                use as a holdout dataset (default: ``None``)
+            training_config (:class:`.TrainingConfig`): Specific training configuration
+                (see the documentation of the :class:`.TrainingConfig` resource for more details
+                on all the parameters)
+            usecase_version_description (str): Description of the usecase version to create
+
+        Returns:
+            :class:`.supervised.Supervised`: Newly created Supervised usecase version object
+        """
+        usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.Images, TypeProblem.MultiClassification)
+        return Supervised._fit(
+            usecase.id,
+            dataset,
+            column_config,
+            metric,
+            holdout_dataset=holdout_dataset,
+            training_config=training_config,
+            description=usecase_version_description,
+        )
 
     def fit_timeseries_regression(
         self,
@@ -816,7 +754,7 @@ class Project(ApiResource, UniqueResourceMixin):
             usecase_version_description (str): Description of the usecase version to create
 
         Returns:
-            :class:`.TimeSeries`: Newly created TimeSeries usecase version object
+            :class:`.timeseries.TimeSeries`: Newly created TimeSeries usecase version object
         """
         return TimeSeries._fit(
             usecase.id,
@@ -861,7 +799,7 @@ class Project(ApiResource, UniqueResourceMixin):
             usecase_version_description (str): Description of the usecase version to create
 
         Returns:
-            :class:`.previsionio.text_similarity.TextSimilarity`: Newly created TextSimilarity usecase version object
+            :class:`.text_similarity.TextSimilarity`: Newly created TextSimilarity usecase version object
         """
         usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.Tabular, TypeProblem.TextSimilarity)
         return TextSimilarity._fit(
@@ -874,6 +812,46 @@ class Project(ApiResource, UniqueResourceMixin):
             queries_dataset=queries_dataset,
             queries_column_config=queries_column_config,
             models_parameters=models_parameters
+        )
+
+    def create_external_regression(self,
+                                   usecase_name: str,
+                                   holdout_dataset: Dataset,
+                                   target_column: str,
+                                   external_models: List[Tuple],
+                                   metric: metrics.Regression = metrics.Regression.RMSE,
+                                   dataset: Dataset = None,
+                                   usecase_version_description: str = None) -> ExternalUsecaseVersion:
+        """ Create a tabular regression usecase version from external models
+
+        Args:
+            usecase_name (str): Name of the usecase to create
+            holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
+            target_column: The name of the target column for this usecase version
+            external_models (list(tuple)): the external models to add in the usecase version to create
+                Each tuple contains 3 items describing an external model as follows:
+                - name of the model
+                - a path to the model in onnx format
+                - a path to a yaml file containing metadata about the model
+            metric (str, optional): Specific metric to use for the usecase (default: ``rmse``)
+            dataset (:class:`.Dataset`, optional): Reference to the dataset object that
+                has been used to train the model (default: ``None``)
+            usecase_version_description (str): Description of the usecase version to create
+
+        Returns:
+            :class:`.external_models.ExternalUsecaseVersion`: Newly created ExternalUsecaseVersion object
+        """
+        if len(external_models) == 0:
+            raise PrevisionException('You must provide at least one external model')
+        usecase = Usecase.new(self._id, 'external', usecase_name, DataType.Tabular, TypeProblem.Regression)
+        return ExternalUsecaseVersion._fit(
+            usecase.id,
+            holdout_dataset,
+            target_column,
+            external_models,
+            metric,
+            dataset=dataset,
+            description=usecase_version_description,
         )
 
     def list_usecases(self, all: bool = True):
