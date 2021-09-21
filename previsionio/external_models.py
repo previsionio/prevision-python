@@ -20,22 +20,28 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
     def _update_from_dict(self, **usecase_version_info):
         super()._update_from_dict(**usecase_version_info)
         self.holdout_dataset_id: str = usecase_version_info.get('holdout_dataset_id')
-        self.dataset_id: Union[str, None] = usecase_version_info.get('dataset_id', None)
+        self.dataset_id: Union[str, None] = usecase_version_info.get('dataset_id')
 
         usecase_version_params = usecase_version_info['usecase_version_params']
         self.metric: str = usecase_version_params['metric']
 
-    def _update_draft(self, **kwargs):
-        external_models = kwargs['external_models']
+    def _update_draft(self, external_models, **kwargs):
         self.__add_external_models(external_models)
 
     @staticmethod
-    def _build_usecase_version_creation_data(**kwargs) -> Dict:
-        data = super(ExternalUsecaseVersion, ExternalUsecaseVersion)._build_usecase_version_creation_data(**kwargs)
-        data['holdout_dataset_id'] = kwargs['holdout_dataset'].id
-        data['dataset_id'] = None if kwargs['dataset'] is None else kwargs['dataset'].id
-        data['metric'] = kwargs['metric'].value
-        data['target_column'] = kwargs['target_column']
+    def _build_usecase_version_creation_data(description, holdout_dataset, target_column,
+                                             metric, dataset, parent_version=None,
+                                             **kwargs) -> Dict:
+        data = super(ExternalUsecaseVersion, ExternalUsecaseVersion)._build_usecase_version_creation_data(
+            description,
+            parent_version=parent_version,
+        )
+
+        data['holdout_dataset_id'] = holdout_dataset.id
+        data['target_column'] = target_column
+        data['metric'] = metric if isinstance(metric, str) else metric.value
+        data['dataset_id'] = dataset.id if dataset is not None else None
+
         return data
 
     @classmethod
@@ -47,12 +53,32 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
              metric: metrics.Enum,
              dataset: Dataset = None,
              description: str = None) -> 'ExternalUsecaseVersion':
-        return super()._fit(usecase_id,
-                            description=description,
-                            holdout_dataset=holdout_dataset,
-                            target_column=target_column,
-                            external_models=external_models,
-                            metric=metric, dataset=dataset)
+        return super()._fit(
+            usecase_id,
+            description=description,
+            holdout_dataset=holdout_dataset,
+            target_column=target_column,
+            external_models=external_models,
+            metric=metric,
+            dataset=dataset,
+        )
+
+    def new_version(self,
+                    holdout_dataset: Dataset = None,
+                    target_column: str = None,
+                    external_models: List[Tuple] = None,
+                    metric: metrics.Enum = None,
+                    dataset: Dataset = None,
+                    description: str = None) -> 'ExternalUsecaseVersion':
+        return ExternalUsecaseVersion._fit(
+            self.usecase_id,
+            holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
+            target_column if target_column is not None else self.target_column,
+            external_models if external_models is not None else self.external_models,
+            metric if metric is not None else self.metric,
+            dataset=dataset if dataset is not None else self.dataset,
+            description=description,
+        )
 
     def __add_external_model(self, external_model: Tuple) -> None:
         external_model_upload_endpoint = f'/usecase-versions/{self._id}/external-models'
