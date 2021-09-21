@@ -275,7 +275,7 @@ class Supervised(ClassicUsecaseVersion):
 
         new_usecase_version_draft = self.new(self.usecase_id,
                                              params)
-        # new_usecase_version_draft._update_from_dict_draft(**params) # _draft do nothing in this class
+        # new_usecase_version_draft._update_draft(**params) # _draft do nothing in this class
         new_usecase_version = new_usecase_version_draft._confirm()
 
         """

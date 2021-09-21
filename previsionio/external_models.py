@@ -25,7 +25,7 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
         usecase_version_params = usecase_version_info['usecase_version_params']
         self.metric: str = usecase_version_params['metric']
 
-    def _update_from_dict_draft(self, **kwargs):
+    def _update_draft(self, **kwargs):
         external_models = kwargs['external_models']
         self.__add_external_models(external_models)
 

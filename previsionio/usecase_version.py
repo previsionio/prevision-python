@@ -44,6 +44,8 @@ class BaseUsecaseVersion(ApiResource):
         self.project_id: str = usecase_version_info.get('project_id')
         self.usecase_id: str = usecase_version_info.get('usecase_id')
         self.description: str = usecase_version_info.get('description')
+        self.version = usecase_version_info['version']
+        self.parent_version: str = usecase_version_info.get('parent_version')
         if 'usecase' in usecase_version_info and 'data_type' in usecase_version_info['usecase']:
             self.data_type: DataType = DataType(usecase_version_info['usecase']['data_type'])
         else:
@@ -56,7 +58,6 @@ class BaseUsecaseVersion(ApiResource):
         self.created_at: datetime.datetime = parser.parse(usecase_version_info.get('created_at'))
 
         self._models = {}
-        self.version = usecase_version_info['version']
 
     # NOTE: this method is just here to parse raw_data (objects) and build the corresponding data (strings)
     #       that can be sent directly to the endpoint
@@ -83,7 +84,7 @@ class BaseUsecaseVersion(ApiResource):
         usecase_version = cls(**usecase_version_info)
         return usecase_version
 
-    def _update_from_dict_draft(self, **kwargs):
+    def _update_draft(self, **kwargs):
         return self
 
     def _confirm(self) -> 'BaseUsecaseVersion':
@@ -106,7 +107,7 @@ class BaseUsecaseVersion(ApiResource):
         usecase_version_creation_data = cls._build_usecase_version_creation_data(description=description,
                                                                             **kwargs)
         usecase_version_draft = cls.new(usecase_id, usecase_version_creation_data)
-        usecase_version_draft._update_from_dict_draft(**kwargs)
+        usecase_version_draft._update_draft(**kwargs)
         usecase_version = usecase_version_draft._confirm()
 
         # NOTE: why wait for usecase_version running ?
