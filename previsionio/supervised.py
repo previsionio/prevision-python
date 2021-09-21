@@ -29,7 +29,7 @@ class Supervised(ClassicUsecaseVersion):
     def _update_from_dict(self, **usecase_version_info):
         super()._update_from_dict(**usecase_version_info)
         if 'folder_dataset_id' in usecase_version_info:
-            self.folder_dataset_id: Dataset = DatasetImages.from_id(usecase_version_info['folder_dataset_id'])
+            self.folder_dataset: DatasetImages = DatasetImages.from_id(usecase_version_info['folder_dataset_id'])
         self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
 
     @classmethod
