@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from typing import Dict, Union
+from typing import Dict
 
-import requests
-from previsionio.utils import EventTuple, parse_json, to_json
+from previsionio.utils import to_json
 from . import TrainingConfig
 from .usecase_config import DataType, UsecaseConfig, ColumnConfig, TypeProblem
 from .usecase_version import ClassicUsecaseVersion
 from .metrics import Regression
 from .model import RegressionModel
 from .dataset import Dataset
-from .prevision_client import client
-import previsionio as pio
 
 
 class TimeWindowException(Exception):
@@ -75,7 +72,6 @@ class TimeSeries(ClassicUsecaseVersion):
 
     def _update_from_dict(self, **usecase_version_info):
         super()._update_from_dict(**usecase_version_info)
-        self.holdout_dataset_id: Union[str, None] = usecase_version_info.get('holdout_dataset_id', None)
         self.time_window = TimeWindow.from_dict(usecase_version_info['usecase_version_params']['timeseries_values'])
 
     @classmethod
@@ -87,35 +83,20 @@ class TimeSeries(ClassicUsecaseVersion):
         return cls(**super()._load(pio_file))
 
     @staticmethod
-    def _build_usecase_version_creation_data(**kwargs) -> Dict:
-        data = super(TimeSeries, TimeSeries)._build_usecase_version_creation_data(**kwargs)
+    def _build_usecase_version_creation_data(description, dataset, column_config, time_window, metric,
+                                             holdout_dataset, training_config,
+                                             parent_version=None) -> Dict:
+        data = super(TimeSeries, TimeSeries)._build_usecase_version_creation_data(
+            description,
+            parent_version=parent_version,
+        )
 
-        dataset = kwargs['dataset']
-        if isinstance(dataset, str):
-            # NOTE: we shoul not authorize to pass directly the dataset_id is _fit(...
-            dataset_id = dataset
-        elif isinstance(dataset, tuple):
-            dataset_id = [d.id for d in dataset]
-        else:
-            dataset_id = dataset.id
-        data['dataset_id'] = dataset_id
-
-        data.update(to_json(kwargs['column_config']))
-        data.update(to_json(kwargs['time_window']))
-        data['metric'] = kwargs['metric'].value
-
-        holdout_dataset = kwargs['holdout_dataset']
-        if holdout_dataset is not None:
-            if isinstance(holdout_dataset, str):
-                # NOTE: we shoul not authorize to pass directly the holdout_dataset_id is _fit(...
-                holdout_dataset_id = holdout_dataset
-            else:
-                holdout_dataset_id = holdout_dataset.id
-        else:
-            holdout_dataset_id = None
-        data['holdout_dataset_id'] = holdout_dataset_id
-
-        data.update(to_json(kwargs['training_config']))
+        data['dataset_id'] = dataset.id
+        data.update(to_json(column_config))
+        data.update(to_json(time_window))
+        data['metric'] = metric if isinstance(metric, str) else metric.value
+        data['holdout_dataset_id'] = holdout_dataset.id if holdout_dataset is not None else None
+        data.update(to_json(training_config))
 
         return data
 
@@ -143,14 +124,14 @@ class TimeSeries(ClassicUsecaseVersion):
 
     def new_version(
         self,
-        description: str = None,
         dataset: Dataset = None,
         column_config: ColumnConfig = None,
         time_window: TimeWindow = None,
         metric: Regression = None,
         holdout_dataset: Dataset = None,
-        training_config: TrainingConfig = TrainingConfig(),
-    ):
+        training_config: TrainingConfig = None,
+        description: str = None,
+    ) -> 'TimeSeries':
         """ Start a time series usecase training to create a new version of the usecase (on the
         platform): the training configs are copied from the current version and then overridden
         for the given parameters.
@@ -171,53 +152,15 @@ class TimeSeries(ClassicUsecaseVersion):
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
         Returns:
-            :class:`.TimeSeries`: Newly created text similarity usecase version object (new version)
+            :class:`.TimeSeries`: Newly created TimeSeries usecase version object (new version)
         """
-
-        if not dataset:
-            dataset_id = self.dataset_id
-        else:
-            dataset_id = dataset.id
-
-        if not column_config:
-            column_config = self.column_config
-
-        if not time_window:
-            time_window = self.time_window
-
-        if not metric:
-            metric = Regression(self.metric)
-
-        if not holdout_dataset:
-            holdout_dataset_id = self.holdout_dataset_id
-        else:
-            holdout_dataset_id = holdout_dataset.id
-
-        if not training_config:
-            training_config = self.training_config
-
-        training_args = to_json(training_config)
-        assert isinstance(training_args, Dict)
-        training_args.update(to_json(column_config))
-        training_args.update(to_json(time_window))
-
-        params = {
-            'dataset_id': dataset_id,
-            'metric': metric.value,
-            'holdout_dataset': holdout_dataset_id,
-            'training_type': self.training_type.value,
-            'usecase_id': self._id,
-            'parent_version': self.version,
-            # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
-        }
-
-        if description:
-            params["description"] = description
-
-        params.update(training_args)
-
-        new_usecase_version_draft = self.new(self.usecase_id,
-                                             params)
-        # new_usecase_version_draft._update_draft(**params) # _draft do nothing in this class
-        new_usecase_version = new_usecase_version_draft._confirm()
-        return new_usecase_version
+        return TimeSeries._fit(
+                               self.usecase_id,
+                               dataset if dataset is not None else self.dataset,
+                               column_config if column_config is not None else self.column_config,
+                               time_window if time_window is not None else self.time_window,
+                               metric if metric is not None else self.metric,
+                               holdout_dataset=holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
+                               training_config=training_config if training_config is not None else self.training_config,
+                               description=description,
+        )
