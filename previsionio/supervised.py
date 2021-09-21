@@ -2,16 +2,13 @@
 from __future__ import print_function
 from typing import Dict, Tuple, Union
 
-import requests
-from previsionio.usecase_config import ColumnConfig, DataType, TypeProblem
-from previsionio.dataset import Dataset, DatasetImages
-from . import TrainingConfig
+from .dataset import Dataset, DatasetImages
+from .usecase_config import (DataType, TypeProblem, Feature, SimpleModel, NormalModel, AdvancedModel, Profile,
+                             TrainingConfig, ColumnConfig)
 from . import metrics
 from .usecase_version import ClassicUsecaseVersion
 from .model import RegressionModel, ClassificationModel, MultiClassificationModel
-from .utils import EventTuple, parse_json, to_json
-from .prevision_client import client
-import previsionio as pio
+from .utils import to_json
 
 MODEL_CLASS_DICT = {
     TypeProblem.Regression: RegressionModel,
@@ -32,8 +29,6 @@ class Supervised(ClassicUsecaseVersion):
 
     def _update_from_dict(self, **usecase_version_info):
         super()._update_from_dict(**usecase_version_info)
-        from .usecase_config import (AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel,
-                             TrainingConfig, ColumnConfig, TypeProblem, UsecaseState)
 
         usecase_params = usecase_version_info['usecase_version_params']
         self.metric: str = usecase_params['metric']
