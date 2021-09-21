@@ -103,21 +103,11 @@ class BaseUsecaseVersion(ApiResource):
              description: str = None,
              **kwargs) -> 'BaseUsecaseVersion':
 
-        usecase_version_creation_data = cls._build_usecase_version_creation_data(description=description,
-                                                                            **kwargs)
+        usecase_version_creation_data = cls._build_usecase_version_creation_data(description,
+                                                                                 **kwargs)
         usecase_version_draft = cls.new(usecase_id, usecase_version_creation_data)
         usecase_version_draft._update_draft(**kwargs)
         usecase_version = usecase_version_draft._confirm()
-
-        # NOTE: why wait for usecase_version running ?
-        """
-        events_url = '/{}/{}'.format(cls.resource, usecase_version_id)
-        assert pio.client.event_manager is not None
-        pio.client.event_manager.wait_for_event(usecase_version.resource_id,
-                                                cls.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
-                                                specific_url=events_url)
-        """
 
         # NOTE: maybe update like that to be sure to have all the correct info of the resource
         # usecase_version._update_from_dict(**cls._from_id(usecase_version._id))
