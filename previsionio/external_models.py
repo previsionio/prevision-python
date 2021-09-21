@@ -19,8 +19,13 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
 
     def _update_from_dict(self, **usecase_version_info):
         super()._update_from_dict(**usecase_version_info)
-        self.holdout_dataset_id: str = usecase_version_info.get('holdout_dataset_id')
-        self.dataset_id: Union[str, None] = usecase_version_info.get('dataset_id')
+        holdout_dataset_id: str = usecase_version_info['holdout_dataset_id']
+        self.holdout_dataset: Dataset = Dataset.from_id(holdout_dataset_id)
+        self.target_column = usecase_version_info.get('target_column')
+
+        self.metric = usecase_version_info.get('metric')
+        dataset_id: Union[str, None] = usecase_version_info.get('dataset_id')
+        self.dataset: Union[str, None] = Dataset.from_id(dataset_id) if dataset_id is not None else None
 
         usecase_version_params = usecase_version_info['usecase_version_params']
         self.metric: str = usecase_version_params['metric']
@@ -64,9 +69,9 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
         )
 
     def new_version(self,
+                    external_models: List[Tuple],
                     holdout_dataset: Dataset = None,
                     target_column: str = None,
-                    external_models: List[Tuple] = None,
                     metric: metrics.Enum = None,
                     dataset: Dataset = None,
                     description: str = None) -> 'ExternalUsecaseVersion':
@@ -74,7 +79,7 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
             self.usecase_id,
             holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
             target_column if target_column is not None else self.target_column,
-            external_models if external_models is not None else self.external_models,
+            external_models,
             metric if metric is not None else self.metric,
             dataset=dataset if dataset is not None else self.dataset,
             description=description,
