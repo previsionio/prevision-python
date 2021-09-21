@@ -67,7 +67,7 @@ class Supervised(ClassicUsecaseVersion):
 
         self.holdout_dataset_id: Union[str, None] = usecase_version_info.get('holdout_dataset_id', None)
 
-        # self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
+        self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
 
     @classmethod
     def from_id(cls, _id: str) -> 'Supervised':
