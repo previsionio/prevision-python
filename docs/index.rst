@@ -6,8 +6,7 @@
 Welcome to prevision-python's documentation!
 ============================================
 
-Prevision.io is an automated SaaS machine learning platform that enables you to create
-and deploy powerful predictive models and business applications in one-click.
+Prevision.io is an automated SaaS machine learning platform that enables you to create deploy and monitor powerful predictive models and business applications.
 
 This documentation focuses on how to use Prevision.io's Python SDK for a direct usage
 in your data science scripts.

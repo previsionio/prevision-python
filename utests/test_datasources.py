@@ -7,12 +7,12 @@ from .utils import get_testing_id
 
 try:
     from .connectors_config import ftp_config, sftp_config, mysql_config, \
-        hive_config, S3_config, gcp_config
+        S3_config, gcp_config
 
     TESTING_ID = get_testing_id()
     TESTING_ID_CONNECTOR = get_testing_id()
     TESTING_ID_DATASOURCE = get_testing_id()
-    SQL_CONNECTORS = ['SQL', 'HIVE']
+    SQL_CONNECTORS = ['SQL']
     OBJECT_CONNECTORS = ['FTP', 'SFTP']
     PROJECT_NAME = "sdk_test_datasource_" + str(TESTING_ID)
     PROJECT_ID = ""
@@ -39,7 +39,6 @@ try:
         'FTP': ftp_config,
         'SFTP': sftp_config,
         'SQL': mysql_config,
-        'HIVE': hive_config,
         'S3': S3_config,
         'GCP': gcp_config
     }
@@ -48,7 +47,6 @@ try:
         {'type': 'FTP', **connectors['FTP']},
         {'type': 'SFTP', **connectors['SFTP']},
         {'type': 'SQL', **connectors['SQL']},
-        {'type': 'HIVE', **connectors['HIVE']},
         {'type': 'S3', **connectors['S3']},
         {'type': 'GCP', **connectors['GCP']},
     ])
@@ -64,7 +62,6 @@ try:
         {'connector': 'FTP', 'path': ftp_config['file']},
         {'connector': 'SFTP', 'path': sftp_config['file']},
         {'connector': 'SQL', 'database': mysql_config['database'], 'table': mysql_config['table']},
-        {'connector': 'HIVE', 'database': hive_config['database'], 'table': hive_config['table']},
         {'connector': 'S3', 'bucket': S3_config['bucket'], 'path': S3_config['file']},
         {'connector': 'GCP', 'gCloud': 'BigQuery', 'database': gcp_config['database'], 'table': gcp_config['table']},
         {'connector': 'GCP', 'gCloud': 'Storage', 'bucket': gcp_config['bucket'], 'path': gcp_config['file']},

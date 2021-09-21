@@ -187,13 +187,10 @@ class UsecaseDeployment(ApiResource):
         """Delete a usecase deployment from the actual [client] workspace.
 
         Raises:
-            PrevisionException: If the dataset does not exist
+            PrevisionException: If the usecase deployment does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/deployments/{}'.format(self.id),
-                              method=requests.delete,
-                              message_prefix='UsecaseDeployment delete')
-        return resp
+        super().delete()
 
     def wait_until(self, condition, timeout: float = config.default_timeout):
         """ Wait until condition is fulfilled, then break.
@@ -271,7 +268,7 @@ class UsecaseDeployment(ApiResource):
             dataset (:class:`.Dataset`): Dataset resource to make a prediction for
 
         Returns:
-            ``pd.DataFrame``: Prediction object
+            :class:`.DeploymentPrediction`: The registered prediction object in the current workspace
         """
         if self.training_type not in ['regression', 'classification', 'multiclassification']:
             PrevisionException('Prediction not supported yet for training type {}', self.training_type)

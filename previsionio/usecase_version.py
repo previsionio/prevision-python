@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 import json
 from previsionio.model import Model
 from typing import Dict, List, Union
@@ -238,15 +237,14 @@ class BaseUsecaseVersion(ApiResource):
         logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                       for k, v in parse_json(response).items()))
 
-    # def delete(self):
-    #     """ Delete a usecase from the actual [client] workspace.
-    #
-    #     Returns:
-    #         dict: Deletion process results
-    #     """
-    #     response = client.request(endpoint='/usecases/{}'.format(self._id),
-    #                               method=requests.delete)
-    #     return (json.loads(response.content.decode('utf-8')))
+    def delete(self):
+        """Delete a usecase version from the actual [client] workspace.
+
+        Raises:
+            PrevisionException: If the usecase version does not exist
+            requests.exceptions.ConnectionError: Error processing the request
+        """
+        super().delete()
 
     def wait_until(self, condition, raise_on_error: bool = True, timeout: float = config.default_timeout):
         """ Wait until condition is fulfilled, then break.
@@ -655,7 +653,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                 predictions, if necessary
 
         Returns:
-            ``pd.DataFrame``: Predictions as a ``pandas`` dataframe
+            :class:`previsionio.prediction.ValidationPrediction`: The registered prediction object in the current
+            workspace
         """
 
         best = self.best_model
@@ -677,7 +676,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                 (default: ``False``)
 
         Returns:
-            tuple(pd.DataFrame, str): Prediction data (as ``pandas`` dataframe) and prediction job ID.
+            ``pd.DataFrame``: Prediction results dataframe
         """
 
         best = self.best_model

@@ -1,28 +1,26 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 from enum import Enum
 from typing import Dict, Tuple
 
-from requests.models import Response
+from pandas import DataFrame
 from previsionio import metrics
 from previsionio.usecase_config import ColumnConfig, DataType, TrainingConfig, TypeProblem
 import requests
 
 from . import client
 from .utils import parse_json, PrevisionException
-
 from .api_resource import ApiResource, UniqueResourceMixin
 from .datasource import DataSource
+from .exporter import Exporter, ExporterWriteMode
 from .dataset import Dataset, DatasetImages
-from .connector import Connector, SQLConnector, FTPConnector, \
-    SFTPConnector, S3Connector, HiveConnector, GCPConnector
+from .connector import (Connector, SQLConnector, FTPConnector, SFTPConnector,
+                        S3Connector, GCPConnector, GCloud)
 from .supervised import Supervised
 from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
                               TextSimilarity, TextSimilarityLang)
 from .usecase import Usecase
 from .usecase_deployment import UsecaseDeployment
-from pandas import DataFrame
 
 
 class ProjectColor(Enum):
@@ -225,17 +223,14 @@ class Project(ApiResource, UniqueResourceMixin):
         return cls(json['_id'], name, description, color, json['created_by'],
                    json['admins'], json['contributors'], json['pipelines_count'])
 
-    def delete(self) -> Response:
+    def delete(self):
         """Delete a project from the actual [client] workspace.
 
         Raises:
-            PrevisionException: If the dataset does not exist
+            PrevisionException: If the project does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/{}/{}'.format(self.resource, self.id),
-                              method=requests.delete,
-                              message_prefix='Project delete')
-        return resp
+        super().delete()
 
     def create_dataset(self, name: str, datasource: DataSource = None, file_name: str = None,
                        dataframe: DataFrame = None, **kwargs):
@@ -391,22 +386,6 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return S3Connector._new(self._id, name, host, port, 'S3', username=username, password=password)
 
-    def create_hive_connector(self, name: str, host: str, port: int = 10000, username: str = '', password: str = ''):
-        """ A connector to interact with a distant source of data (and
-        easily get data snapshots using an associated :class:`.DataSource`
-        resource).
-
-        Args:
-            name (str): Name of the connector
-            host (str): Url of the connector
-            port (int): Port of the connector
-            username (str, optional): Username to use connect to the remote data source
-            password (str, optional): Password to use connect to the remote data source
-        Returns:
-            :class:`.HiveConnector`: The registered connector object in the current project.
-        """
-        return HiveConnector._new(self._id, name, host, port, 'HIVE', username=username, password=password)
-
     def create_gcp_connector(self, name: str = '', host: str = '', port=None, username: str = '', password: str = '',
                              googleCredentials: str = ''):
         """ A connector to interact with a distant source of data (and
@@ -442,7 +421,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return Connector.list(self._id, all=all)
 
     def create_datasource(self, connector: Connector, name: str, path: str = None, database: str = None,
-                          table: str = None, bucket: str = None, request: str = None, gCloud: str = None):
+                          table: str = None, bucket: str = None, request: str = None, gCloud: GCloud = None):
         """ Create a new datasource object on the platform.
 
         Args:
@@ -454,7 +433,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 connector
             table (str, optional): Name of the table to fetch data from via the connector
             bucket (str, optional): Name of the bucket to fetch data from via the connector
-            gCloud (str, optional): gCloud
+            gCloud (:class:`.GCloud`, optional): Type of google cloud service
             request (str, optional): Direct SQL request to use with the connector to fetch data
         Returns:
             :class:`.DataSource`: The registered datasource object in the current project
@@ -486,6 +465,53 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return DataSource.list(self._id, all=all)
 
+    def create_exporter(self, connector: Connector, name: str, description: str = None, path: str = None,
+                        bucket: str = None, database: str = None, table: str = None, g_cloud: GCloud = None,
+                        write_mode: ExporterWriteMode = ExporterWriteMode.safe):
+        """ Create a new exporter object on the platform.
+
+        Args:
+            connector (:class:`.Connector`): Reference to the associated connector (the resource
+                to go through to get a data snapshot)
+            name (str): Name of the exporter
+            description (str, optional): Description of the exporter
+            bucket (str, optional): Bucket of the file to write on via the exporter
+            path (str, optional): Path to the file to write on via the exporter
+            database (str, optional): Name of the database to write on via the exporter
+            table (str, optional): Name of the table to write on via the exporter
+            g_cloud (:class:`.GCloud`, optional): Type of google cloud service
+            write_mode (:class:`.ExporterWriteMode`, optional): Write mode
+
+        Returns:
+            :class:`.Exporter`: The registered exporter object in the current project
+
+        Raises:
+            PrevisionException: Any error while uploading data to the platform
+                or parsing the result
+            Exception: For any other unknown error
+        """
+        return Exporter._new(self._id, connector, name, path=path, description=description, bucket=bucket,
+                             database=database, table=table, g_cloud=g_cloud, write_mode=write_mode)
+
+    def list_exporter(self, all: bool = False):
+        """ List all the available exporters in the current active project.
+
+        .. warning::
+
+            Contrary to the parent ``list()`` function, this method
+            returns actual :class:`.Exporter` objects rather than
+            plain dictionaries with the corresponding data.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+
+        Returns:
+            list(:class:`.Exporter`): Fetched dataset objects
+        """
+        return Exporter.list(self._id, all=all)
+
     def fit_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig,
                        metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
                        training_config=TrainingConfig(), **kwargs):
@@ -498,7 +524,8 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the usecase
+                (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -532,7 +559,8 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.Classification`, optional): Specific metric to use for the usecase
+                (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -566,7 +594,8 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the usecase
+                (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -600,7 +629,7 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the usecase (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -634,7 +663,8 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.Classification`, optional): Specific metric to use for the usecase
+                (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -674,7 +704,7 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the usecase
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (:enum: `metrics.MultiClassification`, optional): Specific metric to use for the usecase (default:
+            metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the usecase (default:
                 ``metrics.MultiClassification.log_loss``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
@@ -719,7 +749,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 on each possible column types)
             time_window (:class:`.TimeWindow`): Time configuration
                 (see the documentation of the :class:`.TimeWindow` resource for more details)
-            metric (:enum: `metrics.Regression`, optional): Specific metric to use for the usecase (default:
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the usecase (default:
                 ``metrics.Regression.RMSE``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
@@ -747,7 +777,8 @@ class Project(ApiResource, UniqueResourceMixin):
             description_column_config (:class:`.DescriptionsColumnConfig`): Description column configuration
                 (see the documentation of the :class:`.DescriptionsColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``accuracy_at_k``)
+            metric (:class:`.metrics.TextSimilarity`, optional): Specific metric to use for the usecase
+                (default: ``accuracy_at_k``)
             top_k (int, optional): top_k (default: ``10``)
             queries_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a queries dataset (default: ``None``)
@@ -813,6 +844,5 @@ connectors_names = {
     'FTP': "create_ftp_connector",
     'SFTP': "create_sftp_connector",
     'S3': "create_s3_connector",
-    'HIVE': "create_hive_connector",
-    'GCP': "create_gcp_connector"
+    'GCP': "create_gcp_connector",
 }

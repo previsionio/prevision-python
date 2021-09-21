@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 from itertools import combinations
 from io import BytesIO, StringIO
 from previsionio.usecase_config import UsecaseState
@@ -121,10 +120,7 @@ class Dataset(ApiResource):
             PrevisionException: If the dataset does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/{}/{}'.format(self.resource, self.id),
-                              method=requests.delete,
-                              message_prefix='Dataset delete')
-        return resp
+        super().delete()
 
     def start_embedding(self):
         """Starts the embeddings analysis of the dataset from the actual [client] workspace
@@ -371,10 +367,7 @@ class DatasetImages(ApiResource):
             PrevisionException: If the dataset images does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/{}/{}'.format(self.resource, self.id),
-                              method=requests.delete,
-                              message_prefix='Image folder delete')
-        return resp
+        super().delete()
 
     @classmethod
     def list(cls, project_id: str, all: bool = True):

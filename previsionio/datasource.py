@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 import requests
 
 from . import client
 from .utils import parse_json, PrevisionException
 from .api_resource import ApiResource, UniqueResourceMixin
+from .connector import Connector, GCloud
 
 
 class DataSource(ApiResource, UniqueResourceMixin):
@@ -15,20 +15,22 @@ class DataSource(ApiResource, UniqueResourceMixin):
 
     Args:
         _id (str): Unique id of the datasource
-        connector (:class:`.Connector`): Reference to the associated connector (the resource
+        connector_id (str): Reference to the associated connector (the resource
             to go through to get a data snapshot)
         name (str): Name of the datasource
         path (str, optional): Path to the file to fetch via the connector
         database (str, optional): Name of the database to fetch data from via the
             connector
         table (str, optional): Name of the table  to fetch data from via the connector
+        bucket (str, optional): Bucket of the file to fetch via the connector
         request (str, optional): Direct SQL request to use with the connector to fetch data
+        gCloud (:class:`.GCloud`, optional): Type of google cloud service
     """
 
     resource = 'data-sources'
 
     def __init__(self, _id, connector_id: str, name: str, path: str = None, database: str = None,
-                 table: str = None, request: str = None, gCloud=None, **kwargs):
+                 table: str = None, request: str = None, gCloud: GCloud = None, **kwargs):
         """ Instantiate a new :class:`.DataSource` object to manipulate a datasource resource
         on the platform. """
         super().__init__(_id=_id,
@@ -96,8 +98,8 @@ class DataSource(ApiResource, UniqueResourceMixin):
         return cls(**resp_json)
 
     @classmethod
-    def _new(cls, project_id: str, connector, name: str, path: str = None, database: str = None, table: str = None,
-             bucket=None, request=None, gCloud=None):
+    def _new(cls, project_id: str, connector: Connector, name: str, path: str = None, database: str = None,
+             table: str = None, bucket: str = None, request: str = None, gCloud: GCloud = None):
         """ Create a new datasource object on the platform.
 
         Args:
@@ -108,7 +110,9 @@ class DataSource(ApiResource, UniqueResourceMixin):
             database (str, optional): Name of the database to fetch data from via the
                 connector
             table (str, optional): Name of the table  to fetch data from via the connector
+            bucket (str, optional): Bucket of the file to fetch via the connector
             request (str, optional): Direct SQL request to use with the connector to fetch data
+            gCloud (:class:`.GCloud`, optional): Type of google cloud service
 
         Returns:
             :class:`.DataSource`: The registered datasource object in the current workspace
@@ -143,4 +147,13 @@ class DataSource(ApiResource, UniqueResourceMixin):
                 raise PrevisionException(json['message'])
             else:
                 raise Exception('unknown error: {}'.format(json))
-        return cls(json['_id'], connector, name, path, database, table, request)
+        return cls(json['_id'], connector._id, name, path, database, table, request, gCloud)
+
+    def delete(self):
+        """Delete a datasource from the actual [client] workspace.
+
+        Raises:
+            PrevisionException: If the datasource does not exist
+            requests.exceptions.ConnectionError: Error processing the request
+        """
+        super().delete()

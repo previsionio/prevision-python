@@ -9,15 +9,18 @@ This section gathers all the available classes, functions and tools offered by P
    :maxdepth: 3
    :caption: Contents:
 
+   api/base_resource.rst
    api/client.rst
    api/project.rst
-   api/usecase.rst
-   api/base_resource.rst
-   api/dataset.rst
-   api/datasource.rst
    api/connector.rst
+   api/datasource.rst
+   api/dataset.rst
+   api/metrics.rst
+   api/usecase.rst
    api/usecases_version.rst
    api/model.rst
-   api/metrics.rst
-   api/deployed_model.rst
    api/usecase_deployment.rst
+   api/deployed_model.rst
+   api/prediction.rst
+   api/exporter.rst
+   api/export.rst
