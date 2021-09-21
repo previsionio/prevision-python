@@ -1,5 +1,4 @@
 import os
-from previsionio.dataset import Dataset
 from previsionio.usecase import Usecase
 from previsionio.text_similarity import ModelEmbedding, TextSimilarityLang, TextSimilarityModels
 from previsionio.usecase_config import DataType, TypeProblem, YesOrNo, YesOrNoOrAuto
@@ -20,8 +19,6 @@ description_dataset_name = TESTING_ID + '-' + describe_dataset_file_name
 queries_dataset_file_name = 'manutan_queries_100'
 queries_dataset_name = TESTING_ID + '-' + queries_dataset_file_name
 
-from previsionio.logger import logger
-
 
 def upload_datasets():
     datapath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data_text_similarity')
@@ -41,29 +38,22 @@ def upload_datasets():
     test_datasets['queries'] = queries_dataset_csv
 
 
-def setup_module(module):
-    project = pio.Project.new(name=PROJECT_NAME,
-                              description="description test sdk")
-    global PROJECT_ID
-    PROJECT_ID = project._id
-    pass
-    # upload_datasets()
-
-
 class BaseTrainSearchDelete(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        project = pio.Project.new(name=PROJECT_NAME,
+                                  description="description test sdk")
+        global PROJECT_ID
+        PROJECT_ID = project._id
         upload_datasets()
 
-    """
     @classmethod
     def tearDownClass(cls):
         try:
             for ds in test_datasets.values():
                 ds.delete()
-        except:
+        except Exception:
             pass
-    """
 
     def test_train_stop_delete_text_similarity(self):
         usecase_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
