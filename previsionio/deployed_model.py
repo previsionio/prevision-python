@@ -4,7 +4,7 @@ from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import BackendApplicationClient
 from previsionio.utils import NpEncoder
 import json
-from time import time
+import time
 import requests
 from . import logger
 from . import config
@@ -59,7 +59,7 @@ class DeployedModel(object):
             raise PrevisionException('Cannot connect: {}'.format(e))
 
     def _generate_token(self):
-        self.token_creation_date = time()
+        self.token_creation_date = time.time()
         client = BackendApplicationClient(client_id=self.client_id)
         oauth = OAuth2Session(client=client)
         token = oauth.fetch_token(token_url=self.prevision_token_url,
@@ -84,10 +84,10 @@ class DeployedModel(object):
 
     def _get_token(self):
         if self.token:
-            if time() < self.token['expires_at'] - 20:
+            if time.time() < self.token['expires_at'] - 20:
                 return
             elif self.token_creation_date and self.refresh_expires_in:
-                if time() < self.token_creation_date + self.refresh_expires_in:
+                if time.time() < self.token_creation_date + self.refresh_expires_in:
                     # refresh token
                     self._refresh_token()
                 else:
