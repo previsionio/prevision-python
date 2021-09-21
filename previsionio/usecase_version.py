@@ -472,7 +472,6 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         self._usecase_version_info = usecase_version_info
 
         dataset_id: str = usecase_version_info['dataset_id']
-        # FIXME: for images need to instanciate Dataset and DatasetImages
         self.dataset: Dataset = Dataset.from_id(dataset_id)
 
         usecase_params = usecase_version_info['usecase_version_params']
