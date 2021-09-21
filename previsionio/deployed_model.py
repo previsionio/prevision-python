@@ -43,7 +43,7 @@ class DeployedModel(object):
 
         self.token_creation_date = None
         self.access_token = None
-        self.refresh_expires_in = None
+        self.expires_at = None
 
         try:
             self._get_token()
@@ -66,37 +66,15 @@ class DeployedModel(object):
                                   client_id=self.client_id,
                                   client_secret=self.client_secret)
         self.token = token
-        self.refresh_expires_in = token['refresh_expires_in']
+        self.expires_at = token['expires_at']
         return token
 
-    def _refresh_token(self):
-        token = self.token
-        extra = {
-            'client_id': self.client_id,
-            'client_secret': self.client_secret,
-        }
-
-        client = OAuth2Session(self.client_id, token=token)
-        self.token = client.refresh_token(self.prevision_token_url, **extra)
-        self.refresh_expires_in = self.token['refresh_expires_in']
-
-        return self.token
-
     def _get_token(self):
-        if self.token:
-            if time.time() < self.token['expires_at'] - 20:
-                return
-            elif self.token_creation_date and self.refresh_expires_in:
-                if time.time() < self.token_creation_date + self.refresh_expires_in:
-                    # refresh token
-                    self._refresh_token()
-                else:
-                    # generate token
-                    self._generate_token()
-            else:
+        while self.token is None or self.expires_at is None or time.time() > self.expires_at - 70:
+            try:
                 self._generate_token()
-        else:
-            self._generate_token()
+            except Exception as e:
+                logger.warning(f'failed to generate token with error {e.__repr__()}')
 
     def check_types(self, features):
         for feature, value in features:
@@ -144,7 +122,6 @@ class DeployedModel(object):
         resp = None
         while (n_tries < retries) and (status_code in config.retry_codes):
             n_tries += 1
-
             try:
                 self._get_token()
                 assert self.token is not None
@@ -163,12 +140,11 @@ class DeployedModel(object):
                 status_code = resp.status_code
 
             except Exception as e:
-                logger.warning(f'Failed to request {url} retrying {retries - n_tries} times: {e.__repr__()}')
-                if n_tries == retries:
-                    raise PrevisionException(f'Error requesting: {url} after {n_tries} retries')
-                continue
+                raise PrevisionException(f'Error requesting: {url} with error {e.__repr__()}')
 
             if status_code in config.retry_codes:
+                logger.warning(f'Failed to request {url} with status code {status_code}.'
+                               f' Retrying {retries - n_tries} times')
                 time.sleep(config.request_retry_time)
 
         assert isinstance(resp, Response)

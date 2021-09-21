@@ -275,12 +275,11 @@ class Client(object):
                 status_code = resp.status_code
 
             except Exception as e:
-                logger.warning(f'Failed to request {url} retrying {retries - n_tries} times: {e.__repr__()}')
-                if n_tries == retries:
-                    raise PrevisionException(f'Error requesting: {url} after {n_tries} retries')
-                continue
+                raise PrevisionException(f'Error requesting: {url} with error {e.__repr__()}')
 
             if status_code in config.retry_codes:
+                logger.warning(f'Failed to request {url} with status code {status_code}.'
+                               f' Retrying {retries - n_tries} times')
                 time.sleep(config.request_retry_time)
 
         assert isinstance(resp, Response)
