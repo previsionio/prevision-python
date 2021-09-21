@@ -43,9 +43,8 @@ def setup_module(module):
 
 
 def teardown_module(module):
-    pass # do nothing during debug
-    # project = pio.Project.from_id(PROJECT_ID)
-    # project.delete()
+    project = pio.Project.from_id(PROJECT_ID)
+    project.delete()
 
 
 def create_external_usecase_version(project_id, uc_name, training_type, usecase_version_description=None):
@@ -81,16 +80,19 @@ def test_usecase_version():
         'regression',
         usecase_version_description='This is an external regression usecase_version'
     )
-    """
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name in [u.name for u in usecases]
 
-    usecase_new_version = usecase_version.new_version()
+    external_model = (
+        'my_external_model',
+        os.path.join(DATA_PATH, 'regression_model.onnx'),
+        os.path.join(DATA_PATH, 'regression_model.yaml'),
+    )
+    external_models = [external_model]
+    usecase_new_version = usecase_version.new_version(external_models)
     usecase_versions = pio.Usecase.from_id(usecase_version.usecase_id).versions
     assert usecase_new_version._id in [u._id for u in usecase_versions]
 
     pio.Usecase.from_id(usecase_new_version.usecase_id).delete()
 
     usecases = pio.Usecase.list(PROJECT_ID)
-    assert uc_name not in [u.name for u in usecases]
-    """
