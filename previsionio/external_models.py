@@ -19,15 +19,19 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
 
     def _update_from_dict(self, **usecase_version_info):
         super()._update_from_dict(**usecase_version_info)
+        usecase_version_params = usecase_version_info['usecase_version_params']
+
         holdout_dataset_id: str = usecase_version_info['holdout_dataset_id']
         self.holdout_dataset: Dataset = Dataset.from_id(holdout_dataset_id)
-        self.target_column = usecase_version_info.get('target_column')
+        self.target_column = usecase_version_params['target_column']
+
+        # this is dict, maybe we should parse it in a tuple like in creation
+        self.external_models = usecase_version_info.get('external_models')
 
         self.metric = usecase_version_info.get('metric')
         dataset_id: Union[str, None] = usecase_version_info.get('dataset_id')
         self.dataset: Union[str, None] = Dataset.from_id(dataset_id) if dataset_id is not None else None
 
-        usecase_version_params = usecase_version_info['usecase_version_params']
         self.metric: str = usecase_version_params['metric']
 
     def _update_draft(self, external_models, **kwargs):
