@@ -30,6 +30,8 @@ class Supervised(ClassicUsecaseVersion):
         super()._update_from_dict(**usecase_version_info)
         if 'folder_dataset_id' in usecase_version_info:
             self.folder_dataset: DatasetImages = DatasetImages.from_id(usecase_version_info['folder_dataset_id'])
+        else:
+            self.folder_dataset = None
         self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
 
     @classmethod
@@ -148,10 +150,17 @@ class Supervised(ClassicUsecaseVersion):
         Returns:
             :class:`.Supervised`: Newly created supervised usecase object (new version)
         """
+        # NOTE: we should be able to overridde only one of the dataset...
+        if dataset is not None:
+            dataset = dataset
+        else:
+            if self.folder_dataset is not None:
+                dataset = (self.dataset, self.folder_dataset)
+            else:
+                dataset = self.dataset
         return Supervised._fit(
                                self.usecase_id,
-                               # NOTE: we should be able to overridde only one of the dataset...
-                               dataset if dataset is not None else (self.dataset, self.folder_dataset),
+                               dataset,
                                column_config if column_config is not None else self.column_config,
                                metric if metric is not None else self.metric,
                                holdout_dataset=holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
