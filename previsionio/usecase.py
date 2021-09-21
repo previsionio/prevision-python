@@ -81,13 +81,14 @@ class Usecase(ApiResource):
                                   method=requests.post,
                                   data=data,
                                   message_prefix='Usecase creation')
-        js = parse_json(response)
-        usecase = cls.from_js(js)
+        usecase_info = parse_json(response)
+        usecase = cls.from_dict(usecase_info)
         return usecase
 
     @classmethod
-    def from_js(cls, js: Dict) -> 'Usecase':
-        usecase = cls(js['_id'], js['name'], js['project_id'], js['training_type'], js['data_type'])
+    def from_dict(cls, usecase_info: Dict) -> 'Usecase':
+        usecase = cls(usecase_info['_id'], usecase_info['name'], usecase_info['project_id'],
+                      usecase_info['training_type'], usecase_info['data_type'])
         return usecase
 
     @classmethod
@@ -104,8 +105,8 @@ class Usecase(ApiResource):
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
         """
-        js = super()._from_id(_id)
-        usecase = cls.from_js(js)
+        usecase_info = super()._from_id(_id)
+        usecase = cls.from_dict(usecase_info)
         return usecase
 
     @classmethod
@@ -127,8 +128,8 @@ class Usecase(ApiResource):
         Returns:
             list(:class:`.Usecase`): Fetched dataset objects
         """
-        js_list = super()._list(all=all, project_id=project_id)
-        return [cls.from_js(js) for js in js_list]
+        usecase_infos = super()._list(all=all, project_id=project_id)
+        return [cls.from_dict(usecase_info) for usecase_info in usecase_infos]
 
     @property
     def usecase_version_class(self) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries]]:
