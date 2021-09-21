@@ -40,6 +40,8 @@ class BaseUsecaseVersion(ApiResource):
         super().__init__(usecase_version_info['_id'])
         self._update_from_dict(**usecase_version_info)
 
+        self._models = {}
+
     def _update_from_dict(self, **usecase_version_info):
         self.project_id: str = usecase_version_info.get('project_id')
         self.usecase_id: str = usecase_version_info.get('usecase_id')
@@ -56,8 +58,6 @@ class BaseUsecaseVersion(ApiResource):
             self.training_type = None
 
         self.created_at: datetime.datetime = parser.parse(usecase_version_info.get('created_at'))
-
-        self._models = {}
 
     # NOTE: this method is just here to parse raw_data (objects) and build the corresponding data (strings)
     #       that can be sent directly to the endpoint
@@ -466,6 +466,9 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         super().__init__(**usecase_version_info)
         self._update_from_dict(**usecase_version_info)
 
+        self.predictions = {}
+        self.predict_token = None
+
     def _update_from_dict(self, **usecase_version_info):
         super()._update_from_dict(**usecase_version_info)
 
@@ -503,9 +506,6 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                                              for f in usecase_params.get('simple_models', [])],
                                               feature_time_seconds=usecase_params.get('features_selection_time', 3600),
                                               feature_number_kept=usecase_params.get('features_selection_count', None))
-
-        self.predictions = {}
-        self.predict_token = None
 
     def print_info(self):
         """ Print all info on the usecase. """
