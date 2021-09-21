@@ -4,6 +4,7 @@ from __future__ import print_function
 from previsionio.text_similarity import TextSimilarity
 from previsionio.supervised import Supervised
 from previsionio.timeseries import TimeSeries
+from previsionio.external_models import ExternalUsecaseVersion
 from previsionio.usecase_config import DataType, TypeProblem
 from typing import Dict, List, Type, Union
 import requests
@@ -15,22 +16,29 @@ from .api_resource import ApiResource
 
 def get_usecase_version_class(
         training_type: TypeProblem,
-        data_type: DataType) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries]]:
+        data_type: DataType,
+        provider: str) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries], Type[ExternalUsecaseVersion]]:
     """ Get the type of UsecaseVersion class used by this Usecase
 
     Returns:
-        (:type:`.TextSimilarity` | :type:`.Supervised` | :type:`.TimeSeries`): Type of UsecaseVersion
+        (:type:`.TextSimilarity` | :type:`.Supervised` | :type:`.TimeSeries` | :type:`.ExternalUsecaseVersion`): Type of UsecaseVersion
     """
-    default: Dict[DataType, Union[Type[Supervised], Type[TimeSeries]]] = {
-        DataType.Tabular: Supervised,
-        DataType.TimeSeries: TimeSeries
-    }
-    class_dict = {
-        TypeProblem.TextSimilarity: {DataType.Tabular: TextSimilarity},
-    }
-    class_type = class_dict.get(training_type, default).get(data_type)
-    assert class_type is not None
-    return class_type
+    if provider == 'external':
+        usecase_version_class = ExternalUsecaseVersion
+    else:
+        if training_type == TypeProblem.TextSimilarity:
+            usecase_version_class = TextSimilarity
+        else:
+            if data_type == DataType.TimeSeries:
+                usecase_version_class = TimeSeries
+            elif data_type in [DataType.Tabular, DataType.Images]:
+                usecase_version_class = Supervised
+            else:
+                raise ValueError('There is no usecase_version_class with the following values: '
+                                 f'training_type: {training_type}'
+                                 f'data_type: {data_type}'
+                                 f'provider: {provider}')
+    return usecase_version_class
 
 
 class Usecase(ApiResource):
@@ -44,20 +52,17 @@ class Usecase(ApiResource):
 
     resource = 'usecases'
 
-    """
-    def __init__(self, **usecase_info):
-        super().__init__(**usecase_info)
-         self._id: str = usecase_info['_id']
-        self.name: str = usecase_info['name']
-        self.project_id: str = usecase_info['project_id']
-        self.training_type: TypeProblem = TypeProblem(usecase_info['training_type'])
-        self.data_type: DataType = DataType(usecase_info['data_type'])
-    """
-    def __init__(self, _id: str, name: str, project_id:str, training_type: TypeProblem, data_type: DataType):
+    def __init__(self,
+                 _id: str,
+                 project_id:str,
+                 provider: str,
+                 name: str,
+                 training_type: TypeProblem,
+                 data_type: DataType) -> 'Usecase':
         super().__init__(_id=_id)
-        self._id = _id
-        self.name = name
         self.project_id = project_id
+        self.provider = provider
+        self.name = name
         self.training_type: TypeProblem = TypeProblem(training_type)
         self.data_type: DataType = DataType(data_type)
 
@@ -87,8 +92,14 @@ class Usecase(ApiResource):
 
     @classmethod
     def from_dict(cls, usecase_info: Dict) -> 'Usecase':
-        usecase = cls(usecase_info['_id'], usecase_info['name'], usecase_info['project_id'],
-                      usecase_info['training_type'], usecase_info['data_type'])
+        usecase = cls(
+            usecase_info['_id'],
+            usecase_info['project_id'],
+            usecase_info['provider'],
+            usecase_info['name'],
+            usecase_info['training_type'],
+            usecase_info['data_type'],
+        )
         return usecase
 
     @classmethod
@@ -138,7 +149,7 @@ class Usecase(ApiResource):
         Returns:
             (:type:`.TextSimilarity` | :type:`.Supervised` | :type:`.TimeSeries`): Type of UsecaseVersion
         """
-        return get_usecase_version_class(self.training_type, self.data_type)
+        return get_usecase_version_class(self.training_type, self.data_type, self.provider)
 
     @property
     def latest_version(self) -> Union[TextSimilarity, Supervised, TimeSeries]:
