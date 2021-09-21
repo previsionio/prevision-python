@@ -62,10 +62,10 @@ class BaseUsecaseVersion(ApiResource):
     # NOTE: this method is just here to parse raw_data (objects) and build the corresponding data (strings)
     #       that can be sent directly to the endpoint
     @staticmethod
-    def _build_usecase_version_creation_data(**kwargs) -> Dict:
+    def _build_usecase_version_creation_data(description, parent_version=None) -> Dict:
         data = {
-            'description': kwargs['description'],
-            'parent_version': kwargs.get('parent_version'),
+            'description': description,
+            'parent_version': parent_version,
         }
         return data
 
@@ -478,8 +478,14 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
 
     def _update_from_dict(self, **usecase_version_info):
         super()._update_from_dict(**usecase_version_info)
+
+        self._usecase_version_info = usecase_version_info
+
+        dataset_id: str = usecase_version_info['dataset_id']
+        # FIXME: for images need to instanciate Dataset and DatasetImages
+        self.dataset: Dataset = Dataset.from_id(dataset_id)
+
         usecase_params = usecase_version_info['usecase_version_params']
-        self.metric: str = usecase_params['metric']
         self.column_config = ColumnConfig(target_column=usecase_params.get('target_column'),
                                           fold_column=usecase_params.get('fold_column'),
                                           id_column=usecase_params.get('id_column'),
@@ -488,6 +494,14 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                           group_columns=usecase_params.get('group_columns'),
                                           apriori_columns=usecase_params.get('apriori_columns'),
                                           drop_list=usecase_params.get('drop_list'))
+
+        self.metric: str = usecase_params['metric']
+
+        holdout_dataset_id: Union[str, None] = usecase_version_info.get('holdout_dataset_id', None)
+        if holdout_dataset_id is not None:
+            self.holdout_dataset: Dataset = Dataset.from_id(holdout_dataset_id)
+        else:
+            self.holdout_dataset = None
 
         self.training_config = TrainingConfig(profile=Profile(usecase_params.get('profile')),
                                               features=[Feature(f) for f in usecase_params.get(
@@ -501,13 +515,8 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                               feature_time_seconds=usecase_params.get('features_selection_time', 3600),
                                               feature_number_kept=usecase_params.get('features_selection_count', None))
 
-        self._usecase_version_info = usecase_version_info
-        # self.data_type: DataType = DataType(usecase_info['usecase'].get('data_type'))
-        # self.training_type: TypeProblem = TypeProblem(usecase_info['usecase'].get('training_type'))
-        self.dataset_id: str = usecase_version_info['dataset_id']
         self.predictions = {}
         self.predict_token = None
-        self._models = {}
 
     def print_info(self):
         """ Print all info on the usecase. """
