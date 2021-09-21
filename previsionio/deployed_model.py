@@ -41,12 +41,9 @@ class DeployedModel(object):
         self.token = None
         self.url = None
 
-        self.token_creation_date = None
         self.access_token = None
-        self.expires_at = None
 
         try:
-            self._get_token()
             about_resp = self.request('/about', method=requests.get)
             app_info = parse_json(about_resp)
             self.problem_type = app_info['problem_type']
@@ -59,18 +56,16 @@ class DeployedModel(object):
             raise PrevisionException('Cannot connect: {}'.format(e))
 
     def _generate_token(self):
-        self.token_creation_date = time.time()
         client = BackendApplicationClient(client_id=self.client_id)
         oauth = OAuth2Session(client=client)
         token = oauth.fetch_token(token_url=self.prevision_token_url,
                                   client_id=self.client_id,
                                   client_secret=self.client_secret)
         self.token = token
-        self.expires_at = token['expires_at']
         return token
 
     def _get_token(self):
-        while self.token is None or self.expires_at is None or time.time() > self.expires_at - 70:
+        while self.token is None or time.time() > self.token['expires_at'] - 60:
             try:
                 self._generate_token()
             except Exception as e:
