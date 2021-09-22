@@ -68,8 +68,7 @@ class Export(ApiResource, UniqueResourceMixin):
     @classmethod
     def _new(cls, exporter_id: str, prediction: Union[DeploymentPrediction, ValidationPrediction] = None,
              dataset: Dataset = None, file_path: str = None, encoding: str = None, separator: str = None,
-             decimal: str = None, thousands: str = None, wait_for_export: bool = False, origin: str = None,
-             pipeline_scheduled_run_id: str = None):
+             decimal: str = None, thousands: str = None, wait_for_export: bool = False, **kwargs):
         """ Create a new exporter object on the platform.
 
         Args:
@@ -115,10 +114,10 @@ class Export(ApiResource, UniqueResourceMixin):
                                          message_prefix='Export prediction')
 
         elif file_path is not None:
-            if origin is not None:
-                data['origin'] = origin
-            if pipeline_scheduled_run_id is not None:
-                data['pipeline_scheduled_run_id'] = pipeline_scheduled_run_id
+            if 'origin' in kwargs:
+                data['origin'] = kwargs['origin']
+            if 'pipeline_scheduled_run_id' in kwargs:
+                data['pipeline_scheduled_run_id'] = kwargs['pipeline_scheduled_run_id']
             if encoding is not None:
                 data['encoding'] = encoding
             if separator is not None:
