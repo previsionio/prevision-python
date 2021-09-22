@@ -1,11 +1,12 @@
 import os
 import uuid
-from typing import Tuple
 import pandas as pd
 import pytest
 import previsionio as pio
 from previsionio import logger
-from .datasets import make_supervised_datasets, remove_datasets
+
+
+# NOTE: use Unittest classes instead of assert everywhere...
 
 
 DATA_PATH = os.path.join(os.path.dirname(__file__), 'data_external_models')
@@ -16,8 +17,8 @@ pio.config.default_timeout = 1000
 
 type_problem_2_projet_usecase_version_creation_method_name = {
     'regression': "create_external_regression",
-    #'classification': "create_external_classification",
-    #'multiclassification': "create_external_multiclassification",
+    'classification': "create_external_classification",
+    'multiclassification': "create_external_multiclassification",
 }
 type_problems = type_problem_2_projet_usecase_version_creation_method_name.keys()
 
@@ -27,7 +28,7 @@ TEST_DATASETS_PATH = {
     'multiclassification': os.path.join(DATA_PATH, 'multiclassification_holdout_dataset.csv'),
 }
 
-# just for fast debug with onmy one type_problem in type_problems
+# just for fast debug with only one type_problem in type_problems
 TEST_DATASETS_PATH = {type_problem: TEST_DATASETS_PATH[type_problem] for type_problem in type_problems}
 
 
@@ -198,19 +199,19 @@ def setup_usecase_class(request):
     pio.Usecase.from_id(usecase_version.usecase_id).delete()
 
 
+# NOTE: atm test nothing else than usecase version launching and stop, which is a part of TestPredict and other tests
+"""
 class TestUsecaseVersionGeneric:
 
     def test_check_config(self, setup_usecase_class):
         training_type, uc = setup_usecase_class
-        # NOTE: atm test nothing else than usecase version launching and stop
-        """
-        assert all([c in uc.drop_list for c in DROP_COLS])
-        uc.update_status()
-        assert set(uc.feature_list) == set(uc_config.features)
-        assert set(uc.advanced_models_list) == set(uc_config.advanced_models)
-        assert set(uc.simple_models_list) == set(uc_config.simple_models)
-        assert set(uc.normal_models_list) == set(uc_config.normal_models)
-        """
+        # assert all([c in uc.drop_list for c in DROP_COLS])
+        # uc.update_status()
+        # assert set(uc.feature_list) == set(uc_config.features)
+        # assert set(uc.advanced_models_list) == set(uc_config.advanced_models)
+        # assert set(uc.simple_models_list) == set(uc_config.simple_models)
+        # assert set(uc.normal_models_list) == set(uc_config.normal_models)
+"""
 
 
 class TestPredict:
@@ -223,5 +224,67 @@ class TestPredict:
         preds = usecase_version.predict(data)
         assert len(preds) == len(data)
         # test_predict_unit
+        # NOTE: predict_unit in external_model ?
+        """
         pred = usecase_version.predict_single(data.iloc[0].to_dict())
         assert pred is not None
+        """
+
+
+class TestInfos:
+
+    def test_info(self, setup_usecase_class):
+        type_problem, usecase_version = setup_usecase_class
+        # test models
+        assert len(usecase_version.models) > 0
+        # test Score
+        assert usecase_version.score is not None
+        """
+        # test cv
+        df_cv = usecase_version.get_cv()
+        assert isinstance(df_cv, pd.DataFrame)
+        """
+        """
+        # test hyper parameters
+        hyper_params = usecase_version.best_model.hyperparameters
+        assert hyper_params is not None
+        """
+        """
+        # test feature importance
+        feat_importance = usecase_version.best_model.feature_importance
+        assert list(feat_importance.columns) == ['feature', 'importance']
+        """
+        # test correlation matrix
+        matrix = usecase_version.correlation_matrix
+        assert isinstance(matrix, pd.DataFrame)
+        # test schema
+        schema = usecase_version.schema
+        assert schema is not None
+        # test features stats
+        stats = usecase_version.features_stats
+        assert stats is not None
+        # test fastest model
+        model = usecase_version.fastest_model
+        # test usecase version id
+        assert model.usecase_version_id == usecase_version._id
+        # test print info
+        usecase_version.print_info()
+        assert isinstance(usecase_version.models, list)
+        model = usecase_version.models[0]
+        model_copy = pio.Model.from_id(model._id)
+        """
+        assert isinstance(model.hyperparameters, dict)
+        assert model_copy.hyperparameters == model.hyperparameters
+        """
+
+        # assert isinstance(model.cross_validation, pd.DataFrame)
+        assert isinstance(model.chart(), dict)
+
+        # assert isinstance(model_copy.cross_validation, pd.DataFrame)
+        assert isinstance(model_copy.chart(), dict)
+        """
+        if type_problem == 'classification':
+            assert isinstance(model_copy, ClassificationModel)
+            assert model_copy.optimal_threshold == model.optimal_threshold
+            assert isinstance(model.get_dynamic_performances(), dict)
+        """
