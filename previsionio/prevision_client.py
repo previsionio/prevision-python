@@ -264,16 +264,13 @@ class Client(object):
         resp = None
         while (n_tries < retries) and (status_code in config.retry_codes):
             n_tries += 1
-            json = None
-            if files is None:
-                json = data
+
             try:
                 resp = method(url,
                               headers=headers,
                               files=files,
                               allow_redirects=allow_redirects,
-                              data=data,
-                              json=json,
+                              json=data,
                               **requests_kwargs)
                 status_code = resp.status_code
 

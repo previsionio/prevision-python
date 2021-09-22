@@ -128,6 +128,8 @@ class Export(ApiResource, UniqueResourceMixin):
                 data['thousands'] = thousands
             files = {}
             with open(file_path, 'r') as f:
+                for k, v in data.items():
+                    files[k] = (None, v)
                 files['file'] = (os.path.basename(file_path), f, 'text/csv')
                 request_url = '/exporters/{}/file'.format(exporter_id)
                 create_resp = client.request(request_url,
