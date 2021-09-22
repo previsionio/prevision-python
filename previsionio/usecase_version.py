@@ -267,33 +267,6 @@ class BaseUsecaseVersion(ApiResource):
         status = self._status
         return UsecaseState(status['state'])
 
-    @property
-    def advanced_models_list(self) -> List[AdvancedModel]:
-        """ Get the list of selected advanced models in the usecase.
-
-        Returns:
-            list(AdvancedModel): Names of the normal models selected for the usecase
-        """
-        return [AdvancedModel(f) for f in self._status['usecase_version_params'].get('normal_models', [])]
-
-    @property
-    def normal_models_list(self) -> List[NormalModel]:
-        """ Get the list of selected normal models in the usecase.
-
-        Returns:
-            list(NormalModel): Names of the normal models selected for the usecase
-        """
-        return [NormalModel(f) for f in self._status['usecase_version_params'].get('lite_models', [])]
-
-    @property
-    def simple_models_list(self) -> List[SimpleModel]:
-        """ Get the list of selected simple models in the usecase.
-
-        Returns:
-            list(SimpleModel): Names of the simple models selected for the usecase
-        """
-        return [SimpleModel(f) for f in self._status['usecase_version_params'].get('simple_models', [])]
-
     def stop(self):
         """ Stop a usecase (stopping all nodes currently in progress). """
         logger.info('[Usecase] stopping usecase')
@@ -503,6 +476,33 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                                              for f in usecase_params.get('simple_models', [])],
                                               feature_time_seconds=usecase_params.get('features_selection_time', 3600),
                                               feature_number_kept=usecase_params.get('features_selection_count', None))
+
+    @property
+    def advanced_models_list(self) -> List[AdvancedModel]:
+        """ Get the list of selected advanced models in the usecase.
+
+        Returns:
+            list(AdvancedModel): Names of the normal models selected for the usecase
+        """
+        return [AdvancedModel(f) for f in self._status['usecase_version_params'].get('normal_models', [])]
+
+    @property
+    def normal_models_list(self) -> List[NormalModel]:
+        """ Get the list of selected normal models in the usecase.
+
+        Returns:
+            list(NormalModel): Names of the normal models selected for the usecase
+        """
+        return [NormalModel(f) for f in self._status['usecase_version_params'].get('lite_models', [])]
+
+    @property
+    def simple_models_list(self) -> List[SimpleModel]:
+        """ Get the list of selected simple models in the usecase.
+
+        Returns:
+            list(SimpleModel): Names of the simple models selected for the usecase
+        """
+        return [SimpleModel(f) for f in self._status['usecase_version_params'].get('simple_models', [])]
 
     @property
     @lru_cache()
