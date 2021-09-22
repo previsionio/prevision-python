@@ -39,7 +39,6 @@ class Dataset(ApiResource):
     def __init__(self, _id: str, name: str, datasource: DataSource = None, _data: DataFrame = None,
                  describe_state: Dict = None, drift_state=None, embeddings_state=None, separator=',', **kwargs):
 
-        #super().__init__(_id=_id, datasource=datasource)
         super().__init__(_id=_id)
         self.name = name
         self._id = _id

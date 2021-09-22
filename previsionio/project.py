@@ -65,11 +65,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """ Instantiate a new :class:`.Project` object to manipulate a project resource
         on the platform. """
         super().__init__(_id=_id)
-                         # name=name,
-                         # description=description,
-                         # color=color)
 
-        self._id = _id
         self.name = name
         self.description = description
         self.color = color

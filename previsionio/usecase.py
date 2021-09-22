@@ -81,7 +81,6 @@ class Usecase(ApiResource):
             'data_type': data_type.value,
             'training_type': training_type.value,
         }
-        print(f'\ncall to {url}:\ndata={data}')
         response = client.request(url,
                                   method=requests.post,
                                   data=data,

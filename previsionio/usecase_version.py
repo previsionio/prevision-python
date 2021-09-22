@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import pprint
 import json
 from previsionio.model import Model
 from typing import Dict, List, Union
@@ -72,14 +71,11 @@ class BaseUsecaseVersion(ApiResource):
     @classmethod
     def new(cls, usecase_id, data) -> 'BaseUsecaseVersion':
         endpoint = f'/usecases/{usecase_id}/versions'
-        print(f'\ncall to {endpoint}:\ndata={data}')
         response = client.request(endpoint,
                                   method=requests.post,
                                   data=data,
                                   message_prefix='Usecase version creation')
         usecase_version_info = parse_json(response)
-        print("\nusecase_version:")
-        pprint.pprint(usecase_version_info)
         usecase_version = cls(**usecase_version_info)
         return usecase_version
 
@@ -88,13 +84,10 @@ class BaseUsecaseVersion(ApiResource):
 
     def _confirm(self) -> 'BaseUsecaseVersion':
         endpoint = f'/usecase-versions/{self._id}/confirm'
-        print(f'\ncall to {endpoint}...')
         response = client.request(endpoint,
                                   method=requests.put,
                                   message_prefix='Usecase version confirmation')
         usecase_version_info = parse_json(response)
-        print("\nusecase_version_info:")
-        pprint.pprint(usecase_version_info)
         self._update_from_dict(**usecase_version_info)
         return self
 
@@ -112,8 +105,6 @@ class BaseUsecaseVersion(ApiResource):
         # NOTE: maybe update like that to be sure to have all the correct info of the resource
         # usecase_version._update_from_dict(**cls._from_id(usecase_version._id))
 
-        print("usecase_version.__dict__ at end of fit")
-        pprint.pprint(usecase_version.__dict__)
         return usecase_version
 
     def new_version(self, **kwargs):

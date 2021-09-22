@@ -108,7 +108,6 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
                 (onnx_key, (onnx_filename, onnx_fd, onnx_content_type)),
                 (yaml_key, (yaml_filename, yaml_fd, yaml_content_type)),
             ]
-            print(f'\ncall to {external_model_upload_endpoint}:\nfiles={external_model_upload_files}')
             external_model_upload_response = client.request(external_model_upload_endpoint,
                                                             method=external_model_upload_method,
                                                             files=external_model_upload_files,
