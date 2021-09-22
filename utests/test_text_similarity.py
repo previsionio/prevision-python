@@ -49,11 +49,8 @@ class BaseTrainSearchDelete(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            for ds in test_datasets.values():
-                ds.delete()
-        except Exception:
-            pass
+        project = pio.Project.from_id(PROJECT_ID)
+        project.delete()
 
     def test_train_stop_delete_text_similarity(self):
         usecase_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
