@@ -455,7 +455,6 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
 
     def __init__(self, **usecase_version_info):
         super().__init__(**usecase_version_info)
-        self._update_from_dict(**usecase_version_info)
 
         self.predictions = {}
         self.predict_token = None

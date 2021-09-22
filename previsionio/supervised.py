@@ -24,7 +24,6 @@ class Supervised(ClassicUsecaseVersion):
 
     def __init__(self, **usecase_version_info):
         super().__init__(**usecase_version_info)
-        self._update_from_dict(**usecase_version_info)
 
     def _update_from_dict(self, **usecase_version_info):
         super()._update_from_dict(**usecase_version_info)
