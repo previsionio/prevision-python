@@ -1,0 +1,9 @@
+class_names:
+- 0
+- 1
+- 2
+input:
+- feat_0
+- feat_1
+- feat_2
+- feat_3
