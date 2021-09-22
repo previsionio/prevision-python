@@ -6,19 +6,23 @@ import requests
 
 from . import metrics
 from .usecase_version import BaseUsecaseVersion
+from .usecase_version import ClassicUsecaseVersion
 from .prevision_client import client
 from .utils import parse_json
 from .dataset import Dataset
 
 
-class ExternalUsecaseVersion(BaseUsecaseVersion):
+# class ExternalUsecaseVersion(BaseUsecaseVersion):
+class ExternalUsecaseVersion(ClassicUsecaseVersion):
 
     def __init__(self, **usecase_version_info):
         super().__init__(**usecase_version_info)
         self._update_from_dict(**usecase_version_info)
 
     def _update_from_dict(self, **usecase_version_info):
-        super()._update_from_dict(**usecase_version_info)
+        # super()._update_from_dict(**usecase_version_info)
+        # we don't want to inherit from ClassicUsecaseVersion._update_from_dict...
+        super(ClassicUsecaseVersion, self)._update_from_dict(**usecase_version_info)
         usecase_version_params = usecase_version_info['usecase_version_params']
 
         holdout_dataset_id: str = usecase_version_info['holdout_dataset_id']
@@ -33,6 +37,16 @@ class ExternalUsecaseVersion(BaseUsecaseVersion):
         self.dataset: Union[str, None] = Dataset.from_id(dataset_id) if dataset_id is not None else None
 
         self.metric: str = usecase_version_params['metric']
+
+        # NOTE: duplicate from Supervised
+        from .usecase_config import TypeProblem
+        from .model import RegressionModel, ClassificationModel, MultiClassificationModel
+        MODEL_CLASS_DICT = {
+            TypeProblem.Regression: RegressionModel,
+            TypeProblem.Classification: ClassificationModel,
+            TypeProblem.MultiClassification: MultiClassificationModel
+        }
+        self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
 
     def _update_draft(self, external_models, **kwargs):
         self.__add_external_models(external_models)
