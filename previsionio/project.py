@@ -850,6 +850,86 @@ class Project(ApiResource, UniqueResourceMixin):
             description=usecase_version_description,
         )
 
+    def create_external_classification(self,
+                                       usecase_name: str,
+                                       holdout_dataset: Dataset,
+                                       target_column: str,
+                                       external_models: List[Tuple],
+                                       metric: metrics.Regression = metrics.Classification.AUC,
+                                       dataset: Dataset = None,
+                                       usecase_version_description: str = None) -> ExternalUsecaseVersion:
+        """ Create a tabular classification usecase version from external models
+
+        Args:
+            usecase_name (str): Name of the usecase to create
+            holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
+            target_column: The name of the target column for this usecase version
+            external_models (list(tuple)): the external models to add in the usecase version to create
+                Each tuple contains 3 items describing an external model as follows:
+                - name of the model
+                - a path to the model in onnx format
+                - a path to a yaml file containing metadata about the model
+            metric (str, optional): Specific metric to use for the usecase (default: ``auc``)
+            dataset (:class:`.Dataset`, optional): Reference to the dataset object that
+                has been used to train the model (default: ``None``)
+            usecase_version_description (str): Description of the usecase version to create
+
+        Returns:
+            :class:`.external_models.ExternalUsecaseVersion`: Newly created ExternalUsecaseVersion object
+        """
+        if len(external_models) == 0:
+            raise PrevisionException('You must provide at least one external model')
+        usecase = Usecase.new(self._id, 'external', usecase_name, DataType.Tabular, TypeProblem.Classification)
+        return ExternalUsecaseVersion._fit(
+            usecase.id,
+            holdout_dataset,
+            target_column,
+            external_models,
+            metric,
+            dataset=dataset,
+            description=usecase_version_description,
+        )
+
+    def create_external_multiclassification(self,
+                                            usecase_name: str,
+                                            holdout_dataset: Dataset,
+                                            target_column: str,
+                                            external_models: List[Tuple],
+                                            metric: metrics.Regression = metrics.MultiClassification.log_loss,
+                                            dataset: Dataset = None,
+                                            usecase_version_description: str = None) -> ExternalUsecaseVersion:
+        """ Create a tabular multiclassification usecase version from external models
+
+        Args:
+            usecase_name (str): Name of the usecase to create
+            holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
+            target_column: The name of the target column for this usecase version
+            external_models (list(tuple)): the external models to add in the usecase version to create
+                Each tuple contains 3 items describing an external model as follows:
+                - name of the model
+                - a path to the model in onnx format
+                - a path to a yaml file containing metadata about the model
+            metric (str, optional): Specific metric to use for the usecase (default: ``log_loss``)
+            dataset (:class:`.Dataset`, optional): Reference to the dataset object that
+                has been used to train the model (default: ``None``)
+            usecase_version_description (str): Description of the usecase version to create
+
+        Returns:
+            :class:`.external_models.ExternalUsecaseVersion`: Newly created ExternalUsecaseVersion object
+        """
+        if len(external_models) == 0:
+            raise PrevisionException('You must provide at least one external model')
+        usecase = Usecase.new(self._id, 'external', usecase_name, DataType.Tabular, TypeProblem.MultiClassification)
+        return ExternalUsecaseVersion._fit(
+            usecase.id,
+            holdout_dataset,
+            target_column,
+            external_models,
+            metric,
+            dataset=dataset,
+            description=usecase_version_description,
+        )
+
     def list_usecases(self, all: bool = True):
         """ List all the available usecase in the current project.
 
