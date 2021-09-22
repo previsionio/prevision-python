@@ -5,7 +5,6 @@ import pandas as pd
 import pytest
 import previsionio as pio
 from .datasets import make_supervised_datasets, remove_datasets
-from .utils import train_model, get_testing_id, DROP_COLS
 
 
 DATA_PATH = os.path.join(os.path.dirname(__file__), 'data_external_models')
@@ -15,21 +14,23 @@ pio.config.zip_files = False
 pio.config.default_timeout = 1000
 
 type_problem_2_projet_usecase_version_creation_method_name = {
-    'regression': "create_external_regression", # only regression for fast debug
+    'regression': "create_external_regression",
+    'classification': "create_external_classification",
+    'multiclassification': "create_external_multiclassification",
 }
 type_problems = type_problem_2_projet_usecase_version_creation_method_name.keys()
 
 
-test_datasets = {}
+TEST_PIO_DATASETS = {}
 def make_pio_datasets(paths):
     for problem_type, p in paths.items():
         project = pio.Project.from_id(PROJECT_ID)
         dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
                                          dataframe=pd.read_csv(p))
-        test_datasets[problem_type] = dataset
+        TEST_PIO_DATASETS[problem_type] = dataset
 
 
-test_external_models = {
+TEST_EXTERNAL_MODELS = {
     'regression': (
         'test_sdk_regression_external_model',
         os.path.join(DATA_PATH, 'regression_model.onnx'),
@@ -49,13 +50,15 @@ test_external_models = {
 
 
 def setup_module(module):
-    project_name = f'project_sdk_test_external_models_{TESTING_ID}'
+    project_name = f'project_sdk_TEST_EXTERNAL_MODELS_{TESTING_ID}'
     project = pio.Project.new(name=project_name,
-                              description="description_sdk_test_external_models")
+                              description="description_sdk_TEST_EXTERNAL_MODELS")
     global PROJECT_ID
-    PROJECT_ID = project._id
+    PROJECT_ID = project.id
     paths = {
         'regression': os.path.join(DATA_PATH, 'regression_holdout_dataset.csv'),
+        'classification': os.path.join(DATA_PATH, 'classification_holdout_dataset.csv'),
+        'multiclassification': os.path.join(DATA_PATH, 'multiclassification_holdout_dataset.csv'),
     }
     make_pio_datasets(paths)
 
@@ -76,7 +79,7 @@ def create_external_usecase_version(
 ) -> pio.external_models.ExternalUsecaseVersion:
 
     project = pio.Project.from_id(project_id)
-    holdout_dataset = test_datasets[type_problem]
+    holdout_dataset = TEST_PIO_DATASETS[type_problem]
     usecase_version_creation_method_name = type_problem_2_projet_usecase_version_creation_method_name[type_problem]
     usecase_version_creation_method = getattr(project, usecase_version_creation_method_name)
 
@@ -91,10 +94,12 @@ def create_external_usecase_version(
     )
 
 
-def test_usecase_version():
-    usecase_name = f'test_sdk_external_models_test_usecase_version_{TESTING_ID}'
-    type_problem = 'regression'
-    external_model = test_external_models[type_problem]
+# create an external usecase version only from type_problem, all other args are default
+def create_external_usecase_version_from_type_problem(type_problem, usecase_name=None):
+    if usecase_name is None:
+        usecase_name = f'test_sdk_external_models_{type_problem}_{TESTING_ID}'
+
+    external_model = TEST_EXTERNAL_MODELS[type_problem]
     external_models = [external_model]
     usecase_version_description = f'description_version_{usecase_name}'
     usecase_version: pio.ExternalUsecaseVersion = create_external_usecase_version(
@@ -104,16 +109,133 @@ def test_usecase_version():
         external_models,
         usecase_version_description=usecase_version_description,
     )
-    usecase_id = usecase_version.usecase_id
-    project_usecases = pio.Usecase.list(PROJECT_ID)
-    assert usecase_id in [usecase.id for usecase in project_usecases]
+    return usecase_version
 
+
+def test_usecase_version():
+    usecase_name = f'test_sdk_external_models_test_usecase_version_{TESTING_ID}'
+    type_problem = 'regression'
+    usecase_version = create_external_usecase_version_from_type_problem(type_problem, usecase_name=usecase_name)
+
+    usecase_id = usecase_version.usecase_id
+    usecases = pio.Usecase.list(PROJECT_ID)
+    assert usecase_id in [usecase.id for usecase in usecases]
+
+    external_model = TEST_EXTERNAL_MODELS[type_problem]
+    external_models = [external_model]
     usecase_version_new = usecase_version.new_version(external_models)
 
     usecase_versions = pio.Usecase.from_id(usecase_id).versions
     assert usecase_version_new.id in [usecase_version.id for usecase_version in usecase_versions]
 
     pio.Usecase.from_id(usecase_id).delete()
-    project_usecases = pio.Usecase.list(PROJECT_ID)
-    project_usecases_ids = [usecase.id for usecase in project_usecases]
-    assert usecase_id not in project_usecases_ids
+    usecases = pio.Usecase.list(PROJECT_ID)
+    assert usecase_id not in [usecase.id for usecase in usecases]
+
+
+def test_usecase_latest_versions():
+    usecase_name = f'test_sdk_external_models_test_usecase_latest_versions_{TESTING_ID}'
+    # type_problem = 'classification'
+    # NOTE: set classification at the end to have a different type_problem than in test_usecase_version()
+    type_problem = 'regression'
+    usecase_version = create_external_usecase_version_from_type_problem(type_problem, usecase_name=usecase_name)
+
+    usecase_id = usecase_version.usecase_id
+    usecases = pio.Usecase.list(PROJECT_ID)
+    assert usecase_id in [usecase.id for usecase in usecases]
+
+    external_model = TEST_EXTERNAL_MODELS[type_problem]
+    external_models = [external_model]
+    usecase_version_new = usecase_version.new_version(external_models)
+    assert usecase_version.id != usecase_version_new.id
+    assert usecase_version.usecase_id == usecase_version_new.usecase_id
+    assert usecase_version.project_id == usecase_version_new.project_id
+
+    latest_version = pio.Usecase.from_id(usecase_version_new.usecase_id).latest_version
+    assert usecase_version_new._id == latest_version._id
+    latest_version.new_version(external_models)
+
+    pio.Usecase.from_id(usecase_version_new.usecase_id).delete()
+    usecases = pio.Usecase.list(PROJECT_ID)
+    assert usecase_id not in [usecase.id for usecase in usecases]
+
+
+def test_stop_running_usecase_version():
+    usecase_name = f'test_sdk_external_models_test_stop_running_usecase_version_{TESTING_ID}'
+    # type_problem = 'classification'
+    # NOTE: set multiclassification at the end to have a different type_problem than in test_usecase_version()
+    type_problem = 'regression'
+    usecase_version = create_external_usecase_version_from_type_problem(type_problem, usecase_name=usecase_name)
+
+    usecase_id = usecase_version.usecase_id
+    assert usecase_version.running
+    usecase_version.stop()
+    assert not usecase_version.running
+    pio.Usecase.from_id(usecase_version.usecase_id).delete()
+    usecases = pio.Usecase.list(PROJECT_ID)
+    assert usecase_id not in [usecase.id for usecase in usecases]
+
+
+@pytest.fixture(scope='module', params=type_problems)
+def setup_usecase_class(request):
+    type_problem = request.param
+    from previsionio import logger
+    logger.info(f'type_problem: {type_problem}')
+    usecase_name = f'test_sdk_external_models_{type_problem}_{TESTING_ID}'
+    usecase_version = create_external_usecase_version_from_type_problem(type_problem, usecase_name=usecase_name)
+    # usecase_version.wait_until(
+    #     lambda usecase: (len(usecase.models) > 0) or (usecase._status['state'] == 'failed'))
+    assert usecase_version.running
+    usecase_version.stop()
+    usecase_version.wait_until(lambda usecase_version: usecase_version._status['state'] == 'done', timeout=60)
+    assert usecase_version._status['state'] == 'done'
+    yield type_problem, usecase_version
+    pio.Usecase.from_id(usecase_version.usecase_id).delete()
+
+
+options_parameters = ('options',
+                      [{'confidence': False},
+                       {'confidence': True}])
+
+predict_u_options_parameters = ('options',
+                                [{'confidence': False, 'explain': True},
+                                 {'confidence': True}])
+
+predict_test_ids = [('confidence-' if opt['confidence'] else 'normal-')
+                    for opt in predict_u_options_parameters[1]]
+
+
+class TestUsecaseVersionGeneric:
+
+    def test_check_config(self, setup_usecase_class):
+        training_type, uc = setup_usecase_class
+        """
+        assert all([c in uc.drop_list for c in DROP_COLS])
+        uc.update_status()
+        assert set(uc.feature_list) == set(uc_config.features)
+        assert set(uc.advanced_models_list) == set(uc_config.advanced_models)
+        assert set(uc.simple_models_list) == set(uc_config.simple_models)
+        assert set(uc.normal_models_list) == set(uc_config.normal_models)
+        """
+
+
+class TestPredict:
+    # @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
+
+    def test_predict(self, setup_usecase_class):
+        training_type, uc = setup_usecase_class
+        data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(training_type)))
+        preds = uc.predict(data, **options)
+        assert len(preds) == len(data)
+        if options['confidence']:
+            if training_type == 'regression':
+                conf_cols = ['_quantile={}'.format(q) for q in [1, 5, 10, 25, 50, 75, 95, 99]]
+                for q in conf_cols:
+                    assert any([q in col for col in preds])
+            elif training_type == 'classification':
+                assert 'confidence' in preds
+                assert 'credibility' in preds
+        # test_predict_unit
+        data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(training_type)))
+        pred = uc.predict_single(data.iloc[0].to_dict(), **options)
+        assert pred is not None
