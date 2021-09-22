@@ -20,41 +20,42 @@ def setup_module(module):
     dataset = project.create_dataset('test_exporter',
                                      file_name='utests/data/titanic.csv')
 
-    # Train one model
-    training_config = pio.TrainingConfig(advanced_models=[],
-                                         normal_models=[],
-                                         simple_models=[pio.SimpleModel.DecisionTree],
-                                         features=[],
-                                         profile=pio.Profile.Quick)
-    column_config = pio.ColumnConfig(target_column='Survived', id_column='PassengerId')
-    usecase_version = project.fit_classification(
-        name='test_exporter_classif',
-        dataset=dataset,
-        column_config=column_config,
-        metric=pio.metrics.Classification.AUC,
-        training_config=training_config,
-        holdout_dataset=None,
-    )
-
-    # Create validation_prediction
-    usecase_version.wait_until(lambda usecasev: (len(usecasev.models) > 0) or (usecasev._status['state'] == 'failed'))
-    if usecase_version._status['state'] == 'failed':
-        raise 'Could not train usecase'
-    global validation_prediction
-    validation_prediction = usecase_version.predict_from_dataset(dataset)
-
-    # Create usecase deployment
-    uc_best_model = usecase_version.best_model
-    usecase_deployment = project.create_usecase_deployment('test_sdk_' + TESTING_ID, uc_best_model)
-
-    # Create deployment_prediction
-    usecase_deployment.wait_until(lambda usecased: usecased.run_state == 'done')
-    global deployment_prediction
-    deployment_prediction = usecase_deployment.predict_from_dataset(dataset)
+    # # Train one model
+    # training_config = pio.TrainingConfig(advanced_models=[],
+    #                                      normal_models=[],
+    #                                      simple_models=[pio.SimpleModel.DecisionTree],
+    #                                      features=[],
+    #                                      profile=pio.Profile.Quick)
+    # column_config = pio.ColumnConfig(target_column='Survived', id_column='PassengerId')
+    # usecase_version = project.fit_classification(
+    #     name='test_exporter_classif',
+    #     dataset=dataset,
+    #     column_config=column_config,
+    #     metric=pio.metrics.Classification.AUC,
+    #     training_config=training_config,
+    #     holdout_dataset=None,
+    # )
+    #
+    # # Create validation_prediction
+    # usecase_version.wait_until(lambda usecasev: (len(usecasev.models) > 0) or (usecasev._status['state'] == 'failed'))
+    # if usecase_version._status['state'] == 'failed':
+    #     raise 'Could not train usecase'
+    # global validation_prediction
+    # validation_prediction = usecase_version.predict_from_dataset(dataset)
+    #
+    # # Create usecase deployment
+    # uc_best_model = usecase_version.best_model
+    # usecase_deployment = project.create_usecase_deployment('test_sdk_' + TESTING_ID, uc_best_model)
+    #
+    # # Create deployment_prediction
+    # usecase_deployment.wait_until(lambda usecased: usecased.run_state == 'done')
+    # global deployment_prediction
+    # deployment_prediction = usecase_deployment.predict_from_dataset(dataset)
 
 
 def teardown_module(module):
-    project.delete()
+    print("jgjfkj")
+    #project.delete()
 
 
 def check_exporter_and_exports(exporter):
@@ -66,24 +67,24 @@ def check_exporter_and_exports(exporter):
     check_export(exporter, export)
 
     time.sleep(1)
-    export = exporter.export_file('utests/data/titanic.csv', wait_for_export=True)
+    export = exporter.export_file('utests/data/titanic.csv', wait_for_export=True, origin= "pipeline-file", pipeline_scheduled_run_id="611a303307edd8001cb046d5")
     check_export(exporter, export)
 
     time.sleep(1)
-    export = exporter.export_prediction(validation_prediction, wait_for_export=True)
-    check_export(exporter, export)
-
-    time.sleep(1)
-    export = exporter.export_prediction(deployment_prediction, wait_for_export=True)
-    check_export(exporter, export)
+    # export = exporter.export_prediction(validation_prediction, wait_for_export=True)
+    # check_export(exporter, export)
+    #
+    # time.sleep(1)
+    # export = exporter.export_prediction(deployment_prediction, wait_for_export=True)
+    # check_export(exporter, export)
 
     exporter2 = pio.Exporter.from_id(exporter._id)
     assert exporter2._id == exporter._id
 
-    exporter.delete()
-    exporters = project.list_exporter(True)
-    exporters_id = [exprtr._id for exprtr in exporters]
-    assert exporter._id not in exporters_id
+    #exporter.delete()
+    #exporters = project.list_exporter(True)
+    #exporters_id = [exprtr._id for exprtr in exporters]
+    #assert exporter._id not in exporters_id
 
 
 def check_export(exporter, export):
