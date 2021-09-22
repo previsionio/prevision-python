@@ -728,7 +728,6 @@ class Project(ApiResource, UniqueResourceMixin):
         training_config=TrainingConfig(),
         usecase_version_description: str = None,
     ) -> TimeSeries:
-        usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.TimeSeries, TypeProblem.Regression)
         """ Start a timeseries regression usecase version training
 
         Args:
@@ -752,6 +751,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.timeseries.TimeSeries`: Newly created TimeSeries usecase version object
         """
+        usecase = Usecase.new(self._id, 'prevision-auto-ml', usecase_name, DataType.TimeSeries, TypeProblem.Regression)
         return TimeSeries._fit(
             usecase.id,
             dataset,
