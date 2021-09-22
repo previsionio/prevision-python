@@ -183,8 +183,6 @@ class TextSimilarity(BaseUsecaseVersion):
     def _update_from_dict(self, **usecase_version_info):
         super()._update_from_dict(**usecase_version_info)
 
-        self._usecase_version_info = usecase_version_info
-
         usecase_version_params = usecase_version_info['usecase_version_params']
 
         dataset_id: str = usecase_version_info['dataset_id']

@@ -42,6 +42,9 @@ class BaseUsecaseVersion(ApiResource):
         self._models = {}
 
     def _update_from_dict(self, **usecase_version_info):
+        # we keep the raw entire dict, atm used only in print_info...
+        self._usecase_version_info = usecase_version_info
+
         self.project_id: str = usecase_version_info.get('project_id')
         self.usecase_id: str = usecase_version_info.get('usecase_id')
         self.description: str = usecase_version_info.get('description')
@@ -57,6 +60,12 @@ class BaseUsecaseVersion(ApiResource):
             self.training_type = None
 
         self.created_at: datetime.datetime = parser.parse(usecase_version_info.get('created_at'))
+
+    def print_info(self):
+        """ Print all info on the usecase. """
+        # NOTE: maybe not set self._usecase_version_info and print each object attribut
+        for k, v in self._usecase_version_info.items():
+            print(str(k) + ': ' + str(v))
 
     # NOTE: this method is just here to parse raw_data (objects) and build the corresponding data (strings)
     #       that can be sent directly to the endpoint
@@ -462,8 +471,6 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
     def _update_from_dict(self, **usecase_version_info):
         super()._update_from_dict(**usecase_version_info)
 
-        self._usecase_version_info = usecase_version_info
-
         dataset_id: str = usecase_version_info['dataset_id']
         self.dataset: Dataset = Dataset.from_id(dataset_id)
 
@@ -496,12 +503,6 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                                              for f in usecase_params.get('simple_models', [])],
                                               feature_time_seconds=usecase_params.get('features_selection_time', 3600),
                                               feature_number_kept=usecase_params.get('features_selection_count', None))
-
-    def print_info(self):
-        """ Print all info on the usecase. """
-        # NOTE: maybe not set self._usecase_version_info and print each object attribut
-        for k, v in self._usecase_version_info.items():
-            print(str(k) + ': ' + str(v))
 
     @property
     @lru_cache()
