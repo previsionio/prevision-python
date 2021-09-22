@@ -68,13 +68,13 @@ class BaseTrainSearchDelete(unittest.TestCase):
                                      metric=pio.metrics.TextSimilarity.accuracy_at_k)
 
         uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
-        # time.sleep(40)
         uc.stop()
         uc.update_status()
         assert not uc.running
         pio.Usecase.from_id(uc.usecase_id).delete()
-        list = pio.Usecase.list(PROJECT_ID)
-        assert len(list) == 0
+        project_usecases = pio.Usecase.list(PROJECT_ID)
+        project_usecases_ids = [usecase.id for usecase in project_usecases]
+        assert usecase_id not in project_usecases_ids
 
     def test_train_new_stop_delete_text_similarity(self):
         usecase_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
@@ -93,7 +93,6 @@ class BaseTrainSearchDelete(unittest.TestCase):
         new_version = uc.new_version()
         new_version.wait_until(lambda usecase: usecase._status['state'] == 'done')
 
-        # time.sleep(40)
         new_version.stop()
         new_version.update_status()
         assert not new_version.running
@@ -102,8 +101,9 @@ class BaseTrainSearchDelete(unittest.TestCase):
         uc.update_status()
         assert not uc.running
         pio.Usecase.from_id(uc.usecase_id).delete()
-        list = pio.Usecase.list(PROJECT_ID)
-        assert len(list) == 0
+        project_usecases = pio.Usecase.list(PROJECT_ID)
+        project_usecases_ids = [usecase.id for usecase in project_usecases]
+        assert usecase_id not in project_usecases_ids
 
     def test_train_search_delete_text_similarity_with_queries_dataset(self):
         usecase_name = 'test_sdk_2_text_similarity_{}'.format(TESTING_ID)
@@ -138,8 +138,9 @@ class BaseTrainSearchDelete(unittest.TestCase):
             nb_prediction += 1
         assert nb_prediction == nb_model
         pio.Usecase.from_id(uc.usecase_id).delete()
-        list = pio.Usecase.list(PROJECT_ID)
-        assert len(list) == 0
+        project_usecases = pio.Usecase.list(PROJECT_ID)
+        project_usecases_ids = [usecase.id for usecase in project_usecases]
+        assert usecase_id not in project_usecases_ids
 
     def test_train_delete_text_similarity_with_queries_dataset_all_models(self):
         usecase_name = 'test_sdk_3_text_similarity_{}'.format(TESTING_ID)
@@ -183,5 +184,6 @@ class BaseTrainSearchDelete(unittest.TestCase):
         uc.update_status()
         assert not uc.running
         pio.Usecase.from_id(uc.usecase_id).delete()
-        list = pio.Usecase.list(PROJECT_ID)
-        assert len(list) == 0
+        project_usecases = pio.Usecase.list(PROJECT_ID)
+        project_usecases_ids = [usecase.id for usecase in project_usecases]
+        assert usecase_id not in project_usecases_ids
