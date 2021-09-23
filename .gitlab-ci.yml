@@ -38,8 +38,8 @@ build:
   script:
     - pip install versioneer twine
     - python setup.py sdist bdist_wheel
-    - twine upload --repository-url $PYPI_URL -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
-    - curl -L --output /usr/local/bin/release-cli "https://release-cli-downloads.s3.amazonaws.com/latest/release-cli-linux-amd64"; chmod +x /usr/local/bin/release-cli
+    # - twine upload --repository-url $PYPI_URL -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
+    # - curl -L --output /usr/local/bin/release-cli "https://release-cli-downloads.s3.amazonaws.com/latest/release-cli-linux-amd64"; chmod +x /usr/local/bin/release-cli
   only:
     - tags
   release:
