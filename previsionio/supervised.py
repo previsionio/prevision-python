@@ -88,6 +88,7 @@ class Supervised(ClassicUsecaseVersion):
         holdout_dataset: Dataset = None,
         training_config: TrainingConfig = TrainingConfig(),
         description: str = None,
+        parent_version: str = None,
     ) -> 'Supervised':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
@@ -113,6 +114,7 @@ class Supervised(ClassicUsecaseVersion):
         return super()._fit(
                             usecase_id,
                             description=description,
+                            parent_version=parent_version,
                             dataset=dataset,
                             column_config=column_config,
                             metric=metric,
@@ -165,6 +167,7 @@ class Supervised(ClassicUsecaseVersion):
                                holdout_dataset=holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
                                training_config=training_config if training_config is not None else self.training_config,
                                description=description,
+                               parent_version=self.version,
         )
 
     def _save_json(self):

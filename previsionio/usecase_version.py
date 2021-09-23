@@ -103,9 +103,11 @@ class BaseUsecaseVersion(ApiResource):
     @classmethod
     def _fit(cls, usecase_id: str,
              description: str = None,
+             parent_version: str = None,
              **kwargs) -> 'BaseUsecaseVersion':
 
         usecase_version_creation_data = cls._build_usecase_version_creation_data(description,
+                                                                                 parent_version=parent_version,
                                                                                  **kwargs)
         usecase_version_draft = cls.new(usecase_id, usecase_version_creation_data)
         usecase_version_draft._update_draft(**kwargs)

@@ -82,10 +82,12 @@ class ExternalUsecaseVersion(ClassicUsecaseVersion):
              external_models: List[Tuple],
              metric: metrics.Enum,
              dataset: Dataset = None,
-             description: str = None) -> 'ExternalUsecaseVersion':
+             description: str = None,
+             parent_version: str = None) -> 'ExternalUsecaseVersion':
         return super()._fit(
             usecase_id,
             description=description,
+            parent_version=parent_version,
             holdout_dataset=holdout_dataset,
             target_column=target_column,
             external_models=external_models,
@@ -108,6 +110,7 @@ class ExternalUsecaseVersion(ClassicUsecaseVersion):
             metric if metric is not None else self.metric,
             dataset=dataset if dataset is not None else self.dataset,
             description=description,
+            parent_version=self.version,
         )
 
     def __add_external_model(self, external_model: Tuple) -> None:
