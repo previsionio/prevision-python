@@ -93,7 +93,6 @@ class Model(ApiResource):
                                   method=requests.get,
                                   message_prefix='Model from id')
         model = json.loads(response.content.decode('utf-8'))
-        print("\n\nmodel:\n", model)
         training_type = TypeProblem(model.get('training_type', model.get('type_problem')))
         provider = model['provider']
         if provider == 'prevision-auto-ml':
