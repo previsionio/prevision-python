@@ -1,10 +1,10 @@
 from enum import Enum
 from typing import Dict, List, Union
 from previsionio.dataset import Dataset
-from .usecase_config import DataType, UsecaseConfig, TypeProblem, YesOrNo, YesOrNoOrAuto
+from .experiment_config import DataType, ExperimentConfig, TypeProblem, YesOrNo, YesOrNoOrAuto
 from .utils import to_json
 from .model import TextSimilarityModel
-from .usecase_version import BaseUsecaseVersion
+from .experiment_version import BaseExperimentVersion
 import previsionio as pio
 
 
@@ -50,8 +50,8 @@ class Preprocessing(object):
         self.ignore_punctuation = ignore_punctuation
 
 
-class ModelsParameters(UsecaseConfig):
-    """ Training configuration that holds the relevant data for a usecase description:
+class ModelsParameters(ExperimentConfig):
+    """ Training configuration that holds the relevant data for an experiment description:
     the wanted feature engineering, the selected models, the training speed...
 
     Args:
@@ -88,7 +88,7 @@ class ModelsParameters(UsecaseConfig):
         self.models = models
 
 
-class ListModelsParameters(UsecaseConfig):
+class ListModelsParameters(ExperimentConfig):
 
     config = {
         'models_parameters': 'models_params'
@@ -119,8 +119,8 @@ class ListModelsParameters(UsecaseConfig):
                 self.models_parameters.append(ModelsParameters(**element))
 
 
-class DescriptionsColumnConfig(UsecaseConfig):
-    """ Description Column configuration for starting a usecase: this object defines
+class DescriptionsColumnConfig(ExperimentConfig):
+    """ Description Column configuration for starting an experiment: this object defines
     the role of specific columns in the dataset.
 
     Args:
@@ -139,8 +139,8 @@ class DescriptionsColumnConfig(UsecaseConfig):
         self.id_column = id_column
 
 
-class QueriesColumnConfig(UsecaseConfig):
-    """ Description Column configuration for starting a usecase: this object defines
+class QueriesColumnConfig(ExperimentConfig):
+    """ Description Column configuration for starting an experiment: this object defines
     the role of specific columns in the dataset.
 
     Args:
@@ -164,43 +164,43 @@ class QueriesColumnConfig(UsecaseConfig):
         self.queries_dataset_id_column = queries_dataset_id_column
 
 
-class TextSimilarity(BaseUsecaseVersion):
-    """ A text similarity usecase version """
+class TextSimilarity(BaseExperimentVersion):
+    """ A text similarity experiment version """
 
     default_metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k
     default_top_k: int = 10
     data_type: DataType = DataType.Tabular
     training_type: TypeProblem = TypeProblem.TextSimilarity
-    resource: str = 'usecase-versions'
+    resource: str = 'experiment-versions'
     model_class = TextSimilarityModel
 
-    def __init__(self, **usecase_version_info):
-        super().__init__(**usecase_version_info)
+    def __init__(self, **experiment_version_info):
+        super().__init__(**experiment_version_info)
 
         self.predictions = {}
         self.predict_token = None
 
-    def _update_from_dict(self, **usecase_version_info):
-        super()._update_from_dict(**usecase_version_info)
+    def _update_from_dict(self, **experiment_version_info):
+        super()._update_from_dict(**experiment_version_info)
 
-        usecase_version_params = usecase_version_info['usecase_version_params']
+        experiment_version_params = experiment_version_info['experiment_version_params']
 
-        dataset_id: str = usecase_version_info['dataset_id']
+        dataset_id: str = experiment_version_info['dataset_id']
         self.dataset: Dataset = Dataset.from_id(dataset_id)
         self.description_column_config = DescriptionsColumnConfig(
-            content_column=usecase_version_params.get('content_column'),
-            id_column=usecase_version_params.get('id_column'))
+            content_column=experiment_version_params.get('content_column'),
+            id_column=experiment_version_params.get('id_column'))
         self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
-            usecase_version_params.get('metric', self.default_metric))
-        self.top_k: int = usecase_version_params.get('top_K', self.default_top_k)
-        self.lang: TextSimilarityLang = TextSimilarityLang(usecase_version_params.get('lang', TextSimilarityLang.Auto))
+            experiment_version_params.get('metric', self.default_metric))
+        self.top_k: int = experiment_version_params.get('top_K', self.default_top_k)
+        self.lang: TextSimilarityLang = TextSimilarityLang(experiment_version_params.get('lang', TextSimilarityLang.Auto))
 
-        if usecase_version_info.get('queries_dataset_id'):
-            queries_dataset_id = usecase_version_info['queries_dataset_id']
+        if experiment_version_info.get('queries_dataset_id'):
+            queries_dataset_id = experiment_version_info['queries_dataset_id']
             self.queries_dataset: Dataset = Dataset.from_id(queries_dataset_id)
-            content_column = usecase_version_params.get('queries_dataset_content_column')
-            matching_id = usecase_version_params.get('queries_dataset_matching_id_description_column')
-            queries_dataset_id_column = usecase_version_params.get('queries_dataset_id_column', None)
+            content_column = experiment_version_params.get('queries_dataset_content_column')
+            matching_id = experiment_version_params.get('queries_dataset_matching_id_description_column')
+            queries_dataset_id_column = experiment_version_params.get('queries_dataset_id_column', None)
             self.queries_column_config = QueriesColumnConfig(queries_dataset_content_column=content_column,
                                                              queries_dataset_matching_id_description_column=matching_id,
                                                              queries_dataset_id_column=queries_dataset_id_column)
@@ -208,7 +208,7 @@ class TextSimilarity(BaseUsecaseVersion):
             self.queries_dataset = None
             self.queries_column_config = None
 
-        models_parameters = usecase_version_params.get('models_params')
+        models_parameters = experiment_version_params.get('models_params')
         self.models_parameters = ListModelsParameters(models_parameters=models_parameters)
 
     @classmethod
@@ -220,11 +220,11 @@ class TextSimilarity(BaseUsecaseVersion):
         return cls(**super()._load(pio_file))
 
     @staticmethod
-    def _build_usecase_version_creation_data(description, dataset, description_column_config, metric,
+    def _build_experiment_version_creation_data(description, dataset, description_column_config, metric,
                                              top_k, lang, queries_dataset, queries_column_config,
                                              models_parameters,
                                              parent_version=None) -> Dict:
-        data = super(TextSimilarity, TextSimilarity)._build_usecase_version_creation_data(
+        data = super(TextSimilarity, TextSimilarity)._build_experiment_version_creation_data(
             description,
             parent_version=parent_version,
         )
@@ -246,7 +246,7 @@ class TextSimilarity(BaseUsecaseVersion):
     @classmethod
     def _fit(
         cls,
-        usecase_id: str,
+        experiment_id: str,
         dataset: Dataset,
         description_column_config: DescriptionsColumnConfig,
         metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k,
@@ -258,26 +258,26 @@ class TextSimilarity(BaseUsecaseVersion):
         description: str = None,
         parent_version: str = None,
     ) -> 'TextSimilarity':
-        """ Start a supervised usecase training with a specific training configuration
+        """ Start a supervised experiment training with a specific training configuration
         (on the platform).
 
         Args:
-            name (str): Name of the usecase to create
+            name (str): Name of the experiment to create
             dataset (:class:`.Dataset`): Reference to the dataset
                 object to use for as training dataset
             description_column_config (:class:`.DescriptionsColumnConfig`): Description column configuration
                 (see the documentation of the :class:`.DescriptionsColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (str, optional): Specific metric to use for the experiment (default: ``None``)
             queries_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a queries dataset (default: ``None``)
 
         Returns:
-            :class:`.TextSimilarity`: Newly created supervised usecase object
+            :class:`.TextSimilarity`: Newly created supervised experiment object
         """
 
         return super()._fit(
-            usecase_id,
+            experiment_id,
             description=description,
             parent_version=parent_version,
             dataset=dataset,
@@ -302,7 +302,7 @@ class TextSimilarity(BaseUsecaseVersion):
         models_parameters: ListModelsParameters = None,
         description: str = None,
     ) -> 'TextSimilarity':
-        """ Start a text similarity usecase training to create a new version of the usecase (on the
+        """ Start a text similarity experiment training to create a new version of the experiment (on the
         platform): the training configs are copied from the current version and then overridden
         for the given parameters.
 
@@ -311,19 +311,19 @@ class TextSimilarity(BaseUsecaseVersion):
             dataset (:class:`.Dataset`, :class:`.DatasetImages`, optional): Reference to the dataset
                 object to use for as training dataset
             description_column_config (:class:`.DescriptionsColumnConfig`, optional): Column configuration for the
-                usecase (see the documentation of the :class:`.ColumnConfig` resource for more details on each possible
+                experiment (see the documentation of the :class:`.ColumnConfig` resource for more details on each possible
                 column types)
-            metric (metrics.TextSimilarity, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (metrics.TextSimilarity, optional): Specific metric to use for the experiment (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`, optional): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
         Returns:
-            :class:`.TextSimilarity`: Newly created text similarity usecase version object (new version)
+            :class:`.TextSimilarity`: Newly created text similarity experiment version object (new version)
         """
         return TextSimilarity._fit(
-            self.usecase_id,
+            self.experiment_id,
             dataset if dataset is not None else self.dataset,
             description_column_config if description_column_config is not None else self.description_column_config,
             metric=metric if metric is not None else self.metric,

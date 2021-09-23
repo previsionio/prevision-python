@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from itertools import combinations
 from io import BytesIO, StringIO
-from previsionio.usecase_config import UsecaseState
+from previsionio.experiment_config import ExperimentState
 import numpy as np
 import pandas as pd
 import os
@@ -25,7 +25,7 @@ class Dataset(ApiResource):
 
     """ Dataset objects represent data resources that will be explored by Prevision.io platform.
 
-        In order to launch an auto ml process (see :class:`.BaseUsecase` class), we need to have
+        In order to launch an auto ml process (see :class:`.BaseExperiment` class), we need to have
         the matching dataset stored in the related workspace.
 
         Within the platform they are stored in tabular form and are derived:
@@ -105,13 +105,13 @@ class Dataset(ApiResource):
         self.embeddings_state = dset_json['embeddings_state']
 
     def get_describe_status(self):
-        return UsecaseState(self.describe_state)
+        return ExperimentState(self.describe_state)
 
     def get_drift_status(self):
-        return UsecaseState(self.drift_state)
+        return ExperimentState(self.drift_state)
 
     def get_embedding_status(self):
-        return UsecaseState(self.embeddings_state)
+        return ExperimentState(self.embeddings_state)
 
     def delete(self):
         """Delete a dataset from the actual [client] workspace.
@@ -339,7 +339,7 @@ class DatasetImages(ApiResource):
     """ DatasetImages objects represent image data resources that will be used by
         Prevision.io's platform.
 
-        In order to launch an auto ml process (see :class:`.BaseUsecase` class), we need to have
+        In order to launch an auto ml process (see :class:`.BaseExperiment` class), we need to have
         the matching dataset stored in the related workspace.
 
         Within the platform, image folder datasets are stored as ZIP files and are copied from

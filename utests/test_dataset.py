@@ -2,7 +2,7 @@ from logging import DEBUG
 import logging
 import os
 # from previsionio.logger import event_logger
-from previsionio.usecase_config import UsecaseState
+from previsionio.experiment_config import ExperimentState
 import time
 import pandas as pd
 import previsionio as pio
@@ -121,7 +121,7 @@ def test_embedding():
 
     ds.start_embedding()
     t0 = time.time()
-    states = [UsecaseState.Pending, UsecaseState.Running]
+    states = [ExperimentState.Pending, ExperimentState.Running]
     while ds.get_embedding_status() in states and time.time() < t0 + pio.config.default_timeout:
         ds.update_status()
 

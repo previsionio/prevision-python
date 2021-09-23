@@ -13,7 +13,7 @@ class ApiResourceType(Enum):
     ApiResource = 'api_resource'
     Dataset = 'files/dataset'
     Folder = 'files/folder'
-    Usecase = 'usecases'
+    Experiment = 'experiments'
     Connector = 'connectors'
     DataSource = 'datasources'
     Exporter = 'exporters'

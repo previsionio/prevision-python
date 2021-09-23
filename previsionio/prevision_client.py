@@ -223,7 +223,7 @@ class Client(object):
         Requires initialization.
 
         Args:
-            endpoint: (str): api endpoint (e.g. /usecases, /prediction/file)
+            endpoint: (str): api endpoint (e.g. /experiments, /prediction/file)
             method (requests.{get,post,delete}): requests method
             files (dict): files dict
             data (dict): for single predict

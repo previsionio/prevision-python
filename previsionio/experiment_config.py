@@ -34,16 +34,16 @@ class DataType(Enum):
     """Catalogue of images"""
 
 
-class UsecaseState(Enum):
-    """ Possible state of a Usecase in Prevision.io """
+class ExperimentState(Enum):
+    """ Possible state of an Experiment in Prevision.io """
     Done = 'done'
-    """The usecase finished properly"""
+    """The experiment finished properly"""
     Running = 'running'
-    """The usecase is still running"""
+    """The experiment is still running"""
     Failed = 'failed'
-    """The usecase finished with an error"""
+    """The experiment finished with an error"""
     Pending = 'pending'
-    """The usecase is waiting for hardware ressources"""
+    """The experiment is waiting for hardware ressources"""
 
 
 class AdvancedModel(Enum):
@@ -164,7 +164,7 @@ class Profile(Enum):
     """Slowest profile, for maximal optimization"""
 
 
-class UsecaseConfig(object):
+class ExperimentConfig(object):
 
     config = {}
 
@@ -186,8 +186,8 @@ class UsecaseConfig(object):
         return cls(**class_args)
 
 
-class TrainingConfig(UsecaseConfig):
-    """ Training configuration that holds the relevant data for a usecase description:
+class TrainingConfig(ExperimentConfig):
+    """ Training configuration that holds the relevant data for an experiment description:
     the wanted feature engineering, the selected models, the training speed...
 
     Args:
@@ -200,14 +200,14 @@ class TrainingConfig(UsecaseConfig):
             - the "normal" profile is something in-between to help you investigate
               an interesting result
 
-        advanced_models (list(AdvancedModel), optional): Names of the advanced models to use in the usecase
+        advanced_models (list(AdvancedModel), optional): Names of the advanced models to use in the experiment
             (among: "LR", "RF", "ET", "XGB", "LGB", "CB" and "NN"). The advanced models will be
             hyperparametrized, resulting in a more accurate modelization at the cost of a longer
             training time.
-        normal_models (list(NormalModel), optional): Names of the (normal) models to use in the usecase
+        normal_models (list(NormalModel), optional): Names of the (normal) models to use in the experiment
             (among: "LR", "RF", "ET", "XGB", "LGB", "CB", 'NB' and "NN"). The normal models only
             use default parameters.
-        simple_models (list(SimpleModel), optional): Names of the (simple) models to use in the usecase
+        simple_models (list(SimpleModel), optional): Names of the (simple) models to use in the experiment
             (among: "LR" and "DT"). These models are easy to ineterpret and fast to train but only
             offer a limited modelization complexity.
         features (list(Feature), optional): Names of the feature engineering modules to use (among:
@@ -277,8 +277,8 @@ class YesOrNoOrAuto(Enum):
     Auto = "auto"
 
 
-class ColumnConfig(UsecaseConfig):
-    """ Column configuration for starting a usecase: this object defines
+class ColumnConfig(ExperimentConfig):
+    """ Column configuration for starting an experiment: this object defines
     the role of specific columns in the dataset (and optionally the list of columns
     to drop).
 
@@ -291,15 +291,15 @@ class ColumnConfig(UsecaseConfig):
         weight_column (str, optional): Name of the weight column used to assign non-equal
             importance weights to the various rows in the dataset
         filename_column (str, optional): Name of the filename column in the dataset for
-            an image-based usecase
+            an image-based experiment
         time_column (str, optional): Name of the time column in the dataset for a
-            timeseries usecase
+            timeseries experiment
         group_columns (list(str), optional): Names of the columns in the dataset that define a
-            unique time serie for a timeseries usecase
+            unique time serie for a timeseries experiment
         apriori_columns (list(str), optional): Names of the columns that are known *a priori* in
-            the dataset for a timeseries usecase
+            the dataset for a timeseries experiment
         drop_list (list(str), optional): Names of all the columns that should be dropped
-            from the dataset while training the usecase
+            from the dataset while training the experiment
     """
 
     config = {

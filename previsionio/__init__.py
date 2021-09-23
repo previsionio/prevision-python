@@ -45,7 +45,7 @@ class Config:
 config = Config()
 
 from previsionio.prevision_client import client
-from previsionio.usecase_config import (
+from previsionio.experiment_config import (
     AdvancedModel,
     NormalModel,
     SimpleModel,
@@ -68,7 +68,7 @@ from previsionio.datasource import DataSource
 from previsionio.exporter import Exporter, ExporterWriteMode
 from previsionio.export import Export
 from previsionio.project import Project
-from previsionio.usecase import Usecase
+from previsionio.experiment import Experiment
 from previsionio.supervised import Supervised
 from previsionio.timeseries import (
     TimeSeries,
@@ -95,7 +95,7 @@ from previsionio.text_similarity import (
 from previsionio.dataset import Dataset, DatasetImages
 from previsionio.analyzer import cv_classif_analysis
 from previsionio.deployed_model import DeployedModel
-from previsionio.usecase_deployment import UsecaseDeployment
+from previsionio.experiment_deployment import ExperimentDeployment
 from previsionio.prediction import ValidationPrediction, DeploymentPrediction
 
 __all__ = [
@@ -141,8 +141,8 @@ __all__ = [
     'ModelEmbedding',
     'Preprocessing',
     'Project',
-    'Usecase',
-    'UsecaseDeployment',
+    'Experiment',
+    'ExperimentDeployment',
     'ValidationPrediction',
     'DeploymentPrediction'
 ]

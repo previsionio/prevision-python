@@ -56,8 +56,8 @@ def test_run_image_embeddings():
     uc_name = TESTING_ID + '_img_embeds'
     datasets = (test_datasets['csv'], test_datasets['zip'])
     project = pio.Project.from_id(PROJECT_ID)
-    usecase_version = project.fit_image_classification(uc_name, dataset=datasets, column_config=col_config,
+    experiment_version = project.fit_image_classification(uc_name, dataset=datasets, column_config=col_config,
                                                        metric=pio.metrics.Classification.AUC,
                                                        training_config=uc_config)
-    usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
-    pio.Usecase.from_id(usecase_version.usecase_id).delete()
+    experiment_version.wait_until(lambda experimentv: len(experimentv.models) > 0)
+    pio.Experiment.from_id(experiment_version.experiment_id).delete()

@@ -1,4 +1,4 @@
-Supervised usecases
+Supervised experiments
 ===================
 
 .. automodule:: previsionio.supervised

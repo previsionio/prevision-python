@@ -16,10 +16,10 @@ This section gathers all the available classes, functions and tools offered by P
    api/datasource.rst
    api/dataset.rst
    api/metrics.rst
-   api/usecase.rst
-   api/usecases_version.rst
+   api/experiment.rst
+   api/experiments_version.rst
    api/model.rst
-   api/usecase_deployment.rst
+   api/experiment_deployment.rst
    api/deployed_model.rst
    api/prediction.rst
    api/exporter.rst

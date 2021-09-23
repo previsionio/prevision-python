@@ -7,7 +7,7 @@ from .utils import train_model, get_testing_id
 
 TESTING_ID = get_testing_id()
 
-PROJECT_NAME = "sdk_test_usecase_deployment" + str(TESTING_ID)
+PROJECT_NAME = "sdk_test_experiment_deployment" + str(TESTING_ID)
 PROJECT_ID = ""
 
 uc_config = pio.TrainingConfig(advanced_models=[pio.AdvancedModel.LinReg],
@@ -55,23 +55,23 @@ def supervised_from_filename(training_type, uc_name):
     return train_model(PROJECT_ID, uc_name, dataset, training_type, training_type_class, uc_config)
 
 
-def test_usecase_version():
+def test_experiment_version():
     uc_name = TESTING_ID + '_file_del'
-    usecase_version: pio.Supervised = supervised_from_filename('regression', uc_name)
-    usecase_version.wait_until(
-        lambda usecase: (len(usecase.models) > 0) or (usecase._status['state'] == 'failed'))
-    assert usecase_version.running
-    usecase_version.stop()
-    uc_best_model = usecase_version.best_model
+    experiment_version: pio.Supervised = supervised_from_filename('regression', uc_name)
+    experiment_version.wait_until(
+        lambda experiment: (len(experiment.models) > 0) or (experiment._status['state'] == 'failed'))
+    assert experiment_version.running
+    experiment_version.stop()
+    uc_best_model = experiment_version.best_model
 
     project = pio.Project.from_id(PROJECT_ID)
-    usecase_deployment = project.create_usecase_deployment('test_sdk_' + TESTING_ID, uc_best_model)
+    experiment_deployment = project.create_experiment_deployment('test_sdk_' + TESTING_ID, uc_best_model)
 
-    uc_dataset_id = usecase_version.dataset._id
+    uc_dataset_id = experiment_version.dataset._id
     prediction_dataset = pio.Dataset.from_id(uc_dataset_id)
 
-    usecase_deployment.wait_until(lambda usecase_deployment: usecase_deployment.run_state == 'done')
+    experiment_deployment.wait_until(lambda experiment_deployment: experiment_deployment.run_state == 'done')
 
-    deployment_prediction = usecase_deployment.predict_from_dataset(prediction_dataset)
+    deployment_prediction = experiment_deployment.predict_from_dataset(prediction_dataset)
     prediction_df = deployment_prediction.get_result()
     assert isinstance(prediction_df, pd.DataFrame)

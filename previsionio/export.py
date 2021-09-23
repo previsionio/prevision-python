@@ -103,7 +103,7 @@ class Export(ApiResource, UniqueResourceMixin):
             if isinstance(prediction, DeploymentPrediction):
                 data['prediction_type'] = 'deployment'
             elif isinstance(prediction, ValidationPrediction):
-                data['prediction_type'] = 'usecase'
+                data['prediction_type'] = 'experiment'
             else:
                 msg = 'prediction must be of type DeploymentPrediction or ValidationPrediction,'
                 msg += f' got: {type(prediction)}'

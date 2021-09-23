@@ -13856,12 +13856,12 @@ train_text_clean
 </span><span class="ansi-green-intense-fg ansi-bold">     35</span> 
 <span class="ansi-green-intense-fg ansi-bold">     36</span> 
 
-<span class="ansi-green-fg">~/prevision-python/previsionio/usecase.py</span> in <span class="ansi-cyan-fg">_start_usecase</span><span class="ansi-blue-fg">(cls, name, dataset_id, data_type, training_type, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">    285</span>         pio.client.usecase_event_manager.wait_for_event(usecase.id,
+<span class="ansi-green-fg">~/prevision-python/previsionio/experiment.py</span> in <span class="ansi-cyan-fg">_start_experiment</span><span class="ansi-blue-fg">(cls, name, dataset_id, data_type, training_type, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">    285</span>         pio.client.experiment_event_manager.wait_for_event(experiment.id,
 <span class="ansi-green-intense-fg ansi-bold">    286</span>                                                         cls<span class="ansi-blue-fg">.</span>resource<span class="ansi-blue-fg">,</span>
 <span class="ansi-green-fg">--&gt; 287</span><span class="ansi-red-fg">                                                         EventTuple(&#39;status&#39;, &#39;running&#39;))
 </span><span class="ansi-green-intense-fg ansi-bold">    288</span> 
-<span class="ansi-green-intense-fg ansi-bold">    289</span>         <span class="ansi-green-fg">return</span> usecase
+<span class="ansi-green-intense-fg ansi-bold">    289</span>         <span class="ansi-green-fg">return</span> experiment
 
 <span class="ansi-green-fg">~/prevision-python/previsionio/prevision_client.py</span> in <span class="ansi-cyan-fg">wait_for_event</span><span class="ansi-blue-fg">(self, resource_id, resource_type, event_tuple)</span>
 <span class="ansi-green-intense-fg ansi-bold">     64</span> 
@@ -13941,7 +13941,7 @@ train_text_clean
 <span class="ansi-green-fg">----&gt; 1</span><span class="ansi-red-fg"> </span>uc<span class="ansi-blue-fg">.</span>wait_until<span class="ansi-blue-fg">(</span><span class="ansi-green-fg">lambda</span> u<span class="ansi-blue-fg">:</span> u<span class="ansi-blue-fg">.</span>_status<span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">&#39;status&#39;</span><span class="ansi-blue-fg">]</span> <span class="ansi-blue-fg">!=</span> <span class="ansi-blue-fg">&#39;running&#39;</span><span class="ansi-blue-fg">)</span>
 <span class="ansi-green-intense-fg ansi-bold">      2</span> t2 <span class="ansi-blue-fg">=</span> time<span class="ansi-blue-fg">.</span>time<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
 
-<span class="ansi-green-fg">~/prevision-python/previsionio/usecase.py</span> in <span class="ansi-cyan-fg">wait_until</span><span class="ansi-blue-fg">(self, condition, raise_on_error, timeout)</span>
+<span class="ansi-green-fg">~/prevision-python/previsionio/experiment.py</span> in <span class="ansi-cyan-fg">wait_until</span><span class="ansi-blue-fg">(self, condition, raise_on_error, timeout)</span>
 <span class="ansi-green-intense-fg ansi-bold">    399</span>                 <span class="ansi-green-fg">if</span> raise_on_error<span class="ansi-blue-fg">:</span>
 <span class="ansi-green-intense-fg ansi-bold">    400</span>                     <span class="ansi-green-fg">raise</span>
 <span class="ansi-green-fg">--&gt; 401</span><span class="ansi-red-fg"> </span>

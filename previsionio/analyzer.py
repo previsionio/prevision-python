@@ -1,15 +1,15 @@
 from typing import Union
-from previsionio.usecase_version import ClassicUsecaseVersion
+from previsionio.experiment_version import ClassicExperimentVersion
 import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score, fbeta_score, recall_score, precision_score
 
 
-def cv_classif_analysis(usecase: ClassicUsecaseVersion, thresh: float = None, step: Union[int, float] = 1000):
-    '''Get metrics on a CV file retrieved from the platform for a binary classification usecase
+def cv_classif_analysis(experiment: ClassicExperimentVersion, thresh: float = None, step: Union[int, float] = 1000):
+    '''Get metrics on a CV file retrieved from the platform for a binary classification experiment
 
     Args:
-        usecase (Usecase): usecase to analyze
+        experiment (Experiment): experiment to analyze
         thresh (float, optional): threshold to use (if none is provided, optimal threshold will be computed
             given F1 score)
         step (int): number of iterations required to find optimal threshold (1000 by default = 0.1% resolution per fold)
@@ -19,7 +19,7 @@ def cv_classif_analysis(usecase: ClassicUsecaseVersion, thresh: float = None, st
     step = float(step)
 
     # get cv
-    cv = usecase.get_cv()
+    cv = experiment.get_cv()
 
     if '__fold__' not in cv.columns:
         raise Exception('The fold column is missing in the cv dataframe')
@@ -32,7 +32,7 @@ def cv_classif_analysis(usecase: ClassicUsecaseVersion, thresh: float = None, st
     recall_fold = []
     threshold = []
 
-    target_col_name = usecase.column_config.target_column
+    target_col_name = experiment.column_config.target_column
     assert target_col_name
     pred_target_col_name = 'pred_' + target_col_name
 

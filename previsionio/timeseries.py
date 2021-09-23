@@ -3,8 +3,8 @@ from __future__ import print_function
 
 from typing import Dict
 from . import TrainingConfig
-from .usecase_config import DataType, UsecaseConfig, ColumnConfig, TypeProblem
-from .usecase_version import ClassicUsecaseVersion
+from .experiment_config import DataType, ExperimentConfig, ColumnConfig, TypeProblem
+from .experiment_version import ClassicExperimentVersion
 from .metrics import Regression
 from .model import RegressionModel
 from .dataset import Dataset
@@ -15,7 +15,7 @@ class TimeWindowException(Exception):
     pass
 
 
-class TimeWindow(UsecaseConfig):
+class TimeWindow(ExperimentConfig):
     """
     A time window object for representing either feature derivation window periods or
     forecast window periods.
@@ -57,8 +57,8 @@ class TimeWindow(UsecaseConfig):
         self.forecast_end = forecast_end
 
 
-class TimeSeries(ClassicUsecaseVersion):
-    """ A supervised usecase version, for timeseries data """
+class TimeSeries(ClassicExperimentVersion):
+    """ A supervised experiment version, for timeseries data """
 
     training_type = TypeProblem.Regression
     metric_type = Regression
@@ -66,13 +66,13 @@ class TimeSeries(ClassicUsecaseVersion):
     data_type = DataType.TimeSeries
     model_class = RegressionModel
 
-    def __init__(self, **usecase_version_info):
-        super().__init__(**usecase_version_info)
-        self._update_from_dict(**usecase_version_info)
+    def __init__(self, **experiment_version_info):
+        super().__init__(**experiment_version_info)
+        self._update_from_dict(**experiment_version_info)
 
-    def _update_from_dict(self, **usecase_version_info):
-        super()._update_from_dict(**usecase_version_info)
-        self.time_window = TimeWindow.from_dict(usecase_version_info['usecase_version_params']['timeseries_values'])
+    def _update_from_dict(self, **experiment_version_info):
+        super()._update_from_dict(**experiment_version_info)
+        self.time_window = TimeWindow.from_dict(experiment_version_info['experiment_version_params']['timeseries_values'])
 
     @classmethod
     def from_id(cls, _id: str) -> 'TimeSeries':
@@ -83,10 +83,10 @@ class TimeSeries(ClassicUsecaseVersion):
         return cls(**super()._load(pio_file))
 
     @staticmethod
-    def _build_usecase_version_creation_data(description, dataset, column_config, time_window, metric,
+    def _build_experiment_version_creation_data(description, dataset, column_config, time_window, metric,
                                              holdout_dataset, training_config,
                                              parent_version=None) -> Dict:
-        data = super(TimeSeries, TimeSeries)._build_usecase_version_creation_data(
+        data = super(TimeSeries, TimeSeries)._build_experiment_version_creation_data(
             description,
             parent_version=parent_version,
         )
@@ -102,7 +102,7 @@ class TimeSeries(ClassicUsecaseVersion):
 
     @classmethod
     def _fit(cls,
-             usecase_id: str,
+             experiment_id: str,
              dataset: Dataset,
              column_config: ColumnConfig,
              time_window: TimeWindow,
@@ -113,7 +113,7 @@ class TimeSeries(ClassicUsecaseVersion):
              parent_version: str = None) -> 'TimeSeries':
 
         return super()._fit(
-            usecase_id,
+            experiment_id,
             description=description,
             parent_version=parent_version,
             dataset=dataset,
@@ -134,7 +134,7 @@ class TimeSeries(ClassicUsecaseVersion):
         training_config: TrainingConfig = None,
         description: str = None,
     ) -> 'TimeSeries':
-        """ Start a time series usecase training to create a new version of the usecase (on the
+        """ Start a time series experiment training to create a new version of the experiment (on the
         platform): the training configs are copied from the current version and then overridden
         for the given parameters.
 
@@ -142,22 +142,22 @@ class TimeSeries(ClassicUsecaseVersion):
             description (str, optional): additional description of the version
             dataset (:class:`.Dataset`, :class:`.DatasetImages`, optional): Reference to the dataset
                 object to use for as training dataset
-            column_config (:class:`.ColumnConfig`, optional): Column configuration for the usecase
+            column_config (:class:`.ColumnConfig`, optional): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
             time_window (:class: `.TimeWindow`, optional): a time window object for representing either feature
                 derivation window periods or forecast window periods
-            metric (metrics.Regression, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (metrics.Regression, optional): Specific metric to use for the experiment (default: ``None``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`, optional): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
         Returns:
-            :class:`.TimeSeries`: Newly created TimeSeries usecase version object (new version)
+            :class:`.TimeSeries`: Newly created TimeSeries experiment version object (new version)
         """
         return TimeSeries._fit(
-                               self.usecase_id,
+                               self.experiment_id,
                                dataset if dataset is not None else self.dataset,
                                column_config if column_config is not None else self.column_config,
                                time_window if time_window is not None else self.time_window,

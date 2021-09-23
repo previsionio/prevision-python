@@ -2,7 +2,7 @@
 from typing import Dict, Union
 
 from pandas.core.frame import DataFrame
-from previsionio.usecase_config import TypeProblem
+from previsionio.experiment_config import TypeProblem
 import json
 import uuid
 import requests
@@ -28,16 +28,16 @@ class Model(ApiResource):
 
     Args:
         _id (str): Unique id of the model
-        usecase_version_id (str): Unique id of the usecase version of the model
+        experiment_version_id (str): Unique id of the experiment version of the model
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id: str, usecase_version_id: str, project_id: str, model_name: str = None,
+    def __init__(self, _id: str, experiment_version_id: str, project_id: str, model_name: str = None,
                  deployable: bool = False, **other_params):
         """ Instantiate a new :class:`.Model` object to manipulate a model resource on the platform. """
         super().__init__(_id=_id)
         self._id = _id
-        self.usecase_version_id = usecase_version_id
+        self.experiment_version_id = experiment_version_id
         self.project_id = project_id
         self.name = model_name
         self.tags = {}
@@ -73,15 +73,15 @@ class Model(ApiResource):
             'ExternalClassificationModel',
             'ExternalMultiClassificationModel',
             'TextSimilarityModel']:
-        """Get a usecase from the platform by its unique id.
+        """Get an experiment from the platform by its unique id.
 
         Args:
-            _id (str): Unique id of the usecase to retrieve
-            version (int, optional): Specific version of the usecase to retrieve
+            _id (str): Unique id of the experiment to retrieve
+            version (int, optional): Specific version of the experiment to retrieve
                 (default: 1)
 
         Returns:
-            :class:`.BaseUsecaseVersion`: Fetched usecase
+            :class:`.BaseExperimentVersion`: Fetched experiment
 
         Raises:
             PrevisionException: Any error while fetching data from the platform
@@ -164,7 +164,7 @@ class Model(ApiResource):
         if dataset_folder_id is not None:
             data['folder_dataset_id'] = dataset_folder_id
 
-        predict_start = client.request('/usecase-versions/{}/validation-predictions'.format(self.usecase_version_id),
+        predict_start = client.request('/experiment-versions/{}/validation-predictions'.format(self.experiment_version_id),
                                        method=requests.post,
                                        data=data,
                                        message_prefix='Bulk predict')
@@ -316,7 +316,7 @@ class ClassicModel(Model):
         }
 
         logger.debug('[Predict Unit] sending payload ' + str(payload))
-        url = '/usecase-versions/{}/unit-prediction'.format(self.usecase_version_id)
+        url = '/experiment-versions/{}/unit-prediction'.format(self.experiment_version_id)
         response = client.request(url,
                                   requests.post,
                                   data=payload,
@@ -327,21 +327,21 @@ class ClassicModel(Model):
 
 
 class ClassificationModel(ClassicModel):
-    """ A model object for a (binary) classification usecase, i.e. a usecase where the target
+    """ A model object for a (binary) classification experiment, i.e. an experiment where the target
     is categorical with exactly 2 modalities.
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the usecase of the model
-        uc_version (str, int): Version of the usecase of the model (either an integer for a specific
+        uc_id (str): Unique id of the experiment of the model
+        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id, usecase_version_id, **other_params):
+    def __init__(self, _id, experiment_version_id, **other_params):
         """ Instantiate a new :class:`.ClassificationModel` object to manipulate a classification model
         resource on the platform. """
-        super().__init__(_id, usecase_version_id, **other_params)
+        super().__init__(_id, experiment_version_id, **other_params)
         self._predict_threshold = 0.5
 
     @property
@@ -398,25 +398,25 @@ class ClassificationModel(ClassicModel):
 
 
 class RegressionModel(ClassicModel):
-    """ A model object for a regression usecase, i.e. a usecase where the target is numerical.
+    """ A model object for a regression experiment, i.e. an experiment where the target is numerical.
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the usecase of the model
-        uc_version (str, int): Version of the usecase of the model (either an integer for a specific
+        uc_id (str): Unique id of the experiment of the model
+        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
 
 
 class MultiClassificationModel(ClassicModel):
-    """ A model object for a multi-classification usecase, i.e. a usecase where the target
+    """ A model object for a multi-classification experiment, i.e. an experiment where the target
     is categorical with strictly more than 2 modalities.
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the usecase of the model
-        uc_version (str, int): Version of the usecase of the model (either an integer for a specific
+        uc_id (str): Unique id of the experiment of the model
+        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -425,13 +425,13 @@ class MultiClassificationModel(ClassicModel):
 # NOTE: we inherit the external models classes from classic model classes but with 2 method not implemented
 
 class ExternalClassificationModel(ClassificationModel):
-    """ A model object for an external (binary) classification usecase, i.e. a usecase where the target
+    """ A model object for an external (binary) classification experiment, i.e. an experiment where the target
     is categorical with exactly 2 modalities.
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the usecase of the model
-        uc_version (str, int): Version of the usecase of the model (either an integer for a specific
+        uc_id (str): Unique id of the experiment of the model
+        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -446,12 +446,12 @@ class ExternalClassificationModel(ClassificationModel):
 
 
 class ExternalRegressionModel(RegressionModel):
-    """ A model object for an external regression usecase, i.e. a usecase where the target is numerical.
+    """ A model object for an external regression experiment, i.e. an experiment where the target is numerical.
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the usecase of the model
-        uc_version (str, int): Version of the usecase of the model (either an integer for a specific
+        uc_id (str): Unique id of the experiment of the model
+        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -466,13 +466,13 @@ class ExternalRegressionModel(RegressionModel):
 
 
 class ExternalMultiClassificationModel(MultiClassificationModel):
-    """ A model object for an external multi-classification usecase, i.e. a usecase where the target
+    """ A model object for an external multi-classification experiment, i.e. an experiment where the target
     is categorical with strictly more than 2 modalities.
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the usecase of the model
-        uc_version (str, int): Version of the usecase of the model (either an integer for a specific
+        uc_id (str): Unique id of the experiment of the model
+        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -518,7 +518,7 @@ class TextSimilarityModel(Model):
         }
         if matching_id_description_column:
             data['queries_dataset_matching_id_description_column'] = matching_id_description_column
-        endpoint = '/usecase-versions/{}/validation-predictions'.format(self.usecase_version_id)
+        endpoint = '/experiment-versions/{}/validation-predictions'.format(self.experiment_version_id)
         predict_start = client.request(endpoint,
                                        method=requests.post,
                                        data=data,

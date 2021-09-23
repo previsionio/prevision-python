@@ -12,8 +12,8 @@ from functools import lru_cache
 from dateutil import parser
 
 from . import config
-from .usecase_config import (AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel,
-                             TrainingConfig, ColumnConfig, TypeProblem, UsecaseState)
+from .experiment_config import (AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel,
+                             TrainingConfig, ColumnConfig, TypeProblem, ExperimentState)
 from .logger import logger
 from .prevision_client import client
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
@@ -21,55 +21,55 @@ from .api_resource import ApiResource
 from .dataset import Dataset
 
 
-class BaseUsecaseVersion(ApiResource):
+class BaseExperimentVersion(ApiResource):
 
-    """Base parent class for all usecases objects."""
+    """Base parent class for all experiments objects."""
 
     training_config: TrainingConfig
     column_config: ColumnConfig
-    id_key = 'usecase_id'
+    id_key = 'experiment_id'
 
-    resource = 'usecase-versions'
+    resource = 'experiment-versions'
     training_type: TypeProblem
     data_type: DataType
     model_class: Model
 
-    def __init__(self, **usecase_version_info):
-        super().__init__(usecase_version_info['_id'])
-        self._update_from_dict(**usecase_version_info)
+    def __init__(self, **experiment_version_info):
+        super().__init__(experiment_version_info['_id'])
+        self._update_from_dict(**experiment_version_info)
 
         self._models = {}
 
-    def _update_from_dict(self, **usecase_version_info):
+    def _update_from_dict(self, **experiment_version_info):
         # we keep the raw entire dict, atm used only in print_info...
-        self._usecase_version_info = usecase_version_info
+        self._experiment_version_info = experiment_version_info
 
-        self.project_id: str = usecase_version_info.get('project_id')
-        self.usecase_id: str = usecase_version_info.get('usecase_id')
-        self.description: str = usecase_version_info.get('description')
-        self.version = usecase_version_info['version']
-        self.parent_version: str = usecase_version_info.get('parent_version')
-        if 'usecase' in usecase_version_info and 'data_type' in usecase_version_info['usecase']:
-            self.data_type: DataType = DataType(usecase_version_info['usecase']['data_type'])
+        self.project_id: str = experiment_version_info.get('project_id')
+        self.experiment_id: str = experiment_version_info.get('experiment_id')
+        self.description: str = experiment_version_info.get('description')
+        self.version = experiment_version_info['version']
+        self.parent_version: str = experiment_version_info.get('parent_version')
+        if 'experiment' in experiment_version_info and 'data_type' in experiment_version_info['experiment']:
+            self.data_type: DataType = DataType(experiment_version_info['experiment']['data_type'])
         else:
             self.data_type = None
-        if 'usecase' in usecase_version_info and 'training_type' in usecase_version_info['usecase']:
-            self.training_type: TypeProblem = TypeProblem(usecase_version_info['usecase']['training_type'])
+        if 'experiment' in experiment_version_info and 'training_type' in experiment_version_info['experiment']:
+            self.training_type: TypeProblem = TypeProblem(experiment_version_info['experiment']['training_type'])
         else:
             self.training_type = None
 
-        self.created_at: datetime.datetime = parser.parse(usecase_version_info.get('created_at'))
+        self.created_at: datetime.datetime = parser.parse(experiment_version_info.get('created_at'))
 
     def print_info(self):
-        """ Print all info on the usecase. """
-        # NOTE: maybe not set self._usecase_version_info and print each object attribut
-        for k, v in self._usecase_version_info.items():
+        """ Print all info on the experiment. """
+        # NOTE: maybe not set self._experiment_version_info and print each object attribut
+        for k, v in self._experiment_version_info.items():
             print(str(k) + ': ' + str(v))
 
     # NOTE: this method is just here to parse raw_data (objects) and build the corresponding data (strings)
     #       that can be sent directly to the endpoint
     @staticmethod
-    def _build_usecase_version_creation_data(description, parent_version=None) -> Dict:
+    def _build_experiment_version_creation_data(description, parent_version=None) -> Dict:
         data = {
             'description': description,
             'parent_version': parent_version,
@@ -77,45 +77,45 @@ class BaseUsecaseVersion(ApiResource):
         return data
 
     @classmethod
-    def new(cls, usecase_id, data) -> 'BaseUsecaseVersion':
-        endpoint = f'/usecases/{usecase_id}/versions'
+    def new(cls, experiment_id, data) -> 'BaseExperimentVersion':
+        endpoint = f'/experiments/{experiment_id}/versions'
         response = client.request(endpoint,
                                   method=requests.post,
                                   data=data,
-                                  message_prefix='Usecase version creation')
-        usecase_version_info = parse_json(response)
-        usecase_version = cls(**usecase_version_info)
-        return usecase_version
+                                  message_prefix='Experiment version creation')
+        experiment_version_info = parse_json(response)
+        experiment_version = cls(**experiment_version_info)
+        return experiment_version
 
     def _update_draft(self, **kwargs):
         return self
 
-    def _confirm(self) -> 'BaseUsecaseVersion':
-        endpoint = f'/usecase-versions/{self._id}/confirm'
+    def _confirm(self) -> 'BaseExperimentVersion':
+        endpoint = f'/experiment-versions/{self._id}/confirm'
         response = client.request(endpoint,
                                   method=requests.put,
-                                  message_prefix='Usecase version confirmation')
-        usecase_version_info = parse_json(response)
-        self._update_from_dict(**usecase_version_info)
+                                  message_prefix='Experiment version confirmation')
+        experiment_version_info = parse_json(response)
+        self._update_from_dict(**experiment_version_info)
         return self
 
     @classmethod
-    def _fit(cls, usecase_id: str,
+    def _fit(cls, experiment_id: str,
              description: str = None,
              parent_version: str = None,
-             **kwargs) -> 'BaseUsecaseVersion':
+             **kwargs) -> 'BaseExperimentVersion':
 
-        usecase_version_creation_data = cls._build_usecase_version_creation_data(description,
+        experiment_version_creation_data = cls._build_experiment_version_creation_data(description,
                                                                                  parent_version=parent_version,
                                                                                  **kwargs)
-        usecase_version_draft = cls.new(usecase_id, usecase_version_creation_data)
-        usecase_version_draft._update_draft(**kwargs)
-        usecase_version = usecase_version_draft._confirm()
+        experiment_version_draft = cls.new(experiment_id, experiment_version_creation_data)
+        experiment_version_draft._update_draft(**kwargs)
+        experiment_version = experiment_version_draft._confirm()
 
         # NOTE: maybe update like that to be sure to have all the correct info of the resource
-        # usecase_version._update_from_dict(**cls._from_id(usecase_version._id))
+        # experiment_version._update_from_dict(**cls._from_id(experiment_version._id))
 
-        return usecase_version
+        return experiment_version
 
     def new_version(self, **kwargs):
         raise NotImplementedError
@@ -129,15 +129,15 @@ class BaseUsecaseVersion(ApiResource):
 
     @classmethod
     def _from_id(cls, _id: str) -> Dict:
-        """Get a usecase from the platform by its unique id.
+        """Get an experiment from the platform by its unique id.
 
         Args:
-            _id (str): Unique id of the usecase to retrieve
-            version (int, optional): Specific version of the usecase to retrieve
+            _id (str): Unique id of the experiment to retrieve
+            version (int, optional): Specific version of the experiment to retrieve
                 (default: 1)
 
         Returns:
-            :class:`.BaseUsecaseVersion`: Fetched usecase
+            :class:`.BaseExperimentVersion`: Fetched experiment
 
         Raises:
             PrevisionException: Any error while fetching data from the platform
@@ -146,17 +146,17 @@ class BaseUsecaseVersion(ApiResource):
         return super()._from_id(specific_url='/{}/{}'.format(cls.resource, _id))
 
     # @property
-    # def usecase(self) -> 'Usecase':
-    #     """Get a usecase of current usecase version.
+    # def experiment(self) -> 'Experiment':
+    #     """Get an experiment of current experiment version.
 
     #     Returns:
-    #         :class:`.Usecase`: Fetched usecase
+    #         :class:`.Experiment`: Fetched experiment
 
     #     Raises:
     #         PrevisionException: Any error while fetching data from the platform
     #             or parsing result
     #     """
-    #     return Usecase.from_id(self.usecase_id)
+    #     return Experiment.from_id(self.experiment_id)
 
     @property
     def models(self):
@@ -164,7 +164,7 @@ class BaseUsecaseVersion(ApiResource):
         are done training are retrieved.
 
         Returns:
-            list(:class:`.Model`): List of models found by the platform for the usecase
+            list(:class:`.Model`): List of models found by the platform for the experiment
         """
         end_point = '/{}/{}/models'.format(self.resource, self._id)
         models = get_all_results(client, end_point, method=requests.get)
@@ -177,7 +177,7 @@ class BaseUsecaseVersion(ApiResource):
     @lru_cache()
     def train_dataset(self):
         """ Get the :class:`.Dataset` object corresponding to the training dataset
-        of the usecase.
+        of the experiment.
 
         Returns:
             :class:`.Dataset`: Associated training dataset
@@ -187,15 +187,15 @@ class BaseUsecaseVersion(ApiResource):
     @property
     @lru_cache()
     def schema(self) -> dict:
-        """ Get the data schema of the usecase.
+        """ Get the data schema of the experiment.
 
         Returns:
-            dict: Usecase schema
+            dict: Experiment schema
         """
         end_point = '/{}/{}/graph'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
                                   method=requests.get,
-                                  message_prefix='Usecase schema')
+                                  message_prefix='Experiment schema')
         uc_schema = json.loads(response.content.decode('utf-8'))
         return uc_schema
 
@@ -205,7 +205,7 @@ class BaseUsecaseVersion(ApiResource):
         Blend models), where the best performance corresponds to a minimal loss.
 
         Returns:
-            (:class:`.Model`, None): Model with the best performance in the usecase, or
+            (:class:`.Model`, None): Model with the best performance in the experiment, or
             ``None`` if no model matched the search filter.
         """
         best_model = None
@@ -240,55 +240,55 @@ class BaseUsecaseVersion(ApiResource):
 
     @property
     def done(self) -> bool:
-        """ Get a flag indicating whether or not the usecase is currently done.
+        """ Get a flag indicating whether or not the experiment is currently done.
 
         Returns:
             bool: done status
         """
         status = self._status
-        return status['state'] == UsecaseState.Done.value
+        return status['state'] == ExperimentState.Done.value
 
     @property
     def running(self) -> bool:
-        """ Get a flag indicating whether or not the usecase is currently running.
+        """ Get a flag indicating whether or not the experiment is currently running.
 
         Returns:
             bool: Running status
         """
         status = self._status
-        return status['state'] == UsecaseState.Running.value
+        return status['state'] == ExperimentState.Running.value
 
     @property
-    def status(self) -> UsecaseState:
-        """ Get a flag indicating whether or not the usecase is currently running.
+    def status(self) -> ExperimentState:
+        """ Get a flag indicating whether or not the experiment is currently running.
 
         Returns:
             bool: Running status
         """
         status = self._status
-        return UsecaseState(status['state'])
+        return ExperimentState(status['state'])
 
     def stop(self):
-        """ Stop a usecase (stopping all nodes currently in progress). """
-        logger.info('[Usecase] stopping usecase')
+        """ Stop an experiment (stopping all nodes currently in progress). """
+        logger.info('[Experiment] stopping experiment')
         end_point = '/{}/{}/stop'.format(self.resource, self._id)
         response = client.request(end_point,
                                   requests.put,
-                                  message_prefix='Usecase stop')
+                                  message_prefix='Experiment stop')
         events_url = '/{}/{}'.format(self.resource, self._id)
         assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(self.resource_id,
                                                 self.resource,
                                                 EventTuple('USECASE_VERSION_UPDATE'),
                                                 specific_url=events_url)
-        logger.info('[Usecase] stopping:' + '  '.join(str(k) + ': ' + str(v)
+        logger.info('[Experiment] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                       for k, v in parse_json(response).items()))
 
     def delete(self):
-        """Delete a usecase version from the actual [client] workspace.
+        """Delete an experiment version from the actual [client] workspace.
 
         Raises:
-            PrevisionException: If the usecase version does not exist
+            PrevisionException: If the experiment version does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
         super().delete()
@@ -297,7 +297,7 @@ class BaseUsecaseVersion(ApiResource):
         """ Wait until condition is fulfilled, then break.
 
         Args:
-            condition (func: (:class:`.BaseUsecaseVersion`) -> bool.): Function to use to check the
+            condition (func: (:class:`.BaseExperimentVersion`) -> bool.): Function to use to check the
                 break condition
             raise_on_error (bool, optional): If true then the function will stop on error,
                 otherwise it will continue waiting (default: ``True``)
@@ -305,7 +305,7 @@ class BaseUsecaseVersion(ApiResource):
 
         Example::
 
-            usecase.wait_until(lambda usecasev: len(usecasev.models) > 3)
+            experiment.wait_until(lambda experimentv: len(experimentv.models) > 3)
 
         Raises:
             PrevisionException: If the resource could not be fetched or there was a timeout.
@@ -329,12 +329,12 @@ class BaseUsecaseVersion(ApiResource):
 
     def get_holdout_predictions(self, full: bool = False):
         """
-        Retrieves the list of holdout predictions for the current usecase from client workspace
+        Retrieves the list of holdout predictions for the current experiment from client workspace
         (with the full predictions object if necessary)
         Args:
             full (boolean): If true, return full holdout prediction objects (else only metadata)
         """
-        end_point = '/usecase-versions/{}/holdout-predictions'.format(self._id)
+        end_point = '/experiment-versions/{}/holdout-predictions'.format(self._id)
         response = client.request(endpoint=end_point,
                                   method=requests.get,
                                   message_prefix='Holdout predictions listing')
@@ -354,12 +354,12 @@ class BaseUsecaseVersion(ApiResource):
 
     def get_predictions(self, full: bool = False):
         """
-        Retrieves the list of predictions for the current usecase from client workspace
+        Retrieves the list of predictions for the current experiment from client workspace
         (with the full predictions object if necessary)
         Args:
             full (boolean): If true, return full prediction objects (else only metadata)
         """
-        response = client.request(endpoint='/usecases/{}/predictions'.format(self._id),
+        response = client.request(endpoint='/experiments/{}/predictions'.format(self._id),
                                   method=requests.get,
                                   message_prefix='Predictions listing')
         preds_list = (json.loads(response.content.decode('utf-8')))['items']
@@ -376,7 +376,7 @@ class BaseUsecaseVersion(ApiResource):
         return preds_dict
 
     def delete_prediction(self, prediction_id: str):
-        """ Delete a prediction in the list for the current usecase from the actual [client] workspace.
+        """ Delete a prediction in the list for the current experiment from the actual [client] workspace.
 
         Args:
             prediction_id (str): Unique id of the prediction to delete
@@ -384,30 +384,30 @@ class BaseUsecaseVersion(ApiResource):
         Returns:
             dict: Deletion process results
         """
-        endpoint = '/usecases/{}/versions/{}/predictions/{}'.format(self._id, self.version, prediction_id)
+        endpoint = '/experiments/{}/versions/{}/predictions/{}'.format(self._id, self.version, prediction_id)
         response = client.request(endpoint=endpoint,
                                   method=requests.delete,
                                   message_prefix='Prediction delete')
         return (json.loads(response.content.decode('utf-8')))
 
     def delete_predictions(self):
-        """ Delete all predictions in the list for the current usecase from the actual [client] workspace.
+        """ Delete all predictions in the list for the current experiment from the actual [client] workspace.
 
         Returns:
             dict: Deletion process results
         """
-        response = client.request(endpoint='/usecases/{}/versions/{}/predictions'.format(self._id, self.version),
+        response = client.request(endpoint='/experiments/{}/versions/{}/predictions'.format(self._id, self.version),
                                   method=requests.delete,
                                   message_prefix='Predictions delete')
         return (json.loads(response.content.decode('utf-8')))
 
     @property
     def score(self) -> float:
-        """ Get the current score of the usecase (i.e. the score of the model that is
-        currently considered the best performance-wise for this usecase).
+        """ Get the current score of the experiment (i.e. the score of the model that is
+        currently considered the best performance-wise for this experiment).
 
         Returns:
-            float: Usecase score (or infinity if not available).
+            float: Experiment score (or infinity if not available).
         """
         try:
             return self._status['score']
@@ -427,88 +427,88 @@ class BaseUsecaseVersion(ApiResource):
         with open(pio_file, 'r') as f:
             mdl = json.load(f)
         uc = cls._from_id(mdl['_id'])
-        # TODO check holdout_dataset in usecase_version_params
-        # if mdl['usecase_version_params'].get('holdout_dataset_id'):
-        #     uc.holdout_dataset = mdl['usecase_version_params'].get('holdout_dataset_id')[0]
+        # TODO check holdout_dataset in experiment_version_params
+        # if mdl['experiment_version_params'].get('holdout_dataset_id'):
+        #     uc.holdout_dataset = mdl['experiment_version_params'].get('holdout_dataset_id')[0]
         return uc
 
 
-class ClassicUsecaseVersion(BaseUsecaseVersion):
+class ClassicExperimentVersion(BaseExperimentVersion):
 
-    def __init__(self, **usecase_version_info):
-        super().__init__(**usecase_version_info)
+    def __init__(self, **experiment_version_info):
+        super().__init__(**experiment_version_info)
 
         self.predictions = {}
         self.predict_token = None
 
-    def _update_from_dict(self, **usecase_version_info):
-        super()._update_from_dict(**usecase_version_info)
+    def _update_from_dict(self, **experiment_version_info):
+        super()._update_from_dict(**experiment_version_info)
 
-        dataset_id: str = usecase_version_info['dataset_id']
+        dataset_id: str = experiment_version_info['dataset_id']
         self.dataset: Dataset = Dataset.from_id(dataset_id)
 
-        usecase_params = usecase_version_info['usecase_version_params']
-        self.column_config = ColumnConfig(target_column=usecase_params.get('target_column'),
-                                          fold_column=usecase_params.get('fold_column'),
-                                          id_column=usecase_params.get('id_column'),
-                                          weight_column=usecase_params.get('weight_column'),
-                                          time_column=usecase_params.get('time_column', None),
-                                          group_columns=usecase_params.get('group_columns'),
-                                          apriori_columns=usecase_params.get('apriori_columns'),
-                                          drop_list=usecase_params.get('drop_list'))
+        experiment_params = experiment_version_info['experiment_version_params']
+        self.column_config = ColumnConfig(target_column=experiment_params.get('target_column'),
+                                          fold_column=experiment_params.get('fold_column'),
+                                          id_column=experiment_params.get('id_column'),
+                                          weight_column=experiment_params.get('weight_column'),
+                                          time_column=experiment_params.get('time_column', None),
+                                          group_columns=experiment_params.get('group_columns'),
+                                          apriori_columns=experiment_params.get('apriori_columns'),
+                                          drop_list=experiment_params.get('drop_list'))
 
-        self.metric: str = usecase_params['metric']
+        self.metric: str = experiment_params['metric']
 
-        holdout_dataset_id: Union[str, None] = usecase_version_info.get('holdout_dataset_id', None)
+        holdout_dataset_id: Union[str, None] = experiment_version_info.get('holdout_dataset_id', None)
         if holdout_dataset_id is not None:
             self.holdout_dataset: Dataset = Dataset.from_id(holdout_dataset_id)
         else:
             self.holdout_dataset = None
 
-        self.training_config = TrainingConfig(profile=Profile(usecase_params.get('profile')),
-                                              features=[Feature(f) for f in usecase_params.get(
+        self.training_config = TrainingConfig(profile=Profile(experiment_params.get('profile')),
+                                              features=[Feature(f) for f in experiment_params.get(
                                                   'features_engineering_selected_list', [])],
                                               advanced_models=[
-                                                  AdvancedModel(f) for f in usecase_params.get('normal_models', [])],
+                                                  AdvancedModel(f) for f in experiment_params.get('normal_models', [])],
                                               normal_models=[NormalModel(f)
-                                                             for f in usecase_params.get('lite_models', [])],
+                                                             for f in experiment_params.get('lite_models', [])],
                                               simple_models=[SimpleModel(f)
-                                                             for f in usecase_params.get('simple_models', [])],
-                                              feature_time_seconds=usecase_params.get('features_selection_time', 3600),
-                                              feature_number_kept=usecase_params.get('features_selection_count', None))
+                                                             for f in experiment_params.get('simple_models', [])],
+                                              feature_time_seconds=experiment_params.get('features_selection_time', 3600),
+                                              feature_number_kept=experiment_params.get('features_selection_count', None))
 
     @property
     def advanced_models_list(self) -> List[AdvancedModel]:
-        """ Get the list of selected advanced models in the usecase.
+        """ Get the list of selected advanced models in the experiment.
 
         Returns:
-            list(AdvancedModel): Names of the normal models selected for the usecase
+            list(AdvancedModel): Names of the normal models selected for the experiment
         """
-        return [AdvancedModel(f) for f in self._status['usecase_version_params'].get('normal_models', [])]
+        return [AdvancedModel(f) for f in self._status['experiment_version_params'].get('normal_models', [])]
 
     @property
     def normal_models_list(self) -> List[NormalModel]:
-        """ Get the list of selected normal models in the usecase.
+        """ Get the list of selected normal models in the experiment.
 
         Returns:
-            list(NormalModel): Names of the normal models selected for the usecase
+            list(NormalModel): Names of the normal models selected for the experiment
         """
-        return [NormalModel(f) for f in self._status['usecase_version_params'].get('lite_models', [])]
+        return [NormalModel(f) for f in self._status['experiment_version_params'].get('lite_models', [])]
 
     @property
     def simple_models_list(self) -> List[SimpleModel]:
-        """ Get the list of selected simple models in the usecase.
+        """ Get the list of selected simple models in the experiment.
 
         Returns:
-            list(SimpleModel): Names of the simple models selected for the usecase
+            list(SimpleModel): Names of the simple models selected for the experiment
         """
-        return [SimpleModel(f) for f in self._status['usecase_version_params'].get('simple_models', [])]
+        return [SimpleModel(f) for f in self._status['experiment_version_params'].get('simple_models', [])]
 
     @property
     @lru_cache()
     def correlation_matrix(self) -> pd.DataFrame:
         """ Get the correlation matrix of the features (those constitute the dataset
-        on which the usecase was trained).
+        on which the experiment was trained).
 
         Returns:
             ``pd.DataFrame``: Correlation matrix as a ``pandas`` dataframe
@@ -527,7 +527,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
     @property
     @lru_cache()
     def features(self) -> List[dict]:
-        """ Get the general description of the usecase's features, such as:
+        """ Get the general description of the experiment's features, such as:
 
         - feature types distribution
         - feature information list
@@ -543,7 +543,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
     @property
     @lru_cache()
     def features_stats(self):
-        """ Get the general description of the usecase's features, such as:
+        """ Get the general description of the experiment's features, such as:
 
         - feature types distribution
         - feature information list
@@ -587,7 +587,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
               list of the most frequent tokens
 
         - role: whether or not the feature is a target/fold/weight or id feature (and for time
-          series usecases, whether or not it is a group/apriori feature - check the
+          series experiments, whether or not it is a group/apriori feature - check the
           `Prevision.io's timeseries documentation
           <https://previsionio.readthedocs.io/fr/latest/projects_timeseries.html>`_)
         - importance_value: scores reflecting the importance of the given feature
@@ -621,25 +621,25 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
 
     @property
     def drop_list(self) -> List[str]:
-        """ Get the list of drop columns in the usecase.
+        """ Get the list of drop columns in the experiment.
 
         Returns:
             list(str): Names of the columns dropped from the dataset
         """
-        return self._status['usecase_version_params'].get('drop_list', [])
+        return self._status['experiment_version_params'].get('drop_list', [])
 
     @property
     def feature_list(self) -> List[Feature]:
-        """ Get the list of selected feature engineering modules in the usecase.
+        """ Get the list of selected feature engineering modules in the experiment.
 
         Returns:
-            list(str): Names of the feature engineering modules selected for the usecase
+            list(str): Names of the feature engineering modules selected for the experiment
         """
-        res = [Feature(f) for f in self._status['usecase_version_params'].get('features_engineering_selected_list', [])]
+        res = [Feature(f) for f in self._status['experiment_version_params'].get('features_engineering_selected_list', [])]
         return res
 
     def get_cv(self) -> pd.DataFrame:
-        """ Get the cross validation dataset from the best model of the usecase.
+        """ Get the cross validation dataset from the best model of the experiment.
 
         Returns:
             ``pd.DataFrame``: Cross validation dataset
@@ -653,7 +653,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                        data,
                        confidence=False,
                        explain=False):
-        """ Get a prediction on a single instance using the best model of the usecase.
+        """ Get a prediction on a single instance using the best model of the experiment.
 
         Args:
             use_best_single (bool, optional): Whether to use the best single model
@@ -681,7 +681,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                              confidence=False,
                              dataset_folder=None) -> pd.DataFrame:
         """ Get the predictions for a dataset stored in the current active [client]
-        workspace using the best model of the usecase.
+        workspace using the best model of the experiment.
 
         Arguments:
             dataset (:class:`.Dataset`): Reference to the dataset object to make
@@ -702,7 +702,7 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
 
     def predict(self, df, confidence=False, prediction_dataset_name=None) -> pd.DataFrame:
         """ Get the predictions for a dataset stored in the current active [client]
-        workspace using the best model of the usecase with a Scikit-learn style blocking prediction mode.
+        workspace using the best model of the experiment with a Scikit-learn style blocking prediction mode.
 
         .. warning::
 
