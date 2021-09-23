@@ -8,7 +8,7 @@ variables:
   PIO_TAG: ${CI_COMMIT_REF_SLUG}
 
 .base:
-  image: python:3.6.8-slim-stretch
+  image: python:3.6.8-stretch
   tags: ["kube", "bel1-c2"]
 
 test-lint:
