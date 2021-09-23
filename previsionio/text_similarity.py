@@ -255,7 +255,9 @@ class TextSimilarity(BaseUsecaseVersion):
         queries_dataset: Dataset = None,
         queries_column_config: Union[QueriesColumnConfig, None] = None,
         models_parameters: ListModelsParameters = ListModelsParameters(),
-        description: str = None) -> 'TextSimilarity':
+        description: str = None,
+        parent_version: str = None,
+    ) -> 'TextSimilarity':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
 
@@ -277,6 +279,7 @@ class TextSimilarity(BaseUsecaseVersion):
         return super()._fit(
             usecase_id,
             description=description,
+            parent_version=parent_version,
             dataset=dataset,
             description_column_config=description_column_config,
             metric=metric,
@@ -330,4 +333,5 @@ class TextSimilarity(BaseUsecaseVersion):
             queries_column_config=queries_column_config if queries_column_config is not None else self.queries_column_config,
             models_parameters=models_parameters if models_parameters is not None else self.models_parameters,
             description=description,
+            parent_version=self.version,
         )
