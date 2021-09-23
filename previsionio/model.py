@@ -69,6 +69,9 @@ class Model(ApiResource):
             'RegressionModel',
             'ClassificationModel',
             'MultiClassificationModel',
+            'ExternalRegressionModel',
+            'ExternalClassificationModel',
+            'ExternalMultiClassificationModel',
             'TextSimilarityModel']:
         """Get a usecase from the platform by its unique id.
 
@@ -90,16 +93,30 @@ class Model(ApiResource):
                                   message_prefix='Model from id')
         model = json.loads(response.content.decode('utf-8'))
         training_type = TypeProblem(model.get('training_type', model.get('type_problem')))
-        if training_type == TypeProblem.Regression:
-            return RegressionModel(**model)
-        elif training_type == TypeProblem.Classification:
-            return ClassificationModel(**model)
-        elif training_type == TypeProblem.MultiClassification:
-            return MultiClassificationModel(**model)
-        elif training_type == TypeProblem.TextSimilarity:
-            return TextSimilarityModel(**model)
+        # NOTE: we should always set the provider in model collection
+        provider = model.get('provider', 'prevision-auto-ml')
+        if provider == 'prevision-auto-ml':
+            if training_type == TypeProblem.Regression:
+                return RegressionModel(**model)
+            elif training_type == TypeProblem.Classification:
+                return ClassificationModel(**model)
+            elif training_type == TypeProblem.MultiClassification:
+                return MultiClassificationModel(**model)
+            elif training_type == TypeProblem.TextSimilarity:
+                return TextSimilarityModel(**model)
+            else:
+                raise PrevisionException('Training type {} not supported'.format(training_type))
+        elif provider == 'external':
+            if training_type == TypeProblem.Regression:
+                return ExternalRegressionModel(**model)
+            elif training_type == TypeProblem.Classification:
+                return ExternalClassificationModel(**model)
+            elif training_type == TypeProblem.MultiClassification:
+                return ExternalMultiClassificationModel(**model)
+            else:
+                raise PrevisionException('Training type {} not supported'.format(training_type))
         else:
-            raise PrevisionException('Training type {} not supported'.format(training_type))
+            raise PrevisionException('Provider {} not supported'.format(provider))
 
     @property
     @lru_cache()
@@ -403,6 +420,70 @@ class MultiClassificationModel(ClassicModel):
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
+
+
+# NOTE: we inherit the external models classes from classic model classes but with 2 method not implemented
+
+class ExternalClassificationModel(ClassificationModel):
+    """ A model object for an external (binary) classification usecase, i.e. a usecase where the target
+    is categorical with exactly 2 modalities.
+
+    Args:
+        _id (str): Unique id of the model
+        uc_id (str): Unique id of the usecase of the model
+        uc_version (str, int): Version of the usecase of the model (either an integer for a specific
+            version, or "last")
+        name (str, optional): Name of the model (default: ``None``)
+    """
+
+    @property
+    def feature_importance(self) -> pd.DataFrame:
+        raise NotImplementedError
+
+    @property
+    def cross_validation(self) -> pd.DataFrame:
+        raise NotImplementedError
+
+
+class ExternalRegressionModel(RegressionModel):
+    """ A model object for an external regression usecase, i.e. a usecase where the target is numerical.
+
+    Args:
+        _id (str): Unique id of the model
+        uc_id (str): Unique id of the usecase of the model
+        uc_version (str, int): Version of the usecase of the model (either an integer for a specific
+            version, or "last")
+        name (str, optional): Name of the model (default: ``None``)
+    """
+
+    @property
+    def feature_importance(self) -> pd.DataFrame:
+        raise NotImplementedError
+
+    @property
+    def cross_validation(self) -> pd.DataFrame:
+        raise NotImplementedError
+
+
+class ExternalMultiClassificationModel(MultiClassificationModel):
+    """ A model object for an external multi-classification usecase, i.e. a usecase where the target
+    is categorical with strictly more than 2 modalities.
+
+    Args:
+        _id (str): Unique id of the model
+        uc_id (str): Unique id of the usecase of the model
+        uc_version (str, int): Version of the usecase of the model (either an integer for a specific
+            version, or "last")
+        name (str, optional): Name of the model (default: ``None``)
+    """
+
+    @property
+    def feature_importance(self) -> pd.DataFrame:
+        raise NotImplementedError
+
+    @property
+    def cross_validation(self) -> pd.DataFrame:
+        raise NotImplementedError
 
 
 class TextSimilarityModel(Model):

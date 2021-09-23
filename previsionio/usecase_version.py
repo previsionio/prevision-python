@@ -5,6 +5,7 @@ from typing import Dict, List, Union
 import pandas as pd
 import requests
 import time
+import datetime
 import previsionio as pio
 import os
 from functools import lru_cache
@@ -18,7 +19,6 @@ from .prevision_client import client
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
 from .api_resource import ApiResource
 from .dataset import Dataset
-# from .usecase import Usecase
 
 
 class BaseUsecaseVersion(ApiResource):
@@ -34,17 +34,91 @@ class BaseUsecaseVersion(ApiResource):
     data_type: DataType
     model_class: Model
 
-    def __init__(self, **usecase_info):
-        super().__init__(**usecase_info)
-        self.name: str = usecase_info.get('name', usecase_info['usecase'].get('name'))
-        self._id: str = usecase_info['_id']
-        self.usecase_id: str = usecase_info['usecase_id']
-        self.project_id: str = usecase_info['project_id']
-        self.dataset_id: str = usecase_info['dataset_id']
-        self.holdout_dataset_id: Union[str, None] = usecase_info.get('holdout_dataset_id', None)
-        self.created_at = parser.parse(usecase_info["created_at"])
+    def __init__(self, **usecase_version_info):
+        super().__init__(usecase_version_info['_id'])
+        self._update_from_dict(**usecase_version_info)
+
         self._models = {}
-        self.version = 1
+
+    def _update_from_dict(self, **usecase_version_info):
+        # we keep the raw entire dict, atm used only in print_info...
+        self._usecase_version_info = usecase_version_info
+
+        self.project_id: str = usecase_version_info.get('project_id')
+        self.usecase_id: str = usecase_version_info.get('usecase_id')
+        self.description: str = usecase_version_info.get('description')
+        self.version = usecase_version_info['version']
+        self.parent_version: str = usecase_version_info.get('parent_version')
+        if 'usecase' in usecase_version_info and 'data_type' in usecase_version_info['usecase']:
+            self.data_type: DataType = DataType(usecase_version_info['usecase']['data_type'])
+        else:
+            self.data_type = None
+        if 'usecase' in usecase_version_info and 'training_type' in usecase_version_info['usecase']:
+            self.training_type: TypeProblem = TypeProblem(usecase_version_info['usecase']['training_type'])
+        else:
+            self.training_type = None
+
+        self.created_at: datetime.datetime = parser.parse(usecase_version_info.get('created_at'))
+
+    def print_info(self):
+        """ Print all info on the usecase. """
+        # NOTE: maybe not set self._usecase_version_info and print each object attribut
+        for k, v in self._usecase_version_info.items():
+            print(str(k) + ': ' + str(v))
+
+    # NOTE: this method is just here to parse raw_data (objects) and build the corresponding data (strings)
+    #       that can be sent directly to the endpoint
+    @staticmethod
+    def _build_usecase_version_creation_data(description, parent_version=None) -> Dict:
+        data = {
+            'description': description,
+            'parent_version': parent_version,
+        }
+        return data
+
+    @classmethod
+    def new(cls, usecase_id, data) -> 'BaseUsecaseVersion':
+        endpoint = f'/usecases/{usecase_id}/versions'
+        response = client.request(endpoint,
+                                  method=requests.post,
+                                  data=data,
+                                  message_prefix='Usecase version creation')
+        usecase_version_info = parse_json(response)
+        usecase_version = cls(**usecase_version_info)
+        return usecase_version
+
+    def _update_draft(self, **kwargs):
+        return self
+
+    def _confirm(self) -> 'BaseUsecaseVersion':
+        endpoint = f'/usecase-versions/{self._id}/confirm'
+        response = client.request(endpoint,
+                                  method=requests.put,
+                                  message_prefix='Usecase version confirmation')
+        usecase_version_info = parse_json(response)
+        self._update_from_dict(**usecase_version_info)
+        return self
+
+    @classmethod
+    def _fit(cls, usecase_id: str,
+             description: str = None,
+             parent_version: str = None,
+             **kwargs) -> 'BaseUsecaseVersion':
+
+        usecase_version_creation_data = cls._build_usecase_version_creation_data(description,
+                                                                                 parent_version=parent_version,
+                                                                                 **kwargs)
+        usecase_version_draft = cls.new(usecase_id, usecase_version_creation_data)
+        usecase_version_draft._update_draft(**kwargs)
+        usecase_version = usecase_version_draft._confirm()
+
+        # NOTE: maybe update like that to be sure to have all the correct info of the resource
+        # usecase_version._update_from_dict(**cls._from_id(usecase_version._id))
+
+        return usecase_version
+
+    def new_version(self, **kwargs):
+        raise NotImplementedError
 
     def __len__(self):
         return len(self.models)
@@ -193,33 +267,6 @@ class BaseUsecaseVersion(ApiResource):
         """
         status = self._status
         return UsecaseState(status['state'])
-
-    @property
-    def advanced_models_list(self) -> List[AdvancedModel]:
-        """ Get the list of selected advanced models in the usecase.
-
-        Returns:
-            list(AdvancedModel): Names of the normal models selected for the usecase
-        """
-        return [AdvancedModel(f) for f in self._status['usecase_version_params'].get('normal_models', [])]
-
-    @property
-    def normal_models_list(self) -> List[NormalModel]:
-        """ Get the list of selected normal models in the usecase.
-
-        Returns:
-            list(NormalModel): Names of the normal models selected for the usecase
-        """
-        return [NormalModel(f) for f in self._status['usecase_version_params'].get('lite_models', [])]
-
-    @property
-    def simple_models_list(self) -> List[SimpleModel]:
-        """ Get the list of selected simple models in the usecase.
-
-        Returns:
-            list(SimpleModel): Names of the simple models selected for the usecase
-        """
-        return [SimpleModel(f) for f in self._status['usecase_version_params'].get('simple_models', [])]
 
     def stop(self):
         """ Stop a usecase (stopping all nodes currently in progress). """
@@ -388,10 +435,19 @@ class BaseUsecaseVersion(ApiResource):
 
 class ClassicUsecaseVersion(BaseUsecaseVersion):
 
-    def __init__(self, **usecase_info):
-        super().__init__(**usecase_info)
-        usecase_params = usecase_info['usecase_version_params']
-        self.metric: str = usecase_params['metric']
+    def __init__(self, **usecase_version_info):
+        super().__init__(**usecase_version_info)
+
+        self.predictions = {}
+        self.predict_token = None
+
+    def _update_from_dict(self, **usecase_version_info):
+        super()._update_from_dict(**usecase_version_info)
+
+        dataset_id: str = usecase_version_info['dataset_id']
+        self.dataset: Dataset = Dataset.from_id(dataset_id)
+
+        usecase_params = usecase_version_info['usecase_version_params']
         self.column_config = ColumnConfig(target_column=usecase_params.get('target_column'),
                                           fold_column=usecase_params.get('fold_column'),
                                           id_column=usecase_params.get('id_column'),
@@ -400,6 +456,14 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                           group_columns=usecase_params.get('group_columns'),
                                           apriori_columns=usecase_params.get('apriori_columns'),
                                           drop_list=usecase_params.get('drop_list'))
+
+        self.metric: str = usecase_params['metric']
+
+        holdout_dataset_id: Union[str, None] = usecase_version_info.get('holdout_dataset_id', None)
+        if holdout_dataset_id is not None:
+            self.holdout_dataset: Dataset = Dataset.from_id(holdout_dataset_id)
+        else:
+            self.holdout_dataset = None
 
         self.training_config = TrainingConfig(profile=Profile(usecase_params.get('profile')),
                                               features=[Feature(f) for f in usecase_params.get(
@@ -413,22 +477,32 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
                                               feature_time_seconds=usecase_params.get('features_selection_time', 3600),
                                               feature_number_kept=usecase_params.get('features_selection_count', None))
 
-        self._id: str = usecase_info['_id']
-        self.usecase_id: str = usecase_info['usecase_id']
-        self.project_id: str = usecase_info['project_id']
-        self.version = usecase_info.get('version', 1)
-        self._usecase_info = usecase_info
-        self.data_type: DataType = DataType(usecase_info['usecase'].get('data_type'))
-        self.training_type: TypeProblem = TypeProblem(usecase_info['usecase'].get('training_type'))
-        self.dataset_id: str = usecase_info['dataset_id']
-        self.predictions = {}
-        self.predict_token = None
-        self._models = {}
+    @property
+    def advanced_models_list(self) -> List[AdvancedModel]:
+        """ Get the list of selected advanced models in the usecase.
 
-    def print_info(self):
-        """ Print all info on the usecase. """
-        for k, v in self._usecase_info.items():
-            print(str(k) + ': ' + str(v))
+        Returns:
+            list(AdvancedModel): Names of the normal models selected for the usecase
+        """
+        return [AdvancedModel(f) for f in self._status['usecase_version_params'].get('normal_models', [])]
+
+    @property
+    def normal_models_list(self) -> List[NormalModel]:
+        """ Get the list of selected normal models in the usecase.
+
+        Returns:
+            list(NormalModel): Names of the normal models selected for the usecase
+        """
+        return [NormalModel(f) for f in self._status['usecase_version_params'].get('lite_models', [])]
+
+    @property
+    def simple_models_list(self) -> List[SimpleModel]:
+        """ Get the list of selected simple models in the usecase.
+
+        Returns:
+            list(SimpleModel): Names of the simple models selected for the usecase
+        """
+        return [SimpleModel(f) for f in self._status['usecase_version_params'].get('simple_models', [])]
 
     @property
     @lru_cache()
@@ -574,41 +648,6 @@ class ClassicUsecaseVersion(BaseUsecaseVersion):
         best = self.best_model
 
         return best.cross_validation
-
-    @classmethod
-    def _start_usecase(cls, project_id: str, name: str,
-                       dataset_id: Union[str, List[str]], data_type: DataType, training_type: TypeProblem, **kwargs):
-        """ Start a usecase of the given data type and problem type with a specific
-        training configuration (on the platform).
-
-        Args:
-            name (str): Registration name for the usecase to create
-            dataset_id (str|tuple(str, str)): Unique id of the training dataset resource or a tuple of csv and folder id
-            data_type (str): Type of data used in the usecase (among "tabular", "images"
-                and "timeseries")
-            training_type: Type of problem to compute with the usecase (among "regression",
-                "classification", "multiclassification" and "object-detection")
-            **kwargs:
-
-        Returns:
-            :class:`.BaseUsecaseVersion`: Newly created usecase object
-        """
-        logger.info('[Usecase] Starting usecase')
-
-        if data_type == DataType.Tabular or data_type == DataType.TimeSeries:
-            data = dict(name=name, dataset_id=dataset_id, **kwargs)
-        elif data_type == DataType.Images:
-            csv_id, folder_id = dataset_id
-            data = dict(name=name, dataset_id=csv_id, folder_dataset_id=folder_id, **kwargs)
-        else:
-            raise PrevisionException('invalid data type: {}'.format(data_type))
-        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', data_type.value, training_type.value)
-        start = client.request(endpoint,
-                               method=requests.post,
-                               data=data,
-                               content_type='application/json',
-                               message_prefix='Usecase start')
-        return parse_json(start)
 
     def predict_single(self,
                        data,

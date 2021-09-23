@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
-from typing import Dict, Union
+from __future__ import print_function
 
-import requests
-from previsionio.utils import EventTuple, parse_json, to_json
+from typing import Dict
 from . import TrainingConfig
 from .usecase_config import DataType, UsecaseConfig, ColumnConfig, TypeProblem
 from .usecase_version import ClassicUsecaseVersion
 from .metrics import Regression
 from .model import RegressionModel
 from .dataset import Dataset
-from .prevision_client import client
-import previsionio as pio
+from .utils import to_json
 
 
 class TimeWindowException(Exception):
@@ -68,11 +66,13 @@ class TimeSeries(ClassicUsecaseVersion):
     data_type = DataType.TimeSeries
     model_class = RegressionModel
 
-    def __init__(self, **usecase_info):
-        self.holdout_dataset_id: Union[str, None] = usecase_info.get('holdout_dataset_id', None)
-        self.time_window = TimeWindow.from_dict(usecase_info['usecase_version_params']['timeseries_values'])
+    def __init__(self, **usecase_version_info):
+        super().__init__(**usecase_version_info)
+        self._update_from_dict(**usecase_version_info)
 
-        super().__init__(**usecase_info)
+    def _update_from_dict(self, **usecase_version_info):
+        super()._update_from_dict(**usecase_version_info)
+        self.time_window = TimeWindow.from_dict(usecase_version_info['usecase_version_params']['timeseries_values'])
 
     @classmethod
     def from_id(cls, _id: str) -> 'TimeSeries':
@@ -82,54 +82,58 @@ class TimeSeries(ClassicUsecaseVersion):
     def load(cls, pio_file: str) -> 'TimeSeries':
         return cls(**super()._load(pio_file))
 
+    @staticmethod
+    def _build_usecase_version_creation_data(description, dataset, column_config, time_window, metric,
+                                             holdout_dataset, training_config,
+                                             parent_version=None) -> Dict:
+        data = super(TimeSeries, TimeSeries)._build_usecase_version_creation_data(
+            description,
+            parent_version=parent_version,
+        )
+
+        data['dataset_id'] = dataset.id
+        data.update(to_json(column_config))
+        data.update(to_json(time_window))
+        data['metric'] = metric if isinstance(metric, str) else metric.value
+        data['holdout_dataset_id'] = holdout_dataset.id if holdout_dataset is not None else None
+        data.update(to_json(training_config))
+
+        return data
+
     @classmethod
-    def _fit(cls, project_id: str,
-             name: str,
+    def _fit(cls,
+             usecase_id: str,
              dataset: Dataset,
              column_config: ColumnConfig,
              time_window: TimeWindow,
              metric: Regression = None,
              holdout_dataset: Dataset = None,
-             training_config: TrainingConfig = TrainingConfig()) -> 'TimeSeries':
-        training_args = to_json(training_config)
-        assert isinstance(training_args, Dict)
+             training_config: TrainingConfig = TrainingConfig(),
+             description: str = None,
+             parent_version: str = None) -> 'TimeSeries':
 
-        training_args.update(to_json(column_config))
-        training_args.update(to_json(time_window))
-
-        if holdout_dataset:
-            training_args['holdout_dataset_id'] = holdout_dataset.id
-
-        if not metric:
-            metric = cls.default_metric
-
-        start_response = cls._start_usecase(project_id=project_id,
-                                            name=name,
-                                            dataset_id=dataset.id,
-                                            data_type=cls.data_type,
-                                            training_type=cls.training_type,
-                                            metric=metric.value,
-                                            **training_args)
-
-        usecase = cls.from_id(start_response['_id'])
-        events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
-        assert pio.client.event_manager is not None
-        pio.client.event_manager.wait_for_event(usecase.resource_id,
-                                                cls.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
-                                                specific_url=events_url)
-        return usecase
+        return super()._fit(
+            usecase_id,
+            description=description,
+            parent_version=parent_version,
+            dataset=dataset,
+            column_config=column_config,
+            time_window=time_window,
+            metric=metric,
+            holdout_dataset=holdout_dataset,
+            training_config=training_config,
+        )
 
     def new_version(
         self,
-        description: str = None,
         dataset: Dataset = None,
         column_config: ColumnConfig = None,
         time_window: TimeWindow = None,
         metric: Regression = None,
         holdout_dataset: Dataset = None,
-        training_config: TrainingConfig = TrainingConfig(),
-    ):
+        training_config: TrainingConfig = None,
+        description: str = None,
+    ) -> 'TimeSeries':
         """ Start a time series usecase training to create a new version of the usecase (on the
         platform): the training configs are copied from the current version and then overridden
         for the given parameters.
@@ -150,67 +154,16 @@ class TimeSeries(ClassicUsecaseVersion):
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
         Returns:
-            :class:`.TimeSeries`: Newly created text similarity usecase version object (new version)
+            :class:`.TimeSeries`: Newly created TimeSeries usecase version object (new version)
         """
-
-        if not dataset:
-            dataset_id = self.dataset_id
-        else:
-            dataset_id = dataset.id
-
-        if not column_config:
-            column_config = self.column_config
-
-        if not time_window:
-            time_window = self.time_window
-
-        if not metric:
-            metric = Regression(self.metric)
-
-        if not holdout_dataset:
-            holdout_dataset_id = self.holdout_dataset_id
-        else:
-            holdout_dataset_id = holdout_dataset.id
-
-        if not training_config:
-            training_config = self.training_config
-
-        training_args = to_json(training_config)
-        assert isinstance(training_args, Dict)
-        training_args.update(to_json(column_config))
-        training_args.update(to_json(time_window))
-
-        params = {
-            'dataset_id': dataset_id,
-            'metric': metric.value,
-            'holdout_dataset': holdout_dataset_id,
-            'training_type': self.training_type.value,
-            'usecase_id': self._id,
-            'parent_version': self.version,
-            # 'nextVersion': max([v['version'] for v in self.versions]) + 1  FA: wait what ?
-        }
-
-        if description:
-            params["description"] = description
-
-        params.update(training_args)
-
-        endpoint = "/usecases/{}/versions".format(self.usecase_id)
-
-        resp = client.request(endpoint=endpoint,
-                              data=params,
-                              method=requests.post,
-                              content_type='application/json',
-                              message_prefix='Time series usecase start')
-        json = parse_json(resp)
-
-        usecase = self.from_id(json["_id"])
-
-        events_url = '/{}/{}'.format(self.resource, json['_id'])
-        assert client.event_manager is not None
-        client.event_manager.wait_for_event(usecase.resource_id,
-                                            self.resource,
-                                            EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
-                                            specific_url=events_url)
-
-        return usecase
+        return TimeSeries._fit(
+                               self.usecase_id,
+                               dataset if dataset is not None else self.dataset,
+                               column_config if column_config is not None else self.column_config,
+                               time_window if time_window is not None else self.time_window,
+                               metric if metric is not None else self.metric,
+                               holdout_dataset=holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
+                               training_config=training_config if training_config is not None else self.training_config,
+                               description=description,
+                               parent_version=self.version,
+        )

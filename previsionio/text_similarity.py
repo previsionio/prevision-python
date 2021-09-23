@@ -1,10 +1,8 @@
 from enum import Enum
 from typing import Dict, List, Union
 from previsionio.dataset import Dataset
-import requests
 from .usecase_config import DataType, UsecaseConfig, TypeProblem, YesOrNo, YesOrNoOrAuto
-from .prevision_client import client
-from .utils import parse_json, EventTuple, to_json
+from .utils import to_json
 from .model import TextSimilarityModel
 from .usecase_version import BaseUsecaseVersion
 import previsionio as pio
@@ -26,7 +24,7 @@ class TextSimilarityModels(Enum):
     """Brute force search"""
     ClusterPruning = 'cluster_pruning'
     """Cluster Pruning"""
-    IVFOPQ = 'ivfopq'
+    IVFOPQ = 'ivf_opq'
     """InVerted File system and Optimized Product Quantization"""
     HKM = 'hkm'
     """Hierarchical K-Means"""
@@ -67,7 +65,7 @@ class ModelsParameters(UsecaseConfig):
         model_embedding (ModelEmbedding, optional): Name of the embedding model to be used
             (among: "tf_idf", "transformer", "transformer_fine_tuned").
         models (list(TextSimilarityModels), optional): Names of the searching models to be used (among:
-            "brute_force", "cluster_pruning", "ivfopq", "hkm", "lsh").
+            "brute_force", "cluster_pruning", "ivf_opq", "hkm", "lsh").
     """
 
     config = {
@@ -106,10 +104,12 @@ class ListModelsParameters(UsecaseConfig):
                                                     TextSimilarityModels.ClusterPruning])
             models_parameters_2 = ModelsParameters(ModelEmbedding.Transformer,
                                                    Preprocessing(),
-                                                   [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
+                                                   # [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
+                                                   [TextSimilarityModels.BruteForce])
             models_parameters_3 = ModelsParameters(ModelEmbedding.TransformerFineTuned,
                                                    Preprocessing(),
-                                                   [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
+                                                   #" [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
+                                                   [TextSimilarityModels.BruteForce])
             models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
         self.models_parameters = []
         for element in models_parameters:
@@ -174,19 +174,30 @@ class TextSimilarity(BaseUsecaseVersion):
     resource: str = 'usecase-versions'
     model_class = TextSimilarityModel
 
-    def __init__(self, **usecase_info):
-        super().__init__(**usecase_info)
-        usecase_version_params = usecase_info['usecase_version_params']
+    def __init__(self, **usecase_version_info):
+        super().__init__(**usecase_version_info)
+
+        self.predictions = {}
+        self.predict_token = None
+
+    def _update_from_dict(self, **usecase_version_info):
+        super()._update_from_dict(**usecase_version_info)
+
+        usecase_version_params = usecase_version_info['usecase_version_params']
+
+        dataset_id: str = usecase_version_info['dataset_id']
+        self.dataset: Dataset = Dataset.from_id(dataset_id)
+        self.description_column_config = DescriptionsColumnConfig(
+            content_column=usecase_version_params.get('content_column'),
+            id_column=usecase_version_params.get('id_column'))
         self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
             usecase_version_params.get('metric', self.default_metric))
         self.top_k: int = usecase_version_params.get('top_K', self.default_top_k)
         self.lang: TextSimilarityLang = TextSimilarityLang(usecase_version_params.get('lang', TextSimilarityLang.Auto))
 
-        self.description_column_config = DescriptionsColumnConfig(
-            content_column=usecase_version_params.get('content_column'),
-            id_column=usecase_version_params.get('id_column'))
-        if usecase_info.get('queries_dataset_id'):
-            self.queries_dataset = usecase_info.get('queries_dataset_id')
+        if usecase_version_info.get('queries_dataset_id'):
+            queries_dataset_id = usecase_version_info['queries_dataset_id']
+            self.queries_dataset: Dataset = Dataset.from_id(queries_dataset_id)
             content_column = usecase_version_params.get('queries_dataset_content_column')
             matching_id = usecase_version_params.get('queries_dataset_matching_id_description_column')
             queries_dataset_id_column = usecase_version_params.get('queries_dataset_id_column', None)
@@ -196,19 +207,9 @@ class TextSimilarity(BaseUsecaseVersion):
         else:
             self.queries_dataset = None
             self.queries_column_config = None
+
         models_parameters = usecase_version_params.get('models_params')
         self.models_parameters = ListModelsParameters(models_parameters=models_parameters)
-
-        self._id: str = usecase_info['_id']
-        self.usecase_id: str = usecase_info['usecase_id']
-        self.project_id: str = usecase_info['project_id']
-        self.version: int = usecase_info.get('version', 1)
-        self._usecase_info = usecase_info
-        self.dataset_id: str = usecase_info['dataset_id']
-        self.predictions = {}
-        self.predict_token = None
-
-        self._models = {}
 
     @classmethod
     def from_id(cls, _id: str) -> 'TextSimilarity':
@@ -218,20 +219,44 @@ class TextSimilarity(BaseUsecaseVersion):
     def load(cls, pio_file: str) -> 'TextSimilarity':
         return cls(**super()._load(pio_file))
 
+    @staticmethod
+    def _build_usecase_version_creation_data(description, dataset, description_column_config, metric,
+                                             top_k, lang, queries_dataset, queries_column_config,
+                                             models_parameters,
+                                             parent_version=None) -> Dict:
+        data = super(TextSimilarity, TextSimilarity)._build_usecase_version_creation_data(
+            description,
+            parent_version=parent_version,
+        )
+
+        data['dataset_id'] = dataset.id
+        data.update(to_json(description_column_config))
+        data['metric'] = metric if isinstance(metric, str) else metric.value
+        data['top_k'] = top_k
+        data['lang'] = lang if isinstance(lang, str) else lang.value
+        if queries_dataset is not None:
+            if queries_column_config is None:
+                raise ValueError('arg queries_column_config must be set if queries_dataset is set')
+            data['queries_dataset_id'] = queries_dataset.id
+            data.update(to_json(queries_column_config))
+        data.update(to_json(models_parameters))
+
+        return data
+
     @classmethod
     def _fit(
         cls,
-        project_id: str,
-        name: str,
+        usecase_id: str,
         dataset: Dataset,
         description_column_config: DescriptionsColumnConfig,
         metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity.accuracy_at_k,
         top_k: int = 10,
         lang: TextSimilarityLang = TextSimilarityLang.Auto,
         queries_dataset: Dataset = None,
-        queries_column_config: QueriesColumnConfig = None,
+        queries_column_config: Union[QueriesColumnConfig, None] = None,
         models_parameters: ListModelsParameters = ListModelsParameters(),
-        **kwargs
+        description: str = None,
+        parent_version: str = None,
     ) -> 'TextSimilarity':
         """ Start a supervised usecase training with a specific training configuration
         (on the platform).
@@ -251,61 +276,31 @@ class TextSimilarity(BaseUsecaseVersion):
             :class:`.TextSimilarity`: Newly created supervised usecase object
         """
 
-        training_args = to_json(description_column_config)
-        assert isinstance(training_args, Dict)
-        if queries_column_config:
-            training_args.update(to_json(queries_column_config))
-        training_args.update(to_json(models_parameters))
-
-        if queries_dataset:
-            if isinstance(queries_dataset, str):
-                training_args['queries_dataset_id'] = queries_dataset
-            else:
-                training_args['queries_dataset_id'] = queries_dataset.id
-
-        if not metric:
-            metric = cls.default_metric
-        if not top_k:
-            top_k = cls.default_top_k
-        training_args['metric'] = metric.value
-        training_args['top_k'] = top_k
-        training_args['lang'] = lang.value
-        if isinstance(dataset, str):
-            dataset_id = dataset
-        else:
-            dataset_id = dataset.id
-
-        data = dict(name=name, dataset_id=dataset_id, **training_args)
-
-        endpoint = '/projects/{}/{}/{}/{}'.format(project_id, 'usecases', cls.data_type.value, cls.training_type.value)
-        start = client.request(endpoint,
-                               method=requests.post,
-                               data=data,
-                               content_type='application/json',
-                               message_prefix='Text similarity usecase start')
-
-        start_response = parse_json(start)
-        usecase = cls.from_id(start_response['_id'])
-        events_url = '/{}/{}'.format(cls.resource, start_response['_id'])
-        assert pio.client.event_manager is not None
-        pio.client.event_manager.wait_for_event(usecase._id,
-                                                cls.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
-                                                specific_url=events_url)
-        return usecase
+        return super()._fit(
+            usecase_id,
+            description=description,
+            parent_version=parent_version,
+            dataset=dataset,
+            description_column_config=description_column_config,
+            metric=metric,
+            top_k=top_k,
+            lang=lang,
+            queries_dataset=queries_dataset,
+            queries_column_config=queries_column_config,
+            models_parameters=models_parameters,
+        )
 
     def new_version(
         self,
-        description: str = None,
         dataset: Dataset = None,
         description_column_config: DescriptionsColumnConfig = None,
         metric: pio.metrics.TextSimilarity = None,
         top_k: int = None,
-        lang: TextSimilarityLang = TextSimilarityLang.Auto,
+        lang: TextSimilarityLang = None,
         queries_dataset: Dataset = None,
         queries_column_config: Union[QueriesColumnConfig, None] = None,
         models_parameters: ListModelsParameters = None,
-        **kwargs
+        description: str = None,
     ) -> 'TextSimilarity':
         """ Start a text similarity usecase training to create a new version of the usecase (on the
         platform): the training configs are copied from the current version and then overridden
@@ -327,63 +322,16 @@ class TextSimilarity(BaseUsecaseVersion):
         Returns:
             :class:`.TextSimilarity`: Newly created text similarity usecase version object (new version)
         """
-
-        if not dataset:
-            dataset_id = self.dataset_id
-        else:
-            dataset_id = dataset.id
-
-        if not description_column_config:
-            description_column_config = self.description_column_config
-
-        if not metric:
-            metric = self.metric
-        if not top_k:
-            top_k = self.top_k
-        if not lang:
-            lang = self.lang
-        if not queries_dataset:
-            queries_dataset_id = self.queries_dataset
-        else:
-            queries_dataset_id = queries_dataset.id
-
-        if not queries_column_config:
-            queries_column_config = self.queries_column_config
-
-        if not models_parameters:
-            models_parameters = self.models_parameters
-
-        training_args = to_json(description_column_config)
-        assert isinstance(training_args, Dict)
-        if queries_column_config:
-            training_args.update(to_json(queries_column_config))
-        training_args.update(to_json(models_parameters))
-
-        if queries_dataset_id:
-            training_args['queries_dataset_id'] = queries_dataset_id
-
-        training_args['metric'] = metric.value
-        training_args['top_k'] = top_k
-        training_args['lang'] = lang.value
-
-        data = dict(dataset_id=dataset_id, **training_args)
-
-        if description:
-            data["description"] = description
-
-        endpoint = "/usecases/{}/versions".format(self.usecase_id)
-        resp = client.request(endpoint=endpoint,
-                              data=data,
-                              method=requests.post,
-                              content_type='application/json',
-                              message_prefix='Text similarity usecase start')
-
-        start_response = parse_json(resp)
-        usecase = self.from_id(start_response['_id'])
-        events_url = '/{}/{}'.format(self.resource, start_response['_id'])
-        assert pio.client.event_manager is not None
-        pio.client.event_manager.wait_for_event(usecase._id,
-                                                self.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE', ('state', 'running')),
-                                                specific_url=events_url)
-        return usecase
+        return TextSimilarity._fit(
+            self.usecase_id,
+            dataset if dataset is not None else self.dataset,
+            description_column_config if description_column_config is not None else self.description_column_config,
+            metric=metric if metric is not None else self.metric,
+            top_k=top_k if top_k is not None else self.top_k,
+            lang=lang if lang is not None else self.lang,
+            queries_dataset=queries_dataset if queries_dataset is not None else self.queries_dataset,
+            queries_column_config=queries_column_config if queries_column_config is not None else self.queries_column_config,
+            models_parameters=models_parameters if models_parameters is not None else self.models_parameters,
+            description=description,
+            parent_version=self.version,
+        )

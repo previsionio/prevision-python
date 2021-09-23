@@ -67,7 +67,7 @@ def test_usecase_version():
     project = pio.Project.from_id(PROJECT_ID)
     usecase_deployment = project.create_usecase_deployment('test_sdk_' + TESTING_ID, uc_best_model)
 
-    uc_dataset_id = usecase_version.dataset_id
+    uc_dataset_id = usecase_version.dataset._id
     prediction_dataset = pio.Dataset.from_id(uc_dataset_id)
 
     usecase_deployment.wait_until(lambda usecase_deployment: usecase_deployment.run_state == 'done')

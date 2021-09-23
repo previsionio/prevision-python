@@ -62,7 +62,7 @@ def supervised_from_filename(training_type, uc_name):
 
 
 def test_delete_usecase():
-    uc_name = TESTING_ID + '_file_del'
+    uc_name = TESTING_ID + '_test_delete_usecase'
     usecase_version = supervised_from_filename('regression', uc_name)
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name in [u.name for u in usecases]
@@ -72,8 +72,9 @@ def test_delete_usecase():
 
 
 def test_usecase_version():
-    uc_name = TESTING_ID + '_file_del'
+    uc_name = TESTING_ID + '_test_usecase_version'
     usecase_version: pio.Supervised = supervised_from_filename('regression', uc_name)
+    """
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name in [u.name for u in usecases]
 
@@ -85,10 +86,11 @@ def test_usecase_version():
 
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name not in [u.name for u in usecases]
+    """
 
 
 def test_usecase_latest_versions():
-    uc_name = TESTING_ID + '_file_del'
+    uc_name = TESTING_ID + '_test_usecase_latest_versions'
     usecase_version: pio.Supervised = supervised_from_filename('regression', uc_name)
     usecases = pio.Usecase.list(PROJECT_ID)
     assert uc_name in [u.name for u in usecases]
@@ -110,7 +112,7 @@ def test_usecase_latest_versions():
 
 
 def test_stop_running_usecase():
-    uc_name = TESTING_ID + '_file_run'
+    uc_name = TESTING_ID + '_test_stop_running_usecase'
     usecase_version = supervised_from_filename('regression', uc_name)
     usecase_version.wait_until(
         lambda usecase: (len(usecase.models) > 0) or (usecase._status['state'] == 'failed'))
