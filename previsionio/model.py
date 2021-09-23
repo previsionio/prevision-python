@@ -94,7 +94,8 @@ class Model(ApiResource):
                                   message_prefix='Model from id')
         model = json.loads(response.content.decode('utf-8'))
         training_type = TypeProblem(model.get('training_type', model.get('type_problem')))
-        provider = model['provider']
+        # NOTE: we should always set the provider in model collection
+        provider = model.get('provider', 'prevision-auto-ml')
         if provider == 'prevision-auto-ml':
             if training_type == TypeProblem.Regression:
                 return RegressionModel(**model)
