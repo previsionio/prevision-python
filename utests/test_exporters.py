@@ -27,7 +27,7 @@ def setup_module(module):
     #                                      features=[],
     #                                      profile=pio.Profile.Quick)
     # column_config = pio.ColumnConfig(target_column='Survived', id_column='PassengerId')
-    # usecase_version = project.fit_classification(
+    # experiment_version = project.fit_classification(
     #     name='test_exporter_classif',
     #     dataset=dataset,
     #     column_config=column_config,
@@ -37,20 +37,20 @@ def setup_module(module):
     # )
     #
     # # Create validation_prediction
-    # usecase_version.wait_until(lambda usecasev: (len(usecasev.models) > 0) or (usecasev._status['state'] == 'failed'))
-    # if usecase_version._status['state'] == 'failed':
-    #     raise 'Could not train usecase'
+    # experiment_version.wait_until(lambda experimentv: (len(experimentv.models) > 0) or (experimentv._status['state'] == 'failed'))
+    # if experiment_version._status['state'] == 'failed':
+    #     raise 'Could not train experiment'
     # global validation_prediction
-    # validation_prediction = usecase_version.predict_from_dataset(dataset)
+    # validation_prediction = experiment_version.predict_from_dataset(dataset)
     #
-    # # Create usecase deployment
-    # uc_best_model = usecase_version.best_model
-    # usecase_deployment = project.create_usecase_deployment('test_sdk_' + TESTING_ID, uc_best_model)
+    # # Create experiment deployment
+    # uc_best_model = experiment_version.best_model
+    # experiment_deployment = project.create_experiment_deployment('test_sdk_' + TESTING_ID, uc_best_model)
     #
     # # Create deployment_prediction
-    # usecase_deployment.wait_until(lambda usecased: usecased.run_state == 'done')
+    # experiment_deployment.wait_until(lambda experimentd: experimentd.run_state == 'done')
     # global deployment_prediction
-    # deployment_prediction = usecase_deployment.predict_from_dataset(dataset)
+    # deployment_prediction = experiment_deployment.predict_from_dataset(dataset)
 
 
 def teardown_module(module):

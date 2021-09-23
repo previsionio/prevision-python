@@ -1,6 +1,6 @@
 .. _time_series_reference:
 
-Time Series usecases
+Time Series experiments
 ====================
 
 .. automodule:: previsionio.timeseries

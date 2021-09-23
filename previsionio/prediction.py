@@ -6,18 +6,18 @@ from .utils import PrevisionException, EventTuple, zip_to_pandas
 
 
 class ValidationPrediction(ApiResource):
-    """ A prediction object that represents a usecase bulk prediction resource which can be explored on the Prevision.io
+    """ A prediction object that represents an experiment bulk prediction resource which can be explored on the Prevision.io
     platform.
     """
 
     resource = 'validation-predictions'
 
-    def __init__(self, _id: str, usecase_id: str, usecase_version_id: str, project_id: str, state='running',
+    def __init__(self, _id: str, experiment_id: str, experiment_version_id: str, project_id: str, state='running',
                  model_id=None, model_name=None, dataset_id=None, download_available=False, score=None, duration=None,
                  predictions_count=None, **kwargs):
         self._id = _id
-        self.usecase_id = usecase_id
-        self.usecase_version_id = usecase_version_id
+        self.experiment_id = experiment_id
+        self.experiment_version_id = experiment_version_id
         self.project_id = project_id
         self.model_id = model_id
         self.model_name = model_name
@@ -33,7 +33,7 @@ class ValidationPrediction(ApiResource):
         """Get a prediction from the platform by its unique id.
 
         Args:
-            _id (str): Unique id of the usecase bulk prediction to retrieve
+            _id (str): Unique id of the experiment bulk prediction to retrieve
 
         Returns:
             :class:`.ValidationPrediction`: The fetched prediction
@@ -91,7 +91,7 @@ class ValidationPrediction(ApiResource):
 
 
 class DeploymentPrediction(ApiResource):
-    """ A prediction object that represents a deployed usecase bulk prediction resource which can be explored on the
+    """ A prediction object that represents a deployed experiment bulk prediction resource which can be explored on the
     Prevision.io platform.
     """
 
@@ -113,7 +113,7 @@ class DeploymentPrediction(ApiResource):
         """Get a prediction from the platform by its unique id.
 
         Args:
-            _id (str): Unique id of the deployed usecase bulk prediction to retrieve
+            _id (str): Unique id of the deployed experiment bulk prediction to retrieve
 
         Returns:
             :class:`.DeploymentPrediction`: The fetched prediction

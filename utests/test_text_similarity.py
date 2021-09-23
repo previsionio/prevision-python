@@ -1,7 +1,7 @@
 import os
-from previsionio.usecase import Usecase
+from previsionio.experiment import Experiment
 from previsionio.text_similarity import ModelEmbedding, TextSimilarityLang, TextSimilarityModels
-from previsionio.usecase_config import DataType, TypeProblem, YesOrNo, YesOrNoOrAuto
+from previsionio.experiment_config import DataType, TypeProblem, YesOrNo, YesOrNoOrAuto
 import time
 import pandas as pd
 import unittest
@@ -10,7 +10,7 @@ from .utils import get_testing_id
 
 TESTING_ID = get_testing_id()
 
-PROJECT_NAME = "sdk_test_text_sim_usecase_" + str(TESTING_ID)
+PROJECT_NAME = "sdk_test_text_sim_experiment_" + str(TESTING_ID)
 PROJECT_ID = ""
 
 test_datasets = {}
@@ -53,42 +53,42 @@ class BaseTrainSearchDelete(unittest.TestCase):
         project.delete()
 
     def test_train_stop_delete_text_similarity(self):
-        usecase_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
-        usecase = Usecase.new(PROJECT_ID, 'prevision-auto-ml', usecase_name,
+        experiment_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
+        experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
                               DataType.Tabular, TypeProblem.TextSimilarity)
-        usecase_id = usecase.id
+        experiment_id = experiment.id
         description_dataset = test_datasets['description']
         description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
-        uc = pio.TextSimilarity._fit(usecase_id,
+        uc = pio.TextSimilarity._fit(experiment_id,
                                      description_dataset,
                                      description_column_config,
                                      metric=pio.metrics.TextSimilarity.accuracy_at_k)
 
-        uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
+        uc.wait_until(lambda experiment: experiment._status['state'] == 'done')
         uc.stop()
         uc.update_status()
         assert not uc.running
-        pio.Usecase.from_id(uc.usecase_id).delete()
-        project_usecases = pio.Usecase.list(PROJECT_ID)
-        project_usecases_ids = [usecase.id for usecase in project_usecases]
-        assert usecase_id not in project_usecases_ids
+        pio.Experiment.from_id(uc.experiment_id).delete()
+        project_experiments = pio.Experiment.list(PROJECT_ID)
+        project_experiments_ids = [experiment.id for experiment in project_experiments]
+        assert experiment_id not in project_experiments_ids
 
     def test_train_new_stop_delete_text_similarity(self):
-        usecase_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
-        usecase = Usecase.new(PROJECT_ID, 'prevision-auto-ml', usecase_name,
+        experiment_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
+        experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
                               DataType.Tabular, TypeProblem.TextSimilarity)
-        usecase_id = usecase.id
+        experiment_id = experiment.id
         description_dataset = test_datasets['description']
         description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
-        uc = pio.TextSimilarity._fit(usecase_id,
+        uc = pio.TextSimilarity._fit(experiment_id,
                                      description_dataset,
                                      description_column_config,
                                      metric=pio.metrics.TextSimilarity.accuracy_at_k)
 
-        uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
+        uc.wait_until(lambda experiment: experiment._status['state'] == 'done')
 
         new_version = uc.new_version()
-        new_version.wait_until(lambda usecase: usecase._status['state'] == 'done')
+        new_version.wait_until(lambda experiment: experiment._status['state'] == 'done')
 
         new_version.stop()
         new_version.update_status()
@@ -97,23 +97,23 @@ class BaseTrainSearchDelete(unittest.TestCase):
         uc.stop()
         uc.update_status()
         assert not uc.running
-        pio.Usecase.from_id(uc.usecase_id).delete()
-        project_usecases = pio.Usecase.list(PROJECT_ID)
-        project_usecases_ids = [usecase.id for usecase in project_usecases]
-        assert usecase_id not in project_usecases_ids
+        pio.Experiment.from_id(uc.experiment_id).delete()
+        project_experiments = pio.Experiment.list(PROJECT_ID)
+        project_experiments_ids = [experiment.id for experiment in project_experiments]
+        assert experiment_id not in project_experiments_ids
 
     def test_train_search_delete_text_similarity_with_queries_dataset(self):
-        usecase_name = 'test_sdk_2_text_similarity_{}'.format(TESTING_ID)
-        usecase = Usecase.new(PROJECT_ID, 'prevision-auto-ml', usecase_name,
+        experiment_name = 'test_sdk_2_text_similarity_{}'.format(TESTING_ID)
+        experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
                               DataType.Tabular, TypeProblem.TextSimilarity)
-        usecase_id = usecase.id
+        experiment_id = experiment.id
         description_dataset = test_datasets['description']
         description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
         queries_dataset = test_datasets['queries']
         queries_column_config = pio.QueriesColumnConfig(queries_dataset_content_column='query',
                                                         queries_dataset_matching_id_description_column='true_item_id')
 
-        uc = pio.TextSimilarity._fit(usecase_id,
+        uc = pio.TextSimilarity._fit(experiment_id,
                                      description_dataset,
                                      description_column_config,
                                      metric=pio.metrics.TextSimilarity.accuracy_at_k,
@@ -122,7 +122,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
                                      queries_dataset=queries_dataset,
                                      queries_column_config=queries_column_config)
 
-        uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
+        uc.wait_until(lambda experiment: experiment._status['state'] == 'done')
         assert not uc.running
         assert uc.score is not None
         nb_model = len(uc.models)
@@ -134,17 +134,17 @@ class BaseTrainSearchDelete(unittest.TestCase):
                                        queries_dataset_matching_id_description_column='true_item_id')
             nb_prediction += 1
         assert nb_prediction == nb_model
-        pio.Usecase.from_id(uc.usecase_id).delete()
-        project_usecases = pio.Usecase.list(PROJECT_ID)
-        project_usecases_ids = [usecase.id for usecase in project_usecases]
-        assert usecase_id not in project_usecases_ids
+        pio.Experiment.from_id(uc.experiment_id).delete()
+        project_experiments = pio.Experiment.list(PROJECT_ID)
+        project_experiments_ids = [experiment.id for experiment in project_experiments]
+        assert experiment_id not in project_experiments_ids
 
     def test_train_delete_text_similarity_with_queries_dataset_all_models(self):
-        usecase_name = 'test_sdk_3_text_similarity_{}'.format(TESTING_ID)
-        usecase = Usecase.new(PROJECT_ID, 'prevision-auto-ml', usecase_name,
+        experiment_name = 'test_sdk_3_text_similarity_{}'.format(TESTING_ID)
+        experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
                               DataType.Tabular, TypeProblem.TextSimilarity)
-        usecase_id = usecase.id
-        usecase_config = [{'model_embedding': ModelEmbedding.TFIDF,
+        experiment_id = experiment.id
+        experiment_config = [{'model_embedding': ModelEmbedding.TFIDF,
                            'preprocessing': {'word_stemming': YesOrNo.Yes,
                                              'ignore_stop_word': YesOrNoOrAuto.Auto,
                                              'ignore_punctuation': YesOrNo.No},
@@ -157,14 +157,14 @@ class BaseTrainSearchDelete(unittest.TestCase):
                            'preprocessing': {},
                            'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
                                       TextSimilarityModels.HKM]}]
-        models_parameters = pio.ListModelsParameters(usecase_config)
+        models_parameters = pio.ListModelsParameters(experiment_config)
         description_dataset = test_datasets['description']
         description_column_config = pio.DescriptionsColumnConfig(content_column='item_desc', id_column='item_id')
         queries_dataset = test_datasets['queries']
         queries_column_config = pio.QueriesColumnConfig(queries_dataset_content_column='query',
                                                         queries_dataset_matching_id_description_column='true_item_id')
 
-        uc = pio.TextSimilarity._fit(usecase_id,
+        uc = pio.TextSimilarity._fit(experiment_id,
                                      description_dataset,
                                      description_column_config,
                                      metric=pio.metrics.TextSimilarity.accuracy_at_k,
@@ -174,13 +174,13 @@ class BaseTrainSearchDelete(unittest.TestCase):
                                      queries_column_config=queries_column_config,
                                      models_parameters=models_parameters)
 
-        uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
+        uc.wait_until(lambda experiment: experiment._status['state'] == 'done')
         assert not uc.running
         assert uc.score is not None
         uc.stop()
         uc.update_status()
         assert not uc.running
-        pio.Usecase.from_id(uc.usecase_id).delete()
-        project_usecases = pio.Usecase.list(PROJECT_ID)
-        project_usecases_ids = [usecase.id for usecase in project_usecases]
-        assert usecase_id not in project_usecases_ids
+        pio.Experiment.from_id(uc.experiment_id).delete()
+        project_experiments = pio.Experiment.list(PROJECT_ID)
+        project_experiments_ids = [experiment.id for experiment in project_experiments]
+        assert experiment_id not in project_experiments_ids

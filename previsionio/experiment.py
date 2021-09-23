@@ -2,8 +2,8 @@
 from previsionio.text_similarity import TextSimilarity
 from previsionio.supervised import Supervised
 from previsionio.timeseries import TimeSeries
-from previsionio.external_models import ExternalUsecaseVersion
-from previsionio.usecase_config import DataType, TypeProblem
+from previsionio.external_models import ExternalExperimentVersion
+from previsionio.experiment_config import DataType, TypeProblem
 from typing import Dict, List, Type, Union
 import requests
 
@@ -12,44 +12,44 @@ from .utils import parse_json
 from .api_resource import ApiResource
 
 
-def get_usecase_version_class(
+def get_experiment_version_class(
         training_type: TypeProblem,
         data_type: DataType,
-        provider: str) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries], Type[ExternalUsecaseVersion]]:
-    """ Get the type of UsecaseVersion class used by this Usecase
+        provider: str) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries], Type[ExternalExperimentVersion]]:
+    """ Get the type of ExperimentVersion class used by this Experiment
 
     Returns:
-        (:type:`.TextSimilarity` | :type:`.Supervised` | :type:`.TimeSeries` | :type:`.ExternalUsecaseVersion`):
-        Type of UsecaseVersion
+        (:type:`.TextSimilarity` | :type:`.Supervised` | :type:`.TimeSeries` | :type:`.ExternalExperimentVersion`):
+        Type of ExperimentVersion
     """
     if provider == 'external':
-        usecase_version_class = ExternalUsecaseVersion
+        experiment_version_class = ExternalExperimentVersion
     else:
         if training_type == TypeProblem.TextSimilarity:
-            usecase_version_class = TextSimilarity
+            experiment_version_class = TextSimilarity
         else:
             if data_type == DataType.TimeSeries:
-                usecase_version_class = TimeSeries
+                experiment_version_class = TimeSeries
             elif data_type in [DataType.Tabular, DataType.Images]:
-                usecase_version_class = Supervised
+                experiment_version_class = Supervised
             else:
-                raise ValueError('There is no usecase_version_class with the following values: '
+                raise ValueError('There is no experiment_version_class with the following values: '
                                  f'training_type: {training_type}'
                                  f'data_type: {data_type}'
                                  f'provider: {provider}')
-    return usecase_version_class
+    return experiment_version_class
 
 
-class Usecase(ApiResource):
-    """ A Usecase
+class Experiment(ApiResource):
+    """ An Experiment
 
     Args:
-        _id (str): Unique id of the usecase
-        name (str): Name of the usecase
+        _id (str): Unique id of the experiment
+        name (str): Name of the experiment
 
     """
 
-    resource = 'usecases'
+    resource = 'experiments'
 
     def __init__(self,
                  _id: str,
@@ -57,7 +57,7 @@ class Usecase(ApiResource):
                  provider: str,
                  name: str,
                  training_type: TypeProblem,
-                 data_type: DataType) -> 'Usecase':
+                 data_type: DataType) -> 'Experiment':
         super().__init__(_id=_id)
         self.project_id = project_id
         self.provider = provider
@@ -72,8 +72,8 @@ class Usecase(ApiResource):
             provider: str,
             name: str,
             data_type: DataType,
-            training_type: TypeProblem) -> 'Usecase':
-        url = f'/projects/{project_id}/usecases'
+            training_type: TypeProblem) -> 'Experiment':
+        url = f'/projects/{project_id}/experiments'
         data = {
             'provider': provider,
             'name': name,
@@ -83,49 +83,49 @@ class Usecase(ApiResource):
         response = client.request(url,
                                   method=requests.post,
                                   data=data,
-                                  message_prefix='Usecase creation')
-        usecase_info = parse_json(response)
-        usecase = cls.from_dict(usecase_info)
-        return usecase
+                                  message_prefix='Experiment creation')
+        experiment_info = parse_json(response)
+        experiment = cls.from_dict(experiment_info)
+        return experiment
 
     @classmethod
-    def from_dict(cls, usecase_info: Dict) -> 'Usecase':
-        usecase = cls(
-            usecase_info['_id'],
-            usecase_info['project_id'],
-            usecase_info['provider'],
-            usecase_info['name'],
-            usecase_info['training_type'],
-            usecase_info['data_type'],
+    def from_dict(cls, experiment_info: Dict) -> 'Experiment':
+        experiment = cls(
+            experiment_info['_id'],
+            experiment_info['project_id'],
+            experiment_info['provider'],
+            experiment_info['name'],
+            experiment_info['training_type'],
+            experiment_info['data_type'],
         )
-        return usecase
+        return experiment
 
     @classmethod
-    def from_id(cls, _id: str) -> 'Usecase':
-        """Get a usecase from the platform by its unique id.
+    def from_id(cls, _id: str) -> 'Experiment':
+        """Get an experiment from the platform by its unique id.
 
         Args:
-            _id (str): Unique id of the usecase version to retrieve
+            _id (str): Unique id of the experiment version to retrieve
 
         Returns:
-            :class:`.Usecase`: Fetched usecase
+            :class:`.Experiment`: Fetched experiment
 
         Raises:
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
         """
-        usecase_info = super()._from_id(_id)
-        usecase = cls.from_dict(usecase_info)
-        return usecase
+        experiment_info = super()._from_id(_id)
+        experiment = cls.from_dict(experiment_info)
+        return experiment
 
     @classmethod
-    def list(cls, project_id: str, all: bool = True) -> List['Usecase']:
-        """ List all the available usecase in the current active [client] workspace.
+    def list(cls, project_id: str, all: bool = True) -> List['Experiment']:
+        """ List all the available experiment in the current active [client] workspace.
 
         .. warning::
 
             Contrary to the parent ``list()`` function, this method
-            returns actual :class:`.Usecase` objects rather than
+            returns actual :class:`.Experiment` objects rather than
             plain dictionaries with the corresponding data.
 
         Args:
@@ -135,20 +135,20 @@ class Usecase(ApiResource):
                 the query will only return the first page of result.
 
         Returns:
-            list(:class:`.Usecase`): Fetched dataset objects
+            list(:class:`.Experiment`): Fetched dataset objects
         """
-        usecase_infos = super()._list(all=all, project_id=project_id)
-        return [cls.from_dict(usecase_info) for usecase_info in usecase_infos]
+        experiment_infos = super()._list(all=all, project_id=project_id)
+        return [cls.from_dict(experiment_info) for experiment_info in experiment_infos]
 
     @property
-    def usecase_version_class(self) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries]]:
-        """ Get the type of UsecaseVersion class used by this Usecase
+    def experiment_version_class(self) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries]]:
+        """ Get the type of ExperimentVersion class used by this Experiment
 
         Returns:
             (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
-            Type of UsecaseVersion
+            Type of ExperimentVersion
         """
-        return get_usecase_version_class(self.training_type, self.data_type, self.provider)
+        return get_experiment_version_class(self.training_type, self.data_type, self.provider)
 
     @property
     def latest_version(self) -> Union[TextSimilarity, Supervised, TimeSeries]:
@@ -156,7 +156,7 @@ class Usecase(ApiResource):
 
         Returns:
             (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
-            latest UsecaseVersion in this Usecase
+            latest ExperimentVersion in this Experiment
         """
         end_point = '/{}/{}/versions'.format(self.resource, self._id)
         format = {
@@ -168,10 +168,10 @@ class Usecase(ApiResource):
         response = client.request(endpoint=end_point,
                                   format=format,
                                   method=requests.get,
-                                  message_prefix='Latest usecase version')
+                                  message_prefix='Latest experiment version')
         res = parse_json(response)
         assert len(res['items']) == 1
-        return self.usecase_version_class(**res['items'][0])
+        return self.experiment_version_class(**res['items'][0])
 
     @property
     def versions(self) -> List[Union[TextSimilarity, Supervised, TimeSeries]]:
@@ -179,20 +179,20 @@ class Usecase(ApiResource):
 
         Returns:
             list(:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
-            List of the usecase versions (as JSON metadata)
+            List of the experiment versions (as JSON metadata)
         """
         end_point = '/{}/{}/versions'.format(self.resource, self._id)
         response = client.request(endpoint=end_point,
                                   method=requests.get,
-                                  message_prefix='Usecase versions listing')
+                                  message_prefix='Experiment versions listing')
         res = parse_json(response)
-        return [self.usecase_version_class(**val) for val in res['items']]
+        return [self.experiment_version_class(**val) for val in res['items']]
 
     def delete(self):
-        """Delete a usecase from the actual [client] workspace.
+        """Delete an experiment from the actual [client] workspace.
 
         Raises:
-            PrevisionException: If the usecase does not exist
+            PrevisionException: If the experiment does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
         super().delete()

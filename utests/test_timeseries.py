@@ -16,7 +16,7 @@ FrameOrSeriesUnion = Union["DataFrame", "Series"]
 pio.config.zip_files = True
 
 TESTING_ID = get_testing_id()
-PROJECT_NAME = "sdk_test_usecase_timeseries_" + str(TESTING_ID)
+PROJECT_NAME = "sdk_test_experiment_timeseries_" + str(TESTING_ID)
 PROJECT_ID = ""
 pio.config.zip_files = False
 pio.config.default_timeout = 1000
@@ -96,19 +96,19 @@ wrong_windows = [
 def test_ts_groups(groups):
     group_name = '{}_{}'.format(str(groups[0]), str(groups[1])) if isinstance(groups, tuple) else groups
     uc_name_asked = 'ts_{}grp_{}'.format(group_name, TESTING_ID)
-    usecase_version = train_model(uc_name_asked, groups)
-    usecase_version.wait_until(lambda usecase: len(usecase) > 0)
-    usecase_version.stop()
-    usecase = pio.Usecase.from_id(usecase_version.usecase_id)
+    experiment_version = train_model(uc_name_asked, groups)
+    experiment_version.wait_until(lambda experiment: len(experiment) > 0)
+    experiment_version.stop()
+    experiment = pio.Experiment.from_id(experiment_version.experiment_id)
     project = pio.Project.from_id(PROJECT_ID)
-    usecases = project.list_usecases()
-    assert usecase.id in [uc.id for uc in usecases]
+    experiments = project.list_experiments()
+    assert experiment.id in [uc.id for uc in experiments]
 
     path = os.path.join(DATA_PATH, 'ts.csv')
     test_data, group_list = get_data(path, groups)
     test_data.loc[test_data['time'] > '2018-01-01', 'target'] = np.nan
-    # preds = usecase_version.predict(test_data, confidence=False)
-    # preds = usecase_version.predict(test_data, confidence=True)
+    # preds = experiment_version.predict(test_data, confidence=False)
+    # preds = experiment_version.predict(test_data, confidence=True)
 
 
 def time_window_test(dws, dwe, fws, fwe):
@@ -116,7 +116,7 @@ def time_window_test(dws, dwe, fws, fwe):
     uc_name_asked = 'ts_time{}_{}'.format(ts_label, TESTING_ID)
     uc = train_model(uc_name_asked,
                      time_window=pio.TimeWindow(dws, dwe, fws, fwe))
-    uc.wait_until(lambda usecasev: len(usecasev.models) > 0)
+    uc.wait_until(lambda experimentv: len(experimentv.models) > 0)
     uc.stop()
     return
 
@@ -126,8 +126,8 @@ def time_window_test(dws, dwe, fws, fwe):
 def test_time_window(dws, dwe, fws, fwe):
     uc_name_returned = time_window_test(dws, dwe, fws, fwe)
     project = pio.Project.from_id(PROJECT_ID)
-    usecases = [uc.name for uc in project.list_usecases()]
-    # assert uc_name_returned in usecases
+    experiments = [uc.name for uc in project.list_experiments()]
+    # assert uc_name_returned in experiments
 
 
 def test_version():
@@ -138,10 +138,10 @@ def test_version():
     uc = train_model(uc_name_asked,
                      time_window=pio.TimeWindow(dws, dwe, fws, fwe))
 
-    uc.wait_until(lambda usecasev: len(usecasev.models) > 0)
+    uc.wait_until(lambda experimentv: len(experimentv.models) > 0)
     uc.stop()
     new_uc = uc.new_version()
-    new_uc.wait_until(lambda usecasev: len(usecasev.models) > 1)
+    new_uc.wait_until(lambda experimentv: len(experimentv.models) > 1)
     uc.stop()
 
 
@@ -161,9 +161,9 @@ def setup_ts_class(request):
     groups = request.param
     group_name = '{}_{}'.format(str(groups[0]), str(groups[1])) if isinstance(groups, tuple) else groups
     uc_name = 'ts_{}grp_{}'.format(group_name, TESTING_ID)
-    usecase_version = train_model(uc_name, groups)
+    experiment_version = train_model(uc_name, groups)
 
-    usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
-    usecase_version.stop()
-    yield groups, usecase_version
-    pio.Usecase.from_id(usecase_version.usecase_id).delete()
+    experiment_version.wait_until(lambda experimentv: len(experimentv.models) > 0)
+    experiment_version.stop()
+    yield groups, experiment_version
+    pio.Experiment.from_id(experiment_version.experiment_id).delete()

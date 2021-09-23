@@ -94,7 +94,7 @@ class DeployedModel(object):
         Requires initialization.
 
         Args:
-            endpoint: (str): api endpoint (e.g. /usecases, /prediction/file)
+            endpoint: (str): api endpoint (e.g. /experiments, /prediction/file)
             method (requests.{get,post,delete}): requests method
             files (dict): files dict
             data (dict): for single predict
@@ -149,7 +149,7 @@ class DeployedModel(object):
         return resp
 
     def predict(self, predict_data: Dict, use_confidence: bool = False, explain: bool = False):
-        """ Get a prediction on a single instance using the best model of the usecase.
+        """ Get a prediction on a single instance using the best model of the experiment.
 
         Args:
             predict_data (dictionary): input data for prediction
