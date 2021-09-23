@@ -3,25 +3,41 @@ from __future__ import print_function
 import os
 from typing import Dict, List, Tuple, Union
 import requests
+import pandas as pd
 
 from . import metrics
-from .usecase_version import BaseUsecaseVersion
+from .usecase_config import TypeProblem
 from .usecase_version import ClassicUsecaseVersion
+from .model import ExternalRegressionModel, ExternalClassificationModel, ExternalMultiClassificationModel
 from .prevision_client import client
 from .utils import parse_json
 from .dataset import Dataset
 
 
-# class ExternalUsecaseVersion(BaseUsecaseVersion):
+# NOTE: We inherit from ClassicUsecaseVersion because it contains a lot of methods we need here, but not all,
+#       we could make a big refactor with intermediate Base classes
 class ExternalUsecaseVersion(ClassicUsecaseVersion):
+
+    def __get_model_class(self):
+        if self.training_type is None:
+            model_class = None
+        elif self.training_type == TypeProblem.Regression:
+            model_class = ExternalRegressionModel
+        elif self.training_type == TypeProblem.Classification:
+            model_class = ExternalClassificationModel
+        elif self.training_type == TypeProblem.MultiClassification:
+            model_class = ExternalMultiClassificationModel
+        else:
+            raise ValueError(f'Unknown training_type for ExternalUsecaseVersion: {self.training_type}')
+        return model_class
 
     def __init__(self, **usecase_version_info):
         super().__init__(**usecase_version_info)
 
     def _update_from_dict(self, **usecase_version_info):
-        # super()._update_from_dict(**usecase_version_info)
-        # we don't want to inherit from ClassicUsecaseVersion._update_from_dict...
+        # we don't want to inherit from ClassicUsecaseVersion._update_from_dict but from its mother...
         super(ClassicUsecaseVersion, self)._update_from_dict(**usecase_version_info)
+
         usecase_version_params = usecase_version_info['usecase_version_params']
 
         holdout_dataset_id: str = usecase_version_info['holdout_dataset_id']
@@ -37,15 +53,7 @@ class ExternalUsecaseVersion(ClassicUsecaseVersion):
 
         self.metric: str = usecase_version_params['metric']
 
-        # NOTE: duplicate from Supervised
-        from .usecase_config import TypeProblem
-        from .model import RegressionModel, ClassificationModel, MultiClassificationModel
-        MODEL_CLASS_DICT = {
-            TypeProblem.Regression: RegressionModel,
-            TypeProblem.Classification: ClassificationModel,
-            TypeProblem.MultiClassification: MultiClassificationModel
-        }
-        self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
+        self.model_class = self.__get_model_class()
 
     def _update_draft(self, external_models, **kwargs):
         self.__add_external_models(external_models)
@@ -132,3 +140,69 @@ class ExternalUsecaseVersion(ClassicUsecaseVersion):
     def __add_external_models(self, external_models: List[Tuple]) -> None:
         for external_model in external_models:
             self.__add_external_model(external_model)
+
+    @property
+    def dropped_features(self):
+        raise NotImplementedError
+
+    @property
+    def drop_list(self) -> List[str]:
+        raise NotImplementedError
+
+    @property
+    def feature_list(self):
+        raise NotImplementedError
+
+    def get_cv(self):
+        raise NotImplementedError
+
+    def predict_single(self, data) -> Dict:
+        """ Get a prediction on a single instance using the best model of the usecase.
+
+        Args:
+
+        Returns:
+            dict: Dictionary containing the prediction.
+
+            .. note::
+
+                The format of the predictions dictionary depends on the problem type
+                (regression, classification...)
+        """
+        return super().predict_single(data,
+                                      confidence=False,
+                                      explain=False)
+
+    def predict_from_dataset(self,
+                             dataset,
+                             dataset_folder=None) -> pd.DataFrame:
+        """ Get the predictions for a dataset stored in the current active [client]
+        workspace using the best model of the usecase.
+
+        Arguments:
+            dataset (:class:`.Dataset`): Reference to the dataset object to make
+                predictions for
+            dataset_folder (:class:`.Dataset`): Matching folder dataset for the
+                predictions, if necessary
+
+        Returns:
+            ``pd.DataFrame``: Predictions as a ``pandas`` dataframe
+        """
+        return super().predict_from_dataset(dataset, confidence=False, dataset_folder=dataset_folder)
+
+    def predict(self, df, prediction_dataset_name=None) -> pd.DataFrame:
+        """ Get the predictions for a dataset stored in the current active [client]
+        workspace using the best model of the usecase with a Scikit-learn style blocking prediction mode.
+
+        .. warning::
+
+            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours).
+            Prefer using this for simple models and small dataframes, or use option ``use_best_single = True``.
+
+        Args:
+            df (``pd.DataFrame``): ``pandas`` DataFrame containing the test data
+
+        Returns:
+            tuple(pd.DataFrame, str): Prediction data (as ``pandas`` dataframe) and prediction job ID.
+        """
+        return super().predict(df=df, confidence=False, prediction_dataset_name=prediction_dataset_name)
