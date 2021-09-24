@@ -18,7 +18,7 @@ def setup_module(module):
     # Create dataset
     global dataset
     dataset = project.create_dataset('test_exporter',
-                                     file_name='utests/data_exporer/titanic.csv')
+                                     file_name='utests/data_exporter/titanic.csv')
 
     # Train one model
     training_config = pio.TrainingConfig(advanced_models=[],
@@ -27,20 +27,20 @@ def setup_module(module):
                                          features=[],
                                          profile=pio.Profile.Quick)
     column_config = pio.ColumnConfig(target_column='Survived', id_column='PassengerId')
+
     experiment_version = project.fit_classification(
-        name='test_exporter_classif',
-        dataset=dataset,
-        column_config=column_config,
+        'test_exporter_classif',
+        dataset,
+        column_config,
         metric=pio.metrics.Classification.AUC,
         training_config=training_config,
-        holdout_dataset=None,
     )
 
     # Create validation_prediction
     experiment_version.wait_until(
         lambda experimentv: (len(experimentv.models) > 0) or (experimentv._status['state'] == 'failed'))
     if experiment_version._status['state'] == 'failed':
-        raise 'Could not train experiment'
+        raise RuntimeError('Could not train experiment')
     global validation_prediction
     validation_prediction = experiment_version.predict_from_dataset(dataset)
 
@@ -67,8 +67,7 @@ def check_exporter_and_exports(exporter):
     check_export(exporter, export)
 
     time.sleep(1)
-    export = exporter.export_file('utests/data/titanic.csv', wait_for_export=True, origin="pipeline-file",
-                                  pipeline_scheduled_run_id="611a303307edd8001cb046d5")
+    export = exporter.export_file('utests/data_exporter/titanic.csv', wait_for_export=True)
     check_export(exporter, export)
 
     time.sleep(1)
