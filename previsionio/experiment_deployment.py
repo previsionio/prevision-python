@@ -13,7 +13,8 @@ from .dataset import Dataset
 
 
 class ExperimentDeployment(ApiResource):
-    """ ExperimentDeployment objects represent experiment deployment resource that will be explored by Prevision.io platform.
+    """ ExperimentDeployment objects represent experiment deployment
+    resource that will be explored by Prevision.io platform.
     """
 
     resource = 'model-deployments'
@@ -239,7 +240,8 @@ class ExperimentDeployment(ApiResource):
         return resp
 
     def get_api_keys(self):
-        """Fetch the api keys client id and cient secret of the experiment deployment from the actual [client] workspace.
+        """Fetch the api keys client id and cient secret of the
+        experiment deployment from the actual [client] workspace.
 
         Raises:
             PrevisionException: If the dataset does not exist
