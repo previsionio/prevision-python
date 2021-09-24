@@ -536,7 +536,8 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular, TypeProblem.Regression)
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+                                    TypeProblem.Regression)
         return Supervised._fit(
             experiment.id,
             dataset,
@@ -576,7 +577,8 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular, TypeProblem.Classification)
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+                                    TypeProblem.Classification)
         return Supervised._fit(
             experiment.id,
             dataset,
@@ -616,7 +618,8 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular, TypeProblem.MultiClassification)
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+                                    TypeProblem.MultiClassification)
         return Supervised._fit(
             experiment.id,
             dataset,
@@ -644,7 +647,7 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment (default: ``None``)
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -655,7 +658,8 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images, TypeProblem.Regression)
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
+                                    TypeProblem.Regression)
         return Supervised._fit(
             experiment.id,
             dataset,
@@ -672,7 +676,7 @@ class Project(ApiResource, UniqueResourceMixin):
                                  column_config: ColumnConfig,
                                  metric: metrics.Classification = metrics.Classification.AUC,
                                  holdout_dataset=None,
-                             training_config=TrainingConfig(),
+                                 training_config=TrainingConfig(),
                                  experiment_version_description: str = None):
         """ Start an image classification experiment version training
 
@@ -695,7 +699,8 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images, TypeProblem.Classification)
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
+                                    TypeProblem.Classification)
         return Supervised._fit(
             experiment.id,
             dataset,
@@ -723,8 +728,8 @@ class Project(ApiResource, UniqueResourceMixin):
             column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the experiment (default:
-                ``metrics.MultiClassification.log_loss``)
+            metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the experiment
+                (default: ``metrics.MultiClassification.log_loss``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -735,7 +740,8 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images, TypeProblem.MultiClassification)
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
+                                    TypeProblem.MultiClassification)
         return Supervised._fit(
             experiment.id,
             dataset,
@@ -780,7 +786,8 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.timeseries.TimeSeries`: Newly created TimeSeries experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.TimeSeries, TypeProblem.Regression)
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.TimeSeries,
+                                    TypeProblem.Regression)
         return TimeSeries._fit(
             experiment.id,
             dataset,
@@ -827,7 +834,8 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.text_similarity.TextSimilarity`: Newly created TextSimilarity experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular, TypeProblem.TextSimilarity)
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+                                    TypeProblem.TextSimilarity)
         return TextSimilarity._fit(
             experiment.id,
             dataset,
@@ -949,7 +957,8 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
-        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular, TypeProblem.MultiClassification)
+        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular,
+                                    TypeProblem.MultiClassification)
         return ExternalExperimentVersion._fit(
             experiment.id,
             holdout_dataset,
