@@ -44,21 +44,21 @@ def setup_module(module):
     global validation_prediction
     validation_prediction = experiment_version.predict_from_dataset(dataset)
 
-    # Create experiment deployment
-    uc_best_model = experiment_version.best_model
-    experiment_deployment = project.create_experiment_deployment('test_sdk_' + TESTING_ID, uc_best_model)
+    # # Create experiment deployment
+    # uc_best_model = experiment_version.best_model
+    # experiment_deployment = project.create_experiment_deployment('test_sdk_' + TESTING_ID, uc_best_model)
 
-    # Create deployment_prediction
-    experiment_deployment.wait_until(lambda experimentd: experimentd.run_state == 'done')
-    global deployment_prediction
-    deployment_prediction = experiment_deployment.predict_from_dataset(dataset)
+    # # Create deployment_prediction
+    # experiment_deployment.wait_until(lambda experimentd: experimentd.run_state == 'done')
+    # global deployment_prediction
+    # deployment_prediction = experiment_deployment.predict_from_dataset(dataset)
 
 
 def teardown_module(module):
     project.delete()
 
 
-def check_exporter_and_exports(exporter):
+def check_exporter_and_exports(exporter, skip_prediction=False):
     exporters = project.list_exporter(True)
     exporters_id = [exprtr._id for exprtr in exporters]
     assert exporter._id in exporters_id
@@ -70,15 +70,16 @@ def check_exporter_and_exports(exporter):
     export = exporter.export_file('utests/data_exporter/titanic.csv', wait_for_export=True)
     check_export(exporter, export)
 
-    time.sleep(1)
-    validation_prediction._wait_for_prediction()
-    export = exporter.export_prediction(validation_prediction, wait_for_export=True)
-    check_export(exporter, export)
+    if not skip_prediction:
+        time.sleep(1)
+        validation_prediction._wait_for_prediction()
+        export = exporter.export_prediction(validation_prediction, wait_for_export=True)
+        check_export(exporter, export)
 
-    time.sleep(1)
-    deployment_prediction.get_result()
-    export = exporter.export_prediction(deployment_prediction, wait_for_export=True)
-    check_export(exporter, export)
+        # time.sleep(1)
+        # deployment_prediction.get_result()
+        # export = exporter.export_prediction(deployment_prediction, wait_for_export=True)
+        # check_export(exporter, export)
 
     exporter2 = pio.Exporter.from_id(exporter._id)
     assert exporter2._id == exporter._id
@@ -129,7 +130,7 @@ def test_exporter_MySQL():
                                        database=mysql_config['database'],
                                        table=mysql_config['table'],
                                        write_mode=pio.ExporterWriteMode.replace)
-    check_exporter_and_exports(exporter)
+    check_exporter_and_exports(exporter, skip_prediction=True)
 
 
 def test_exporter_S3():
