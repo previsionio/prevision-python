@@ -44,14 +44,14 @@ def setup_module(module):
     global validation_prediction
     validation_prediction = experiment_version.predict_from_dataset(dataset)
 
-    # # Create experiment deployment
-    # uc_best_model = experiment_version.best_model
-    # experiment_deployment = project.create_experiment_deployment('test_sdk_' + TESTING_ID, uc_best_model)
+    # Create experiment deployment
+    uc_best_model = experiment_version.best_model
+    experiment_deployment = project.create_experiment_deployment('test_sdk_' + TESTING_ID, uc_best_model)
 
-    # # Create deployment_prediction
-    # experiment_deployment.wait_until(lambda experimentd: experimentd.run_state == 'done')
-    # global deployment_prediction
-    # deployment_prediction = experiment_deployment.predict_from_dataset(dataset)
+    # Create deployment_prediction
+    experiment_deployment.wait_until(lambda experimentd: experimentd.run_state == 'done')
+    global deployment_prediction
+    deployment_prediction = experiment_deployment.predict_from_dataset(dataset)
 
 
 def teardown_module(module):
@@ -76,10 +76,10 @@ def check_exporter_and_exports(exporter, skip_prediction=False):
         export = exporter.export_prediction(validation_prediction, wait_for_export=True)
         check_export(exporter, export)
 
-        # time.sleep(1)
-        # deployment_prediction.get_result()
-        # export = exporter.export_prediction(deployment_prediction, wait_for_export=True)
-        # check_export(exporter, export)
+        time.sleep(1)
+        deployment_prediction.get_result()
+        export = exporter.export_prediction(deployment_prediction, wait_for_export=True)
+        check_export(exporter, export)
 
     exporter2 = pio.Exporter.from_id(exporter._id)
     assert exporter2._id == exporter._id
