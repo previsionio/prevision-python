@@ -13,7 +13,7 @@ from dateutil import parser
 
 from . import config
 from .experiment_config import (AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel,
-                             TrainingConfig, ColumnConfig, TypeProblem, ExperimentState)
+                                TrainingConfig, ColumnConfig, TypeProblem, ExperimentState)
 from .logger import logger
 from .prevision_client import client
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
@@ -105,9 +105,11 @@ class BaseExperimentVersion(ApiResource):
              parent_version: str = None,
              **kwargs) -> 'BaseExperimentVersion':
 
-        experiment_version_creation_data = cls._build_experiment_version_creation_data(description,
-                                                                                 parent_version=parent_version,
-                                                                                 **kwargs)
+        experiment_version_creation_data = cls._build_experiment_version_creation_data(
+            description,
+            parent_version=parent_version,
+            **kwargs,
+        )
         experiment_version_draft = cls.new(experiment_id, experiment_version_creation_data)
         experiment_version_draft._update_draft(**kwargs)
         experiment_version = experiment_version_draft._confirm()
@@ -282,7 +284,7 @@ class BaseExperimentVersion(ApiResource):
                                                 EventTuple('USECASE_VERSION_UPDATE'),
                                                 specific_url=events_url)
         logger.info('[Experiment] stopping:' + '  '.join(str(k) + ': ' + str(v)
-                                                      for k, v in parse_json(response).items()))
+                                                         for k, v in parse_json(response).items()))
 
     def delete(self):
         """Delete an experiment version from the actual [client] workspace.
@@ -465,17 +467,14 @@ class ClassicExperimentVersion(BaseExperimentVersion):
         else:
             self.holdout_dataset = None
 
-        self.training_config = TrainingConfig(profile=Profile(experiment_params.get('profile')),
-                                              features=[Feature(f) for f in experiment_params.get(
-                                                  'features_engineering_selected_list', [])],
-                                              advanced_models=[
-                                                  AdvancedModel(f) for f in experiment_params.get('normal_models', [])],
-                                              normal_models=[NormalModel(f)
-                                                             for f in experiment_params.get('lite_models', [])],
-                                              simple_models=[SimpleModel(f)
-                                                             for f in experiment_params.get('simple_models', [])],
-                                              feature_time_seconds=experiment_params.get('features_selection_time', 3600),
-                                              feature_number_kept=experiment_params.get('features_selection_count', None))
+        self.training_config = TrainingConfig(
+            profile=Profile(experiment_params.get('profile')),
+            features=[Feature(f) for f in experiment_params.get('features_engineering_selected_list', [])],
+            advanced_models=[AdvancedModel(f) for f in experiment_params.get('normal_models', [])],
+            normal_models=[NormalModel(f) for f in experiment_params.get('lite_models', [])],
+            simple_models=[SimpleModel(f) for f in experiment_params.get('simple_models', [])],
+            feature_time_seconds=experiment_params.get('features_selection_time', 3600),
+            feature_number_kept=experiment_params.get('features_selection_count', None))
 
     @property
     def advanced_models_list(self) -> List[AdvancedModel]:
@@ -635,7 +634,8 @@ class ClassicExperimentVersion(BaseExperimentVersion):
         Returns:
             list(str): Names of the feature engineering modules selected for the experiment
         """
-        res = [Feature(f) for f in self._status['experiment_version_params'].get('features_engineering_selected_list', [])]
+        res = [Feature(f) for f in self._status['experiment_version_params'].get(
+            'features_engineering_selected_list', [])]
         return res
 
     def get_cv(self) -> pd.DataFrame:
