@@ -60,8 +60,8 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
 
     @staticmethod
     def _build_experiment_version_creation_data(description, holdout_dataset, target_column,
-                                             metric, dataset, parent_version=None,
-                                             **kwargs) -> Dict:
+                                                metric, dataset, parent_version=None,
+                                                **kwargs) -> Dict:
         data = super(ExternalExperimentVersion, ExternalExperimentVersion)._build_experiment_version_creation_data(
             description,
             parent_version=parent_version,

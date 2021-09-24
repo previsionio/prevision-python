@@ -6,8 +6,8 @@ from .utils import PrevisionException, EventTuple, zip_to_pandas
 
 
 class ValidationPrediction(ApiResource):
-    """ A prediction object that represents an experiment bulk prediction resource which can be explored on the Prevision.io
-    platform.
+    """ A prediction object that represents an experiment bulk prediction resource
+    which can be explored on the Prevision.io platform.
     """
 
     resource = 'validation-predictions'

@@ -164,10 +164,12 @@ class Model(ApiResource):
         if dataset_folder_id is not None:
             data['folder_dataset_id'] = dataset_folder_id
 
-        predict_start = client.request('/experiment-versions/{}/validation-predictions'.format(self.experiment_version_id),
-                                       method=requests.post,
-                                       data=data,
-                                       message_prefix='Bulk predict')
+        predict_start = client.request(
+            '/experiment-versions/{}/validation-predictions'.format(self.experiment_version_id),
+            method=requests.post,
+            data=data,
+            message_prefix='Bulk predict',
+        )
         predict_start_parsed = parse_json(predict_start)
 
         if '_id' not in predict_start_parsed:
