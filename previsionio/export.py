@@ -28,7 +28,6 @@ class Export(ApiResource, UniqueResourceMixin):
         on the platform. """
         super().__init__(_id=_id)
 
-        self._id = _id
         self.exporter_id = exporter_id
         self.dataset_id = dataset_id
         self.state = status

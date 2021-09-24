@@ -53,7 +53,6 @@ class Exporter(ApiResource, UniqueResourceMixin):
         on the platform. """
         super().__init__(_id=_id)
 
-        self._id = _id
         self.connector_id = connector_id
 
         self.name = name

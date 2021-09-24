@@ -33,11 +33,11 @@ class Connector(ApiResource, UniqueResourceMixin):
     resource = 'connectors'
     conn_type = 'connector'
 
+    # NOTE: too much specific arg in this base class, like googleCredentials
     def __init__(self, _id: str, name: str, host: str = None, port: int = None, type: str = None,
                  username: str = '', password: str = '', googleCredentials: str = None, **kwargs):
-        super().__init__(_id=_id, name=name, host=host, port=port, conn_type=type,
-                         username=username, password=password, googleCredentials=googleCredentials)
-        self._id = _id
+        super().__init__(_id=_id)
+
         self.name = name
         self.host = host
         self.port = port
