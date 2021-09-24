@@ -71,10 +71,12 @@ def check_exporter_and_exports(exporter):
     check_export(exporter, export)
 
     time.sleep(1)
+    validation_prediction._wait_for_prediction()
     export = exporter.export_prediction(validation_prediction, wait_for_export=True)
     check_export(exporter, export)
 
     time.sleep(1)
+    deployment_prediction.get_result()
     export = exporter.export_prediction(deployment_prediction, wait_for_export=True)
     check_export(exporter, export)
 
