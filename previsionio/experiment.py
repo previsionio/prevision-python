@@ -13,9 +13,10 @@ from .api_resource import ApiResource
 
 
 def get_experiment_version_class(
-        training_type: TypeProblem,
-        data_type: DataType,
-        provider: str) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries], Type[ExternalExperimentVersion]]:
+    training_type: TypeProblem,
+    data_type: DataType,
+    provider: str,
+) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries], Type[ExternalExperimentVersion]]:
     """ Get the type of ExperimentVersion class used by this Experiment
 
     Returns:
@@ -53,7 +54,7 @@ class Experiment(ApiResource):
 
     def __init__(self,
                  _id: str,
-                 project_id:str,
+                 project_id: str,
                  provider: str,
                  name: str,
                  training_type: TypeProblem,
