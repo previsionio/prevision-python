@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Union
+from typing import Dict
 import requests
 from . import client
 from .utils import parse_json
@@ -22,31 +22,17 @@ class Connector(ApiResource, UniqueResourceMixin):
 
     Args:
         _id (str): Unique reference of the connector on the platform
+        project_id (str): Unique reference of the project id on the platform
         name (str): Name of the connector
-        host (str): Url of the connector
-        port (int): Port of the connector
-        conn_type (str): Type of the connector, among "FTP", "SFTP", "SQL", "S3", "GCP"
-        username (str, optional): Username to use connect to the remote data source
-        password (str, optional): Password to use connect to the remote data source
     """
 
     resource = 'connectors'
     conn_type = 'connector'
 
-    # NOTE: too much specific arg in this base class, like googleCredentials
-    def __init__(self, _id: str, name: str, host: str = None, port: int = None, type: str = None,
-                 username: str = '', password: str = '', googleCredentials: str = None, **kwargs):
+    def __init__(self, _id: str, project_id: str, name: str):
         super().__init__(_id=_id)
-
+        self.project_id = project_id
         self.name = name
-        self.host = host
-        self.port = port
-        self.type = type
-        self.username = username
-        self.password = password
-        self.googleCredentials = googleCredentials
-
-        self.other_params = kwargs
 
     @classmethod
     def list(cls, project_id: str, all: bool = False):
@@ -59,6 +45,7 @@ class Connector(ApiResource, UniqueResourceMixin):
             plain dictionaries with the corresponding data.
 
         Args:
+            project_id (str): Unique reference of the project id on the platform
             all (boolean, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
@@ -67,21 +54,40 @@ class Connector(ApiResource, UniqueResourceMixin):
             list(:class:`.Connector`): Fetched connector objects
         """
         resources = super()._list(all=all, project_id=project_id)
-        return [cls(**conn_data) for conn_data in resources
+        print(resources)
+        return [connectors_names.get(conn_data['type']).from_dict(conn_data) for conn_data in resources
                 if conn_data['type'] == cls.conn_type or cls.conn_type == 'connector']
 
     @classmethod
-    def _new(cls, project_id: str, name: str, host: str, port: Union[int, None], conn_type: str, username: str = None,
-             password: str = None, googleCredentials: str = None):
+    def _create_connector(cls, project_id, data, content_type=None):
+        data['type'] = cls.conn_type
+        print(data)
+        resp = client.request('/projects/{}/{}'.format(project_id, cls.resource),
+                              data=data,
+                              method=requests.post,
+                              message_prefix='New connector creation',
+                              content_type=content_type)
+
+        connector_info = parse_json(resp)
+        if '_id' not in connector_info:
+            if 'message' in connector_info:
+                raise Exception('Prevision.io error: {}'.format(' '.join(connector_info['message'])))
+            else:
+                raise Exception('unknown error:{}'.format(connector_info))
+
+        return connector_info
+
+    @classmethod
+    def _new(cls, project_id: str, name: str, host: str, port: int, username: str, password: str):
         """ Create a new connector object on the platform.
 
         Args:
+            project_id (str): Unique reference of the project id on the platform
             name (str): Name of the connector
             host (str): Url of the connector
             port (int): Port of the connector
-            conn_type (str): Type of the connector, among "FTP", "SFTP", "SQL", "S3", "GCP"
-            username (str, optional): Username to use connect to the remote data source
-            password (str, optional): Password to use connect to the remote data source
+            username (str): Username to use connect to the remote data source
+            password (str): Password to use connect to the remote data source
 
         Returns:
             :class:`.Connector`: Newly create connector object
@@ -90,31 +96,11 @@ class Connector(ApiResource, UniqueResourceMixin):
             'name': name,
             'host': host,
             'port': port,
-            'type': conn_type
+            'username': username,
+            'password': password,
         }
-        message_prefix = 'New connector creation'
-        if username:
-            data['username'] = username
-        if password:
-            data['password'] = password
-        if googleCredentials:
-            data['googleCredentials'] = googleCredentials
-            content_type = 'application/json'
-            resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=data, method=requests.post,
-                                  content_type=content_type, message_prefix=message_prefix)
-        else:
-            resp = client.request('/projects/{}/{}'.format(project_id, cls.resource), data=data, method=requests.post,
-                                  message_prefix=message_prefix)
-
-        resp_json = parse_json(resp)
-        if '_id' not in resp_json:
-            if 'message' in resp_json:
-                raise Exception('Prevision.io error: {}'.format(' '.join(resp_json['message'])))
-            else:
-                raise Exception('unknown error:{}'.format(resp_json))
-        data['_id'] = resp_json['_id']
-
-        return cls(**data)
+        connector_info = cls._create_connector(project_id, data)
+        return cls.from_dict(connector_info)
 
     def test(self):
         """ Test a connector already uploaded on the platform.
@@ -139,8 +125,36 @@ class Connector(ApiResource, UniqueResourceMixin):
 
 
 class DataTableBaseConnector(Connector):
+    """ A specific type of connector to interact with a database client (containing databases and tables), and
+    easily get data snapshots using an associated :class:`.DataSource`
+    resource).
 
-    """ A specific type of connector to interact with a database client (containing databases and tables). """
+    Args:
+        _id (str): Unique reference of the connector on the platform
+        project_id (str): Unique reference of the project id on the platform
+        name (str): Name of the connector
+        host (str): Url of the connector
+        port (int): Port of the connector
+        username (str): Username to use connect to the remote data source
+    """
+
+    def __init__(self, _id: str, project_id: str, name: str, host: str, port: int, username: str):
+        super().__init__(_id=_id, project_id=project_id, name=name)
+        self.host = host
+        self.port = port
+        self.username = username
+
+    @classmethod
+    def from_dict(cls, connector_info: Dict):
+        connector = cls(
+            connector_info['_id'],
+            connector_info['project_id'],
+            connector_info['name'],
+            connector_info['host'],
+            connector_info['port'],
+            connector_info['username'],
+        )
+        return connector
 
     def list_databases(self):
         """ List all available databases for the client.
@@ -169,7 +183,36 @@ class DataTableBaseConnector(Connector):
 
 
 class DataFileBaseConnector(Connector):
-    """ A specific type of connector to interact with a database client (containing files). """
+    """ A specific type of connector to interact with a database client (containing files), and
+    easily get data snapshots using an associated :class:`.DataSource`
+    resource).
+
+    Args:
+        _id (str): Unique reference of the connector on the platform
+        project_id (str): Unique reference of the project id on the platform
+        name (str): Name of the connector
+        host (str): Url of the connector
+        port (int): Port of the connector
+        username (str): Username to use connect to the remote data source
+    """
+
+    def __init__(self, _id: str, project_id: str, name: str, host: str, port: int, username: str):
+        super().__init__(_id=_id, project_id=project_id, name=name)
+        self.host = host
+        self.port = port
+        self.username = username
+
+    @classmethod
+    def from_dict(cls, connector_info: Dict):
+        connector = cls(
+            connector_info['_id'],
+            connector_info['project_id'],
+            connector_info['name'],
+            connector_info['host'],
+            connector_info['port'],
+            connector_info['username'],
+        )
+        return connector
 
     def list_files(self):
         """ List all available tables in a specific database for the client.
@@ -187,24 +230,158 @@ class DataFileBaseConnector(Connector):
 
 
 class FTPConnector(DataFileBaseConnector):
+    """ A specific type of connector to interact with a FTP client (containing files), and
+    easily get data snapshots using an associated :class:`.DataSource`
+    resource).
 
-    """ A specific type of connector to interact with a FTP client (containing files). """
+    Args:
+        _id (str): Unique reference of the connector on the platform
+        project_id (str): Unique reference of the project id on the platform
+        name (str): Name of the connector
+        host (str): Url of the connector
+        port (int): Port of the connector
+        username (str): Username to use connect to the remote data source
+    """
 
     conn_type = 'FTP'
 
 
 class SFTPConnector(DataFileBaseConnector):
+    """ A specific type of connector to interact with a secured FTP client (containing files), and
+    easily get data snapshots using an associated :class:`.DataSource`
+    resource).
 
-    """ A specific type of connector to interact with a secured FTP client (containing files). """
+    Args:
+        _id (str): Unique reference of the connector on the platform
+        project_id (str): Unique reference of the project id on the platform
+        name (str): Name of the connector
+        host (str): Url of the connector
+        port (int): Port of the connector
+        username (str): Username to use connect to the remote data source
+    """
 
     conn_type = 'SFTP'
 
 
 class SQLConnector(DataTableBaseConnector):
+    """ A specific type of connector to interact with a SQL database client (containing databases and tables), and
+    easily get data snapshots using an associated :class:`.DataSource`
+    resource).
 
-    """ A specific type of connector to interact with a SQL database client (containing databases and tables). """
+    Args:
+        _id (str): Unique reference of the connector on the platform
+        project_id (str): Unique reference of the project id on the platform
+        name (str): Name of the connector
+        host (str): Url of the connector
+        port (int): Port of the connector
+        username (str): Username to use connect to the remote data source
+    """
 
     conn_type = 'SQL'
+
+
+class S3Connector(Connector):
+    """ A specific type of connector to interact with an Amazon S3 client (containing buckets with files),
+    and easily get data snapshots using an associated :class:`.DataSource` resource).
+
+    Args:
+        _id (str): Unique reference of the connector on the platform
+        project_id (str): Unique reference of the project id on the platform
+        name (str): Name of the connector
+        host (str): Url of the connector
+        port (int): Port of the connector
+        username (str): Username to use connect to the remote data source
+    """
+
+    conn_type = 'S3'
+
+    def __init__(self, _id: str, project_id: str, name: str, username: str):
+        super().__init__(_id=_id, project_id=project_id, name=name)
+        self.username = username
+
+    @classmethod
+    def from_dict(cls, connector_info: Dict):
+        connector = cls(
+            connector_info['_id'],
+            connector_info['project_id'],
+            connector_info['name'],
+            connector_info['username'],
+        )
+        return connector
+
+    @classmethod
+    def _new(cls, project_id: str, name: str, username: str, password: str):
+        """ Create a new connector object on the platform.
+
+        Args:
+            project_id (str): Unique reference of the project id on the platform
+            name (str): Name of the connector
+            username (str): Username to use connect to the remote data source
+            password (str): Password to use connect to the remote data source
+
+        Returns:
+            :class:`.S3Connector`: Newly create connector object
+        """
+        data = {
+            'name': name,
+            'username': username,
+            'password': password,
+        }
+        connector_info = cls._create_connector(project_id, data)
+        return cls.from_dict(connector_info)
+
+
+class GCPConnector(Connector):
+    """ A specific type of connector to interact with a GCP database client
+    (containing databases and tables or buckets), and easily get data snapshots
+    using an associated :class:`.DataSource` resource).
+
+    Args:
+        _id (str): Unique reference of the connector on the platform
+        project_id (str): Unique reference of the project id on the platform
+        name (str): Name of the connector
+    """
+
+    conn_type = 'GCP'
+
+    @classmethod
+    def from_dict(cls, connector_info: Dict):
+        connector = cls(
+            connector_info['_id'],
+            connector_info['project_id'],
+            connector_info['name'],
+        )
+        return connector
+
+    @classmethod
+    def _new(cls, project_id: str, name: str, googleCredentials: str):
+        """ Create a new connector object on the platform.
+
+        Args:
+            project_id (str): Unique reference of the project id on the platform
+            name (str): Name of the connector
+            googleCredentials(str): google credentials
+
+        Returns:
+            :class:`.GCPConnector`: Newly create connector object
+        """
+        data = {
+            'name': name,
+            'googleCredentials': googleCredentials,
+        }
+        connector_info = cls._create_connector(project_id, data, content_type='application/json')
+        return cls.from_dict(connector_info)
+
+
+# class HDFSConnector(Connector):
+#
+#     """ A specific type of connector to interact with a HDFS client. """
+#
+#     conn_type = 'HDFS'
+#
+#     @classmethod
+#     def new(cls, name, host, port=50070, username='', password=''):
+#         return cls._new(name=name, host=host, conn_type='HDFS', port=port, username=username, password=password)
 
 
 # class HiveConnector(DataTableBaseConnector):
@@ -223,32 +400,6 @@ class SQLConnector(DataTableBaseConnector):
 #     @classmethod
 #     def new(cls, name, host, port=9090, username='', password=''):
 #         return cls._new(name=name, host=host, conn_type='HBASE', port=port, username=username, password=password)
-
-
-class S3Connector(Connector):
-
-    """ A specific type of connector to interact with an Amazon S3 client (containing buckets with files). """
-
-    conn_type = 'S3'
-
-
-class GCPConnector(Connector):
-
-    """ A specific type of connector to interact with a GCP database client
-        (containing databases and tables or buckets)."""
-
-    conn_type = 'GCP'
-
-#
-# class HDFSConnector(Connector):
-#
-#     """ A specific type of connector to interact with a HDFS client. """
-#
-#     conn_type = 'HDFS'
-#
-#     @classmethod
-#     def new(cls, name, host, port=50070, username='', password=''):
-#         return cls._new(name=name, host=host, conn_type='HDFS', port=port, username=username, password=password)
 
 
 connectors_names = {

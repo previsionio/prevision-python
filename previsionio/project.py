@@ -319,7 +319,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return DatasetImages.list(self._id, all=all)
 
-    def create_sql_connector(self, name: str, host: str, port: int = 3306, username: str = '', password: str = ''):
+    def create_sql_connector(self, name: str, host: str, port: int, username: str, password: str):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -328,14 +328,14 @@ class Project(ApiResource, UniqueResourceMixin):
             name (str): Name of the connector
             host (str): Url of the connector
             port (int): Port of the connector
-            username (str, optional): Username to use connect to the remote data source
-            password (str, optional): Password to use connect to the remote data source
+            username (str): Username to use connect to the remote data source
+            password (str): Password to use connect to the remote data source
         Returns:
             :class:`.SQLConnector`: The registered connector object in the current project.
         """
-        return SQLConnector._new(self._id, name, host, port, 'SQL', username=username, password=password)
+        return SQLConnector._new(self._id, name, host, port, username=username, password=password)
 
-    def create_ftp_connector(self, name: str, host: str, port: int = 21, username: str = '', password: str = ''):
+    def create_ftp_connector(self, name: str, host: str, port: int, username: str, password: str):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -344,14 +344,14 @@ class Project(ApiResource, UniqueResourceMixin):
             name (str): Name of the connector
             host (str): Url of the connector
             port (int): Port of the connector
-            username (str, optional): Username to use connect to the remote data source
-            password (str, optional): Password to use connect to the remote data source
+            username (str): Username to use connect to the remote data source
+            password (str): Password to use connect to the remote data source
         Returns:
             :class:`.FTPConnector`: The registered connector object in the current project.
         """
-        return FTPConnector._new(self._id, name, host, port, 'FTP', username=username, password=password)
+        return FTPConnector._new(self._id, name, host, port, username=username, password=password)
 
-    def create_sftp_connector(self, name: str, host: str, port: int = 23, username: str = '', password: str = ''):
+    def create_sftp_connector(self, name: str, host: str, port: int, username: str, password: str):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -360,14 +360,14 @@ class Project(ApiResource, UniqueResourceMixin):
             name (str): Name of the connector
             host (str): Url of the connector
             port (int): Port of the connector
-            username (str, optional): Username to use connect to the remote data source
-            password (str, optional): Password to use connect to the remote data source
+            username (str): Username to use connect to the remote data source
+            password (str): Password to use connect to the remote data source
         Returns:
             :class:`.SFTPConnector`: The registered connector object in the current project.
         """
-        return SFTPConnector._new(self._id, name, host, port, 'SFTP', username=username, password=password)
+        return SFTPConnector._new(self._id, name, host, port, username=username, password=password)
 
-    def create_s3_connector(self, name: str, host: str = '', port: int = None, username: str = '', password: str = ''):
+    def create_s3_connector(self, name: str, username: str, password: str):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -381,10 +381,9 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.S3Connector`: The registered connector object in the current project.
         """
-        return S3Connector._new(self._id, name, host, port, 'S3', username=username, password=password)
+        return S3Connector._new(self._id, name, username=username, password=password)
 
-    def create_gcp_connector(self, name: str = '', host: str = '', port=None, username: str = '', password: str = '',
-                             googleCredentials: str = ''):
+    def create_gcp_connector(self, name: str, googleCredentials: str):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -395,8 +394,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.GCPConnector`: The registered connector object in the current project.
         """
-        return GCPConnector._new(self._id, name, host, port, 'GCP', username=username, password=password,
-                                 googleCredentials=googleCredentials)
+        return GCPConnector._new(self._id, name, googleCredentials=googleCredentials)
 
     def list_connectors(self, all: bool = True):
         """ List all the available connectors in the current active project.
