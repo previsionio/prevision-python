@@ -184,12 +184,9 @@ def setup_experiment_class(request):
     experiment_name = f'test_sdk_external_models_{type_problem}_{TESTING_ID}'
     experiment_version = create_external_experiment_version_from_type_problem(type_problem, experiment_name=experiment_name)
     assert experiment_version.running
-    experiment_version.wait_until(
-         lambda experiment: (len(experiment.models) > 0) or (experiment._status['state'] == 'failed'))
-    experiment_version.stop()
+    experiment_version.wait_until(lambda experiment: experiment.done or experiment._status['state'] == 'failed')
     assert not experiment_version.running
-    experiment_version.wait_until(lambda experiment_version: experiment_version._status['state'] == 'done', timeout=60)
-    assert experiment_version._status['state'] == 'done'
+    assert experiment_version.done
     yield type_problem, experiment_version
     pio.Experiment.from_id(experiment_version.experiment_id).delete()
 
