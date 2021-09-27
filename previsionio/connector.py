@@ -54,14 +54,12 @@ class Connector(ApiResource, UniqueResourceMixin):
             list(:class:`.Connector`): Fetched connector objects
         """
         resources = super()._list(all=all, project_id=project_id)
-        print(resources)
         return [connectors_names.get(conn_data['type']).from_dict(conn_data) for conn_data in resources
                 if conn_data['type'] == cls.conn_type or cls.conn_type == 'connector']
 
     @classmethod
     def _create_connector(cls, project_id, data, content_type=None):
         data['type'] = cls.conn_type
-        print(data)
         resp = client.request('/projects/{}/{}'.format(project_id, cls.resource),
                               data=data,
                               method=requests.post,
