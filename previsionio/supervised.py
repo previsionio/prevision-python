@@ -37,16 +37,13 @@ class Supervised(ClassicExperimentVersion):
         """Get a supervised experiment from the platform by its unique id.
 
         Args:
-            _id (str): Unique id of the experiment to retrieve
-            version (int, optional): Specific version of the experiment to retrieve
-                (default: 1)
+            _id (str): Unique id of the experiment version to retrieve
 
         Returns:
             :class:`.Supervised`: Fetched experiment version
 
         Raises:
-            PrevisionException: Invalid problem type or any error while fetching
-                data from the platform or parsing result
+            PrevisionException: Any error while fetching data from the platform or parsing result
         """
         return cls(**super()._from_id(_id))
 
