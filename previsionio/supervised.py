@@ -34,7 +34,7 @@ class Supervised(ClassicExperimentVersion):
 
     @classmethod
     def from_id(cls, _id: str) -> 'Supervised':
-        """Get a supervised experiment from the platform by its unique id.
+        """Get a supervised experiment version from the platform by its unique id.
 
         Args:
             _id (str): Unique id of the experiment version to retrieve
