@@ -77,7 +77,7 @@ class BaseExperimentVersion(ApiResource):
         return data
 
     @classmethod
-    def new(cls, experiment_id, data) -> 'BaseExperimentVersion':
+    def _new(cls, experiment_id, data) -> 'BaseExperimentVersion':
         endpoint = f'/experiments/{experiment_id}/versions'
         response = client.request(endpoint,
                                   method=requests.post,
@@ -110,7 +110,7 @@ class BaseExperimentVersion(ApiResource):
             parent_version=parent_version,
             **kwargs,
         )
-        experiment_version_draft = cls.new(experiment_id, experiment_version_creation_data)
+        experiment_version_draft = cls._new(experiment_id, experiment_version_creation_data)
         experiment_version_draft._update_draft(**kwargs)
         experiment_version = experiment_version_draft._confirm()
 
