@@ -213,6 +213,17 @@ class TextSimilarity(BaseExperimentVersion):
 
     @classmethod
     def from_id(cls, _id: str) -> 'TextSimilarity':
+        """Get a text-similarity experiment version from the platform by its unique id.
+
+        Args:
+            _id (str): Unique id of the experiment version to retrieve
+
+        Returns:
+            :class:`.TextSimilarity`: Fetched experiment version
+
+        Raises:
+            PrevisionException: Any error while fetching data from the platform or parsing result
+        """
         return cls(**super()._from_id(_id))
 
     @classmethod
@@ -258,22 +269,33 @@ class TextSimilarity(BaseExperimentVersion):
         description: str = None,
         parent_version: str = None,
     ) -> 'TextSimilarity':
-        """ Start a supervised experiment training with a specific training configuration
+        """ Start a text-similarity experiment version training with a specific configuration
         (on the platform).
 
         Args:
-            name (str): Name of the experiment to create
-            dataset (:class:`.Dataset`): Reference to the dataset
-                object to use for as training dataset
+            experiment_id (str): The id of the experiment from which this version is created
+            dataset (:class:`.Dataset`): Reference to the dataset object to use for as training dataset
             description_column_config (:class:`.DescriptionsColumnConfig`): Description column configuration
                 (see the documentation of the :class:`.DescriptionsColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the experiment (default: ``None``)
+            metric (:class:`.metrics.TextSimilarity`, optional): Specific metric to use for the experiment
+                (default: ``metrics.TextSimilarity.accuracy_at_k``)
+            top_k (int, optional): top_k (default: ``10``)
+            lang (:class:`.TextSimilarityLang`, optional): lang of the training dataset
+                (default: ``.TextSimilarityLang.Auto``)
             queries_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a queries dataset (default: ``None``)
+            queries_column_config (:class:`.QueriesColumnConfig`): Queries column configuration
+                (see the documentation of the :class:`.QueriesColumnConfig` resource for more details
+                on each possible column types)
+            models_parameters (:class:`.ListModelsParameters`): Specific training configuration
+                (see the documentation of the :class:`.ListModelsParameters` resource for more details
+                on all the parameters)
+            description (str, optional): The description of this experiment version (default: ``None``)
+            parent_version (str, optional): The parent version of this experiment_version (default: ``None``)
 
         Returns:
-            :class:`.TextSimilarity`: Newly created supervised experiment object
+            :class:`.TextSimilarity`: Newly created text-similarity experiment version object
         """
 
         return super()._fit(
@@ -302,25 +324,29 @@ class TextSimilarity(BaseExperimentVersion):
         models_parameters: ListModelsParameters = None,
         description: str = None,
     ) -> 'TextSimilarity':
-        """ Start a text similarity experiment training to create a new version of the experiment (on the
-        platform): the training configs are copied from the current version and then overridden
+        """ Start a text-similarity experiment version training from this version to create a new version of the experiment
+        (on the platform). The training parameters are copied from the current version and then overridden
         for the given parameters.
 
         Args:
-            description (str, optional): additional description of the version
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`, optional): Reference to the dataset
-                object to use for as training dataset
-            description_column_config (:class:`.DescriptionsColumnConfig`, optional): Column configuration for the
-                experiment (see the documentation of the :class:`.ColumnConfig` resource for more details on each possible
-                column types)
-            metric (metrics.TextSimilarity, optional): Specific metric to use for the experiment (default: ``None``)
-            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
-                use as a holdout dataset (default: ``None``)
-            training_config (:class:`.TrainingConfig`, optional): Specific training configuration
-                (see the documentation of the :class:`.TrainingConfig` resource for more details
+            dataset (:class:`.Dataset`): Reference to the dataset object to use for as training dataset
+            description_column_config (:class:`.DescriptionsColumnConfig`): Description column configuration
+                (see the documentation of the :class:`.DescriptionsColumnConfig` resource for more details
+                on each possible column types)
+            metric (:class:`.metrics.TextSimilarity`, optional): Specific metric to use for the experiment
+            top_k (int, optional): top_k
+            lang (:class:`.TextSimilarityLang`, optional): lang of the training dataset
+            queries_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
+                use as a queries dataset
+            queries_column_config (:class:`.QueriesColumnConfig`): Queries column configuration
+                (see the documentation of the :class:`.QueriesColumnConfig` resource for more details
+                on each possible column types)
+            models_parameters (:class:`.ListModelsParameters`): Specific training configuration
+                (see the documentation of the :class:`.ListModelsParameters` resource for more details
                 on all the parameters)
+            description (str, optional): The description of this experiment version (default: ``None``)
         Returns:
-            :class:`.TextSimilarity`: Newly created text similarity experiment version object (new version)
+            :class:`.TextSimilarity`: Newly created text-similarity experiment version object (new version)
         """
         return TextSimilarity._fit(
             self.experiment_id,
