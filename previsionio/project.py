@@ -507,14 +507,16 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return Exporter.list(self._id, all=all)
 
-    def fit_regression(self,
-                       experiment_name: str,
-                       dataset: Dataset,
-                       column_config: ColumnConfig,
-                       metric: metrics.Regression = metrics.Regression.RMSE,
-                       holdout_dataset=None,
-                       training_config=TrainingConfig(),
-                       experiment_version_description: str = None):
+    def fit_regression(
+        self,
+        experiment_name: str,
+        dataset: Dataset,
+        column_config: ColumnConfig,
+        metric: metrics.Regression = metrics.Regression.RMSE,
+        holdout_dataset=None,
+        training_config=TrainingConfig(),
+        experiment_version_description: str = None,
+    ) -> Supervised:
         """ Start a tabular regression experiment version training
 
         Args:
@@ -548,14 +550,16 @@ class Project(ApiResource, UniqueResourceMixin):
             description=experiment_version_description,
         )
 
-    def fit_classification(self,
-                           experiment_name: str,
-                           dataset: Dataset,
-                           column_config: ColumnConfig,
-                           metric: metrics.Classification = metrics.Classification.AUC,
-                           holdout_dataset=None,
-                           training_config=TrainingConfig(),
-                           experiment_version_description: str = None):
+    def fit_classification(
+        self,
+        experiment_name: str,
+        dataset: Dataset,
+        column_config: ColumnConfig,
+        metric: metrics.Classification = metrics.Classification.AUC,
+        holdout_dataset=None,
+        training_config=TrainingConfig(),
+        experiment_version_description: str = None,
+    ) -> Supervised:
         """ Start a tabular classification experiment version training
 
         Args:
@@ -589,14 +593,16 @@ class Project(ApiResource, UniqueResourceMixin):
             description=experiment_version_description,
         )
 
-    def fit_multiclassification(self,
-                                experiment_name: str,
-                                dataset: Dataset,
-                                column_config: ColumnConfig,
-                                metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
-                                holdout_dataset=None,
-                                training_config=TrainingConfig(),
-                                experiment_version_description: str = None):
+    def fit_multiclassification(
+        self,
+        experiment_name: str,
+        dataset: Dataset,
+        column_config: ColumnConfig,
+        metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
+        holdout_dataset=None,
+        training_config=TrainingConfig(),
+        experiment_version_description: str = None,
+    ) -> Supervised:
         """ Start a tabular multiclassification experiment version training
 
         Args:
@@ -630,14 +636,16 @@ class Project(ApiResource, UniqueResourceMixin):
             description=experiment_version_description,
         )
 
-    def fit_image_regression(self,
-                             experiment_name: str,
-                             dataset: Tuple[Dataset, DatasetImages],
-                             column_config: ColumnConfig,
-                             metric: metrics.Regression = metrics.Regression.RMSE,
-                             holdout_dataset=None,
-                             training_config=TrainingConfig(),
-                             experiment_version_description: str = None):
+    def fit_image_regression(
+        self,
+        experiment_name: str,
+        dataset: Tuple[Dataset, DatasetImages],
+        column_config: ColumnConfig,
+        metric: metrics.Regression = metrics.Regression.RMSE,
+        holdout_dataset=None,
+        training_config=TrainingConfig(),
+        experiment_version_description: str = None,
+    ) -> Supervised:
         """ Start an image regression experiment version training
 
         Args:
@@ -670,14 +678,16 @@ class Project(ApiResource, UniqueResourceMixin):
             description=experiment_version_description,
         )
 
-    def fit_image_classification(self,
-                                 experiment_name: str,
-                                 dataset: Tuple[Dataset, DatasetImages],
-                                 column_config: ColumnConfig,
-                                 metric: metrics.Classification = metrics.Classification.AUC,
-                                 holdout_dataset=None,
-                                 training_config=TrainingConfig(),
-                                 experiment_version_description: str = None):
+    def fit_image_classification(
+        self,
+        experiment_name: str,
+        dataset: Tuple[Dataset, DatasetImages],
+        column_config: ColumnConfig,
+        metric: metrics.Classification = metrics.Classification.AUC,
+        holdout_dataset=None,
+        training_config=TrainingConfig(),
+        experiment_version_description: str = None
+    ) -> Supervised:
         """ Start an image classification experiment version training
 
         Args:
@@ -711,14 +721,16 @@ class Project(ApiResource, UniqueResourceMixin):
             description=experiment_version_description,
         )
 
-    def fit_image_multiclassification(self,
-                                      experiment_name: str,
-                                      dataset: Tuple[Dataset, DatasetImages],
-                                      column_config: ColumnConfig,
-                                      metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
-                                      holdout_dataset=None,
-                                      training_config=TrainingConfig(),
-                                      experiment_version_description: str = None):
+    def fit_image_multiclassification(
+        self,
+        experiment_name: str,
+        dataset: Tuple[Dataset, DatasetImages],
+        column_config: ColumnConfig,
+        metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
+        holdout_dataset=None,
+        training_config=TrainingConfig(),
+        experiment_version_description: str = None,
+    ) -> Supervised:
         """ Start an image multiclassification experiment version training
 
         Args:
@@ -799,17 +811,19 @@ class Project(ApiResource, UniqueResourceMixin):
             description=experiment_version_description,
         )
 
-    def fit_text_similarity(self,
-                            experiment_name: str,
-                            dataset: Dataset,
-                            description_column_config: DescriptionsColumnConfig,
-                            metric: metrics.TextSimilarity = metrics.TextSimilarity.accuracy_at_k,
-                            top_k: int = 10,
-                            lang: TextSimilarityLang = TextSimilarityLang.Auto,
-                            queries_dataset: Dataset = None,
-                            queries_column_config: QueriesColumnConfig = None,
-                            models_parameters: ListModelsParameters = ListModelsParameters(),
-                            experiment_version_description: str = None):
+    def fit_text_similarity(
+        self,
+        experiment_name: str,
+        dataset: Dataset,
+        description_column_config: DescriptionsColumnConfig,
+        metric: metrics.TextSimilarity = metrics.TextSimilarity.accuracy_at_k,
+        top_k: int = 10,
+        lang: TextSimilarityLang = TextSimilarityLang.Auto,
+        queries_dataset: Dataset = None,
+        queries_column_config: QueriesColumnConfig = None,
+        models_parameters: ListModelsParameters = ListModelsParameters(),
+        experiment_version_description: str = None,
+    ) -> TextSimilarity:
         """ Start a text similarity experiment version training with a specific training configuration.
 
         Args:
@@ -848,14 +862,16 @@ class Project(ApiResource, UniqueResourceMixin):
             models_parameters=models_parameters
         )
 
-    def create_external_regression(self,
-                                   experiment_name: str,
-                                   holdout_dataset: Dataset,
-                                   target_column: str,
-                                   external_models: List[Tuple],
-                                   metric: metrics.Regression = metrics.Regression.RMSE,
-                                   dataset: Dataset = None,
-                                   experiment_version_description: str = None) -> ExternalExperimentVersion:
+    def create_external_regression(
+        self,
+        experiment_name: str,
+        holdout_dataset: Dataset,
+        target_column: str,
+        external_models: List[Tuple],
+        metric: metrics.Regression = metrics.Regression.RMSE,
+        dataset: Dataset = None,
+        experiment_version_description: str = None,
+    ) -> ExternalExperimentVersion:
         """ Create a tabular regression experiment version from external models
 
         Args:
@@ -877,7 +893,8 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
-        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular, TypeProblem.Regression)
+        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular,
+                                    TypeProblem.Regression)
         return ExternalExperimentVersion._fit(
             experiment.id,
             holdout_dataset,
@@ -888,14 +905,16 @@ class Project(ApiResource, UniqueResourceMixin):
             description=experiment_version_description,
         )
 
-    def create_external_classification(self,
-                                       experiment_name: str,
-                                       holdout_dataset: Dataset,
-                                       target_column: str,
-                                       external_models: List[Tuple],
-                                       metric: metrics.Regression = metrics.Classification.AUC,
-                                       dataset: Dataset = None,
-                                       experiment_version_description: str = None) -> ExternalExperimentVersion:
+    def create_external_classification(
+        self,
+        experiment_name: str,
+        holdout_dataset: Dataset,
+        target_column: str,
+        external_models: List[Tuple],
+        metric: metrics.Regression = metrics.Classification.AUC,
+        dataset: Dataset = None,
+        experiment_version_description: str = None,
+    ) -> ExternalExperimentVersion:
         """ Create a tabular classification experiment version from external models
 
         Args:
@@ -917,7 +936,8 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
-        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular, TypeProblem.Classification)
+        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular,
+                                    TypeProblem.Classification)
         return ExternalExperimentVersion._fit(
             experiment.id,
             holdout_dataset,
@@ -928,14 +948,16 @@ class Project(ApiResource, UniqueResourceMixin):
             description=experiment_version_description,
         )
 
-    def create_external_multiclassification(self,
-                                            experiment_name: str,
-                                            holdout_dataset: Dataset,
-                                            target_column: str,
-                                            external_models: List[Tuple],
-                                            metric: metrics.Regression = metrics.MultiClassification.log_loss,
-                                            dataset: Dataset = None,
-                                            experiment_version_description: str = None) -> ExternalExperimentVersion:
+    def create_external_multiclassification(
+        self,
+        experiment_name: str,
+        holdout_dataset: Dataset,
+        target_column: str,
+        external_models: List[Tuple],
+        metric: metrics.Regression = metrics.MultiClassification.log_loss,
+        dataset: Dataset = None,
+        experiment_version_description: str = None,
+    ) -> ExternalExperimentVersion:
         """ Create a tabular multiclassification experiment version from external models
 
         Args:
