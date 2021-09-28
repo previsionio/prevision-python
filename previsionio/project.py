@@ -836,6 +836,8 @@ class Project(ApiResource, UniqueResourceMixin):
             metric (:class:`.metrics.TextSimilarity`, optional): Specific metric to use for the experiment
                 (default: ``metrics.TextSimilarity.accuracy_at_k``)
             top_k (int, optional): top_k (default: ``10``)
+            lang (:class:`.TextSimilarityLang`, optional): lang of the training dataset
+                (default: ``.TextSimilarityLang.Auto``)
             queries_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a queries dataset (default: ``None``)
             queries_column_config (:class:`.QueriesColumnConfig`): Queries column configuration
