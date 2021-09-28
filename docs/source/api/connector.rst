@@ -6,6 +6,5 @@ are the same as the ones in the :py:meth:`.Connector._new`.
 
 .. automodule:: previsionio.connector
     :members:
-    :private-members: _new
     :show-inheritance:
     :exclude-members: HDFSConnector

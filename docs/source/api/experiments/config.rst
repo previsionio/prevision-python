@@ -1,7 +1,7 @@
 .. _config_reference:
 
 Experiment configuration
-=====================
+========================
 
 .. automodule:: previsionio.experiment_config
     :members:

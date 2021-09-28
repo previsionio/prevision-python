@@ -1,5 +1,5 @@
 Base experiment version
-====================
+=======================
 
 .. autoclass:: previsionio.experiment_version.BaseExperimentVersion
     :members:

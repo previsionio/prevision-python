@@ -1,5 +1,5 @@
 Supervised experiments
-===================
+======================
 
 .. automodule:: previsionio.supervised
     :members:

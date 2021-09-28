@@ -4,7 +4,7 @@ from previsionio.supervised import Supervised
 from previsionio.timeseries import TimeSeries
 from previsionio.external_models import ExternalExperimentVersion
 from previsionio.experiment_config import DataType, TypeProblem
-from typing import Dict, List, Type, Union
+from typing import Dict, List, Union
 import requests
 
 from .prevision_client import client
@@ -16,11 +16,12 @@ def get_experiment_version_class(
     training_type: TypeProblem,
     data_type: DataType,
     provider: str,
-) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries], Type[ExternalExperimentVersion]]:
+) -> Union[TextSimilarity, Supervised, TimeSeries, ExternalExperimentVersion]:
     """ Get the type of ExperimentVersion class used by this Experiment
 
     Returns:
-        (:type:`.TextSimilarity` | :type:`.Supervised` | :type:`.TimeSeries` | :type:`.ExternalExperimentVersion`):
+        (:class:`.previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` |
+        :class:`.TimeSeries` | :class:`.ExternalExperimentVersion`):
         Type of ExperimentVersion
     """
     if provider == 'external':
@@ -142,11 +143,12 @@ class Experiment(ApiResource):
         return [cls.from_dict(experiment_info) for experiment_info in experiment_infos]
 
     @property
-    def experiment_version_class(self) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries]]:
+    def experiment_version_class(self) -> Union[TextSimilarity, Supervised, TimeSeries, ExternalExperimentVersion]:
         """ Get the type of ExperimentVersion class used by this Experiment
 
         Returns:
-            (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
+            (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` |
+            :class:`.TimeSeries` | :class:`.ExternalExperimentVersion`):
             Type of ExperimentVersion
         """
         return get_experiment_version_class(self.training_type, self.data_type, self.provider)

@@ -1,5 +1,5 @@
 Experiment
-=======
+==========
 
 .. automodule:: previsionio.experiment
     :members:

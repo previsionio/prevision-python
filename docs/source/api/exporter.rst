@@ -5,5 +5,4 @@ Exporter
 
 .. automodule:: previsionio.exporter
     :members:
-    :private-members: _new
     :show-inheritance:

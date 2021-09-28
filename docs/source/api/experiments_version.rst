@@ -1,5 +1,5 @@
 Experiments Version
-================
+===================
 
 Prevision.io's Python SDK enables you to very easily run experiments of different types:
 regression, (binary) classification, multiclassification or timeseries.
