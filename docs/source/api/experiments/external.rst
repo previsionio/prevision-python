@@ -1,6 +1,6 @@
 External experiments
 ======================
 
-.. automodule:: previsionio.external_models
+.. automodule:: previsionio.external_experiment_version
     :members:
     :show-inheritance:
