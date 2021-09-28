@@ -527,7 +527,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
             metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment
-                (default: ``None``)
+                (default: ``metrics.Regression.RMSE``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -570,7 +570,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
             metric (:class:`.metrics.Classification`, optional): Specific metric to use for the experiment
-                (default: ``None``)
+                (default: ``metrics.Classification.AUC``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -613,7 +613,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
             metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the experiment
-                (default: ``None``)
+                (default: ``metrics.MultiClassification.log_loss``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -656,6 +656,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
             metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment
+                (default: ``metrics.Regression.RMSE``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -698,7 +699,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
             metric (:class:`.metrics.Classification`, optional): Specific metric to use for the experiment
-                (default: ``None``)
+                (default: ``metrics.Classification.AUC``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -786,8 +787,8 @@ class Project(ApiResource, UniqueResourceMixin):
                 on each possible column types)
             time_window (:class:`.TimeWindow`): Time configuration
                 (see the documentation of the :class:`.TimeWindow` resource for more details)
-            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment (default:
-                ``metrics.Regression.RMSE``)
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment
+                (default: ``metrics.Regression.RMSE``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
@@ -833,7 +834,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 (see the documentation of the :class:`.DescriptionsColumnConfig` resource for more details
                 on each possible column types)
             metric (:class:`.metrics.TextSimilarity`, optional): Specific metric to use for the experiment
-                (default: ``accuracy_at_k``)
+                (default: ``metrics.TextSimilarity.accuracy_at_k``)
             top_k (int, optional): top_k (default: ``10``)
             queries_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a queries dataset (default: ``None``)
@@ -883,7 +884,8 @@ class Project(ApiResource, UniqueResourceMixin):
                 - name of the model
                 - a path to the model in onnx format
                 - a path to a yaml file containing metadata about the model
-            metric (str, optional): Specific metric to use for the experiment (default: ``rmse``)
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment
+                (default: ``metrics.Regression.RMSE``)
             dataset (:class:`.Dataset`, optional): Reference to the dataset object that
                 has been used to train the model (default: ``None``)
             experiment_version_description (str): Description of the experiment version to create
@@ -926,7 +928,8 @@ class Project(ApiResource, UniqueResourceMixin):
                 - name of the model
                 - a path to the model in onnx format
                 - a path to a yaml file containing metadata about the model
-            metric (str, optional): Specific metric to use for the experiment (default: ``auc``)
+            metric (:class:`.metrics.Classification`, optional): Specific metric to use for the experiment
+                (default: ``metrics.Classification.AUC``)
             dataset (:class:`.Dataset`, optional): Reference to the dataset object that
                 has been used to train the model (default: ``None``)
             experiment_version_description (str): Description of the experiment version to create
@@ -969,7 +972,8 @@ class Project(ApiResource, UniqueResourceMixin):
                 - name of the model
                 - a path to the model in onnx format
                 - a path to a yaml file containing metadata about the model
-            metric (str, optional): Specific metric to use for the experiment (default: ``log_loss``)
+            metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the experiment
+                (default: ``metrics.MultiClassification.log_loss``)
             dataset (:class:`.Dataset`, optional): Reference to the dataset object that
                 has been used to train the model (default: ``None``)
             experiment_version_description (str): Description of the experiment version to create
