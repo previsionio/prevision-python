@@ -19,4 +19,5 @@ and of the experiment configuration options:
    experiments/supervised.rst
    experiments/time_series.rst
    experiments/text_similarity.rst
+   experiments/external.rst
    experiments/config.rst
