@@ -2,8 +2,13 @@ import os
 import uuid
 import pandas as pd
 import pytest
+
 import previsionio as pio
-from previsionio.model import ExternalRegressionModel, ExternalClassificationModel, ExternalMultiClassificationModel
+from previsionio.project import Project
+from previsionio.experiment import Experiment
+from previsionio.external_experiment_version import ExternalExperimentVersion
+from previsionio.model import (Model,
+                               ExternalRegressionModel, ExternalClassificationModel, ExternalMultiClassificationModel)
 
 
 # NOTE: use Unittest classes instead of assert everywhere...
@@ -54,7 +59,7 @@ TEST_PIO_DATASETS = {}
 
 def make_pio_datasets():
     for problem_type, p in TEST_DATASETS_PATH.items():
-        project = pio.Project.from_id(PROJECT_ID)
+        project = Project.from_id(PROJECT_ID)
         dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
                                          dataframe=pd.read_csv(p))
         TEST_PIO_DATASETS[problem_type] = dataset
@@ -62,7 +67,7 @@ def make_pio_datasets():
 
 def setup_module(module):
     project_name = f'project_sdk_TEST_EXTERNAL_MODELS_{TESTING_ID}'
-    project = pio.Project.new(name=project_name,
+    project = Project.new(name=project_name,
                               description="description_sdk_TEST_EXTERNAL_MODELS")
     global PROJECT_ID
     PROJECT_ID = project.id
@@ -70,7 +75,7 @@ def setup_module(module):
 
 
 def teardown_module(module):
-    project = pio.Project.from_id(PROJECT_ID)
+    project = Project.from_id(PROJECT_ID)
     project.delete()
 
 
@@ -82,9 +87,9 @@ def create_external_experiment_version(
     target_column='TARGET',  # because all our utests datasets has a target_column named 'TARGET'
     dataset=None,
     experiment_version_description=None,
-) -> pio.external_models.ExternalExperimentVersion:
+) -> ExternalExperimentVersion:
 
-    project = pio.Project.from_id(project_id)
+    project = Project.from_id(project_id)
     holdout_dataset = TEST_PIO_DATASETS[type_problem]
     experiment_version_creation_method_name = type_problem_2_projet_experiment_version_creation_method_name[type_problem]
     experiment_version_creation_method = getattr(project, experiment_version_creation_method_name)
@@ -108,7 +113,7 @@ def create_external_experiment_version_from_type_problem(type_problem, experimen
     external_model = TEST_EXTERNAL_MODELS[type_problem]
     external_models = [external_model]
     experiment_version_description = f'description_version_{experiment_name}'
-    experiment_version: pio.ExternalExperimentVersion = create_external_experiment_version(
+    experiment_version: ExternalExperimentVersion = create_external_experiment_version(
         PROJECT_ID,
         type_problem,
         experiment_name,
@@ -124,18 +129,18 @@ def test_experiment_version():
     experiment_version = create_external_experiment_version_from_type_problem(type_problem, experiment_name=experiment_name)
 
     experiment_id = experiment_version.experiment_id
-    experiments = pio.Experiment.list(PROJECT_ID)
+    experiments = Experiment.list(PROJECT_ID)
     assert experiment_id in [experiment.id for experiment in experiments]
 
     external_model = TEST_EXTERNAL_MODELS[type_problem]
     external_models = [external_model]
     experiment_version_new = experiment_version.new_version(external_models)
 
-    experiment_versions = pio.Experiment.from_id(experiment_id).versions
+    experiment_versions = Experiment.from_id(experiment_id).versions
     assert experiment_version_new.id in [experiment_version.id for experiment_version in experiment_versions]
 
-    pio.Experiment.from_id(experiment_id).delete()
-    experiments = pio.Experiment.list(PROJECT_ID)
+    Experiment.from_id(experiment_id).delete()
+    experiments = Experiment.list(PROJECT_ID)
     assert experiment_id not in [experiment.id for experiment in experiments]
 
 
@@ -145,7 +150,7 @@ def test_experiment_latest_versions():
     experiment_version = create_external_experiment_version_from_type_problem(type_problem, experiment_name=experiment_name)
 
     experiment_id = experiment_version.experiment_id
-    experiments = pio.Experiment.list(PROJECT_ID)
+    experiments = Experiment.list(PROJECT_ID)
     assert experiment_id in [experiment.id for experiment in experiments]
 
     external_model = TEST_EXTERNAL_MODELS[type_problem]
@@ -155,12 +160,12 @@ def test_experiment_latest_versions():
     assert experiment_version.experiment_id == experiment_version_new.experiment_id
     assert experiment_version.project_id == experiment_version_new.project_id
 
-    latest_version = pio.Experiment.from_id(experiment_version_new.experiment_id).latest_version
+    latest_version = Experiment.from_id(experiment_version_new.experiment_id).latest_version
     assert experiment_version_new._id == latest_version._id
     latest_version.new_version(external_models)
 
-    pio.Experiment.from_id(experiment_version_new.experiment_id).delete()
-    experiments = pio.Experiment.list(PROJECT_ID)
+    Experiment.from_id(experiment_version_new.experiment_id).delete()
+    experiments = Experiment.list(PROJECT_ID)
     assert experiment_id not in [experiment.id for experiment in experiments]
 
 
@@ -173,8 +178,8 @@ def test_stop_running_experiment_version():
     assert experiment_version.running
     experiment_version.stop()
     assert not experiment_version.running
-    pio.Experiment.from_id(experiment_version.experiment_id).delete()
-    experiments = pio.Experiment.list(PROJECT_ID)
+    Experiment.from_id(experiment_version.experiment_id).delete()
+    experiments = Experiment.list(PROJECT_ID)
     assert experiment_id not in [experiment.id for experiment in experiments]
 
 
@@ -188,7 +193,7 @@ def setup_experiment_class(request):
     assert not experiment_version.running
     assert experiment_version.done
     yield type_problem, experiment_version
-    pio.Experiment.from_id(experiment_version.experiment_id).delete()
+    Experiment.from_id(experiment_version.experiment_id).delete()
 
 
 # NOTE: copy paste from test_supervised.py, atm test nothing else than experiment version launching and
@@ -257,7 +262,7 @@ class TestInfos:
         experiment_version.print_info()
         assert isinstance(experiment_version.models, list)
         model = experiment_version.models[0]
-        model_copy = pio.Model.from_id(model._id)
+        model_copy = Model.from_id(model._id)
         """
         assert isinstance(model.hyperparameters, dict)
         assert model_copy.hyperparameters == model.hyperparameters

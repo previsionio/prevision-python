@@ -2,7 +2,7 @@
 from previsionio.text_similarity import TextSimilarity
 from previsionio.supervised import Supervised
 from previsionio.timeseries import TimeSeries
-from previsionio.external_models import ExternalExperimentVersion
+from previsionio.external_experiment_version import ExternalExperimentVersion
 from previsionio.experiment_config import DataType, TypeProblem
 from typing import Dict, List, Union
 import requests

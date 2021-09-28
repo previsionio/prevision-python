@@ -16,7 +16,7 @@ from .dataset import Dataset, DatasetImages
 from .connector import (Connector, SQLConnector, FTPConnector, SFTPConnector,
                         S3Connector, GCPConnector, GCloud)
 from .supervised import Supervised
-from .external_models import ExternalExperimentVersion
+from .external_experiment_version import ExternalExperimentVersion
 from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
                               TextSimilarity, TextSimilarityLang)
