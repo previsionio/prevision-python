@@ -226,10 +226,6 @@ class TextSimilarity(BaseExperimentVersion):
         """
         return cls(**super()._from_id(_id))
 
-    @classmethod
-    def load(cls, pio_file: str) -> 'TextSimilarity':
-        return cls(**super()._load(pio_file))
-
     @staticmethod
     def _build_experiment_version_creation_data(description, dataset, description_column_config, metric,
                                              top_k, lang, queries_dataset, queries_column_config,

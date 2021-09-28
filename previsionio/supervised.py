@@ -47,11 +47,6 @@ class Supervised(ClassicExperimentVersion):
         """
         return cls(**super()._from_id(_id))
 
-    @classmethod
-    def load(cls, pio_file: str) -> 'Supervised':
-        # NOTE: need to create the objects from the ids (ex: dataset_id -> Dataset)
-        return cls(**super()._load(pio_file))
-
     @staticmethod
     def _build_experiment_version_creation_data(description, dataset, column_config, metric,
                                              holdout_dataset, training_config,

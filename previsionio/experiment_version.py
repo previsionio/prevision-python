@@ -416,24 +416,6 @@ class BaseExperimentVersion(ApiResource):
         except KeyError:
             return float('inf')
 
-    def _save_json(self):
-        raise NotImplementedError
-
-    def save(self, directory: str = '.'):
-        version_dict = self._save_json()
-        with open(os.path.join(directory, self.name) + '.pio', 'w') as f:
-            json.dump(version_dict, f)
-
-    @classmethod
-    def _load(cls, pio_file: str) -> Dict:
-        with open(pio_file, 'r') as f:
-            mdl = json.load(f)
-        uc = cls._from_id(mdl['_id'])
-        # TODO check holdout_dataset in experiment_version_params
-        # if mdl['experiment_version_params'].get('holdout_dataset_id'):
-        #     uc.holdout_dataset = mdl['experiment_version_params'].get('holdout_dataset_id')[0]
-        return uc
-
 
 class ClassicExperimentVersion(BaseExperimentVersion):
 

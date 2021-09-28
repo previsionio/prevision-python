@@ -78,10 +78,6 @@ class TimeSeries(ClassicExperimentVersion):
     def from_id(cls, _id: str) -> 'TimeSeries':
         return cls(**super()._from_id(_id))
 
-    @classmethod
-    def load(cls, pio_file: str) -> 'TimeSeries':
-        return cls(**super()._load(pio_file))
-
     @staticmethod
     def _build_experiment_version_creation_data(description, dataset, column_config, time_window, metric,
                                              holdout_dataset, training_config,
