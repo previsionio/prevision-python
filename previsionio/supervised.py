@@ -42,7 +42,7 @@ class Supervised(ClassicExperimentVersion):
                 (default: 1)
 
         Returns:
-            :class:`.Supervised`: Fetched experiment
+            :class:`.Supervised`: Fetched experiment version
 
         Raises:
             PrevisionException: Invalid problem type or any error while fetching
@@ -89,36 +89,38 @@ class Supervised(ClassicExperimentVersion):
         description: str = None,
         parent_version: str = None,
     ) -> 'Supervised':
-        """ Start a supervised experiment training with a specific training configuration
+        """ Start a supervised experiment version training with a specific training configuration
         (on the platform).
 
         Args:
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the dataset
-                object to use for as training dataset
+            experiment_id (str): The id of the experiment from which this version is created
+            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the dataset(s)
+                object(s) to use for as training dataset(s)
             column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str): Specific metric to use for the experiment (default: ``None``)
+            metric (metrics.Enum): Specific metric to use for the experiment version
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`, optional): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
             description (str, optional): The description of this experiment version (default: ``None``)
+            parent_version (str, optional): The parent version of this experiment_version (default: ``None``)
 
 
         Returns:
             :class:`.Supervised`: Newly created supervised experiment version object
         """
         return super()._fit(
-                            experiment_id,
-                            description=description,
-                            parent_version=parent_version,
-                            dataset=dataset,
-                            column_config=column_config,
-                            metric=metric,
-                            holdout_dataset=holdout_dataset,
-                            training_config=training_config,
+            experiment_id,
+            description=description,
+            parent_version=parent_version,
+            dataset=dataset,
+            column_config=column_config,
+            metric=metric,
+            holdout_dataset=holdout_dataset,
+            training_config=training_config,
         )
 
     def new_version(
@@ -130,23 +132,23 @@ class Supervised(ClassicExperimentVersion):
         training_config: TrainingConfig = None,
         description: str = None,
     ) -> 'Supervised':
-        """ Start a supervised experiment training to create a new version of the experiment (on the
-        platform): the training configs are copied from the current version and then overridden
+        """ Start a supervised experiment version training from this version to create a new version of the experiment
+        (on the platform). The training parameters are copied from the current version and then overridden
         for the given parameters.
 
         Args:
-            description (str, optional): additional description of the version
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`, optional): Reference to the dataset
-                object to use for as training dataset
+            dataset (:class:`.Dataset`, :class:`.DatasetImages`, optional): Reference to the dataset(s)
+                object(s) to use for as training dataset(s)
             column_config (:class:`.ColumnConfig`, optional): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (metrics.Enum, optional): Specific metric to use for the experiment (default: ``None``)
+            metric (metrics.Enum, optional): Specific metric to use for the experiment version
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
-            training_config (:class:`.TrainingConfig`): Specific training configuration
+            training_config (:class:`.TrainingConfig`, optional): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
+            description (str, optional): The description of this experiment version (default: ``None``)
         Returns:
             :class:`.Supervised`: Newly created supervised experiment object (new version)
         """
@@ -159,14 +161,14 @@ class Supervised(ClassicExperimentVersion):
             else:
                 dataset = self.dataset
         return Supervised._fit(
-                               self.experiment_id,
-                               dataset,
-                               column_config if column_config is not None else self.column_config,
-                               metric if metric is not None else self.metric,
-                               holdout_dataset=holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
-                               training_config=training_config if training_config is not None else self.training_config,
-                               description=description,
-                               parent_version=self.version,
+            self.experiment_id,
+            dataset,
+            column_config if column_config is not None else self.column_config,
+            metric if metric is not None else self.metric,
+            holdout_dataset=holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
+            training_config=training_config if training_config is not None else self.training_config,
+            description=description,
+            parent_version=self.version,
         )
 
     def _save_json(self):
