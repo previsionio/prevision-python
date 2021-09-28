@@ -4,7 +4,11 @@
 Getting started
 ***************
 
-The following document is a step by step usage example of the `Prevision.io <https://prevision.io/>`_ Python SDK. The full documentation of the software is available `here <https://previsionio.readthedocs.io/fr/latest/>`_.
+The Prevision.io Python SDK allows you to interact with Prevision.io `APIs <https://cloud.prevision.io/api/documentation/>`_ directly from a python environment.
+
+The following document is a step by step usage example of the Prevision.io Python SDK. If your looking for the full documentation of the software you will find it `here <https://previsionio.readthedocs.io/fr/latest/>`_.
+
+Don't already have a Prevision.io account established? Head over to `this link <https://previsionio.readthedocs.io/fr/latest/Introduction/getting-started.html>`_, follow the instructions and come back to this page!
 
 Pre-requisites
 ==============
@@ -191,7 +195,7 @@ If you created or uploaded a dataset in your workspace and want to grab it local
     out_path = dataset.download(download_path="your/local/path")
 
 Regression/Classification/Multi-classification experiments
-=======================================================
+==========================================================
 
 Configuring the dataset
 -----------------------
@@ -293,7 +297,7 @@ Then you have to options:
     prediction_df = experiment_version.predict(test_dataframe)
 
 Time Series experiments
-====================
+=======================
 
 A time series experiment is very similar to a regression experiment. The main differences rely in the dataset configuration, and the specification of a time window.
 
@@ -360,7 +364,7 @@ Making predictions
 The prediction workflow is the same as for a classic experiment (detailed in :ref:`making prediction`).
 
 Text Similarity experiments
-========================
+===========================
 
 A Text Similarity experiment matches the most similar texts between a dataset containing descriptions (can be seen as a catalog) and a dataset containing queries. It first converts texts to numerical vectors (text embeddings) and then performs a similarity search to retrieve the most similar documents to a query.
 
@@ -468,7 +472,7 @@ The only differences are the specific parameters ``top_k`` and ``queries_dataset
 To get a full documentation check the api reference of :class:`.TextSimilarityModel` prediction methods.
 
 Deployed experiments
-=================
+====================
 
 Prevision.io's SDK allows to deploy an experiment's models. Deployed models are made available for unit and bulk prediction through apis. Then you can follow the usage of a model and the evolution of its input features distribution.
 
@@ -573,7 +577,7 @@ Additional util methods
 =======================
 
 Retrieving an experiment version
----------------------
+--------------------------------
 
 Since an experiment version can be somewhat long to train, it can be useful to separate the training, monitoring and prediction phases.
 
