@@ -86,8 +86,7 @@ class Supervised(ClassicExperimentVersion):
         description: str = None,
         parent_version: str = None,
     ) -> 'Supervised':
-        """ Start a supervised experiment version training with a specific training configuration
-        (on the platform).
+        """ Start a supervised experiment version training with a specific configuration (on the platform).
 
         Args:
             experiment_id (str): The id of the experiment from which this version is created
