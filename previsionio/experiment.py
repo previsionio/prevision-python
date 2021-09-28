@@ -155,7 +155,7 @@ class Experiment(ApiResource):
 
     @property
     def latest_version(self) -> Union[TextSimilarity, Supervised, TimeSeries]:
-        """Get the latest version of this use case.
+        """Get the latest version of this experiment version.
 
         Returns:
             (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
@@ -178,7 +178,7 @@ class Experiment(ApiResource):
 
     @property
     def versions(self) -> List[Union[TextSimilarity, Supervised, TimeSeries]]:
-        """Get the list of all versions for the current use case.
+        """Get the list of all versions for the current experiment version.
 
         Returns:
             list(:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):

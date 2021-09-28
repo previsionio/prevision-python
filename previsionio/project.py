@@ -237,7 +237,7 @@ class Project(ApiResource, UniqueResourceMixin):
 
         .. note::
 
-            To start a new use case on a dataset, it has to be already
+            To start a new experiment version on a dataset, it has to be already
             registred in your workspace.
 
         Args:
@@ -285,7 +285,7 @@ class Project(ApiResource, UniqueResourceMixin):
 
         .. note::
 
-            To start a new use case on a dataset image, it has to be already
+            To start a new experiment version on a dataset image, it has to be already
             registred in your workspace.
 
         Args:

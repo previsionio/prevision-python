@@ -162,7 +162,7 @@ class BaseExperimentVersion(ApiResource):
 
     @property
     def models(self):
-        """Get the list of models generated for the current use case. Only the models that
+        """Get the list of models generated for the current experiment version. Only the models that
         are done training are retrieved.
 
         Returns:

@@ -572,10 +572,10 @@ To get a full documentation check the api reference :ref:`export_reference`.
 Additional util methods
 =======================
 
-Retrieving a use case
+Retrieving an experiment version
 ---------------------
 
-Since a use case can be somewhat long to train, it can be useful to separate the training, monitoring and prediction phases.
+Since an experiment version can be somewhat long to train, it can be useful to separate the training, monitoring and prediction phases.
 
 To do that, we need to be able to recreate an experiment object in python from its name:
 
