@@ -3,6 +3,7 @@ from __future__ import print_function
 import os
 from typing import Dict, List, Tuple, Union
 import requests
+from functools import lru_cache
 import pandas as pd
 
 from . import metrics
@@ -191,6 +192,21 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
             self.__add_external_model(external_model)
 
     @property
+    def train_dataset(self):
+        raise NotImplementedError
+
+    @property
+    @lru_cache()
+    def holdout_dataset(self):
+        """ Get the :class:`.Dataset` object corresponding to the holdout dataset
+        of the experiment.
+
+        Returns:
+            :class:`.Dataset`: Associated holdout dataset
+        """
+        return Dataset.from_id(_id=self.holdout_dataset.id)
+
+    @property
     def best_model(self):
         """ Get the model with the best predictive performance over all models, where the best performance
         corresponds to a minimal loss.
@@ -200,6 +216,18 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
             ``None`` if no model matched the search filter.
         """
         return super().best_model
+
+    @property
+    def advanced_models_list(self):
+        raise NotImplementedError
+
+    @property
+    def normal_models_list(self):
+        raise NotImplementedError
+
+    @property
+    def simple_models_list(self):
+        raise NotImplementedError
 
     @property
     def dropped_features(self):
@@ -217,21 +245,7 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
         raise NotImplementedError
 
     def predict_single(self, data) -> Dict:
-        """ Get a prediction on a single instance using the best model of the experiment.
-
-        Args:
-
-        Returns:
-            dict: Dictionary containing the prediction.
-
-            .. note::
-
-                The format of the predictions dictionary depends on the problem type
-                (regression, classification...)
-        """
-        return super().predict_single(data,
-                                      confidence=False,
-                                      explain=False)
+        raise NotImplementedError
 
     def predict_from_dataset(self,
                              dataset,
