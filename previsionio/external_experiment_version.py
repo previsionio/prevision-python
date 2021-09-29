@@ -75,15 +75,38 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
         return data
 
     @classmethod
-    def _fit(cls,
-             experiment_id: str,
-             holdout_dataset: Dataset,
-             target_column: str,
-             external_models: List[Tuple],
-             metric: metrics.Enum,
-             dataset: Dataset = None,
-             description: str = None,
-             parent_version: str = None) -> 'ExternalExperimentVersion':
+    def _fit(
+        cls,
+        experiment_id: str,
+        holdout_dataset: Dataset,
+        target_column: str,
+        external_models: List[Tuple],
+        metric: metrics.Enum,
+        dataset: Dataset = None,
+        description: str = None,
+        parent_version: str = None,
+    ) -> 'ExternalExperimentVersion':
+        """ Create an external experiment version with a specific configuration (on the platform).
+
+        Args:
+            experiment_id (str): The id of the experiment from which this version is created
+            holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
+                Each tuple contains 3 items describing an external model as follows:
+                    1) The name you want to give to the model
+                    2) The path to the model in onnx format
+                    3) The path to a yaml file containing metadata about the model
+            metric (metrics.Enum): Specific metric to use for the experiment version
+            dataset (:class:`.Dataset`, optional): Reference to the dataset object that
+                has been used to train the model (default: ``None``)
+            description (str, optional): The description of this experiment version (default: ``None``)
+            parent_version (str, optional): The parent version of this experiment_version (default: ``None``)
+
+
+        Returns:
+            :class:`.ExternalExperimentVersion`: Newly created external experiment version object
+        """
         return super()._fit(
             experiment_id,
             description=description,
@@ -95,13 +118,36 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
             dataset=dataset,
         )
 
-    def new_version(self,
-                    external_models: List[Tuple],
-                    holdout_dataset: Dataset = None,
-                    target_column: str = None,
-                    metric: metrics.Enum = None,
-                    dataset: Dataset = None,
-                    description: str = None) -> 'ExternalExperimentVersion':
+    def new_version(
+        self,
+        external_models: List[Tuple],
+        holdout_dataset: Dataset = None,
+        target_column: str = None,
+        metric: metrics.Enum = None,
+        dataset: Dataset = None,
+        description: str = None,
+    ) -> 'ExternalExperimentVersion':
+        """
+        Create an new external experiment version from this version (on the platform).
+        The external_models parameter is mandatory.
+        The other parameters are copied from the current version and then overridden for those provided.
+
+        Args:
+            external_models (list(tuple)): The external models to add in the experiment version to create.
+                Each tuple contains 3 items describing an external model as follows:
+                    1) The name you want to give to the model
+                    2) The path to the model in onnx format
+                    3) The path to a yaml file containing metadata about the model
+            holdout_dataset (:class:`.Dataset`, optional): Reference to the holdout dataset object
+                to use for as holdout dataset
+            target_column (str, optional): The name of the target column for this experiment version
+            metric (metrics.Enum, optional): Specific metric to use for the experiment version
+            dataset (:class:`.Dataset`, optional): Reference to the dataset object that
+                has been used to train the model (default: ``None``)
+            description (str, optional): The description of this experiment version (default: ``None``)
+        Returns:
+            :class:`.ExternalExperimentVersion`: Newly created external experiment object (new version)
+        """
         return ExternalExperimentVersion._fit(
             self.experiment_id,
             holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
