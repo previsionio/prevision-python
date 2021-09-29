@@ -639,7 +639,8 @@ class Project(ApiResource, UniqueResourceMixin):
     def fit_image_regression(
         self,
         experiment_name: str,
-        dataset: Tuple[Dataset, DatasetImages],
+        dataset: Dataset,
+        dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.Regression = metrics.Regression.RMSE,
         holdout_dataset=None,
@@ -650,8 +651,10 @@ class Project(ApiResource, UniqueResourceMixin):
 
         Args:
             experiment_name (str): Name of the experiment to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the datasets
-                objects to use for as training datasets
+            dataset (:class:`.Dataset`): Reference to the dataset
+                object to use for as training dataset
+            dataset_images (:class:`.DatasetImages`): Reference to the images dataset
+                object to use for as training dataset
             column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
@@ -669,6 +672,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
                                     TypeProblem.Regression)
+        dataset = (dataset, dataset_images)
         return Supervised._fit(
             experiment.id,
             dataset,
@@ -682,7 +686,8 @@ class Project(ApiResource, UniqueResourceMixin):
     def fit_image_classification(
         self,
         experiment_name: str,
-        dataset: Tuple[Dataset, DatasetImages],
+        dataset: Dataset,
+        dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.Classification = metrics.Classification.AUC,
         holdout_dataset=None,
@@ -693,8 +698,10 @@ class Project(ApiResource, UniqueResourceMixin):
 
         Args:
             experiment_name (str): Name of the experiment to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the datasets
-                objects to use for as training datasets
+            dataset (:class:`.Dataset`): Reference to the dataset
+                object to use for as training dataset
+            dataset_images (:class:`.DatasetImages`): Reference to the images dataset
+                object to use for as training dataset
             column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
@@ -712,6 +719,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
                                     TypeProblem.Classification)
+        dataset = (dataset, dataset_images)
         return Supervised._fit(
             experiment.id,
             dataset,
@@ -725,7 +733,8 @@ class Project(ApiResource, UniqueResourceMixin):
     def fit_image_multiclassification(
         self,
         experiment_name: str,
-        dataset: Tuple[Dataset, DatasetImages],
+        dataset: Dataset,
+        dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
         holdout_dataset=None,
@@ -736,8 +745,10 @@ class Project(ApiResource, UniqueResourceMixin):
 
         Args:
             experiment_name (str): Name of the experiment to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the datasets
-                objects to use for as training datasets
+            dataset (:class:`.Dataset`): Reference to the dataset
+                object to use for as training dataset
+            dataset_images (:class:`.DatasetImages`): Reference to the images dataset
+                object to use for as training dataset
             column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
@@ -755,6 +766,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
                                     TypeProblem.MultiClassification)
+        dataset = (dataset, dataset_images)
         return Supervised._fit(
             experiment.id,
             dataset,

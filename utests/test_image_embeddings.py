@@ -54,10 +54,16 @@ def teardown_module(module):
 
 def test_run_image_embeddings():
     uc_name = TESTING_ID + '_img_embeds'
-    datasets = (test_datasets['csv'], test_datasets['zip'])
+    dataset = test_datasets['csv']
+    dataset_images = test_datasets['zip']
     project = pio.Project.from_id(PROJECT_ID)
-    experiment_version = project.fit_image_classification(uc_name, dataset=datasets, column_config=col_config,
-                                                       metric=pio.metrics.Classification.AUC,
-                                                       training_config=uc_config)
+    experiment_version = project.fit_image_classification(
+        uc_name,
+        dataset,
+        dataset_images,
+        column_config=col_config,
+        metric=pio.metrics.Classification.AUC,
+        training_config=uc_config,
+    )
     experiment_version.wait_until(lambda experimentv: len(experimentv.models) > 0)
     pio.Experiment.from_id(experiment_version.experiment_id).delete()
