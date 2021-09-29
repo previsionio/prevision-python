@@ -186,7 +186,7 @@ class BaseExperimentVersion(ApiResource):
         Returns:
             :class:`.Dataset`: Associated training dataset
         """
-        return Dataset.from_id(_id=self.dataset_id)
+        return Dataset.from_id(_id=self.dataset.id)
 
     @property
     @lru_cache()
