@@ -471,6 +471,57 @@ The only differences are the specific parameters ``top_k`` and ``queries_dataset
 
 To get a full documentation check the api reference of :class:`.TextSimilarityModel` prediction methods.
 
+
+External Regression/Classification/MultiClassification experiments
+==================================================================
+
+Preparing your external models
+------------------------------
+
+Before to create an external experiment, you have to create a list of tuple containing at least one item.
+
+Each tuple contains 3 items describing an external model as follows:
+    1) The name you want to give to the model
+    2) The path to the model in onnx format
+    3) The path to a yaml file containing metadata about the model
+
+.. code-block:: python
+
+    external_models = [
+        ('my_first_external_model', 'model_1.onnx', 'model_1.yaml'),
+        ('my_second_external_model', 'model_2.onnx', 'model_2.yaml'),
+    ]
+
+Experiment creation
+-------------------
+
+You can now create a new experiment based on:
+
+ - an experiment name
+ - an holdout dataset
+ - a target column name
+ - a list of tuple containing external models
+ - (optional) a metric type
+ - (optional) the experiment version description
+
+.. code-block:: python
+
+    experiment_version = project.create_external_regression(
+        'my_experiment_name',
+        holdout_dataset,
+        'target_column',
+        external_models,
+        metric=pio.metrics.Regression.RMSE,
+        'my_experiment_version_description',
+    )
+
+To get an exhaustive list of the available metrics go to the api reference :ref:`metrics_reference`.
+
+Making predictions
+------------------
+
+The prediction workflow is the same as for classic experiment (detailed in :ref:`making prediction`).
+
 Deployed experiments
 ====================
 
