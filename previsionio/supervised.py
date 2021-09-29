@@ -27,9 +27,9 @@ class Supervised(ClassicExperimentVersion):
     def _update_from_dict(self, **experiment_version_info):
         super()._update_from_dict(**experiment_version_info)
         if 'folder_dataset_id' in experiment_version_info:
-            self.folder_dataset: DatasetImages = DatasetImages.from_id(experiment_version_info['folder_dataset_id'])
+            self.dataset_images: DatasetImages = DatasetImages.from_id(experiment_version_info['folder_dataset_id'])
         else:
-            self.folder_dataset = None
+            self.dataset_images = None
         self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
 
     @classmethod
@@ -116,7 +116,8 @@ class Supervised(ClassicExperimentVersion):
 
     def new_version(
         self,
-        dataset: Union[Dataset, Tuple[Dataset, DatasetImages]] = None,
+        dataset: Dataset = None,
+        dataset_images: DatasetImages = None,
         column_config: ColumnConfig = None,
         metric: metrics.Enum = None,
         holdout_dataset: Dataset = None,
@@ -128,8 +129,10 @@ class Supervised(ClassicExperimentVersion):
         for the given parameters.
 
         Args:
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`, optional): Reference to the dataset(s)
-                object(s) to use for as training dataset(s)
+            dataset (:class:`.Dataset`): Reference to the dataset
+                object to use for as training dataset
+            dataset_images (:class:`.DatasetImages`): Reference to the images dataset
+                object to use for as training dataset
             column_config (:class:`.ColumnConfig`, optional): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
@@ -143,14 +146,9 @@ class Supervised(ClassicExperimentVersion):
         Returns:
             :class:`.Supervised`: Newly created supervised experiment object (new version)
         """
-        # NOTE: we should be able to overridde only one of the dataset...
-        if dataset is not None:
-            dataset = dataset
-        else:
-            if self.folder_dataset is not None:
-                dataset = (self.dataset, self.folder_dataset)
-            else:
-                dataset = self.dataset
+        dataset = dataset if dataset is not None else self.dataset
+        dataset_images = dataset_images if dataset_images is not None else self.dataset_images
+        dataset = (dataset, dataset_images)
         return Supervised._fit(
             self.experiment_id,
             dataset,
