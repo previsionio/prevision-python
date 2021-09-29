@@ -423,6 +423,9 @@ class MultiClassificationModel(ClassicModel):
         name (str, optional): Name of the model (default: ``None``)
     """
 
+    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
+        raise NotImplementedError
+
 
 # NOTE: we inherit the external models classes from classic model classes but with 2 method not implemented
 
@@ -446,6 +449,9 @@ class ExternalClassificationModel(ClassificationModel):
     def cross_validation(self) -> pd.DataFrame:
         raise NotImplementedError
 
+    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
+        raise NotImplementedError
+
 
 class ExternalRegressionModel(RegressionModel):
     """ A model object for an external regression experiment, i.e. an experiment where the target is numerical.
@@ -464,6 +470,9 @@ class ExternalRegressionModel(RegressionModel):
 
     @property
     def cross_validation(self) -> pd.DataFrame:
+        raise NotImplementedError
+
+    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
         raise NotImplementedError
 
 
@@ -485,6 +494,9 @@ class ExternalMultiClassificationModel(MultiClassificationModel):
 
     @property
     def cross_validation(self) -> pd.DataFrame:
+        raise NotImplementedError
+
+    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
         raise NotImplementedError
 
 
