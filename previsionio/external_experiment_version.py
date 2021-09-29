@@ -128,7 +128,7 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
         description: str = None,
     ) -> 'ExternalExperimentVersion':
         """
-        Create an new external experiment version from this version (on the platform).
+        Create a new external experiment version from this version (on the platform).
         The external_models parameter is mandatory.
         The other parameters are copied from the current version and then overridden for those provided.
 
