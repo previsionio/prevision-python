@@ -99,10 +99,13 @@ class BaseExperimentVersion(ApiResource):
         return self
 
     @classmethod
-    def _fit(cls, experiment_id: str,
-             description: str = None,
-             parent_version: str = None,
-             **kwargs) -> 'BaseExperimentVersion':
+    def _fit(
+        cls,
+        experiment_id: str,
+        description: str = None,
+        parent_version: str = None,
+        **kwargs,
+    ) -> 'BaseExperimentVersion':
 
         experiment_version_creation_data = cls._build_experiment_version_creation_data(
             description,
