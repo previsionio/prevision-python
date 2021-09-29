@@ -159,15 +159,3 @@ class Supervised(ClassicExperimentVersion):
             description=description,
             parent_version=self.version,
         )
-
-    def _save_json(self):
-        json_dict = {
-            '_id': self.id,
-            'experiment_version_params': self._status.get('experiment_version_params', {}),
-            'dataset_id': self._status['dataset_id'],
-            'training_type': self.training_type.value,
-            'data_type': self.data_type.value,
-        }
-        if self.holdout_dataset_id:
-            json_dict['holdout_id'] = self.holdout_dataset_id
-        return json_dict
