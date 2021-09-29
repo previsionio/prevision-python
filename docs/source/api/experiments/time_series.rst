@@ -6,3 +6,4 @@ Time Series experiments
 .. automodule:: previsionio.timeseries
     :members:
     :show-inheritance:
+    :inherited-members:
