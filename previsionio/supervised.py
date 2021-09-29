@@ -124,9 +124,9 @@ class Supervised(ClassicExperimentVersion):
         training_config: TrainingConfig = None,
         description: str = None,
     ) -> 'Supervised':
-        """ Start a supervised experiment version training from this version to create a new version of the experiment
-        (on the platform). The training parameters are copied from the current version and then overridden
-        for the given parameters.
+        """
+        Start a new supervised experiment version training from this version (on the platform).
+        The training parameters are copied from the current version and then overridden for those provided.
 
         Args:
             dataset (:class:`.Dataset`): Reference to the dataset

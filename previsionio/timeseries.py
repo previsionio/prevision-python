@@ -156,9 +156,9 @@ class TimeSeries(ClassicExperimentVersion):
         training_config: TrainingConfig = None,
         description: str = None,
     ) -> 'TimeSeries':
-        """ Start a timeseries experiment version training from this version to create a new version of the experiment
-            (on the platform). The training parameters are copied from the current version and then overridden
-            for the given parameters.
+        """
+        Start a new timeseries experiment version training from this version (on the platform).
+        The training parameters are copied from the current version and then overridden for those provided.
 
         Args:
             dataset (:class:`.Dataset`, optional): Reference to the dataset
