@@ -68,7 +68,6 @@ class TimeSeries(ClassicExperimentVersion):
 
     def __init__(self, **experiment_version_info):
         super().__init__(**experiment_version_info)
-        self._update_from_dict(**experiment_version_info)
 
     def _update_from_dict(self, **experiment_version_info):
         super()._update_from_dict(**experiment_version_info)
