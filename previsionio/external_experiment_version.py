@@ -191,6 +191,17 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
             self.__add_external_model(external_model)
 
     @property
+    def best_model(self):
+        """ Get the model with the best predictive performance over all models, where the best performance
+        corresponds to a minimal loss.
+
+        Returns:
+            (:class:`.Model`, None): Model with the best performance in the experiment, or
+            ``None`` if no model matched the search filter.
+        """
+        return super().best_model
+
+    @property
     def dropped_features(self):
         raise NotImplementedError
 
