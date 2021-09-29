@@ -892,12 +892,12 @@ class Project(ApiResource, UniqueResourceMixin):
         Args:
             experiment_name (str): Name of the experiment to create
             holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
-            target_column: The name of the target column for this experiment version
-            external_models (list(tuple)): the external models to add in the experiment version to create
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
                 Each tuple contains 3 items describing an external model as follows:
-                - name of the model
-                - a path to the model in onnx format
-                - a path to a yaml file containing metadata about the model
+                    1) The name you want to give to the model
+                    2) The path to the model in onnx format
+                    3) The path to a yaml file containing metadata about the model
             metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment
                 (default: ``metrics.Regression.RMSE``)
             dataset (:class:`.Dataset`, optional): Reference to the dataset object that
@@ -936,12 +936,12 @@ class Project(ApiResource, UniqueResourceMixin):
         Args:
             experiment_name (str): Name of the experiment to create
             holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
-            target_column: The name of the target column for this experiment version
-            external_models (list(tuple)): the external models to add in the experiment version to create
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
                 Each tuple contains 3 items describing an external model as follows:
-                - name of the model
-                - a path to the model in onnx format
-                - a path to a yaml file containing metadata about the model
+                    1) The name you want to give to the model
+                    2) The path to the model in onnx format
+                    3) The path to a yaml file containing metadata about the model
             metric (:class:`.metrics.Classification`, optional): Specific metric to use for the experiment
                 (default: ``metrics.Classification.AUC``)
             dataset (:class:`.Dataset`, optional): Reference to the dataset object that
@@ -980,12 +980,12 @@ class Project(ApiResource, UniqueResourceMixin):
         Args:
             experiment_name (str): Name of the experiment to create
             holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
-            target_column: The name of the target column for this experiment version
-            external_models (list(tuple)): the external models to add in the experiment version to create
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
                 Each tuple contains 3 items describing an external model as follows:
-                - name of the model
-                - a path to the model in onnx format
-                - a path to a yaml file containing metadata about the model
+                    1) The name you want to give to the model
+                    2) The path to the model in onnx format
+                    3) The path to a yaml file containing metadata about the model
             metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the experiment
                 (default: ``metrics.MultiClassification.log_loss``)
             dataset (:class:`.Dataset`, optional): Reference to the dataset object that
