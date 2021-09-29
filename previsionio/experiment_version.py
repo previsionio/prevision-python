@@ -7,7 +7,6 @@ import requests
 import time
 import datetime
 import previsionio as pio
-import os
 from functools import lru_cache
 from dateutil import parser
 
