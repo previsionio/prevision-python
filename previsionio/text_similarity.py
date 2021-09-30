@@ -44,7 +44,7 @@ class Preprocessing(object):
     def __init__(self,
                  word_stemming: YesOrNo = YesOrNo.Yes,
                  ignore_stop_word: YesOrNoOrAuto = YesOrNoOrAuto.Auto,
-                 ignore_punctuation: YesOrNo = YesOrNo.Yes):
+                 ignore_punctuation: YesOrNo = YesOrNo.No):
         self.word_stemming = word_stemming
         self.ignore_stop_word = ignore_stop_word
         self.ignore_punctuation = ignore_punctuation
@@ -104,11 +104,9 @@ class ListModelsParameters(ExperimentConfig):
                                                     TextSimilarityModels.ClusterPruning])
             models_parameters_2 = ModelsParameters(ModelEmbedding.Transformer,
                                                    Preprocessing(),
-                                                   # [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
                                                    [TextSimilarityModels.BruteForce])
             models_parameters_3 = ModelsParameters(ModelEmbedding.TransformerFineTuned,
                                                    Preprocessing(),
-                                                   #" [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
                                                    [TextSimilarityModels.BruteForce])
             models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
         self.models_parameters = []
