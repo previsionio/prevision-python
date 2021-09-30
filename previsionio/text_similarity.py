@@ -183,8 +183,7 @@ class TextSimilarity(BaseExperimentVersion):
 
         experiment_version_params = experiment_version_info['experiment_version_params']
 
-        dataset_id: str = experiment_version_info['dataset_id']
-        self.dataset: Dataset = Dataset.from_id(dataset_id)
+        self.dataset_id: str = experiment_version_info['dataset_id']
         self.description_column_config = DescriptionsColumnConfig(
             content_column=experiment_version_params.get('content_column'),
             id_column=experiment_version_params.get('id_column'))
@@ -195,8 +194,7 @@ class TextSimilarity(BaseExperimentVersion):
                                                                                          TextSimilarityLang.Auto))
 
         if experiment_version_info.get('queries_dataset_id'):
-            queries_dataset_id = experiment_version_info['queries_dataset_id']
-            self.queries_dataset: Dataset = Dataset.from_id(queries_dataset_id)
+            self.queries_dataset_id: str = experiment_version_info['queries_dataset_id']
             content_column = experiment_version_params.get('queries_dataset_content_column')
             matching_id = experiment_version_params.get('queries_dataset_matching_id_description_column')
             queries_dataset_id_column = experiment_version_params.get('queries_dataset_id_column', None)
@@ -204,11 +202,28 @@ class TextSimilarity(BaseExperimentVersion):
                                                              queries_dataset_matching_id_description_column=matching_id,
                                                              queries_dataset_id_column=queries_dataset_id_column)
         else:
-            self.queries_dataset = None
             self.queries_column_config = None
 
         models_parameters = experiment_version_params.get('models_params')
         self.models_parameters = ListModelsParameters(models_parameters=models_parameters)
+
+    @property
+    def dataset(self) -> Dataset:
+        """ Get the :class:`.Dataset` object corresponding to the training dataset of this experiment version.
+
+        Returns:
+            :class:`.Dataset`: Associated training dataset
+        """
+        return Dataset.from_id(self.dataset_id)
+
+    @property
+    def queries_dataset(self) -> Union[Dataset, None]:
+        """ Get the :class:`.Dataset` object corresponding to the queries dataset of this experiment version.
+
+        Returns:
+            :class:`.Dataset`: Associated queries dataset
+        """
+        return Dataset.from_id(self.queries_dataset_id) if self.queries_dataset_id is not None else None
 
     @classmethod
     def from_id(cls, _id: str) -> 'TextSimilarity':

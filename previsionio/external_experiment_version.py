@@ -41,20 +41,36 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
 
         experiment_version_params = experiment_version_info['experiment_version_params']
 
-        holdout_dataset_id: str = experiment_version_info['holdout_dataset_id']
-        self.holdout_dataset: Dataset = Dataset.from_id(holdout_dataset_id)
+        self.holdout_dataset_id: str = experiment_version_info['holdout_dataset_id']
         self.target_column = experiment_version_params['target_column']
 
         # this is dict, maybe we should parse it in a tuple like in creation
         self.external_models = experiment_version_info.get('external_models')
 
         self.metric = experiment_version_info.get('metric')
-        dataset_id: Union[str, None] = experiment_version_info.get('dataset_id')
-        self.dataset: Union[str, None] = Dataset.from_id(dataset_id) if dataset_id is not None else None
+        self.dataset_id: Union[str, None] = experiment_version_info.get('dataset_id')
 
         self.metric: str = experiment_version_params['metric']
 
         self.model_class = self.__get_model_class()
+
+    @property
+    def holdout_dataset(self) -> Dataset:
+        """ Get the :class:`.Dataset` object corresponding to the holdout dataset of this experiment version.
+
+        Returns:
+            :class:`.Dataset`: Associated holdout dataset
+        """
+        return Dataset.from_id(self.holdout_dataset_id)
+
+    @property
+    def dataset(self) -> Union[Dataset, None]:
+        """ Get the :class:`.Dataset` object corresponding to the training dataset of this experiment version.
+
+        Returns:
+            :class:`.Dataset`: Associated training dataset
+        """
+        return Dataset.from_id(self.dataset_id) if self.dataset_id is not None else None
 
     def _update_draft(self, external_models, **kwargs):
         self.__add_external_models(external_models)
@@ -196,17 +212,6 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
     @property
     def train_dataset(self):
         raise NotImplementedError
-
-    @property
-    @lru_cache()
-    def holdout_dataset(self):
-        """ Get the :class:`.Dataset` object corresponding to the holdout dataset
-        of the experiment.
-
-        Returns:
-            :class:`.Dataset`: Associated holdout dataset
-        """
-        return Dataset.from_id(_id=self.holdout_dataset.id)
 
     @property
     def best_model(self):

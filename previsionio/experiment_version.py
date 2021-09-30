@@ -186,7 +186,7 @@ class BaseExperimentVersion(ApiResource):
         Returns:
             :class:`.Dataset`: Associated training dataset
         """
-        return Dataset.from_id(_id=self.dataset.id)
+        return self.dataset
 
     @property
     @lru_cache()
@@ -430,8 +430,7 @@ class ClassicExperimentVersion(BaseExperimentVersion):
     def _update_from_dict(self, **experiment_version_info):
         super()._update_from_dict(**experiment_version_info)
 
-        dataset_id: str = experiment_version_info['dataset_id']
-        self.dataset: Dataset = Dataset.from_id(dataset_id)
+        self.dataset_id: str = experiment_version_info['dataset_id']
 
         experiment_params = experiment_version_info['experiment_version_params']
         self.column_config = ColumnConfig(target_column=experiment_params.get('target_column'),
@@ -445,11 +444,7 @@ class ClassicExperimentVersion(BaseExperimentVersion):
 
         self.metric: str = experiment_params['metric']
 
-        holdout_dataset_id: Union[str, None] = experiment_version_info.get('holdout_dataset_id', None)
-        if holdout_dataset_id is not None:
-            self.holdout_dataset: Dataset = Dataset.from_id(holdout_dataset_id)
-        else:
-            self.holdout_dataset = None
+        self.holdout_dataset_id: Union[str, None] = experiment_version_info.get('holdout_dataset_id', None)
 
         self.training_config = TrainingConfig(
             profile=Profile(experiment_params.get('profile')),
@@ -459,6 +454,24 @@ class ClassicExperimentVersion(BaseExperimentVersion):
             simple_models=[SimpleModel(f) for f in experiment_params.get('simple_models', [])],
             feature_time_seconds=experiment_params.get('features_selection_time', 3600),
             feature_number_kept=experiment_params.get('features_selection_count', None))
+
+    @property
+    def dataset(self) -> Dataset:
+        """ Get the :class:`.Dataset` object corresponding to the training dataset of this experiment version.
+
+        Returns:
+            :class:`.Dataset`: Associated training dataset
+        """
+        return Dataset.from_id(self.dataset_id)
+
+    @property
+    def holdout_dataset(self) -> Union[Dataset, None]:
+        """ Get the :class:`.Dataset` object corresponding to the holdout dataset of this experiment version.
+
+        Returns:
+            :class:`.Dataset`: Associated holdout dataset
+        """
+        return Dataset.from_id(self.holdout_dataset_id) if self.holdout_dataset_id is not None else None
 
     @property
     def advanced_models_list(self) -> List[AdvancedModel]:

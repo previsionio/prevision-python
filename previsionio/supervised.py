@@ -17,20 +17,28 @@ MODEL_CLASS_DICT = {
 
 class Supervised(ClassicExperimentVersion):
 
-    """ A supervised experiment version, for tabular data """
-
-    data_type = DataType.Tabular
+    """ A supervised experiment version """
 
     def __init__(self, **experiment_version_info):
         super().__init__(**experiment_version_info)
 
     def _update_from_dict(self, **experiment_version_info):
         super()._update_from_dict(**experiment_version_info)
-        if 'folder_dataset_id' in experiment_version_info:
-            self.dataset_images: DatasetImages = DatasetImages.from_id(experiment_version_info['folder_dataset_id'])
-        else:
-            self.dataset_images = None
+        if self.data_type == DataType.Images:
+            self.dataset_images_id: str = experiment_version_info['folder_dataset_id']
         self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
+
+    @property
+    def dataset_images(self) -> DatasetImages:
+        """ Get the :class:`.DatasetImages` object corresponding to the images training dataset of this
+        experiment version. Available only if data_type of this experiment_version is images
+
+        Returns:
+            :class:`.DatasetImages`: Associated images training dataset
+        """
+        if self.data_type != DataType.Images:
+            raise RuntimeError(f'dataset_images not available when data type is not {DataType.Images.value}')
+        return DatasetImages.from_id(self.dataset_images_id)
 
     @classmethod
     def from_id(cls, _id: str) -> 'Supervised':
@@ -150,8 +158,9 @@ class Supervised(ClassicExperimentVersion):
             :class:`.Supervised`: Newly created supervised experiment object (new version)
         """
         dataset = dataset if dataset is not None else self.dataset
-        dataset_images = dataset_images if dataset_images is not None else self.dataset_images
-        dataset = (dataset, dataset_images)
+        if self.data_type == DataType.Images:
+            dataset_images = dataset_images if dataset_images is not None else self.dataset_images
+            dataset = (dataset, dataset_images)
         return Supervised._fit(
             self.experiment_id,
             dataset,
