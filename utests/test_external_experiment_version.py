@@ -68,7 +68,7 @@ def make_pio_datasets():
 def setup_module(module):
     project_name = f'project_sdk_TEST_EXTERNAL_MODELS_{TESTING_ID}'
     project = Project.new(name=project_name,
-                              description="description_sdk_TEST_EXTERNAL_MODELS")
+                          description="description_sdk_TEST_EXTERNAL_MODELS")
     global PROJECT_ID
     PROJECT_ID = project.id
     make_pio_datasets()
@@ -91,7 +91,8 @@ def create_external_experiment_version(
 
     project = Project.from_id(project_id)
     holdout_dataset = TEST_PIO_DATASETS[type_problem]
-    experiment_version_creation_method_name = type_problem_2_projet_experiment_version_creation_method_name[type_problem]
+    experiment_version_creation_method_name =\
+        type_problem_2_projet_experiment_version_creation_method_name[type_problem]
     experiment_version_creation_method = getattr(project, experiment_version_creation_method_name)
 
     # NOTE: should allow to change the default metric
@@ -126,7 +127,8 @@ def create_external_experiment_version_from_type_problem(type_problem, experimen
 def test_experiment_version():
     experiment_name = f'test_sdk_external_models_test_experiment_version_{TESTING_ID}'
     type_problem = 'regression'
-    experiment_version = create_external_experiment_version_from_type_problem(type_problem, experiment_name=experiment_name)
+    experiment_version = create_external_experiment_version_from_type_problem(type_problem,
+                                                                              experiment_name=experiment_name)
 
     experiment_id = experiment_version.experiment_id
     experiments = Experiment.list(PROJECT_ID)
@@ -147,7 +149,8 @@ def test_experiment_version():
 def test_experiment_latest_versions():
     experiment_name = f'test_sdk_external_models_test_experiment_latest_versions_{TESTING_ID}'
     type_problem = 'classification'
-    experiment_version = create_external_experiment_version_from_type_problem(type_problem, experiment_name=experiment_name)
+    experiment_version = create_external_experiment_version_from_type_problem(type_problem,
+                                                                              experiment_name=experiment_name)
 
     experiment_id = experiment_version.experiment_id
     experiments = Experiment.list(PROJECT_ID)
@@ -172,7 +175,8 @@ def test_experiment_latest_versions():
 def test_stop_running_experiment_version():
     experiment_name = f'test_sdk_external_models_test_stop_running_experiment_version_{TESTING_ID}'
     type_problem = 'multiclassification'
-    experiment_version = create_external_experiment_version_from_type_problem(type_problem, experiment_name=experiment_name)
+    experiment_version = create_external_experiment_version_from_type_problem(type_problem,
+                                                                              experiment_name=experiment_name)
 
     experiment_id = experiment_version.experiment_id
     assert experiment_version.running
@@ -187,7 +191,8 @@ def test_stop_running_experiment_version():
 def setup_experiment_class(request):
     type_problem = request.param
     experiment_name = f'test_sdk_external_models_{type_problem}_{TESTING_ID}'
-    experiment_version = create_external_experiment_version_from_type_problem(type_problem, experiment_name=experiment_name)
+    experiment_version = create_external_experiment_version_from_type_problem(type_problem,
+                                                                              experiment_name=experiment_name)
     assert experiment_version.running
     experiment_version.wait_until(lambda experiment: experiment.done or experiment._status['state'] == 'failed')
     assert not experiment_version.running

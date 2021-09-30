@@ -118,16 +118,19 @@ def time_window_test(dws, dwe, fws, fwe):
                      time_window=pio.TimeWindow(dws, dwe, fws, fwe))
     uc.wait_until(lambda experimentv: len(experimentv.models) > 0)
     uc.stop()
-    return
+    return uc
 
 
 @pytest.mark.parametrize('dws, dwe, fws, fwe', windows,
                          ids=['-'.join(str(s) for s in w) for w in windows])
 def test_time_window(dws, dwe, fws, fwe):
-    uc_name_returned = time_window_test(dws, dwe, fws, fwe)
+    experiment_version = time_window_test(dws, dwe, fws, fwe)
+    experiment = pio.Experiment.from_id(experiment_version.experiment_id)
     project = pio.Project.from_id(PROJECT_ID)
-    experiments = [uc.name for uc in project.list_experiments()]
-    # assert uc_name_returned in experiments
+    experiments = project.list_experiments()
+    assert experiment.id in [experiment.id for experiment in experiments]
+    experiments_versions = experiment.versions
+    assert experiment_version.id in [experiment_version.id for experiment_version in experiments_versions]
 
 
 def test_version():

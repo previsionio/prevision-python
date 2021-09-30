@@ -72,21 +72,20 @@ def test_delete_experiment():
 
 
 def test_experiment_version():
-    uc_name = TESTING_ID + '_test_experiment_version'
-    experiment_version: pio.Supervised = supervised_from_filename('regression', uc_name)
-    """
+    experiment_name_desired = TESTING_ID + '_test_experiment_version'
+    experiment_version: pio.Supervised = supervised_from_filename('regression', experiment_name_desired)
     experiments = pio.Experiment.list(PROJECT_ID)
-    assert uc_name in [u.name for u in experiments]
+    assert experiment_name_desired in [e.name for e in experiments]
 
     experiment_new_version = experiment_version.new_version()
     experiment_versions = pio.Experiment.from_id(experiment_version.experiment_id).versions
-    assert experiment_new_version._id in [u._id for u in experiment_versions]
+    assert experiment_new_version.id in [ev.id for ev in experiment_versions]
 
-    pio.Experiment.from_id(experiment_new_version.experiment_id).delete()
+    experiment = pio.Experiment.from_id(experiment_new_version.experiment_id)
+    experiment.delete()
 
     experiments = pio.Experiment.list(PROJECT_ID)
-    assert uc_name not in [u.name for u in experiments]
-    """
+    assert experiment.id not in [exp.id for exp in experiments]
 
 
 def test_experiment_latest_versions():

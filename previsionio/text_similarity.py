@@ -191,7 +191,8 @@ class TextSimilarity(BaseExperimentVersion):
         self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
             experiment_version_params.get('metric', self.default_metric))
         self.top_k: int = experiment_version_params.get('top_K', self.default_top_k)
-        self.lang: TextSimilarityLang = TextSimilarityLang(experiment_version_params.get('lang', TextSimilarityLang.Auto))
+        self.lang: TextSimilarityLang = TextSimilarityLang(experiment_version_params.get('lang',
+                                                                                         TextSimilarityLang.Auto))
 
         if experiment_version_info.get('queries_dataset_id'):
             queries_dataset_id = experiment_version_info['queries_dataset_id']
@@ -226,9 +227,9 @@ class TextSimilarity(BaseExperimentVersion):
 
     @staticmethod
     def _build_experiment_version_creation_data(description, dataset, description_column_config, metric,
-                                             top_k, lang, queries_dataset, queries_column_config,
-                                             models_parameters,
-                                             parent_version=None) -> Dict:
+                                                top_k, lang, queries_dataset, queries_column_config,
+                                                models_parameters,
+                                                parent_version=None) -> Dict:
         data = super(TextSimilarity, TextSimilarity)._build_experiment_version_creation_data(
             description,
             parent_version=parent_version,
@@ -350,7 +351,8 @@ class TextSimilarity(BaseExperimentVersion):
             top_k=top_k if top_k is not None else self.top_k,
             lang=lang if lang is not None else self.lang,
             queries_dataset=queries_dataset if queries_dataset is not None else self.queries_dataset,
-            queries_column_config=queries_column_config if queries_column_config is not None else self.queries_column_config,
+            queries_column_config=queries_column_config if queries_column_config is not None else
+            self.queries_column_config,
             models_parameters=models_parameters if models_parameters is not None else self.models_parameters,
             description=description,
             parent_version=self.version,

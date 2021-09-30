@@ -49,8 +49,8 @@ class Supervised(ClassicExperimentVersion):
 
     @staticmethod
     def _build_experiment_version_creation_data(description, dataset, column_config, metric,
-                                             holdout_dataset, training_config,
-                                             parent_version=None) -> Dict:
+                                                holdout_dataset, training_config,
+                                                parent_version=None) -> Dict:
         data = super(Supervised, Supervised)._build_experiment_version_creation_data(
             description,
             parent_version=parent_version,

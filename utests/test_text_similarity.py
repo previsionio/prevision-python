@@ -1,11 +1,12 @@
 import os
+import pandas as pd
+import unittest
+
+import previsionio as pio
 from previsionio.experiment import Experiment
 from previsionio.text_similarity import ModelEmbedding, TextSimilarityLang, TextSimilarityModels
 from previsionio.experiment_config import DataType, TypeProblem, YesOrNo, YesOrNoOrAuto
-import time
-import pandas as pd
-import unittest
-import previsionio as pio
+
 from .utils import get_testing_id
 
 TESTING_ID = get_testing_id()
@@ -55,7 +56,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
     def test_train_stop_delete_text_similarity(self):
         experiment_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
         experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
-                              DataType.Tabular, TypeProblem.TextSimilarity)
+                                    DataType.Tabular, TypeProblem.TextSimilarity)
         experiment_id = experiment.id
         description_dataset = test_datasets['description']
         description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
@@ -76,7 +77,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
     def test_train_new_stop_delete_text_similarity(self):
         experiment_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
         experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
-                              DataType.Tabular, TypeProblem.TextSimilarity)
+                                    DataType.Tabular, TypeProblem.TextSimilarity)
         experiment_id = experiment.id
         description_dataset = test_datasets['description']
         description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
@@ -105,7 +106,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
     def test_train_search_delete_text_similarity_with_queries_dataset(self):
         experiment_name = 'test_sdk_2_text_similarity_{}'.format(TESTING_ID)
         experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
-                              DataType.Tabular, TypeProblem.TextSimilarity)
+                                    DataType.Tabular, TypeProblem.TextSimilarity)
         experiment_id = experiment.id
         description_dataset = test_datasets['description']
         description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
@@ -142,21 +143,21 @@ class BaseTrainSearchDelete(unittest.TestCase):
     def test_train_delete_text_similarity_with_queries_dataset_all_models(self):
         experiment_name = 'test_sdk_3_text_similarity_{}'.format(TESTING_ID)
         experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
-                              DataType.Tabular, TypeProblem.TextSimilarity)
+                                    DataType.Tabular, TypeProblem.TextSimilarity)
         experiment_id = experiment.id
         experiment_config = [{'model_embedding': ModelEmbedding.TFIDF,
-                           'preprocessing': {'word_stemming': YesOrNo.Yes,
-                                             'ignore_stop_word': YesOrNoOrAuto.Auto,
-                                             'ignore_punctuation': YesOrNo.No},
-                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.ClusterPruning]},
-                          {'model_embedding': ModelEmbedding.Transformer,
-                           'preprocessing': {},
-                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
-                                      TextSimilarityModels.HKM]},
-                          {'model_embedding': ModelEmbedding.TransformerFineTuned,
-                           'preprocessing': {},
-                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
-                                      TextSimilarityModels.HKM]}]
+                              'preprocessing': {'word_stemming': YesOrNo.Yes,
+                                                'ignore_stop_word': YesOrNoOrAuto.Auto,
+                                                'ignore_punctuation': YesOrNo.No},
+                              'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.ClusterPruning]},
+                             {'model_embedding': ModelEmbedding.Transformer,
+                              'preprocessing': {},
+                              'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
+                                         TextSimilarityModels.HKM]},
+                             {'model_embedding': ModelEmbedding.TransformerFineTuned,
+                              'preprocessing': {},
+                              'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
+                                         TextSimilarityModels.HKM]}]
         models_parameters = pio.ListModelsParameters(experiment_config)
         description_dataset = test_datasets['description']
         description_column_config = pio.DescriptionsColumnConfig(content_column='item_desc', id_column='item_id')

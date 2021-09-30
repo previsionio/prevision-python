@@ -71,7 +71,8 @@ class TimeSeries(ClassicExperimentVersion):
 
     def _update_from_dict(self, **experiment_version_info):
         super()._update_from_dict(**experiment_version_info)
-        self.time_window = TimeWindow.from_dict(experiment_version_info['experiment_version_params']['timeseries_values'])
+        timeseries_values = experiment_version_info['experiment_version_params']['timeseries_values']
+        self.time_window = TimeWindow.from_dict(timeseries_values)
 
     @classmethod
     def from_id(cls, _id: str) -> 'TimeSeries':
@@ -79,8 +80,8 @@ class TimeSeries(ClassicExperimentVersion):
 
     @staticmethod
     def _build_experiment_version_creation_data(description, dataset, column_config, time_window, metric,
-                                             holdout_dataset, training_config,
-                                             parent_version=None) -> Dict:
+                                                holdout_dataset, training_config,
+                                                parent_version=None) -> Dict:
         data = super(TimeSeries, TimeSeries)._build_experiment_version_creation_data(
             description,
             parent_version=parent_version,
