@@ -95,6 +95,7 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
             target_column (str): The name of the target column for this experiment version
             external_models (list(tuple)): The external models to add in the experiment version to create.
                 Each tuple contains 3 items describing an external model as follows:
+
                     1) The name you want to give to the model
                     2) The path to the model in onnx format
                     3) The path to a yaml file containing metadata about the model
@@ -136,6 +137,7 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
         Args:
             external_models (list(tuple)): The external models to add in the experiment version to create.
                 Each tuple contains 3 items describing an external model as follows:
+
                     1) The name you want to give to the model
                     2) The path to the model in onnx format
                     3) The path to a yaml file containing metadata about the model
