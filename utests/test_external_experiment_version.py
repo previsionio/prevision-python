@@ -22,8 +22,8 @@ pio.config.default_timeout = 1000
 
 type_problems = [
     'regression',
-    #'classification',
-    #"'multiclassification',
+    'classification',
+    'multiclassification',
 ]
 type_problem_2_projet_experiment_version_creation_method_name = {
     type_problem: f'create_external_{type_problem}' for type_problem in type_problems
@@ -31,8 +31,8 @@ type_problem_2_projet_experiment_version_creation_method_name = {
 
 TEST_DATASETS_PATH = {
     'regression': os.path.join(DATA_PATH, 'regression_holdout_dataset.csv'),
-    #'classification': os.path.join(DATA_PATH, 'classification_holdout_dataset.csv'),
-    #'multiclassification': os.path.join(DATA_PATH, 'multiclassification_holdout_dataset.csv'),
+    'classification': os.path.join(DATA_PATH, 'classification_holdout_dataset.csv'),
+    'multiclassification': os.path.join(DATA_PATH, 'multiclassification_holdout_dataset.csv'),
 }
 
 TEST_EXTERNAL_MODELS = {

@@ -60,21 +60,25 @@ def train_model(experiment_name, groups=1, time_window=pio.TimeWindow(-90, -30, 
     dataset = project.create_dataset(name=experiment_name,
                                      dataframe=data)
 
-    experiment_version_config = pio.TrainingConfig(advanced_models=[pio.AdvancedModel.LinReg],
-                                   normal_models=[pio.NormalModel.LinReg],
-                                   features=[pio.Feature.Counts],
-                                   profile=pio.Profile.Quick)
+    experiment_version_config = pio.TrainingConfig(
+        advanced_models=[pio.AdvancedModel.LinReg],
+        normal_models=[pio.NormalModel.LinReg],
+        features=[pio.Feature.Counts],
+        profile=pio.Profile.Quick,
+    )
 
     col_config = pio.ColumnConfig(target_column='target',
                                   time_column='time',
                                   # group_columns=group_list
                                   )
 
-    experiment_version = project.fit_timeseries_regression(experiment_name,
-                                           dataset,
-                                           time_window=time_window,
-                                           training_config=experiment_version_config,
-                                           column_config=col_config)
+    experiment_version = project.fit_timeseries_regression(
+        experiment_name,
+        dataset,
+        time_window=time_window,
+        training_config=experiment_version_config,
+        column_config=col_config,
+    )
     return experiment_version
 
 
@@ -115,7 +119,7 @@ def time_window_test(dws, dwe, fws, fwe):
     ts_label = '_'.join(str(s).replace('-', 'm') for s in (dws, dwe, fws, fwe))
     experiment_name_asked = 'ts_time{}_{}'.format(ts_label, TESTING_ID)
     experiment_version = train_model(experiment_name_asked,
-                     time_window=pio.TimeWindow(dws, dwe, fws, fwe))
+                                     time_window=pio.TimeWindow(dws, dwe, fws, fwe))
     experiment_version.wait_until(lambda experimentv: len(experimentv.models) > 0)
     experiment_version.stop()
     return experiment_version
@@ -139,7 +143,7 @@ def test_version():
     experiment_name_asked = 'ts_time{}_{}'.format(ts_label, TESTING_ID)
 
     experiment_version = train_model(experiment_name_asked,
-                     time_window=pio.TimeWindow(dws, dwe, fws, fwe))
+                                     time_window=pio.TimeWindow(dws, dwe, fws, fwe))
 
     experiment_version.wait_until(lambda experimentv: len(experimentv.models) > 0)
     experiment_version.stop()

@@ -11,11 +11,13 @@ pio.config.zip_files = False
 pio.config.default_timeout = 1000
 
 col_config = pio.ColumnConfig(target_column='class', filename_column='filename')
-experiment_version_config = pio.TrainingConfig(advanced_models=[pio.AdvancedModel.LinReg],
-                               normal_models=[],
-                               simple_models=[],
-                               features=[pio.Feature.Counts],
-                               profile=pio.Profile.Quick)
+experiment_version_config = pio.TrainingConfig(
+    advanced_models=[pio.AdvancedModel.LinReg],
+    normal_models=[],
+    simple_models=[],
+    features=[pio.Feature.Counts],
+    profile=pio.Profile.Quick,
+)
 
 test_datasets = {}
 dataset_name = 'cats_and_dogs_train'

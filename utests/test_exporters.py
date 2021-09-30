@@ -46,7 +46,8 @@ def setup_module(module):
 
     # Create experiment deployment
     experiment_version_best_model = experiment_version.best_model
-    experiment_deployment = project.create_experiment_deployment('test_sdk_' + TESTING_ID, experiment_version_best_model)
+    experiment_deployment = project.create_experiment_deployment('test_sdk_' + TESTING_ID,
+                                                                 experiment_version_best_model)
 
     # Create deployment_prediction
     experiment_deployment.wait_until(lambda experimentd: experimentd.run_state == 'done')

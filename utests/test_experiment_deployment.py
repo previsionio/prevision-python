@@ -10,12 +10,13 @@ TESTING_ID = get_testing_id()
 PROJECT_NAME = "sdk_test_experiment_deployment" + str(TESTING_ID)
 PROJECT_ID = ""
 
-experiment_version_config = pio.TrainingConfig(advanced_models=[pio.AdvancedModel.LinReg],
-                               normal_models=[pio.NormalModel.LinReg],
-                               simple_models=[pio.SimpleModel.DecisionTree],
-                               features=[pio.Feature.Counts],
-                               profile=pio.Profile.Quick)
-test_datasets = {}
+experiment_version_config = pio.TrainingConfig(
+    advanced_models=[pio.AdvancedModel.LinReg],
+    normal_models=[pio.NormalModel.LinReg],
+    simple_models=[pio.SimpleModel.DecisionTree],
+    features=[pio.Feature.Counts],
+    profile=pio.Profile.Quick,
+)
 
 training_type_2_pio_class = {
     'regression': "fit_regression",
@@ -23,6 +24,8 @@ training_type_2_pio_class = {
     'multiclassification': "fit_multiclassification",
 }
 training_types = training_type_2_pio_class.keys()
+
+test_datasets = {}
 
 
 def make_pio_datasets(paths):
@@ -52,7 +55,8 @@ def teardown_module(module):
 def supervised_from_filename(training_type, experiment_name):
     dataset = test_datasets[training_type]
     training_type_class = training_type_2_pio_class[training_type]
-    return train_model(PROJECT_ID, experiment_name, dataset, training_type, training_type_class, experiment_version_config)
+    return train_model(PROJECT_ID, experiment_name, dataset, training_type,
+                       training_type_class, experiment_version_config)
 
 
 def test_experiment_version():
@@ -65,7 +69,8 @@ def test_experiment_version():
     experiment_version_best_model = experiment_version.best_model
 
     project = pio.Project.from_id(PROJECT_ID)
-    experiment_deployment = project.create_experiment_deployment('test_sdk_' + TESTING_ID, experiment_version_best_model)
+    experiment_deployment = project.create_experiment_deployment('test_sdk_' + TESTING_ID,
+                                                                 experiment_version_best_model)
 
     experiment_version_dataset_id = experiment_version.dataset._id
     prediction_dataset = pio.Dataset.from_id(experiment_version_dataset_id)

@@ -3,7 +3,6 @@ from __future__ import print_function
 import os
 from typing import Dict, List, Tuple, Union
 import requests
-from functools import lru_cache
 import pandas as pd
 
 from . import metrics

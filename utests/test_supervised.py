@@ -16,12 +16,13 @@ PROJECT_ID = ""
 pio.config.zip_files = False
 pio.config.default_timeout = 1000
 
-experiment_version_config = pio.TrainingConfig(advanced_models=[pio.AdvancedModel.LinReg],
-                               normal_models=[pio.NormalModel.LinReg],
-                               simple_models=[pio.SimpleModel.DecisionTree],
-                               features=[pio.Feature.Counts],
-                               profile=pio.Profile.Quick)
-test_datasets = {}
+experiment_version_config = pio.TrainingConfig(
+    advanced_models=[pio.AdvancedModel.LinReg],
+    normal_models=[pio.NormalModel.LinReg],
+    simple_models=[pio.SimpleModel.DecisionTree],
+    features=[pio.Feature.Counts],
+    profile=pio.Profile.Quick,
+)
 
 training_type_2_pio_class = {
     'regression': "fit_regression",
@@ -29,6 +30,8 @@ training_type_2_pio_class = {
     'multiclassification': "fit_multiclassification",
 }
 training_types = training_type_2_pio_class.keys()
+
+test_datasets = {}
 
 
 def make_pio_datasets(paths):
@@ -58,7 +61,8 @@ def teardown_module(module):
 def supervised_from_filename(training_type, experiment_name):
     dataset = test_datasets[training_type]
     training_type_class = training_type_2_pio_class[training_type]
-    return train_model(PROJECT_ID, experiment_name, dataset, training_type, training_type_class, experiment_version_config)
+    return train_model(PROJECT_ID, experiment_name, dataset, training_type,
+                       training_type_class, experiment_version_config)
 
 
 def test_delete_experiment():
