@@ -532,12 +532,12 @@ You first need to deploy a main model (and a challenger model) from an existing 
 .. code-block:: python
 
     # retrieve the best model of your experiment
-    uc_best_model = experiment_version.best_model
+    experiment_version_best_model = experiment_version.best_model
 
     # deploy the experiment model
     experiment_deployment = project.create_experiment_deployment(
         'my_deployed_experiment',
-        main_model=uc_best_model,
+        main_model=experiment_version_best_model,
         challenger_model=None,
     )
 
@@ -656,7 +656,7 @@ You can decide to completely delete the experiment:
 
 .. code-block:: python
 
-    uc = pio.Experiment.from_id(experiment_version.experiment_id)
-    uc.delete()
+    experiment = pio.Experiment.from_id(experiment_version.experiment_id)
+    experiment.delete()
 
 However be careful, in that case any detail about the experiment will be removed, and you won't be able to make predictions from it anymore.

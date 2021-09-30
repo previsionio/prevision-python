@@ -58,7 +58,10 @@ class Supervised(ClassicExperimentVersion):
 
         # because if Image there is the dataset and the images zip
         if isinstance(dataset, tuple):
-            data['dataset_id'], data['folder_dataset_id'] = dataset[0].id, dataset[1].id
+            dataset, folder_dataset = dataset
+            data['dataset_id'] = dataset.id
+            if folder_dataset is not None:
+                data['folder_dataset_id'] = folder_dataset.id
         else:
             data['dataset_id'] = dataset.id
 

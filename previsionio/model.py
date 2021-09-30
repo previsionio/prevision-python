@@ -334,8 +334,8 @@ class ClassificationModel(ClassicModel):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the experiment of the model
-        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
+        experiment_version_id (str): Unique id of the experiment version of the model
+        experiment_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -404,8 +404,8 @@ class RegressionModel(ClassicModel):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the experiment of the model
-        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
+        experiment_version_id (str): Unique id of the experiment version of the model
+        experiment_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -417,8 +417,8 @@ class MultiClassificationModel(ClassicModel):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the experiment of the model
-        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
+        experiment_version_id (str): Unique id of the experiment version of the model
+        experiment_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -435,8 +435,8 @@ class ExternalClassificationModel(ClassificationModel):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the experiment of the model
-        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
+        experiment_version_id (str): Unique id of the experiment version of the model
+        experiment_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -458,8 +458,8 @@ class ExternalRegressionModel(RegressionModel):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the experiment of the model
-        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
+        experiment_version_id (str): Unique id of the experiment version of the model
+        experiment_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -482,8 +482,8 @@ class ExternalMultiClassificationModel(MultiClassificationModel):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the experiment of the model
-        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
+        experiment_version_id (str): Unique id of the experiment version of the model
+        experiment_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """

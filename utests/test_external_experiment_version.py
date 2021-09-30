@@ -22,8 +22,8 @@ pio.config.default_timeout = 1000
 
 type_problems = [
     'regression',
-    'classification',
-    'multiclassification',
+    #'classification',
+    #"'multiclassification',
 ]
 type_problem_2_projet_experiment_version_creation_method_name = {
     type_problem: f'create_external_{type_problem}' for type_problem in type_problems
@@ -31,8 +31,8 @@ type_problem_2_projet_experiment_version_creation_method_name = {
 
 TEST_DATASETS_PATH = {
     'regression': os.path.join(DATA_PATH, 'regression_holdout_dataset.csv'),
-    'classification': os.path.join(DATA_PATH, 'classification_holdout_dataset.csv'),
-    'multiclassification': os.path.join(DATA_PATH, 'multiclassification_holdout_dataset.csv'),
+    #'classification': os.path.join(DATA_PATH, 'classification_holdout_dataset.csv'),
+    #'multiclassification': os.path.join(DATA_PATH, 'multiclassification_holdout_dataset.csv'),
 }
 
 TEST_EXTERNAL_MODELS = {
@@ -207,13 +207,13 @@ def setup_experiment_class(request):
 class TestExperimentVersionGeneric:
 
     def test_check_config(self, setup_experiment_class):
-        training_type, uc = setup_experiment_class
-        # assert all([c in uc.drop_list for c in DROP_COLS])
-        # uc.update_status()
-        # assert set(uc.feature_list) == set(uc_config.features)
-        # assert set(uc.advanced_models_list) == set(uc_config.advanced_models)
-        # assert set(uc.simple_models_list) == set(uc_config.simple_models)
-        # assert set(uc.normal_models_list) == set(uc_config.normal_models)
+        training_type, experiment_version = setup_experiment_class
+        # assert all([c in experiment_version.drop_list for c in DROP_COLS])
+        # experiment_version.update_status()
+        # assert set(experiment_version.feature_list) == set(experiment_version_config.features)
+        # assert set(experiment_version.advanced_models_list) == set(experiment_version_config.advanced_models)
+        # assert set(experiment_version.simple_models_list) == set(experiment_version_config.simple_models)
+        # assert set(experiment_version.normal_models_list) == set(experiment_version_config.normal_models)
 """
 
 

@@ -200,8 +200,8 @@ class BaseExperimentVersion(ApiResource):
         response = client.request(endpoint=end_point,
                                   method=requests.get,
                                   message_prefix='Experiment schema')
-        uc_schema = json.loads(response.content.decode('utf-8'))
-        return uc_schema
+        schema = json.loads(response.content.decode('utf-8'))
+        return schema
 
     @property
     def best_model(self):
