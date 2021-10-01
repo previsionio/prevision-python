@@ -193,7 +193,7 @@ class TextSimilarity(BaseExperimentVersion):
         self.lang: TextSimilarityLang = TextSimilarityLang(experiment_version_params.get('lang',
                                                                                          TextSimilarityLang.Auto))
 
-        if experiment_version_info.get('queries_dataset_id'):
+        if 'queries_dataset_id' in experiment_version_info:
             self.queries_dataset_id: str = experiment_version_info['queries_dataset_id']
             content_column = experiment_version_params.get('queries_dataset_content_column')
             matching_id = experiment_version_params.get('queries_dataset_matching_id_description_column')
@@ -202,6 +202,7 @@ class TextSimilarity(BaseExperimentVersion):
                                                              queries_dataset_matching_id_description_column=matching_id,
                                                              queries_dataset_id_column=queries_dataset_id_column)
         else:
+            self.queries_dataset_id = None
             self.queries_column_config = None
 
         models_parameters = experiment_version_params.get('models_params')
