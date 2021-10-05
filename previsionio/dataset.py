@@ -226,10 +226,10 @@ class Dataset(ApiResource):
             :class:`.Dataset`: The registered dataset object in the current workspace.
         """
         if any(a is not None and b is not None for a, b in combinations([datasource, file_name, dataframe], 2)):
-            raise Exception('only one of [datasource, file_handle, data] must be specified')
+            raise Exception('only one of [datasource, file_name, dataframe] must be specified')
 
         if not any([datasource is not None, file_name is not None, dataframe is not None]):
-            raise Exception('at least one of [datasource, file_handle, data] must be specified')
+            raise Exception('at least one of [datasource, file_name, dataframe] must be specified')
 
         data = {
             'name': name,
