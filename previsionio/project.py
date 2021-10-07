@@ -1,28 +1,27 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 from enum import Enum
-from typing import Dict, Tuple
+from typing import List, Dict, Tuple
 
-from requests.models import Response
+from pandas import DataFrame
 from previsionio import metrics
-from previsionio.usecase_config import ColumnConfig, DataType, TrainingConfig, TypeProblem
+from previsionio.experiment_config import ColumnConfig, DataType, TrainingConfig, TypeProblem
 import requests
 
 from . import client
 from .utils import parse_json, PrevisionException
-
 from .api_resource import ApiResource, UniqueResourceMixin
 from .datasource import DataSource
+from .exporter import Exporter, ExporterWriteMode
 from .dataset import Dataset, DatasetImages
-from .connector import Connector, SQLConnector, FTPConnector, \
-    SFTPConnector, S3Connector, HiveConnector, GCPConnector
+from .connector import (Connector, SQLConnector, FTPConnector, SFTPConnector,
+                        S3Connector, GCPConnector, GCloud)
 from .supervised import Supervised
+from .external_experiment_version import ExternalExperimentVersion
 from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
                               TextSimilarity, TextSimilarityLang)
-from .usecase import Usecase
-from .usecase_deployment import UsecaseDeployment
-from pandas import DataFrame
+from .experiment import Experiment
+from .experiment_deployment import ExperimentDeployment
 
 
 class ProjectColor(Enum):
@@ -59,16 +58,12 @@ class Project(ApiResource, UniqueResourceMixin):
     resource = 'projects'
 
     def __init__(self, _id: str, name: str, description: str = None, color: ProjectColor = None, created_by: str = None,
-                 admins=[], contributors=[], viewers=[], pipelines_count: int = 0, usecases_count: int = 0,
+                 admins=[], contributors=[], viewers=[], pipelines_count: int = 0, experiments_count: int = 0,
                  dataset_count: int = 0, **kwargs):
         """ Instantiate a new :class:`.Project` object to manipulate a project resource
         on the platform. """
-        super().__init__(_id=_id,
-                         name=name,
-                         description=description,
-                         color=color)
+        super().__init__(_id=_id)
 
-        self._id = _id
         self.name = name
         self.description = description
         self.color = color
@@ -77,7 +72,7 @@ class Project(ApiResource, UniqueResourceMixin):
         self.contributors = contributors
         self.viewers = viewers
         self.pipelines_count = pipelines_count
-        self.usecases_count = usecases_count
+        self.experiments_count = experiments_count
         self.dataset_count = dataset_count
 
     @classmethod
@@ -161,7 +156,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 "contributors"
                 "viewers"
                 "pipelines_count"
-                "usecases_count"
+                "experiments_count"
                 "dataset_count"
                 "users"
 
@@ -178,7 +173,7 @@ class Project(ApiResource, UniqueResourceMixin):
                         "contributors": self.contributors,
                         "viewers": self.viewers,
                         "pipelines_count": self.pipelines_count,
-                        "usecases_count": self.usecases_count,
+                        "experiments_count": self.experiments_count,
                         "dataset_count": self.dataset_count,
                         "users": self.users}
         return project_info
@@ -225,17 +220,14 @@ class Project(ApiResource, UniqueResourceMixin):
         return cls(json['_id'], name, description, color, json['created_by'],
                    json['admins'], json['contributors'], json['pipelines_count'])
 
-    def delete(self) -> Response:
+    def delete(self):
         """Delete a project from the actual [client] workspace.
 
         Raises:
-            PrevisionException: If the dataset does not exist
+            PrevisionException: If the project does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/{}/{}'.format(self.resource, self.id),
-                              method=requests.delete,
-                              message_prefix='Project delete')
-        return resp
+        super().delete()
 
     def create_dataset(self, name: str, datasource: DataSource = None, file_name: str = None,
                        dataframe: DataFrame = None, **kwargs):
@@ -245,7 +237,7 @@ class Project(ApiResource, UniqueResourceMixin):
 
         .. note::
 
-            To start a new use case on a dataset, it has to be already
+            To start a new experiment version on a dataset, it has to be already
             registred in your workspace.
 
         Args:
@@ -293,7 +285,7 @@ class Project(ApiResource, UniqueResourceMixin):
 
         .. note::
 
-            To start a new use case on a dataset image, it has to be already
+            To start a new experiment version on a dataset image, it has to be already
             registred in your workspace.
 
         Args:
@@ -327,7 +319,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return DatasetImages.list(self._id, all=all)
 
-    def create_sql_connector(self, name: str, host: str, port: int = 3306, username: str = '', password: str = ''):
+    def create_sql_connector(self, name: str, host: str, port: int, username: str, password: str):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -336,14 +328,14 @@ class Project(ApiResource, UniqueResourceMixin):
             name (str): Name of the connector
             host (str): Url of the connector
             port (int): Port of the connector
-            username (str, optional): Username to use connect to the remote data source
-            password (str, optional): Password to use connect to the remote data source
+            username (str): Username to use connect to the remote data source
+            password (str): Password to use connect to the remote data source
         Returns:
             :class:`.SQLConnector`: The registered connector object in the current project.
         """
-        return SQLConnector._new(self._id, name, host, port, 'SQL', username=username, password=password)
+        return SQLConnector._new(self._id, name, host, port, username=username, password=password)
 
-    def create_ftp_connector(self, name: str, host: str, port: int = 21, username: str = '', password: str = ''):
+    def create_ftp_connector(self, name: str, host: str, port: int, username: str, password: str):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -352,14 +344,14 @@ class Project(ApiResource, UniqueResourceMixin):
             name (str): Name of the connector
             host (str): Url of the connector
             port (int): Port of the connector
-            username (str, optional): Username to use connect to the remote data source
-            password (str, optional): Password to use connect to the remote data source
+            username (str): Username to use connect to the remote data source
+            password (str): Password to use connect to the remote data source
         Returns:
             :class:`.FTPConnector`: The registered connector object in the current project.
         """
-        return FTPConnector._new(self._id, name, host, port, 'FTP', username=username, password=password)
+        return FTPConnector._new(self._id, name, host, port, username=username, password=password)
 
-    def create_sftp_connector(self, name: str, host: str, port: int = 23, username: str = '', password: str = ''):
+    def create_sftp_connector(self, name: str, host: str, port: int, username: str, password: str):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -368,14 +360,14 @@ class Project(ApiResource, UniqueResourceMixin):
             name (str): Name of the connector
             host (str): Url of the connector
             port (int): Port of the connector
-            username (str, optional): Username to use connect to the remote data source
-            password (str, optional): Password to use connect to the remote data source
+            username (str): Username to use connect to the remote data source
+            password (str): Password to use connect to the remote data source
         Returns:
             :class:`.SFTPConnector`: The registered connector object in the current project.
         """
-        return SFTPConnector._new(self._id, name, host, port, 'SFTP', username=username, password=password)
+        return SFTPConnector._new(self._id, name, host, port, username=username, password=password)
 
-    def create_s3_connector(self, name: str, host: str = '', port: int = None, username: str = '', password: str = ''):
+    def create_s3_connector(self, name: str, username: str, password: str):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -389,26 +381,9 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.S3Connector`: The registered connector object in the current project.
         """
-        return S3Connector._new(self._id, name, host, port, 'S3', username=username, password=password)
+        return S3Connector._new(self._id, name, username=username, password=password)
 
-    def create_hive_connector(self, name: str, host: str, port: int = 10000, username: str = '', password: str = ''):
-        """ A connector to interact with a distant source of data (and
-        easily get data snapshots using an associated :class:`.DataSource`
-        resource).
-
-        Args:
-            name (str): Name of the connector
-            host (str): Url of the connector
-            port (int): Port of the connector
-            username (str, optional): Username to use connect to the remote data source
-            password (str, optional): Password to use connect to the remote data source
-        Returns:
-            :class:`.HiveConnector`: The registered connector object in the current project.
-        """
-        return HiveConnector._new(self._id, name, host, port, 'HIVE', username=username, password=password)
-
-    def create_gcp_connector(self, name: str = '', host: str = '', port=None, username: str = '', password: str = '',
-                             googleCredentials: str = ''):
+    def create_gcp_connector(self, name: str, googleCredentials: str):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
@@ -419,8 +394,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.GCPConnector`: The registered connector object in the current project.
         """
-        return GCPConnector._new(self._id, name, host, port, 'GCP', username=username, password=password,
-                                 googleCredentials=googleCredentials)
+        return GCPConnector._new(self._id, name, googleCredentials=googleCredentials)
 
     def list_connectors(self, all: bool = True):
         """ List all the available connectors in the current active project.
@@ -442,7 +416,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return Connector.list(self._id, all=all)
 
     def create_datasource(self, connector: Connector, name: str, path: str = None, database: str = None,
-                          table: str = None, bucket: str = None, request: str = None, gCloud: str = None):
+                          table: str = None, bucket: str = None, request: str = None, gCloud: GCloud = None):
         """ Create a new datasource object on the platform.
 
         Args:
@@ -454,7 +428,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 connector
             table (str, optional): Name of the table to fetch data from via the connector
             bucket (str, optional): Name of the bucket to fetch data from via the connector
-            gCloud (str, optional): gCloud
+            gCloud (:class:`.GCloud`, optional): Type of google cloud service
             request (str, optional): Direct SQL request to use with the connector to fetch data
         Returns:
             :class:`.DataSource`: The registered datasource object in the current project
@@ -486,269 +460,396 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return DataSource.list(self._id, all=all)
 
-    def fit_regression(self, name: str, dataset: Dataset, column_config: ColumnConfig,
-                       metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset=None,
-                       training_config=TrainingConfig(), **kwargs):
-        """ Start a tabular regression usecase version training
+    def create_exporter(self, connector: Connector, name: str, description: str = None, path: str = None,
+                        bucket: str = None, database: str = None, table: str = None, g_cloud: GCloud = None,
+                        write_mode: ExporterWriteMode = ExporterWriteMode.safe):
+        """ Create a new exporter object on the platform.
 
         Args:
-            name (str): Name of the usecase to create
+            connector (:class:`.Connector`): Reference to the associated connector (the resource
+                to go through to get a data snapshot)
+            name (str): Name of the exporter
+            description (str, optional): Description of the exporter
+            bucket (str, optional): Bucket of the file to write on via the exporter
+            path (str, optional): Path to the file to write on via the exporter
+            database (str, optional): Name of the database to write on via the exporter
+            table (str, optional): Name of the table to write on via the exporter
+            g_cloud (:class:`.GCloud`, optional): Type of google cloud service
+            write_mode (:class:`.ExporterWriteMode`, optional): Write mode
+
+        Returns:
+            :class:`.Exporter`: The registered exporter object in the current project
+
+        Raises:
+            PrevisionException: Any error while uploading data to the platform
+                or parsing the result
+            Exception: For any other unknown error
+        """
+        return Exporter._new(self._id, connector, name, path=path, description=description, bucket=bucket,
+                             database=database, table=table, g_cloud=g_cloud, write_mode=write_mode)
+
+    def list_exporter(self, all: bool = False):
+        """ List all the available exporters in the current active project.
+
+        .. warning::
+
+            Contrary to the parent ``list()`` function, this method
+            returns actual :class:`.Exporter` objects rather than
+            plain dictionaries with the corresponding data.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+
+        Returns:
+            list(:class:`.Exporter`): Fetched dataset objects
+        """
+        return Exporter.list(self._id, all=all)
+
+    def fit_regression(
+        self,
+        experiment_name: str,
+        dataset: Dataset,
+        column_config: ColumnConfig,
+        metric: metrics.Regression = metrics.Regression.RMSE,
+        holdout_dataset=None,
+        training_config=TrainingConfig(),
+        experiment_version_description: str = None,
+    ) -> Supervised:
+        """ Start a tabular regression experiment version training
+
+        Args:
+            experiment_name (str): Name of the experiment to create
             dataset (:class:`.Dataset`): Reference to the dataset
                 object to use for as training dataset
-            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
+            column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment
+                (default: ``metrics.Regression.RMSE``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
+            experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.supervised.Regression`: Newly created Regression usecase version object
+            :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+                                    TypeProblem.Regression)
         return Supervised._fit(
-            self._id, name,
-            data_type=DataType.Tabular,
-            training_type=TypeProblem.Regression,
-            dataset=dataset,
-            column_config=column_config,
-            metric=metric,
+            experiment.id,
+            dataset,
+            column_config,
+            metric,
             holdout_dataset=holdout_dataset,
             training_config=training_config,
-            **kwargs
+            description=experiment_version_description,
         )
 
-    def fit_classification(self, name: str, dataset: Dataset, column_config: ColumnConfig,
-                           metric: metrics.Classification = metrics.Classification.AUC, holdout_dataset=None,
-                           training_config=TrainingConfig(), **kwargs):
-        """ Start a tabular classification usecase version training
+    def fit_classification(
+        self,
+        experiment_name: str,
+        dataset: Dataset,
+        column_config: ColumnConfig,
+        metric: metrics.Classification = metrics.Classification.AUC,
+        holdout_dataset=None,
+        training_config=TrainingConfig(),
+        experiment_version_description: str = None,
+    ) -> Supervised:
+        """ Start a tabular classification experiment version training
 
         Args:
-            name (str): Name of the usecase to create
+            experiment_name (str): Name of the experiment to create
             dataset (:class:`.Dataset`): Reference to the dataset
                 object to use for as training dataset
-            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
+            column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.Classification`, optional): Specific metric to use for the experiment
+                (default: ``metrics.Classification.AUC``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
+            experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.supervised.Classification`: Newly created Classification usecase version object
+            :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+                                    TypeProblem.Classification)
         return Supervised._fit(
-            self._id, name,
-            data_type=DataType.Tabular,
-            training_type=TypeProblem.Classification,
-            dataset=dataset,
-            column_config=column_config,
-            metric=metric,
+            experiment.id,
+            dataset,
+            column_config,
+            metric,
             holdout_dataset=holdout_dataset,
             training_config=training_config,
-            **kwargs
+            description=experiment_version_description,
         )
 
-    def fit_multiclassification(self, name: str, dataset: Dataset, column_config: ColumnConfig,
-                                metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
-                                holdout_dataset: Dataset = None, training_config=TrainingConfig(), **kwargs):
-        """ Start a tabular multiclassification usecase version training
+    def fit_multiclassification(
+        self,
+        experiment_name: str,
+        dataset: Dataset,
+        column_config: ColumnConfig,
+        metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
+        holdout_dataset=None,
+        training_config=TrainingConfig(),
+        experiment_version_description: str = None,
+    ) -> Supervised:
+        """ Start a tabular multiclassification experiment version training
 
         Args:
-            name (str): Name of the usecase to create
+            experiment_name (str): Name of the experiment to create
             dataset (:class:`.Dataset`): Reference to the dataset
                 object to use for as training dataset
-            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
+            column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the experiment
+                (default: ``metrics.MultiClassification.log_loss``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
+            experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.supervised.MultiClassification`: Newly created MultiClassification usecase version object
+            :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+                                    TypeProblem.MultiClassification)
         return Supervised._fit(
-            self._id, name,
-            data_type=DataType.Tabular,
-            training_type=TypeProblem.MultiClassification,
-            dataset=dataset,
-            column_config=column_config,
-            metric=metric,
+            experiment.id,
+            dataset,
+            column_config,
+            metric,
             holdout_dataset=holdout_dataset,
             training_config=training_config,
-            **kwargs
+            description=experiment_version_description,
         )
 
-    def fit_image_regression(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig,
-                             metric: metrics.Regression = metrics.Regression.RMSE, holdout_dataset: Dataset = None,
-                             training_config=TrainingConfig(), **kwargs):
-        """ Start an image regression usecase version training
+    def fit_image_regression(
+        self,
+        experiment_name: str,
+        dataset: Dataset,
+        dataset_images: DatasetImages,
+        column_config: ColumnConfig,
+        metric: metrics.Regression = metrics.Regression.RMSE,
+        holdout_dataset=None,
+        training_config=TrainingConfig(),
+        experiment_version_description: str = None,
+    ) -> Supervised:
+        """ Start an image regression experiment version training
 
         Args:
-            name (str): Name of the usecase to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the dataset
+            experiment_name (str): Name of the experiment to create
+            dataset (:class:`.Dataset`): Reference to the dataset
                 object to use for as training dataset
-            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
+            dataset_images (:class:`.DatasetImages`): Reference to the images dataset
+                object to use for as training dataset
+            column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment
+                (default: ``metrics.Regression.RMSE``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
+            experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.supervised.RegressionImages`: Newly created RegressionImages usecase version object
+            :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
+                                    TypeProblem.Regression)
+        dataset = (dataset, dataset_images)
         return Supervised._fit(
-            self._id, name,
-            data_type=DataType.Images,
-            training_type=TypeProblem.Regression,
-            dataset=dataset,
-            column_config=column_config,
-            metric=metric,
+            experiment.id,
+            dataset,
+            column_config,
+            metric,
             holdout_dataset=holdout_dataset,
             training_config=training_config,
-            **kwargs
+            description=experiment_version_description,
         )
 
-    def fit_image_classification(self, name: str, dataset: Tuple[Dataset, DatasetImages], column_config: ColumnConfig,
-                                 metric: metrics.Classification = metrics.Classification.AUC,
-                                 holdout_dataset: Dataset = None, training_config=TrainingConfig(), **kwargs):
-        """ Start an image classification usecase version training
+    def fit_image_classification(
+        self,
+        experiment_name: str,
+        dataset: Dataset,
+        dataset_images: DatasetImages,
+        column_config: ColumnConfig,
+        metric: metrics.Classification = metrics.Classification.AUC,
+        holdout_dataset=None,
+        training_config=TrainingConfig(),
+        experiment_version_description: str = None
+    ) -> Supervised:
+        """ Start an image classification experiment version training
 
         Args:
-            name (str): Name of the usecase to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the dataset
+            experiment_name (str): Name of the experiment to create
+            dataset (:class:`.Dataset`): Reference to the dataset
                 object to use for as training dataset
-            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
+            dataset_images (:class:`.DatasetImages`): Reference to the images dataset
+                object to use for as training dataset
+            column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``None``)
+            metric (:class:`.metrics.Classification`, optional): Specific metric to use for the experiment
+                (default: ``metrics.Classification.AUC``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
+            experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.supervised.ClassificationImages`: Newly created ClassificationImages usecase version object
+            :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
+                                    TypeProblem.Classification)
+        dataset = (dataset, dataset_images)
         return Supervised._fit(
-            self._id, name,
-            data_type=DataType.Images,
-            training_type=TypeProblem.Classification,
-            dataset=dataset,
-            column_config=column_config,
-            metric=metric,
+            experiment.id,
+            dataset,
+            column_config,
+            metric,
             holdout_dataset=holdout_dataset,
             training_config=training_config,
-            **kwargs
+            description=experiment_version_description,
         )
 
     def fit_image_multiclassification(
-        self, name: str,
-        dataset: Tuple[Dataset, DatasetImages],
+        self,
+        experiment_name: str,
+        dataset: Dataset,
+        dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
-        holdout_dataset: Dataset = None,
+        holdout_dataset=None,
         training_config=TrainingConfig(),
-        **kwargs
+        experiment_version_description: str = None,
     ) -> Supervised:
-        """ Start an image multiclassification usecase version training
+        """ Start an image multiclassification experiment version training
 
         Args:
-            name (str): Name of the usecase to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the dataset
+            experiment_name (str): Name of the experiment to create
+            dataset (:class:`.Dataset`): Reference to the dataset
                 object to use for as training dataset
-            column_config (:class:`.ColumnConfig`): Column configuration for the usecase
+            dataset_images (:class:`.DatasetImages`): Reference to the images dataset
+                object to use for as training dataset
+            column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            metric (:enum: `metrics.MultiClassification`, optional): Specific metric to use for the usecase (default:
-                ``metrics.MultiClassification.log_loss``)
+            metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the experiment
+                (default: ``metrics.MultiClassification.log_loss``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
+            experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.supervised.MultiClassificationImages`: Newly created MultiClassificationImages usecase version
-                object
+            :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
+                                    TypeProblem.MultiClassification)
+        dataset = (dataset, dataset_images)
         return Supervised._fit(
-            self._id, name,
-            data_type=DataType.Images,
-            training_type=TypeProblem.MultiClassification,
-            dataset=dataset,
-            column_config=column_config,
-            metric=metric,
+            experiment.id,
+            dataset,
+            column_config,
+            metric,
             holdout_dataset=holdout_dataset,
             training_config=training_config,
-            **kwargs
+            description=experiment_version_description,
         )
 
     def fit_timeseries_regression(
         self,
-        name: str,
+        experiment_name: str,
         dataset: Dataset,
         column_config: ColumnConfig,
         time_window: TimeWindow,
         metric: metrics.Regression = metrics.Regression.RMSE,
         holdout_dataset: Dataset = None,
-        training_config=TrainingConfig()
+        training_config=TrainingConfig(),
+        experiment_version_description: str = None,
     ) -> TimeSeries:
-        """ Start a timeseries regression usecase version training
+        """ Start a timeseries regression experiment version training
 
         Args:
-            name (str): Name of the usecase to create
+            experiment_name (str): Name of the experiment to create
             dataset (:class:`.Dataset`): Reference to the dataset
                 object to use for as training dataset
-            column_config (:class:`.ColumnConfig`): Column configuration for the usecase version
+            column_config (:class:`.ColumnConfig`): Column configuration for the experiment version
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
             time_window (:class:`.TimeWindow`): Time configuration
                 (see the documentation of the :class:`.TimeWindow` resource for more details)
-            metric (:enum: `metrics.Regression`, optional): Specific metric to use for the usecase (default:
-                ``metrics.Regression.RMSE``)
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment
+                (default: ``metrics.Regression.RMSE``)
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a holdout dataset (default: ``None``)
             training_config (:class:`.TrainingConfig`): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
+            experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.TimeSeries`: Newly created TimeSeries usecase version object
+            :class:`.timeseries.TimeSeries`: Newly created TimeSeries experiment version object
         """
-        return TimeSeries._fit(self._id, name, dataset, column_config, time_window, metric=metric,
-                               holdout_dataset=holdout_dataset, training_config=training_config)
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.TimeSeries,
+                                    TypeProblem.Regression)
+        return TimeSeries._fit(
+            experiment.id,
+            dataset,
+            column_config,
+            time_window,
+            metric,
+            holdout_dataset=holdout_dataset,
+            training_config=training_config,
+            description=experiment_version_description,
+        )
 
-    def fit_text_similarity(self, name: str, dataset: Dataset, description_column_config: DescriptionsColumnConfig,
-                            metric: metrics.TextSimilarity = metrics.TextSimilarity.accuracy_at_k, top_k: int = 10,
-                            lang: TextSimilarityLang = TextSimilarityLang.Auto, queries_dataset: Dataset = None,
-                            queries_column_config: QueriesColumnConfig = None,
-                            models_parameters: ListModelsParameters = ListModelsParameters()):
-        """ Start a text similarity usecase training with a specific training configuration.
+    def fit_text_similarity(
+        self,
+        experiment_name: str,
+        dataset: Dataset,
+        description_column_config: DescriptionsColumnConfig,
+        metric: metrics.TextSimilarity = metrics.TextSimilarity.accuracy_at_k,
+        top_k: int = 10,
+        lang: TextSimilarityLang = TextSimilarityLang.Auto,
+        queries_dataset: Dataset = None,
+        queries_column_config: QueriesColumnConfig = None,
+        models_parameters: ListModelsParameters = ListModelsParameters(),
+        experiment_version_description: str = None,
+    ) -> TextSimilarity:
+        """ Start a text similarity experiment version training with a specific training configuration.
 
         Args:
-            name (str): Name of the usecase to create
-            dataset (:class:`.Dataset`): Reference to the dataset
-                object to use for as training dataset
+            experiment_name (str): Name of the experiment to create
+            dataset (:class:`.Dataset`): Reference to the dataset object to use for as training dataset
             description_column_config (:class:`.DescriptionsColumnConfig`): Description column configuration
                 (see the documentation of the :class:`.DescriptionsColumnConfig` resource for more details
                 on each possible column types)
-            metric (str, optional): Specific metric to use for the usecase (default: ``accuracy_at_k``)
+            metric (:class:`.metrics.TextSimilarity`, optional): Specific metric to use for the experiment
+                (default: ``metrics.TextSimilarity.accuracy_at_k``)
             top_k (int, optional): top_k (default: ``10``)
+            lang (:class:`.TextSimilarityLang`, optional): lang of the training dataset
+                (default: ``.TextSimilarityLang.Auto``)
             queries_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a queries dataset (default: ``None``)
             queries_column_config (:class:`.QueriesColumnConfig`): Queries column configuration
@@ -757,13 +858,15 @@ class Project(ApiResource, UniqueResourceMixin):
             models_parameters (:class:`.ListModelsParameters`): Specific training configuration
                 (see the documentation of the :class:`.ListModelsParameters` resource for more details
                 on all the parameters)
+            experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.previsionio.text_similarity.TextSimilarity`: Newly created TextSimilarity usecase version object
+            :class:`.text_similarity.TextSimilarity`: Newly created TextSimilarity experiment version object
         """
+        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+                                    TypeProblem.TextSimilarity)
         return TextSimilarity._fit(
-            self._id,
-            name,
+            experiment.id,
             dataset,
             description_column_config,
             metric=metric,
@@ -774,20 +877,155 @@ class Project(ApiResource, UniqueResourceMixin):
             models_parameters=models_parameters
         )
 
-    def list_usecases(self, all: bool = True):
-        """ List all the available usecase in the current project.
+    def create_external_regression(
+        self,
+        experiment_name: str,
+        holdout_dataset: Dataset,
+        target_column: str,
+        external_models: List[Tuple],
+        metric: metrics.Regression = metrics.Regression.RMSE,
+        dataset: Dataset = None,
+        experiment_version_description: str = None,
+    ) -> ExternalExperimentVersion:
+        """ Create a tabular regression experiment version from external models
+
+        Args:
+            experiment_name (str): Name of the experiment to create
+            holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
+                Each tuple contains 3 items describing an external model as follows:
+
+                    1) The name you want to give to the model
+                    2) The path to the model in onnx format
+                    3) The path to a yaml file containing metadata about the model
+            metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment
+                (default: ``metrics.Regression.RMSE``)
+            dataset (:class:`.Dataset`, optional): Reference to the dataset object that
+                has been used to train the model (default: ``None``)
+            experiment_version_description (str): Description of the experiment version to create
+
+        Returns:
+            :class:`.external_models.ExternalExperimentVersion`: Newly created ExternalExperimentVersion object
+        """
+        if len(external_models) == 0:
+            raise PrevisionException('You must provide at least one external model')
+        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular,
+                                    TypeProblem.Regression)
+        return ExternalExperimentVersion._fit(
+            experiment.id,
+            holdout_dataset,
+            target_column,
+            external_models,
+            metric,
+            dataset=dataset,
+            description=experiment_version_description,
+        )
+
+    def create_external_classification(
+        self,
+        experiment_name: str,
+        holdout_dataset: Dataset,
+        target_column: str,
+        external_models: List[Tuple],
+        metric: metrics.Regression = metrics.Classification.AUC,
+        dataset: Dataset = None,
+        experiment_version_description: str = None,
+    ) -> ExternalExperimentVersion:
+        """ Create a tabular classification experiment version from external models
+
+        Args:
+            experiment_name (str): Name of the experiment to create
+            holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
+                Each tuple contains 3 items describing an external model as follows:
+
+                    1) The name you want to give to the model
+                    2) The path to the model in onnx format
+                    3) The path to a yaml file containing metadata about the model
+            metric (:class:`.metrics.Classification`, optional): Specific metric to use for the experiment
+                (default: ``metrics.Classification.AUC``)
+            dataset (:class:`.Dataset`, optional): Reference to the dataset object that
+                has been used to train the model (default: ``None``)
+            experiment_version_description (str): Description of the experiment version to create
+
+        Returns:
+            :class:`.external_models.ExternalExperimentVersion`: Newly created ExternalExperimentVersion object
+        """
+        if len(external_models) == 0:
+            raise PrevisionException('You must provide at least one external model')
+        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular,
+                                    TypeProblem.Classification)
+        return ExternalExperimentVersion._fit(
+            experiment.id,
+            holdout_dataset,
+            target_column,
+            external_models,
+            metric,
+            dataset=dataset,
+            description=experiment_version_description,
+        )
+
+    def create_external_multiclassification(
+        self,
+        experiment_name: str,
+        holdout_dataset: Dataset,
+        target_column: str,
+        external_models: List[Tuple],
+        metric: metrics.Regression = metrics.MultiClassification.log_loss,
+        dataset: Dataset = None,
+        experiment_version_description: str = None,
+    ) -> ExternalExperimentVersion:
+        """ Create a tabular multiclassification experiment version from external models
+
+        Args:
+            experiment_name (str): Name of the experiment to create
+            holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
+                Each tuple contains 3 items describing an external model as follows:
+
+                    1) The name you want to give to the model
+                    2) The path to the model in onnx format
+                    3) The path to a yaml file containing metadata about the model
+            metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the experiment
+                (default: ``metrics.MultiClassification.log_loss``)
+            dataset (:class:`.Dataset`, optional): Reference to the dataset object that
+                has been used to train the model (default: ``None``)
+            experiment_version_description (str): Description of the experiment version to create
+
+        Returns:
+            :class:`.external_models.ExternalExperimentVersion`: Newly created ExternalExperimentVersion object
+        """
+        if len(external_models) == 0:
+            raise PrevisionException('You must provide at least one external model')
+        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular,
+                                    TypeProblem.MultiClassification)
+        return ExternalExperimentVersion._fit(
+            experiment.id,
+            holdout_dataset,
+            target_column,
+            external_models,
+            metric,
+            dataset=dataset,
+            description=experiment_version_description,
+        )
+
+    def list_experiments(self, all: bool = True):
+        """ List all the available experiment in the current project.
 
         Args:
             all (boolean, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
         Returns:
-            list(:class:`.Usecase`): Fetched usecase objects
+            list(:class:`.Experiment`): Fetched experiment objects
         """
-        return Usecase.list(self._id, all=all)
+        return Experiment.list(self._id, all=all)
 
-    def create_usecase_deployment(self, name: str, main_model, challenger_model=None, access_type: str = 'public'):
-        return UsecaseDeployment._new(
+    def create_experiment_deployment(self, name: str, main_model, challenger_model=None, access_type: str = 'public'):
+        return ExperimentDeployment._new(
             self._id,
             name,
             main_model,
@@ -795,17 +1033,17 @@ class Project(ApiResource, UniqueResourceMixin):
             access_type=access_type
         )
 
-    def list_usecase_deployments(self, all: bool = True):
-        """ List all the available usecase in the current project.
+    def list_experiment_deployments(self, all: bool = True):
+        """ List all the available experiment in the current project.
 
         Args:
             all (boolean, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
         Returns:
-            list(:class:`.UsecaseDeployment`): Fetched usecase deployment objects
+            list(:class:`.ExperimentDeployment`): Fetched experiment deployment objects
         """
-        return UsecaseDeployment.list(self._id, all=all)
+        return ExperimentDeployment.list(self._id, all=all)
 
 
 connectors_names = {
@@ -813,6 +1051,5 @@ connectors_names = {
     'FTP': "create_ftp_connector",
     'SFTP': "create_sftp_connector",
     'S3': "create_s3_connector",
-    'HIVE': "create_hive_connector",
-    'GCP': "create_gcp_connector"
+    'GCP': "create_gcp_connector",
 }

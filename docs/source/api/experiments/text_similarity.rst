@@ -1,9 +1,10 @@
 .. _text_similarity_reference:
 
-TextSimilarity usecases
-=======================
+TextSimilarity experiments
+==========================
 
 .. automodule:: previsionio.text_similarity
     :members:
     :show-inheritance:
+    :inherited-members:
     :exclude-members: Preprocessing, ListModelsParameters

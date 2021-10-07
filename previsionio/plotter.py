@@ -1,6 +1,6 @@
 import itertools
-from previsionio.usecase_version import ClassicUsecaseVersion
-from previsionio.usecase_config import TypeProblem
+from previsionio.experiment_version import ClassicExperimentVersion
+from previsionio.experiment_config import TypeProblem
 import numpy as np
 import os
 
@@ -27,30 +27,30 @@ class PrevisionioPlotter(Plotter):
                          'clusterStats', 'costMatrix', 'confusionMatrix', 'regvs', 'regdisp', 'repartition',
                          'classifLift', 'classifPerBinLift']
 
-    def __init__(self, usecase):
+    def __init__(self, experiment):
         super().__init__()
 
         def add_widget_method(widget):
             def f(plotter):
-                return plotter.__plot(widget, usecase)
+                return plotter.__plot(widget, experiment)
 
             setattr(PrevisionioPlotter, widget, f)
 
         for method in self.prevision_widgets:
             add_widget_method(method)
 
-    def __plot(self, widget, usecase, width=1000, height=600):
+    def __plot(self, widget, experiment, width=1000, height=600):
         iframe_url = '<iframe src={}/widgets/{}/{} width={} height={}></iframe>'.format(local_url,
                                                                                         widget,
-                                                                                        usecase.usecase_name,
+                                                                                        experiment.experiment_name,
                                                                                         height,
                                                                                         width)
         return IPython.display.HTML(iframe_url)
 
 
 class PlotlyPlotter(Plotter):
-    def __init__(self, usecase: ClassicUsecaseVersion):
-        self.usecase = usecase
+    def __init__(self, experiment: ClassicExperimentVersion):
+        self.experiment = experiment
         super().__init__()
 
     def plot_roc(self):
@@ -67,17 +67,17 @@ class PlotlyPlotter(Plotter):
 
         init_notebook_mode()
 
-        if self.usecase.training_type not in [TypeProblem.Classification, TypeProblem.MultiClassification]:
+        if self.experiment.training_type not in [TypeProblem.Classification, TypeProblem.MultiClassification]:
             raise Exception(
                 'ROC curve only available for classification or multiclassif, '
-                'not ' + self.usecase.training_type.value)
+                'not ' + self.experiment.training_type.value)
 
-        preds = self.usecase.get_cv()
+        preds = self.experiment.get_cv()
 
-        target_col_name = self.usecase.column_config.target_column
+        target_col_name = self.experiment.column_config.target_column
         assert target_col_name
 
-        if self.usecase.training_type == TypeProblem.Classification:
+        if self.experiment.training_type == TypeProblem.Classification:
             fpr, tpr, _ = roc_curve(preds[target_col_name], preds['pred_' + target_col_name])
             roc_auc = auc(fpr, tpr)
 
@@ -146,8 +146,8 @@ class PlotlyPlotter(Plotter):
 
 
 class MatplotlibPlotter(Plotter):
-    def __init__(self, usecase):
-        self.usecase = usecase
+    def __init__(self, experiment):
+        self.experiment = experiment
         super().__init__()
 
     def featdetail(self):
@@ -211,36 +211,36 @@ class MatplotlibPlotter(Plotter):
         Only available for binary classification
 
         Args:
-            usecase:
+            experiment:
             predict_id (str): ID of the prediction
         """
-        if self.usecase.training_type not in [TypeProblem.Classification, TypeProblem.MultiClassification]:
+        if self.experiment.training_type not in [TypeProblem.Classification, TypeProblem.MultiClassification]:
             raise Exception(
                 'ROC curve only available for classification or multiclassif, '
-                'not ' + self.usecase.training_type)
+                'not ' + self.experiment.training_type)
 
         if predict_id:
             raise NotImplementedError
-            # if predict_8id not in self.usecase.predictions:
+            # if predict_8id not in self.experiment.predictions:
             #     raise KeyError('No such prediction')
             #
-            # prediction = self.usecase.predictions[predict_id]
+            # prediction = self.experiment.predictions[predict_id]
             #
             # if prediction.truth is None:
             #     raise ValueError('Truth not set for this prediction')
             # else:
-            #     truth, pred = prediction.truth, prediction.data[self.usecase.usecase_params['target_column']]
+            #     truth, pred = prediction.truth, prediction.data[self.experiment.experiment_params['target_column']]
         else:
-            preds = self.usecase.get_cv()
+            preds = self.experiment.get_cv()
 
-        target_col_name = self.usecase.column_config.target_column
+        target_col_name = self.experiment.column_config.target_column
 
         if not plt:
             raise Exception('matplotlib not installed. please install to plot curves')
 
         lw = 1
 
-        if self.usecase.training_type == TypeProblem.Classification:
+        if self.experiment.training_type == TypeProblem.Classification:
             fpr, tpr, _ = roc_curve(preds[target_col_name], preds['pred_' + target_col_name])
             roc_auc = auc(fpr, tpr)
             lw = 2
@@ -301,18 +301,18 @@ class MatplotlibPlotter(Plotter):
             predict_id (str): ID of the prediction
 
         """
-        if self.usecase.training_type != TypeProblem.MultiClassification:
+        if self.experiment.training_type != TypeProblem.MultiClassification:
             raise Exception('Confusion matrices only available for multiclassification, not {}'.format(
-                            self.usecase.training_type))
+                            self.experiment.training_type))
 
         # retrieve current list of predictions if necessary
-        if len(self.usecase.predictions) == 0:
-            self.usecase.predictions = self.usecase.get_predictions(full=True)
+        if len(self.experiment.predictions) == 0:
+            self.experiment.predictions = self.experiment.get_predictions(full=True)
 
-        if predict_id not in self.usecase.predictions:
+        if predict_id not in self.experiment.predictions:
             raise KeyError('No such prediction')
 
-        prediction = self.usecase.predictions[predict_id]
+        prediction = self.experiment.predictions[predict_id]
 
         # if prediction.truth is None:
         #     raise ValueError('Truth not set for this prediction')
@@ -320,8 +320,8 @@ class MatplotlibPlotter(Plotter):
         if not plt:
             raise Exception('matplotlib not installed. please install to plot curves')
 
-        id_col_name = self.usecase.column_config.id_column
-        target_col_name = self.usecase.column_config.target_column
+        id_col_name = self.experiment.column_config.id_column
+        target_col_name = self.experiment.column_config.target_column
         pred_target_col_name = 'pred_' + target_col_name if target_col_name else 'pred_TARGET'
         pred_cols = prediction.drop([id_col_name or 'ID',
                                      target_col_name or 'TARGET',
@@ -366,20 +366,20 @@ class MatplotlibPlotter(Plotter):
             top (int): top individuals to analyze
 
         """
-        if self.usecase.training_type != TypeProblem.Classification:
+        if self.experiment.training_type != TypeProblem.Classification:
             raise Exception('Classification analysis plots only available for classification, not {}'.format(
-                            self.usecase.training_type))
+                            self.experiment.training_type))
 
         # retrieve current list of predictions if necessary
-        if len(self.usecase.predictions) == 0:
-            self.usecase.predictions = self.usecase.get_predictions(full=True)
+        if len(self.experiment.predictions) == 0:
+            self.experiment.predictions = self.experiment.get_predictions(full=True)
 
-        if predict_id not in self.usecase.predictions:
+        if predict_id not in self.experiment.predictions:
             raise KeyError('No such prediction')
 
-        prediction = self.usecase.predictions[predict_id]
+        prediction = self.experiment.predictions[predict_id]
 
-        target_col_name = self.usecase.column_config.target_column
+        target_col_name = self.experiment.column_config.target_column
         pred_target_col_name = 'pred_' + target_col_name if target_col_name else 'pred_TARGET'
 
         # sort by predicted values (decreasing)

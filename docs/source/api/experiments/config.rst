@@ -1,8 +1,8 @@
 .. _config_reference:
 
-Usecase configuration
-=====================
+Experiment configuration
+========================
 
-.. automodule:: previsionio.usecase_config
+.. automodule:: previsionio.experiment_config
     :members:
     :exclude-members: ParamList, AdvancedModel, NormalModel, SimpleModel, Feature, Profile, DataType

@@ -8,7 +8,7 @@ variables:
   PIO_TAG: ${CI_COMMIT_REF_SLUG}
 
 .base:
-  image: python:3.6.8-slim-stretch
+  image: python:3.6.8-stretch
   tags: ["kube", "bel1-c2"]
 
 test-lint:
@@ -28,7 +28,7 @@ test-image:
   script:
     - pip install --no-cache-dir -r requirements.txt
     - pip install --no-cache-dir -r utests/requirements.txt
-    - pytest utests/
+    - pytest -k 'not exporter' utests/
   timeout: 3h
   allow_failure: true
 

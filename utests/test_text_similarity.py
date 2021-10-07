@@ -1,15 +1,17 @@
 import os
-from previsionio.text_similarity import ModelEmbedding, TextSimilarityLang, TextSimilarityModels
-from previsionio.usecase_config import YesOrNo, YesOrNoOrAuto
-import time
 import pandas as pd
 import unittest
+
 import previsionio as pio
+from previsionio.experiment import Experiment
+from previsionio.text_similarity import ModelEmbedding, TextSimilarityLang, TextSimilarityModels
+from previsionio.experiment_config import DataType, TypeProblem, YesOrNo, YesOrNoOrAuto
+
 from .utils import get_testing_id
 
 TESTING_ID = get_testing_id()
 
-PROJECT_NAME = "sdk_test_text_sim_usecase_" + str(TESTING_ID)
+PROJECT_NAME = "sdk_test_text_sim_experiment_" + str(TESTING_ID)
 PROJECT_ID = ""
 
 test_datasets = {}
@@ -37,137 +39,157 @@ def upload_datasets():
     test_datasets['queries'] = queries_dataset_csv
 
 
-def setup_module(module):
-    project = pio.Project.new(name=PROJECT_NAME,
-                              description="description test sdk")
-    global PROJECT_ID
-    PROJECT_ID = project._id
-    upload_datasets()
-
-
 class BaseTrainSearchDelete(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        project = pio.Project.new(name=PROJECT_NAME,
+                                  description="description test sdk")
+        global PROJECT_ID
+        PROJECT_ID = project._id
         upload_datasets()
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            for ds in test_datasets.values():
-                ds.delete()
-        except:
-            pass
+        project = pio.Project.from_id(PROJECT_ID)
+        project.delete()
 
     def test_train_stop_delete_text_similarity(self):
-
+        experiment_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
+        experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
+                                    DataType.Tabular, TypeProblem.TextSimilarity)
+        experiment_id = experiment.id
+        description_dataset = test_datasets['description']
         description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
-        uc = pio.TextSimilarity._fit(PROJECT_ID,
-                                     'test_sdk_1_text_similarity_{}'.format(TESTING_ID),
-                                     test_datasets['description'],
-                                     description_column_config,
-                                     metric=pio.metrics.TextSimilarity.accuracy_at_k)
+        experiment_version = pio.TextSimilarity._fit(
+            experiment_id,
+            description_dataset,
+            description_column_config,
+            metric=pio.metrics.TextSimilarity.accuracy_at_k,
+        )
 
-        uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
-        time.sleep(40)
-        uc.stop()
-        uc.update_status()
-        assert not uc.running
-        pio.Usecase.from_id(uc.usecase_id).delete()
-        list = pio.Usecase.list(PROJECT_ID)
-        assert len(list) == 0
+        experiment_version.wait_until(lambda experiment: experiment._status['state'] == 'done')
+        experiment_version.stop()
+        experiment_version.update_status()
+        assert not experiment_version.running
+        pio.Experiment.from_id(experiment_version.experiment_id).delete()
+        project_experiments = pio.Experiment.list(PROJECT_ID)
+        project_experiments_ids = [experiment.id for experiment in project_experiments]
+        assert experiment_id not in project_experiments_ids
 
     def test_train_new_stop_delete_text_similarity(self):
-
+        experiment_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
+        experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
+                                    DataType.Tabular, TypeProblem.TextSimilarity)
+        experiment_id = experiment.id
+        description_dataset = test_datasets['description']
         description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
-        uc = pio.TextSimilarity._fit(PROJECT_ID,
-                                     'test_sdk_1_text_similarity_{}'.format(TESTING_ID),
-                                     test_datasets['description'],
-                                     description_column_config,
-                                     metric=pio.metrics.TextSimilarity.accuracy_at_k)
+        experiment_version = pio.TextSimilarity._fit(
+            experiment_id,
+            description_dataset,
+            description_column_config,
+            metric=pio.metrics.TextSimilarity.accuracy_at_k,
+        )
 
-        uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
+        experiment_version.wait_until(lambda experiment: experiment._status['state'] == 'done')
 
-        new_version = uc.new_version()
-        new_version.wait_until(lambda usecase: usecase._status['state'] == 'done')
+        new_version = experiment_version.new_version()
+        new_version.wait_until(lambda experiment: experiment._status['state'] == 'done')
 
-        time.sleep(40)
         new_version.stop()
         new_version.update_status()
         assert not new_version.running
 
-        uc.stop()
-        uc.update_status()
-        assert not uc.running
-        pio.Usecase.from_id(uc.usecase_id).delete()
-        list = pio.Usecase.list(PROJECT_ID)
-        assert len(list) == 0
+        experiment_version.stop()
+        experiment_version.update_status()
+        assert not experiment_version.running
+        pio.Experiment.from_id(experiment_version.experiment_id).delete()
+        project_experiments = pio.Experiment.list(PROJECT_ID)
+        project_experiments_ids = [experiment.id for experiment in project_experiments]
+        assert experiment_id not in project_experiments_ids
 
     def test_train_search_delete_text_similarity_with_queries_dataset(self):
-
-        description_column_config = pio.DescriptionsColumnConfig(content_column='item_desc', id_column='item_id')
+        experiment_name = 'test_sdk_2_text_similarity_{}'.format(TESTING_ID)
+        experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
+                                    DataType.Tabular, TypeProblem.TextSimilarity)
+        experiment_id = experiment.id
+        description_dataset = test_datasets['description']
+        description_column_config = pio.DescriptionsColumnConfig('item_desc', 'item_id')
+        queries_dataset = test_datasets['queries']
         queries_column_config = pio.QueriesColumnConfig(queries_dataset_content_column='query',
                                                         queries_dataset_matching_id_description_column='true_item_id')
-        uc = pio.TextSimilarity._fit(PROJECT_ID,
-                                     'test_sdk_2_text_similarity_{}'.format(TESTING_ID),
-                                     test_datasets['description'],
-                                     description_column_config,
-                                     metric=pio.metrics.TextSimilarity.accuracy_at_k,
-                                     top_k=10,
-                                     lang=TextSimilarityLang.Auto,
-                                     queries_dataset=test_datasets['queries'],
-                                     queries_column_config=queries_column_config)
 
-        uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
-        assert not uc.running
-        assert uc.score is not None
-        nb_model = len(uc.models)
+        experiment_version = pio.TextSimilarity._fit(
+            experiment_id,
+            description_dataset,
+            description_column_config,
+            metric=pio.metrics.TextSimilarity.accuracy_at_k,
+            top_k=10,
+            lang=TextSimilarityLang.Auto,
+            queries_dataset=queries_dataset,
+            queries_column_config=queries_column_config,
+        )
+
+        experiment_version.wait_until(lambda experiment: experiment._status['state'] == 'done')
+        assert not experiment_version.running
+        assert experiment_version.score is not None
+        nb_model = len(experiment_version.models)
         nb_prediction = 0
-        for model in uc.models:
+        for model in experiment_version.models:
             model.predict_from_dataset(test_datasets['queries'],
                                        'query',
                                        top_k=10,
                                        queries_dataset_matching_id_description_column='true_item_id')
             nb_prediction += 1
         assert nb_prediction == nb_model
-        pio.Usecase.from_id(uc.usecase_id).delete()
-        list = pio.Usecase.list(PROJECT_ID)
-        assert len(list) == 0
+        pio.Experiment.from_id(experiment_version.experiment_id).delete()
+        project_experiments = pio.Experiment.list(PROJECT_ID)
+        project_experiments_ids = [experiment.id for experiment in project_experiments]
+        assert experiment_id not in project_experiments_ids
 
     def test_train_delete_text_similarity_with_queries_dataset_all_models(self):
+        experiment_name = 'test_sdk_3_text_similarity_{}'.format(TESTING_ID)
+        experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
+                                    DataType.Tabular, TypeProblem.TextSimilarity)
+        experiment_id = experiment.id
+        experiment_config = [{'model_embedding': ModelEmbedding.TFIDF,
+                              'preprocessing': {'word_stemming': YesOrNo.Yes,
+                                                'ignore_stop_word': YesOrNoOrAuto.Auto,
+                                                'ignore_punctuation': YesOrNo.No},
+                              'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.ClusterPruning]},
+                             {'model_embedding': ModelEmbedding.Transformer,
+                              'preprocessing': {},
+                              'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
+                                         TextSimilarityModels.HKM]},
+                             {'model_embedding': ModelEmbedding.TransformerFineTuned,
+                              'preprocessing': {},
+                              'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
+                                         TextSimilarityModels.HKM]}]
+        models_parameters = pio.ListModelsParameters(experiment_config)
+        description_dataset = test_datasets['description']
         description_column_config = pio.DescriptionsColumnConfig(content_column='item_desc', id_column='item_id')
+        queries_dataset = test_datasets['queries']
         queries_column_config = pio.QueriesColumnConfig(queries_dataset_content_column='query',
                                                         queries_dataset_matching_id_description_column='true_item_id')
-        usecase_config = [{'model_embedding': ModelEmbedding.TFIDF,
-                           'preprocessing': {'word_stemming': YesOrNo.Yes,
-                                             'ignore_stop_word': YesOrNoOrAuto.Auto,
-                                             'ignore_punctuation': YesOrNo.No},
-                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.ClusterPruning]},
-                          {'model_embedding': ModelEmbedding.Transformer,
-                           'preprocessing': {},
-                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
-                                      TextSimilarityModels.HKM]},
-                          {'model_embedding': ModelEmbedding.TransformerFineTuned,
-                           'preprocessing': {},
-                           'models': [TextSimilarityModels.BruteForce, TextSimilarityModels.LSH,
-                                      TextSimilarityModels.HKM]}]
-        models_parameters = pio.ListModelsParameters(usecase_config)
-        uc = pio.TextSimilarity._fit(PROJECT_ID,
-                                     'test_sdk_3_text_similarity_{}'.format(TESTING_ID),
-                                     test_datasets['description'],
-                                     description_column_config,
-                                     metric=pio.metrics.TextSimilarity.accuracy_at_k,
-                                     top_k=10,
-                                     lang=TextSimilarityLang.Auto,
-                                     queries_dataset=test_datasets['queries'],
-                                     queries_column_config=queries_column_config,
-                                     models_parameters=models_parameters)
 
-        uc.wait_until(lambda usecase: usecase._status['state'] == 'done')
-        assert not uc.running
-        assert uc.score is not None
-        uc.stop()
-        uc.update_status()
-        assert not uc.running
-        pio.Usecase.from_id(uc.usecase_id).delete()
-        list = pio.Usecase.list(PROJECT_ID)
-        assert len(list) == 0
+        experiment_version = pio.TextSimilarity._fit(
+            experiment_id,
+            description_dataset,
+            description_column_config,
+            metric=pio.metrics.TextSimilarity.accuracy_at_k,
+            top_k=10,
+            lang=TextSimilarityLang.Auto,
+            queries_dataset=queries_dataset,
+            queries_column_config=queries_column_config,
+            models_parameters=models_parameters,
+        )
+
+        experiment_version.wait_until(lambda experiment: experiment._status['state'] == 'done')
+        assert not experiment_version.running
+        assert experiment_version.score is not None
+        experiment_version.stop()
+        experiment_version.update_status()
+        assert not experiment_version.running
+        pio.Experiment.from_id(experiment_version.experiment_id).delete()
+        project_experiments = pio.Experiment.list(PROJECT_ID)
+        project_experiments_ids = [experiment.id for experiment in project_experiments]
+        assert experiment_id not in project_experiments_ids

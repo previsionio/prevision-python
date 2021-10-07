@@ -6,26 +6,27 @@ from . import config
 from .logger import logger
 from .api_resource import ApiResource
 from . import client
-from .usecase_version import BaseUsecaseVersion
+from .experiment_version import BaseExperimentVersion
 from .utils import parse_json, PrevisionException, get_all_results
 from .prediction import DeploymentPrediction
 from .dataset import Dataset
 
 
-class UsecaseDeployment(ApiResource):
-    """ UsecaseDeployment objects represent usecase deployment resource that will be explored by Prevision.io platform.
+class ExperimentDeployment(ApiResource):
+    """ ExperimentDeployment objects represent experiment deployment
+    resource that will be explored by Prevision.io platform.
     """
 
     resource = 'model-deployments'
 
-    def __init__(self, _id: str, name: str, usecase_id, current_version,
+    def __init__(self, _id: str, name: str, experiment_id, current_version,
                  versions, deploy_state, access_type, project_id, training_type, models, url=None,
                  **kwargs):
 
         self.name = name
         self._id = _id
-        # self.usecase_version_id = usecase_version_id
-        self.usecase_id = usecase_id
+        # self.experiment_version_id = experiment_version_id
+        self.experiment_id = experiment_id
         self.current_version = current_version
         self.versions = versions
         self._deploy_state = deploy_state
@@ -41,13 +42,13 @@ class UsecaseDeployment(ApiResource):
 
     @classmethod
     def from_id(cls, _id: str):
-        """Get a deployed usecase from the platform by its unique id.
+        """Get a deployed experiment from the platform by its unique id.
 
         Args:
-            _id (str): Unique id of the usecase version to retrieve
+            _id (str): Unique id of the experiment version to retrieve
 
         Returns:
-            :class:`.UsecaseDeployment`: Fetched deployed usecase
+            :class:`.ExperimentDeployment`: Fetched deployed experiment
 
         Raises:
             PrevisionException: Any error while fetching data from the platform
@@ -60,22 +61,22 @@ class UsecaseDeployment(ApiResource):
 
     @property
     def deploy_state(self):
-        usecase_deployment = self.from_id(self._id)
-        return usecase_deployment._deploy_state
+        experiment_deployment = self.from_id(self._id)
+        return experiment_deployment._deploy_state
 
     @property
     def run_state(self):
-        usecase_deployment = self.from_id(self._id)
-        return usecase_deployment._run_state
+        experiment_deployment = self.from_id(self._id)
+        return experiment_deployment._run_state
 
     @classmethod
-    def list(cls, project_id: str, all: bool = True) -> List['UsecaseDeployment']:
-        """ List all the available usecase in the current active [client] workspace.
+    def list(cls, project_id: str, all: bool = True) -> List['ExperimentDeployment']:
+        """ List all the available experiment in the current active [client] workspace.
 
         .. warning::
 
             Contrary to the parent ``list()`` function, this method
-            returns actual :class:`.UsecaseDeployment` objects rather
+            returns actual :class:`.ExperimentDeployment` objects rather
             than plain dictionaries with the corresponding data.
 
         Args:
@@ -85,121 +86,118 @@ class UsecaseDeployment(ApiResource):
                 the query will only return the first page of result.
 
         Returns:
-            list(:class:`.UsecaseDeployment`): Fetched dataset objects
+            list(:class:`.ExperimentDeployment`): Fetched dataset objects
         """
         resources = super()._list(all=all, project_id=project_id)
-        return [UsecaseDeployment(**usecase_deployment) for usecase_deployment in resources]
+        return [ExperimentDeployment(**experiment_deployment) for experiment_deployment in resources]
 
     @classmethod
     def _new(cls, project_id: str, name: str, main_model, challenger_model=None, access_type: str = 'public'):
-        """ Create a new usecase deployment object on the platform.
+        """ Create a new experiment deployment object on the platform.
 
         Args:
             project_id (str): project id
-            name (str): usecase deployment name
+            name (str): experiment deployment name
             main_model: main model
-            challenger_model (optional): challenger model. main and challenger models should be in the same usecase
+            challenger_model (optional): challenger model. main and challenger models should be in the same experiment
             access_type (str, optional): public/ fine_grained/ private
 
         Returns:
-            :class:`.UsecaseDeployment`: The registered usecase deployment object in the current project
+            :class:`.ExperimentDeployment`: The registered experiment deployment object in the current project
 
         Raises:
-            PrevisionException: Any error while creating usecase deployment to the platform
+            PrevisionException: Any error while creating experiment deployment to the platform
                 or parsing the result
             Exception: For any other unknown error
         """
 
         if access_type not in ['public', 'fine_grained', 'private']:
             raise PrevisionException('access type must be public, fine_grained or private')
-        main_model_usecase_version_id = main_model.usecase_version_id
-        main_usecase = BaseUsecaseVersion._from_id(main_model_usecase_version_id)
-        main_usecase_id = main_usecase['usecase_id']
+        main_model_experiment_version_id = main_model.experiment_version_id
+        main_experiment = BaseExperimentVersion._from_id(main_model_experiment_version_id)
+        main_experiment_id = main_experiment['experiment_id']
         data = {
             'name': name,
-            'usecase_id': main_usecase_id,
-            'main_model_usecase_version_id': main_model_usecase_version_id,
+            'experiment_id': main_experiment_id,
+            'main_model_experiment_version_id': main_model_experiment_version_id,
             'main_model_id': main_model._id,
             'access_type': access_type
         }
 
         if challenger_model:
-            challenger_model_usecase_version_id = challenger_model.usecase_version_id
-            challenger_usecase = BaseUsecaseVersion._from_id(main_model_usecase_version_id)
-            challenger_usecase_id = challenger_usecase['usecase_id']
-            if main_usecase_id != challenger_usecase_id:
-                raise PrevisionException('main and challenger models must be from the same usecase')
-            data['challenger_model_usecase_version_id'] = challenger_model_usecase_version_id
+            challenger_model_experiment_version_id = challenger_model.experiment_version_id
+            challenger_experiment = BaseExperimentVersion._from_id(main_model_experiment_version_id)
+            challenger_experiment_id = challenger_experiment['experiment_id']
+            if main_experiment_id != challenger_experiment_id:
+                raise PrevisionException('main and challenger models must be from the same experiment')
+            data['challenger_model_experiment_version_id'] = challenger_model_experiment_version_id
             data['challenger_model_id'] = challenger_model._id
 
         url = '/projects/{}/model-deployments'.format(project_id)
         resp = client.request(url,
                               data=data,
                               method=requests.post,
-                              message_prefix='UsecaseDeployment creation')
+                              message_prefix='ExperimentDeployment creation')
         json_resp = parse_json(resp)
-        usecase_deployment = cls.from_id(json_resp['_id'])
-        return usecase_deployment
+        experiment_deployment = cls.from_id(json_resp['_id'])
+        return experiment_deployment
 
     def new_version(self, name: str, main_model, challenger_model=None):
-        """ Create a new usecase deployment version.
+        """ Create a new experiment deployment version.
 
         Args:
-            name (str): usecase deployment name
+            name (str): experiment deployment name
             main_model: main model
-            challenger_model (optional): challenger model. main and challenger models should be in the same usecase
+            challenger_model (optional): challenger model. main and challenger models should be in the same experiment
 
         Returns:
-            :class:`.UsecaseDeployment`: The registered usecase deployment object in the current project
+            :class:`.ExperimentDeployment`: The registered experiment deployment object in the current project
 
         Raises:
-            PrevisionException: Any error while creating usecase deployment to the platform
+            PrevisionException: Any error while creating experiment deployment to the platform
                 or parsing the result
             Exception: For any other unknown error
         """
-        main_model_usecase_version_id = main_model.usecase_version_id
-        main_usecase = BaseUsecaseVersion._from_id(main_model_usecase_version_id)
-        main_usecase_id = main_usecase['usecase_id']
+        main_model_experiment_version_id = main_model.experiment_version_id
+        main_experiment = BaseExperimentVersion._from_id(main_model_experiment_version_id)
+        main_experiment_id = main_experiment['experiment_id']
         data = {
             'name': name,
-            'main_model_usecase_version_id': main_model_usecase_version_id,
+            'main_model_experiment_version_id': main_model_experiment_version_id,
             'main_model_id': main_model._id,
         }
         if challenger_model:
-            challenger_model_usecase_version_id = challenger_model.usecase_version_id
-            challenger_usecase = BaseUsecaseVersion._from_id(main_model_usecase_version_id)
-            challenger_usecase_id = challenger_usecase['usecase_id']
-            if main_usecase_id != challenger_usecase_id:
-                raise PrevisionException('main and challenger models must be from the same usecase')
-            data['challenger_model_usecase_version_id'] = challenger_model_usecase_version_id
+            challenger_model_experiment_version_id = challenger_model.experiment_version_id
+            challenger_experiment = BaseExperimentVersion._from_id(main_model_experiment_version_id)
+            challenger_experiment_id = challenger_experiment['experiment_id']
+            if main_experiment_id != challenger_experiment_id:
+                raise PrevisionException('main and challenger models must be from the same experiment')
+            data['challenger_model_experiment_version_id'] = challenger_model_experiment_version_id
             data['challenger_model_id'] = challenger_model._id
 
         url = '/deployments/{}/versions'.format(self._id)
         resp = client.request(url,
                               data=data,
                               method=requests.post,
-                              message_prefix='UsecaseDeployment creation new version')
+                              message_prefix='ExperimentDeployment creation new version')
         json_resp = parse_json(resp)
-        usecase_deployment = self.from_id(json_resp['_id'])
-        return usecase_deployment
+        experiment_deployment = self.from_id(json_resp['_id'])
+        return experiment_deployment
 
     def delete(self):
-        """Delete a usecase deployment from the actual [client] workspace.
+        """Delete an experiment deployment from the actual [client] workspace.
 
         Raises:
-            PrevisionException: If the dataset does not exist
+            PrevisionException: If the experiment deployment does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/deployments/{}'.format(self.id),
-                              method=requests.delete,
-                              message_prefix='UsecaseDeployment delete')
-        return resp
+        super().delete()
 
     def wait_until(self, condition, timeout: float = config.default_timeout):
         """ Wait until condition is fulfilled, then break.
 
         Args:
-            condition (func: (:class:`.BaseUsecaseVersion`) -> bool.): Function to use to check the
+            condition (func: (:class:`.BaseExperimentVersion`) -> bool.): Function to use to check the
                 break condition
             raise_on_error (bool, optional): If true then the function will stop on error,
                 otherwise it will continue waiting (default: ``True``)
@@ -207,7 +205,7 @@ class UsecaseDeployment(ApiResource):
 
         Example::
 
-            usecase.wait_until(lambda usecasev: len(usecasev.models) > 3)
+            experiment.wait_until(lambda experimentv: len(experimentv.models) > 3)
 
         Raises:
             PrevisionException: If the resource could not be fetched or there was a timeout.
@@ -228,7 +226,7 @@ class UsecaseDeployment(ApiResource):
             time.sleep(config.scheduler_refresh_rate)
 
     def create_api_key(self):
-        """Create an api key of the usecase deployment from the actual [client] workspace.
+        """Create an api key of the experiment deployment from the actual [client] workspace.
 
         Raises:
             PrevisionException: If the dataset does not exist
@@ -237,12 +235,13 @@ class UsecaseDeployment(ApiResource):
         print('/deployments/{}/api-keys'.format(self.id))
         resp = client.request(endpoint='/deployments/{}/api-keys'.format(self.id),
                               method=requests.post,
-                              message_prefix='UsecaseDeployment create api key')
+                              message_prefix='ExperimentDeployment create api key')
         resp = parse_json(resp)
         return resp
 
     def get_api_keys(self):
-        """Fetch the api keys client id and cient secret of the usecase deployment from the actual [client] workspace.
+        """Fetch the api keys client id and cient secret of the
+        experiment deployment from the actual [client] workspace.
 
         Raises:
             PrevisionException: If the dataset does not exist
@@ -250,14 +249,14 @@ class UsecaseDeployment(ApiResource):
         """
         resp = client.request(endpoint='/deployments/{}/api-keys'.format(self.id),
                               method=requests.get,
-                              message_prefix='UsecaseDeployment get api key _id')
+                              message_prefix='ExperimentDeployment get api key _id')
         resp = parse_json(resp)
         api_keys_ids = [item['_id'] for item in resp['items']]
         res = []
         for api_keys_id in api_keys_ids:
             resp = client.request(endpoint='/api-keys/{}/secret'.format(api_keys_id),
                                   method=requests.get,
-                                  message_prefix='UsecaseDeployment get api key client_id and secret')
+                                  message_prefix='ExperimentDeployment get api key client_id and secret')
             resp = parse_json(resp)
             res.append({'client_id': resp['service_account_client_id'],
                         'client_secret': resp['client_secret']})
@@ -271,7 +270,7 @@ class UsecaseDeployment(ApiResource):
             dataset (:class:`.Dataset`): Dataset resource to make a prediction for
 
         Returns:
-            ``pd.DataFrame``: Prediction object
+            :class:`.DeploymentPrediction`: The registered prediction object in the current workspace
         """
         if self.training_type not in ['regression', 'classification', 'multiclassification']:
             PrevisionException('Prediction not supported yet for training type {}', self.training_type)

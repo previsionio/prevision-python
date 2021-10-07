@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 from itertools import combinations
 from io import BytesIO, StringIO
-from previsionio.usecase_config import UsecaseState
+from previsionio.experiment_config import ExperimentState
 import numpy as np
 import pandas as pd
 import os
@@ -26,7 +25,7 @@ class Dataset(ApiResource):
 
     """ Dataset objects represent data resources that will be explored by Prevision.io platform.
 
-        In order to launch an auto ml process (see :class:`.BaseUsecase` class), we need to have
+        In order to launch an auto ml process (see :class:`.BaseExperiment` class), we need to have
         the matching dataset stored in the related workspace.
 
         Within the platform they are stored in tabular form and are derived:
@@ -39,7 +38,7 @@ class Dataset(ApiResource):
     def __init__(self, _id: str, name: str, datasource: DataSource = None, _data: DataFrame = None,
                  describe_state: Dict = None, drift_state=None, embeddings_state=None, separator=',', **kwargs):
 
-        super().__init__(_id=_id, datasource=datasource)
+        super().__init__(_id=_id)
         self.name = name
         self._id = _id
         self.separator = separator
@@ -106,13 +105,13 @@ class Dataset(ApiResource):
         self.embeddings_state = dset_json['embeddings_state']
 
     def get_describe_status(self):
-        return UsecaseState(self.describe_state)
+        return ExperimentState(self.describe_state)
 
     def get_drift_status(self):
-        return UsecaseState(self.drift_state)
+        return ExperimentState(self.drift_state)
 
     def get_embedding_status(self):
-        return UsecaseState(self.embeddings_state)
+        return ExperimentState(self.embeddings_state)
 
     def delete(self):
         """Delete a dataset from the actual [client] workspace.
@@ -121,10 +120,7 @@ class Dataset(ApiResource):
             PrevisionException: If the dataset does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/{}/{}'.format(self.resource, self.id),
-                              method=requests.delete,
-                              message_prefix='Dataset delete')
-        return resp
+        super().delete()
 
     def start_embedding(self):
         """Starts the embeddings analysis of the dataset from the actual [client] workspace
@@ -207,7 +203,7 @@ class Dataset(ApiResource):
 
         .. note::
 
-            To start a new use case on a dataset, it has to be already
+            To start a new experiment version on a dataset, it has to be already
             registred in your workspace.
 
         Args:
@@ -230,10 +226,10 @@ class Dataset(ApiResource):
             :class:`.Dataset`: The registered dataset object in the current workspace.
         """
         if any(a is not None and b is not None for a, b in combinations([datasource, file_name, dataframe], 2)):
-            raise Exception('only one of [datasource, file_handle, data] must be specified')
+            raise Exception('only one of [datasource, file_name, dataframe] must be specified')
 
         if not any([datasource is not None, file_name is not None, dataframe is not None]):
-            raise Exception('at least one of [datasource, file_handle, data] must be specified')
+            raise Exception('at least one of [datasource, file_name, dataframe] must be specified')
 
         data = {
             'name': name,
@@ -315,14 +311,12 @@ class Dataset(ApiResource):
 
         create_json = parse_json(create_resp)
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
-        event_tuple = previsionio.utils.EventTuple('DATASET_UPDATE',
-                                                   [('copy_state', 'done'),
-                                                       ('describe_state', 'done'),
-                                                       ('drift_state', 'done')],
-                                                   [('copy_state', 'failed'),
-                                                       ('describe_state', 'failed'),
-                                                       ('drift_state', 'failed'),
-                                                       ('embeddings_state', 'failed')])
+        event_tuple = previsionio.utils.EventTuple(
+            'DATASET_UPDATE',
+            [('copy_state', 'done'), ('describe_state', 'done'), ('drift_state', 'done')],
+            [('copy_state', 'failed'), ('describe_state', 'failed'),
+             ('drift_state', 'failed'), ('embeddings_state', 'failed')],
+        )
         assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(create_json['_id'],
                                                 cls.resource,
@@ -343,7 +337,7 @@ class DatasetImages(ApiResource):
     """ DatasetImages objects represent image data resources that will be used by
         Prevision.io's platform.
 
-        In order to launch an auto ml process (see :class:`.BaseUsecase` class), we need to have
+        In order to launch an auto ml process (see :class:`.BaseExperiment` class), we need to have
         the matching dataset stored in the related workspace.
 
         Within the platform, image folder datasets are stored as ZIP files and are copied from
@@ -371,10 +365,7 @@ class DatasetImages(ApiResource):
             PrevisionException: If the dataset images does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        resp = client.request(endpoint='/{}/{}'.format(self.resource, self.id),
-                              method=requests.delete,
-                              message_prefix='Image folder delete')
-        return resp
+        super().delete()
 
     @classmethod
     def list(cls, project_id: str, all: bool = True):
@@ -404,7 +395,7 @@ class DatasetImages(ApiResource):
 
         .. note::
 
-            To start a new use case on a dataset image, it has to be already
+            To start a new experiment version on a dataset image, it has to be already
             registred in your workspace.
 
         Args:

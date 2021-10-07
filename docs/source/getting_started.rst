@@ -4,7 +4,11 @@
 Getting started
 ***************
 
-The following document is a step by step usage example of the `Prevision.io <https://prevision.io/>`_ Python SDK. The full documentation of the software is available `here <https://previsionio.readthedocs.io/fr/latest/>`_.
+The Prevision.io Python SDK allows you to interact with Prevision.io `APIs <https://cloud.prevision.io/api/documentation/>`_ directly from a python environment.
+
+The following document is a step by step usage example of the Prevision.io Python SDK. If your looking for the full documentation of the software you will find it `here <https://previsionio.readthedocs.io/fr/latest/>`_.
+
+Don't already have a Prevision.io account established? Head over to `this link <https://previsionio.readthedocs.io/fr/latest/Introduction/getting-started.html>`_, follow the instructions and come back to this page!
 
 Pre-requisites
 ==============
@@ -24,7 +28,7 @@ Get the package
 Set up your client
 ==================
 
-Prevision.io's SDK client uses a specific master token to authenticate with the instance's server and allows you to perform various requests. To get your master token, log in the online interface on your instance, navigate to the admin page and copy the token.
+Prevision.io's SDK client uses a specific master token to authenticate with the instance's server and allows you to perform various requests. To get your master token, log in the online interface of your instance, navigate to the admin page and copy the token.
 
 You can either set the token and the instance name as environment variables, by specifying
 ``PREVISION_URL`` and ``PREVISION_MASTER_TOKEN``, or at the beginning of your script:
@@ -46,10 +50,19 @@ You can either set the token and the instance name as environment variables, by 
         event_log=False, # whether to activate detailed event managers debug logging
     )
 
+    # You can manage the duration you wish to wait for an asynchronous response
+    pio.config.default_timeout = 3600
+
+    # You can manage the number of retries for each call to the Prevision.io API
+    pio.config.request_retries = 6
+
+    # You can manage the duration of retry for each call to the Prevision.io API
+    pio.config.request_retry_time = 10
+
 Create a project
 ================
 
-First things first, to upload data or train a usecase, you need to create a project.
+First things first, to upload data or train an experiment, you need to create a project.
 
 .. code-block:: python
 
@@ -60,7 +73,7 @@ First things first, to upload data or train a usecase, you need to create a proj
 Data
 ====
 
-To train a usecase, you need to gather some training data. This data must be uploaded to your instance using either a data source, a file path or a :class:`.pandas.DataFrame`.
+To train an experiment, you need to gather some training data. This data must be uploaded to your instance using either a data source, a file path or a :class:`.pandas.DataFrame`.
 
 Managing datasources & connectors
 ---------------------------------
@@ -68,13 +81,14 @@ Managing datasources & connectors
 Datasources and connectors are Prevision.io's way of keeping a link to a source of data and taking snapshots when needed. The avaible data sources are:
 
 - SQL
-- HIVE
 - FTP
 - SFTP
 - S3
 - GCP
 
 Connectors hold the credentials to connect to the distant data sources. Then you can specify the exact resource to extract from a data source (be it the path to the file to load, the name of the database table to parse, ...).
+
+.. _creating connector:
 
 Creating a connector
 ~~~~~~~~~~~~~~~~~~~~
@@ -113,7 +127,7 @@ You can then create datasets from this datasource as explained in :ref:`Uploadin
 Listing available connectors and data sources
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Connectors and datasources already registered on the platform can be listed
+Connectors and datasources already registered on your workspace can be listed
 using the ``list_connectors()`` and ``list_datasource()`` method from project class:
 
 .. code-block:: py
@@ -151,13 +165,12 @@ You can upload data from three different sources: a path to a local (``csv``, ``
     image_folder_path = 'path/to/your/image_data.zip'
     image_folder = project.create_image_folder(name='helloworld', file_name=image_folder_path)
 
-
-This will automatically upload the data as a new dataset on your Prevision.io's instance. If you go to the online interface, you will see this new dataset in the list of datasets (in the "Data" tab).
+This will automatically upload the data as a new dataset in your workspace. If you go to the online interface, you will see this new dataset in the list of datasets (in the "Data" tab).
 
 Listing available datasets
 --------------------------
 
-To get a list of all the datasets currently available on the platform (in your workspace), use the ``list_datasets()``
+To get a list of all the datasets currently available in your workspace, use the ``list_datasets()``
 method:
 
 .. code-block:: py
@@ -172,22 +185,22 @@ method:
     for folder in image_folders:
         print(folder.name)
 
-Downloading data from the platform
-----------------------------------
+Downloading data from your workspace
+------------------------------------
 
-If you already uploaded a dataset on the platform and want to grab it locally, simply use the ``Dataset.from_id()`` SDK method:
+If you created or uploaded a dataset in your workspace and want to grab it locally, simply use the ``Dataset.download`` method:
 
 .. code-block:: py
 
-    dataset = pio.Dataset.from_id('5ebaad70a7271000e7b28ea0')
+    out_path = dataset.download(download_path="your/local/path")
 
-Regression/Classification/Multi-classification usecase
-======================================================
+Regression/Classification/Multi-classification experiments
+==========================================================
 
 Configuring the dataset
 -----------------------
 
-To start a usecase you need to specify the dataset to be used and its configuration (target column, weight column, id column, ...). To get a full documentation check the api reference of the :class:`.ColumnConfig` in :ref:`config_reference`.
+To start an experiment you need to specify the dataset to be used and its configuration (target column, weight column, id column, ...). To get a full documentation check the api reference of the :class:`.ColumnConfig` in :ref:`config_reference`.
 
 .. code-block:: python
 
@@ -213,9 +226,9 @@ If you want, you can also specify some training parameters, such as which models
 Starting training
 -----------------
 
-You can now create a new usecase based on:
+You can now create a new experiment based on:
 
- - a usecase name
+ - an experiment name
  - a dataset
  - a column config
  - (optional) a metric type
@@ -224,7 +237,7 @@ You can now create a new usecase based on:
 
 .. code-block:: python
 
-    usecase_version = project.fit_classification(
+    experiment_version = project.fit_classification(
         name='helloworld_classif',
         dataset=dataset,
         column_config=column_config,
@@ -233,11 +246,11 @@ You can now create a new usecase based on:
         holdout_dataset=None,
     )
 
-If you want to use image data for your usecase, you need to provide the API with both the tabular dataset and the image folder:
+If you want to use image data for your experiment, you need to provide the API with both the tabular dataset and the image folder:
 
 .. code-block:: python
 
-    usecase_version = project.fit_image_classification(
+    experiment_version = project.fit_image_classification(
         name='helloworld_images_classif',
         dataset=(dataset, image_folder),
         column_config=column_config,
@@ -253,31 +266,40 @@ To get an exhaustive list of the available metrics go to the api reference :ref:
 Making predictions
 ------------------
 
-To make predictions from a dataset and a usecase, you need to wait until at least one model is trained. This can be achieved in the following way:
+To make predictions from a dataset and an experiment, you need to wait until at least one model is trained. This can be achieved in the following way:
 
 .. code-block:: python
 
     # block until there is at least 1 model trained
-    usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
+    experiment_version.wait_until(lambda experimentv: len(experimentv.models) > 0)
 
-    # check out the usecase status and other info
-    usecase_version.print_info()
-    print('Current (best model) score:', usecase_version.score)
-
-    # predict from uploaded dataset on the plateform
-    preds = usecase_version.predict_from_dataset(test_dataset)
-
-    # or predict from a `pandas.DataFrame`
-    preds = usecase_version.predict(test_dataframe)
+    # check out the experiment status and other info
+    experiment_version.print_info()
+    print('Current (best model) score:', experiment_version.score)
 
 .. note::
 
-    The ``wait_until`` method takes a function that takes the usecase as an argument, and can therefore access any info relative to the usecase.
+    The ``wait_until`` method takes a function that takes the experiment as an argument, and can therefore access any info relative to the experiment.
 
-Time Series usecase
-===================
+Then you have to options:
 
-A time series usecase is very similar to a regression usecase. The main differences rely in the dataset configuration, and the specification of a time window.
+1.  you can predict from a dataset of your workspace, which returns a ``previsionio.ValidationPrediction`` object. It allows you to keep on working even if the prediction isn't complete
+2.  you can predict from a ``pd.DataFrame``, which returns a ``pd.DataFrame`` once the prediction is complete
+
+.. code-block:: python
+
+    # predict from a dataset of your workspace
+    validation_prediction = experiment_version.predict_from_dataset(test_dataset)
+    # get the result at a pandas.DataFrame
+    prediction_df = validation_prediction.get_result()
+
+    # predict from a pandas.DataFrame
+    prediction_df = experiment_version.predict(test_dataframe)
+
+Time Series experiments
+=======================
+
+A time series experiment is very similar to a regression experiment. The main differences rely in the dataset configuration, and the specification of a time window.
 
 Configuring the dataset
 -----------------------
@@ -297,14 +319,14 @@ Here you need to specify which column in the dataset defines the time steps. Als
 Configuring the training parameters
 -----------------------------------
 
-The training config is the same as for a regression usecase (detailed in :ref:`configuring train`).
+The training config is the same as for a regression experiment (detailed in :ref:`configuring train`).
 
 Starting training
 -----------------
 
-You can now create a new usecase based on:
+You can now create a new experiment based on:
 
- - a usecase name
+ - an experiment name
  - a dataset
  - a column config
  - a time window
@@ -324,7 +346,7 @@ In particular the ``time_window`` parameter defines the period in the past that 
         forecast_end=7,
     )
 
-    usecase_version = project.fit_timeseries_regression(
+    experiment_version = project.fit_timeseries_regression(
         name='helloworld_time_series',
         dataset=dataset,
         time_window=time_window,
@@ -339,17 +361,17 @@ To get a full documentation check the api reference :ref:`time_series_reference`
 Making predictions
 ------------------
 
-The predictions workflow is the same as for a regression usecase (detailed in :ref:`making prediction`).
+The prediction workflow is the same as for a classic experiment (detailed in :ref:`making prediction`).
 
-Text Similarity usecase
-=======================
+Text Similarity experiments
+===========================
 
-A Text Similarity usecase matches the most similar texts between a dataset containing descriptions (can be seen as a catalog) and a dataset containing queries. It first converts texts to numerical vectors (text embeddings) and then performs a similarity search to retrieve the most similar documents to a query.
+A Text Similarity experiment matches the most similar texts between a dataset containing descriptions (can be seen as a catalog) and a dataset containing queries. It first converts texts to numerical vectors (text embeddings) and then performs a similarity search to retrieve the most similar documents to a query.
 
 Configuring the datasets
 ------------------------
 
-To start a usecase you need to specify the datasets to be used and their configuration. Note that a *DescriptionsDataset* is required while a *QueriesDataset* is optional during training (used for scoring). To get a full documentation check the api reference of the :class:`.DescriptionsColumnConfig` and the :class:`.QueriesColumnConfig` in :ref:`text_similarity_reference`.
+To start an experiment you need to specify the datasets to be used and their configuration. Note that a *DescriptionsDataset* is required while a *QueriesDataset* is optional during training (used for scoring).
 
 .. code-block:: python
 
@@ -365,10 +387,12 @@ To start a usecase you need to specify the datasets to be used and their configu
         id_column='ID',
     )
 
+To get a full documentation check the api reference of :class:`.DescriptionsColumnConfig` and :class:`.QueriesColumnConfig`.
+
 Configuring the training parameters
 -----------------------------------
 
-If you want, you can also specify some training parameters, such as which embedding models, searching models and preprocessing are used. To get a full documentation check the api reference of the :class:`.ModelsParameters` in :ref:`text_similarity_reference`. Here you need to specify one configuration per embedding model you want to use:
+If you want, you can also specify some training parameters, such as which embedding models, searching models and preprocessing are used. Here you need to specify one configuration per embedding model you want to use:
 
 .. code-block:: python
 
@@ -397,6 +421,7 @@ If you want, you can also specify some training parameters, such as which embedd
     models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
     models_parameters = pio.ListModelsParameters(models_parameters=models_parameters)
 
+To get a full documentation check the api reference of :class:`.ModelsParameters`.
 
 .. note::
 
@@ -410,21 +435,21 @@ If you want, you can also specify some training parameters, such as which embedd
 Starting the training
 ---------------------
 
-You can then create a new text similarity usecase based on:
+You can then create a new text similarity experiment based on:
 
- - a usecase name
+ - an experiment name
  - a dataset
  - a description column config
  - (optional) a queries dataset
  - (optional) a queries column config
  - (optional) a metric type
- - (optional) the number of *top k* results tou want per query
+ - (optional) the number of *top k* results you want per query
  - (optional) a language
  - (optional) a models parameters list
 
 .. code-block:: python
 
-    usecase_verion = project.fit_text_similarity(
+    experiment_verion = project.fit_text_similarity(
         name='helloworld_text_similarity',
         dataset=dataset,
         description_column_config=description_column_config,
@@ -435,50 +460,84 @@ You can then create a new text similarity usecase based on:
         models_parameters=models_parameters,
     )
 
-To get an exhaustive list of the available metrics go to the class :class:`.previsionio.metrics.TextSimilarity` in the api reference :ref:`metrics_reference`.
+To get a full documentation check the api reference of :class:`.previsionio.metrics.TextSimilarity`.
 
 Making predictions
 ------------------
 
-To make predictions from a dataset and a usecase, you need to wait until at least one model is trained. This can be achieved in the following way:
+The prediction workflow is very similar to a classic experiment (detailed in :ref:`making prediction`).
+
+The only differences are the specific parameters ``top_k`` and ``queries_dataset_matching_id_description_column`` which are optional.
+
+To get a full documentation check the api reference of :class:`.TextSimilarityModel` prediction methods.
+
+
+External Regression/Classification/MultiClassification experiments
+==================================================================
+
+Preparing your external models
+------------------------------
+
+Before to create an external experiment, you have to create a list of tuple containing at least one item.
+
+Each tuple contains 3 items describing an external model as follows:
+    1) The name you want to give to the model
+    2) The path to the model in onnx format
+    3) The path to a yaml file containing metadata about the model
 
 .. code-block:: python
 
-    # block until there is at least 1 model trained
-    usecase_version.wait_until(lambda usecasev: len(usecasev.models) > 0)
+    external_models = [
+        ('my_first_external_model', 'model_1.onnx', 'model_1.yaml'),
+        ('my_second_external_model', 'model_2.onnx', 'model_2.yaml'),
+    ]
 
-    # check out the usecase status and other info
-    usecase_version.print_info()
-    print('Current (best model) score:', usecase_version.score)
+Experiment creation
+-------------------
 
-    # predict from uploaded dataset on the plateform
-    preds = usecase_version.predict_from_dataset(
-        queries_dataset=queries_dataset,
-        queries_dataset_content_column='queries',
-        top_k=10,
-        queries_dataset_matching_id_description_column=None, # Optional
+You can now create a new experiment based on:
+
+ - an experiment name
+ - an holdout dataset
+ - a target column name
+ - a list of tuple containing external models
+ - (optional) a metric type
+ - (optional) the experiment version description
+
+.. code-block:: python
+
+    experiment_version = project.create_external_regression(
+        'my_experiment_name',
+        holdout_dataset,
+        'target_column',
+        external_models,
+        metric=pio.metrics.Regression.RMSE,
+        'my_experiment_version_description',
     )
 
-.. note::
+To get an exhaustive list of the available metrics go to the api reference :ref:`metrics_reference`.
 
-    The ``wait_until`` method takes a function that takes the usecase as an argument, and can therefore access any info relative to the usecase.
+Making predictions
+------------------
 
-Deployed usecases
-=================
+The prediction workflow is the same as for classic experiment (detailed in :ref:`making prediction`).
 
-Prevision.io's SDK allows to deploy a usecase's models. Deployed models are made available for unit and bulk prediction through apis. Then you can follow the usage of a model and the evolution of its input features distribution.
+Deployed experiments
+====================
 
-You first need to deploy a main model (and a challenger model) from an existing usecase:
+Prevision.io's SDK allows to deploy an experiment's models. Deployed models are made available for unit and bulk prediction through apis. Then you can follow the usage of a model and the evolution of its input features distribution.
+
+You first need to deploy a main model (and a challenger model) from an existing experiment:
 
 .. code-block:: python
 
-    # retrieve the best model of your usecase
-    uc_best_model = usecase_version.best_model
+    # retrieve the best model of your experiment
+    experiment_version_best_model = experiment_version.best_model
 
-    # deploy the usecase model
-    usecase_deployment = project.create_usecase_deployment(
-        'my_deployed_usecase',
-        main_model=uc_best_model,
+    # deploy the experiment model
+    experiment_deployment = project.create_experiment_deployment(
+        'my_deployed_experiment',
+        main_model=experiment_version_best_model,
         challenger_model=None,
     )
 
@@ -487,7 +546,7 @@ Now you can make bulk predictions from your deployed model(s):
 .. code-block:: python
     
     # make predictions
-    deployment_prediction = usecase_deployment.predict_from_dataset(test_dataset)
+    deployment_prediction = experiment_deployment.predict_from_dataset(test_dataset)
 
     # retrieve prediction from main model
     prediction_df = deployment_prediction.get_result()
@@ -495,21 +554,21 @@ Now you can make bulk predictions from your deployed model(s):
     # retrieve prediction from challenger model (if any)
     prediction_df = deployment_prediction.get_challenger_result()
 
-To get a full documentation check the api reference :ref:`usecase_deployment_reference`.
+To get a full documentation check the api reference :ref:`experiment_deployment_reference`.
 
 You can also make unitary predictions from the main model:
 
 .. code-block:: python
 
     # create an api key for your model
-    usecase_deployment.create_api_key()
+    experiment_deployment.create_api_key()
 
     # retrieve the last client id and client secret
-    creds = usecase_deployment.get_api_keys()[-1]
+    creds = experiment_deployment.get_api_keys()[-1]
 
     # initialize the deployed model with its url, your client id and client secret
     model = pio.DeployedModel(
-        prevision_app_url=usecase_deployment.url,
+        prevision_app_url=experiment_deployment.url,
         client_id=creds['client_id'],
         client_secret=creds['client_secret'],
     )
@@ -523,39 +582,81 @@ You can also make unitary predictions from the main model:
 
 To get a full documentation check the api reference :ref:`deployed_model_reference`.
 
-Additional util methods
-=======================
+Exporters
+=========
 
-Retrieving a use case
----------------------
+Once you trained a model and made predictions from it you might want to export your results on a remote filesystem/database. To do so you will need a registered connector on your project (described in section :ref:`creating connector`).
 
-Since a use case can be somewhat long to train, it can be useful to separate the training, monitoring and prediction phases.
+Creating an exporter
+--------------------
 
-To do that, we need to be able to recreate a usecase object in python from its name:
+The first step is to create an exporter in your project:
 
 .. code-block:: python
 
-    usecase_version = pio.Supervised.from_id('<a usecase id>')
-    # Usecase_version now has all the same methods as a usecase_version
+    exporter = project.create_exporter(
+        connector=connector,
+        name = 'my_exporter',
+        path='remote/file/path.csv',
+        write_mode = pio.ExporterWriteMode.timestamp,
+    )
+
+To get a full documentation check the api reference :ref:`exporter_reference`.
+
+Exporting
+---------
+
+Once your exporter is operational you can export your datasets or predictions:
+
+.. code-block:: python
+
+    # export a dataset stored in your project
+    export = exporter.export_dataset(
+        dataset=dataset,
+        wait_for_export=False,
+    )
+
+    # export a prediction stored in your project
+    export = exporter.export_prediction(
+        prediction=deployment_prediction,
+        wait_for_export=False,
+    )
+
+To get a full documentation check the api reference :ref:`export_reference`.
+
+Additional util methods
+=======================
+
+Retrieving an experiment version
+--------------------------------
+
+Since an experiment version can be somewhat long to train, it can be useful to separate the training, monitoring and prediction phases.
+
+To do that, we need to be able to recreate an experiment object in python from its name:
+
+.. code-block:: python
+
+    experiment_version = pio.Supervised.from_id('<a experiment id>')
+    # Experiment_version now has all the same methods as an experiment_version
     # created directly from a file or a dataframe
-    usecase_version.print_info()
+    experiment_version.print_info()
 
 Stopping and deleting
 ---------------------
 
-Once you're satisfied with model performance, don't want to wait for the complete training process to be over, or need to free up some resources to start a new training, you can stop the usecase_version simply:
+Once you're satisfied with model performance, don't want to wait for the complete training process to be over, or need to free up some resources to start a new training, you can stop the experiment_version simply:
 
 .. code-block:: python
 
-    usecase_version.stop()
+    experiment_version.stop()
 
-You'll still be able to make predictions and get info, but the performance won't improve anymore. Note: there's no difference in state between a stopped usecase and a usecase that has completed its training completely.
+You'll still be able to make predictions and get info, but the performance won't improve anymore. Note: there's no difference in state between a stopped experiment and an experiment that has completed its training completely.
 
-You can decide to completely delete the usecase:
+You can decide to completely delete the experiment:
 
 .. code-block:: python
 
-    uc = pio.Usecase.from_id(usecase_version.usecase_id)
-    uc.delete()
+    experiment = pio.Experiment.from_id(experiment_version.experiment_id)
+    experiment.delete()
 
-However be careful, in that case any detail about the usecase will be removed, and you won't be able to make predictions from it anymore.
+However be careful, in that case any detail about the experiment will be removed, and you won't be able to make predictions from it anymore.

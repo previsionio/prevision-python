@@ -1,5 +1,5 @@
 import os
-from previsionio.usecase_version import ClassicUsecaseVersion
+from previsionio.experiment_version import ClassicExperimentVersion
 from typing import Tuple
 from previsionio.model import ClassificationModel
 import pandas as pd
@@ -11,17 +11,18 @@ from .utils import train_model, get_testing_id, DROP_COLS
 
 TESTING_ID = get_testing_id()
 
-PROJECT_NAME = "sdk_test_usecase_" + str(TESTING_ID)
+PROJECT_NAME = "sdk_test_experiment_" + str(TESTING_ID)
 PROJECT_ID = ""
 pio.config.zip_files = False
 pio.config.default_timeout = 1000
 
-uc_config = pio.TrainingConfig(advanced_models=[pio.AdvancedModel.LinReg],
-                               normal_models=[pio.NormalModel.LinReg],
-                               simple_models=[pio.SimpleModel.DecisionTree],
-                               features=[pio.Feature.Counts],
-                               profile=pio.Profile.Quick)
-test_datasets = {}
+experiment_version_config = pio.TrainingConfig(
+    advanced_models=[pio.AdvancedModel.LinReg],
+    normal_models=[pio.NormalModel.LinReg],
+    simple_models=[pio.SimpleModel.DecisionTree],
+    features=[pio.Feature.Counts],
+    profile=pio.Profile.Quick,
+)
 
 training_type_2_pio_class = {
     'regression': "fit_regression",
@@ -29,6 +30,8 @@ training_type_2_pio_class = {
     'multiclassification': "fit_multiclassification",
 }
 training_types = training_type_2_pio_class.keys()
+
+test_datasets = {}
 
 
 def make_pio_datasets(paths):
@@ -55,84 +58,86 @@ def teardown_module(module):
     project.delete()
 
 
-def supervised_from_filename(training_type, uc_name):
+def supervised_from_filename(training_type, experiment_name):
     dataset = test_datasets[training_type]
     training_type_class = training_type_2_pio_class[training_type]
-    return train_model(PROJECT_ID, uc_name, dataset, training_type, training_type_class, uc_config)
+    return train_model(PROJECT_ID, experiment_name, dataset, training_type,
+                       training_type_class, experiment_version_config)
 
 
-def test_delete_usecase():
-    uc_name = TESTING_ID + '_file_del'
-    usecase_version = supervised_from_filename('regression', uc_name)
-    usecases = pio.Usecase.list(PROJECT_ID)
-    assert uc_name in [u.name for u in usecases]
-    pio.Usecase.from_id(usecase_version.usecase_id).delete()
-    usecases = pio.Usecase.list(PROJECT_ID)
-    assert uc_name not in [u.name for u in usecases]
+def test_delete_experiment():
+    experiment_name = TESTING_ID + '_test_delete_experiment'
+    experiment_version = supervised_from_filename('regression', experiment_name)
+    experiments = pio.Experiment.list(PROJECT_ID)
+    assert experiment_name in [u.name for u in experiments]
+    pio.Experiment.from_id(experiment_version.experiment_id).delete()
+    experiments = pio.Experiment.list(PROJECT_ID)
+    assert experiment_name not in [u.name for u in experiments]
 
 
-def test_usecase_version():
-    uc_name = TESTING_ID + '_file_del'
-    usecase_version: pio.Supervised = supervised_from_filename('regression', uc_name)
-    usecases = pio.Usecase.list(PROJECT_ID)
-    assert uc_name in [u.name for u in usecases]
+def test_experiment_version():
+    experiment_name_desired = TESTING_ID + '_test_experiment_version'
+    experiment_version: pio.Supervised = supervised_from_filename('regression', experiment_name_desired)
+    experiments = pio.Experiment.list(PROJECT_ID)
+    assert experiment_name_desired in [e.name for e in experiments]
 
-    usecase_new_version = usecase_version.new_version()
-    usecase_versions = pio.Usecase.from_id(usecase_version.usecase_id).versions
-    assert usecase_new_version._id in [u._id for u in usecase_versions]
+    experiment_new_version = experiment_version.new_version()
+    experiment_versions = pio.Experiment.from_id(experiment_version.experiment_id).versions
+    assert experiment_new_version.id in [ev.id for ev in experiment_versions]
 
-    pio.Usecase.from_id(usecase_new_version.usecase_id).delete()
+    experiment = pio.Experiment.from_id(experiment_new_version.experiment_id)
+    experiment.delete()
 
-    usecases = pio.Usecase.list(PROJECT_ID)
-    assert uc_name not in [u.name for u in usecases]
+    experiments = pio.Experiment.list(PROJECT_ID)
+    assert experiment.id not in [exp.id for exp in experiments]
 
 
-def test_usecase_latest_versions():
-    uc_name = TESTING_ID + '_file_del'
-    usecase_version: pio.Supervised = supervised_from_filename('regression', uc_name)
-    usecases = pio.Usecase.list(PROJECT_ID)
-    assert uc_name in [u.name for u in usecases]
+def test_experiment_latest_versions():
+    experiment_name = TESTING_ID + '_test_experiment_latest_versions'
+    experiment_version: pio.Supervised = supervised_from_filename('regression', experiment_name)
+    experiments = pio.Experiment.list(PROJECT_ID)
+    assert experiment_name in [u.name for u in experiments]
 
-    usecase_new_version = usecase_version.new_version()
-    assert usecase_version._id != usecase_new_version._id
-    assert usecase_version.usecase_id == usecase_new_version.usecase_id
-    assert usecase_version.project_id == usecase_new_version.project_id
+    experiment_new_version = experiment_version.new_version()
+    assert experiment_version._id != experiment_new_version._id
+    assert experiment_version.experiment_id == experiment_new_version.experiment_id
+    assert experiment_version.project_id == experiment_new_version.project_id
 
-    # usecases = pio.Usecase.list(PROJECT_ID)
-    latest_version = pio.Usecase.from_id(usecase_new_version.usecase_id).latest_version
-    assert usecase_new_version._id == latest_version._id
+    # experiments = pio.Experiment.list(PROJECT_ID)
+    latest_version = pio.Experiment.from_id(experiment_new_version.experiment_id).latest_version
+    assert experiment_new_version._id == latest_version._id
     latest_version.new_version()
 
-    pio.Usecase.from_id(usecase_new_version.usecase_id).delete()
+    pio.Experiment.from_id(experiment_new_version.experiment_id).delete()
 
-    usecases = pio.Usecase.list(PROJECT_ID)
-    assert uc_name not in [u.name for u in usecases]
+    experiments = pio.Experiment.list(PROJECT_ID)
+    assert experiment_name not in [u.name for u in experiments]
 
 
-def test_stop_running_usecase():
-    uc_name = TESTING_ID + '_file_run'
-    usecase_version = supervised_from_filename('regression', uc_name)
-    usecase_version.wait_until(
-        lambda usecase: (len(usecase.models) > 0) or (usecase._status['state'] == 'failed'))
-    assert usecase_version.running
-    usecase_version.stop()
-    usecase_version.update_status()
-    assert not usecase_version.running
-    pio.Usecase.from_id(usecase_version.usecase_id).delete()
+def test_stop_running_experiment():
+    experiment_name = TESTING_ID + '_test_stop_running_experiment'
+    experiment_version = supervised_from_filename('regression', experiment_name)
+    experiment_version.wait_until(
+        lambda experiment: (len(experiment.models) > 0) or (experiment._status['state'] == 'failed'))
+    assert experiment_version.running
+    experiment_version.stop()
+    experiment_version.update_status()
+    assert not experiment_version.running
+    pio.Experiment.from_id(experiment_version.experiment_id).delete()
 
 
 @pytest.fixture(scope='module', params=training_types)
-def setup_usecase_class(request):
-    usecase_name = '{}_{}'.format(request.param[0:5], TESTING_ID)
-    uc = supervised_from_filename(request.param, usecase_name)
-    uc.wait_until(
-        lambda usecase: (len(usecase.models) > 0) or (usecase._status['state'] == 'failed'))
-    assert uc.running
-    uc.stop()
-    uc.wait_until(lambda usecase: usecase._status['state'] == 'done', timeout=60)
-    assert uc._status['state'] == 'done'
-    yield request.param, uc
-    _ = pio.Usecase.from_id(uc.usecase_id).delete()
+def setup_experiment_class(request):
+    experiment_name = '{}_{}'.format(request.param[0:5], TESTING_ID)
+    experiment_version = supervised_from_filename(request.param, experiment_name)
+    experiment_version.wait_until(
+        lambda experiment: (len(experiment.models) > 0) or (experiment._status['state'] == 'failed'))
+    assert experiment_version.running
+    experiment_version.stop()
+    experiment_version.wait_until(lambda experiment: experiment._status['state'] == 'done', timeout=60)
+    assert experiment_version._status['state'] == 'done'
+    yield request.param, experiment_version
+    _ = pio.Experiment.from_id(experiment_version.experiment_id).delete()
 
 
 options_parameters = ('options',
@@ -148,22 +153,22 @@ predict_test_ids = [('confidence-' if opt['confidence'] else 'normal-')
 
 
 class TestUCGeneric:
-    def test_check_config(self, setup_usecase_class):
-        training_type, uc = setup_usecase_class
-        assert all([c in uc.drop_list for c in DROP_COLS])
-        uc.update_status()
-        assert set(uc.feature_list) == set(uc_config.features)
-        assert set(uc.advanced_models_list) == set(uc_config.advanced_models)
-        assert set(uc.simple_models_list) == set(uc_config.simple_models)
-        assert set(uc.normal_models_list) == set(uc_config.normal_models)
+    def test_check_config(self, setup_experiment_class):
+        training_type, experiment_version = setup_experiment_class
+        assert all([c in experiment_version.drop_list for c in DROP_COLS])
+        experiment_version.update_status()
+        assert set(experiment_version.feature_list) == set(experiment_version_config.features)
+        assert set(experiment_version.advanced_models_list) == set(experiment_version_config.advanced_models)
+        assert set(experiment_version.simple_models_list) == set(experiment_version_config.simple_models)
+        assert set(experiment_version.normal_models_list) == set(experiment_version_config.normal_models)
 
 
 class TestPredict:
     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-    def test_predict(self, setup_usecase_class, options):
-        training_type, uc = setup_usecase_class
+    def test_predict(self, setup_experiment_class, options):
+        training_type, experiment_version = setup_experiment_class
         data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(training_type)))
-        preds = uc.predict(data, **options)
+        preds = experiment_version.predict(data, **options)
         assert len(preds) == len(data)
         if options['confidence']:
             if training_type == 'regression':
@@ -173,51 +178,51 @@ class TestPredict:
             elif training_type == 'classification':
                 assert 'confidence' in preds
                 assert 'credibility' in preds
-        # test_predict_unit
-        data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(training_type)))
-        pred = uc.predict_single(data.iloc[0].to_dict(), **options)
-        assert pred is not None
+        if training_type in ('regression', 'classification'):
+            # test_predict_unit
+            pred = experiment_version.predict_single(data.iloc[0].to_dict(), **options)
+            assert pred is not None
 
 
 class TestInfos:
     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-    def test_info(self, setup_usecase_class: Tuple[str, ClassicUsecaseVersion], options):
-        training_type, uc = setup_usecase_class
+    def test_info(self, setup_experiment_class: Tuple[str, ClassicExperimentVersion], options):
+        training_type, experiment_version = setup_experiment_class
         # test models
-        assert len(uc.models) > 0
+        assert len(experiment_version.models) > 0
         # test Score
-        assert uc.score is not None
+        assert experiment_version.score is not None
         # test cv
-        df_cv = uc.get_cv()
+        df_cv = experiment_version.get_cv()
         assert isinstance(df_cv, pd.DataFrame)
         # test hyper parameters
-        hyper_params = uc.best_model.hyperparameters
+        hyper_params = experiment_version.best_model.hyperparameters
         assert hyper_params is not None
         # test feature importance
-        feat_importance = uc.best_model.feature_importance
+        feat_importance = experiment_version.best_model.feature_importance
         assert list(feat_importance.columns) == ['feature', 'importance']
         # test correlation matrix
-        matrix = uc.correlation_matrix
+        matrix = experiment_version.correlation_matrix
         assert isinstance(matrix, pd.DataFrame)
         # test schema
-        schema = uc.schema
+        schema = experiment_version.schema
         assert schema is not None
         # test features stats
-        stats = uc.features_stats
+        stats = experiment_version.features_stats
         assert stats is not None
         # test fastest model
-        model = uc.fastest_model
-        # test usecase version id
-        assert model.usecase_version_id == uc._id
+        model = experiment_version.fastest_model
+        # test experiment version id
+        assert model.experiment_version_id == experiment_version._id
         # test print info
-        uc.print_info()
-        assert isinstance(uc.models, list)
-        model = uc.models[0]
+        experiment_version.print_info()
+        assert isinstance(experiment_version.models, list)
+        model = experiment_version.models[0]
         model_copy = pio.Model.from_id(model._id)
         assert isinstance(model.hyperparameters, dict)
         assert model_copy.hyperparameters == model.hyperparameters
 
-        print("uc.status", uc.status)
+        print("experiment_version.status", experiment_version.status)
 
         assert isinstance(model.cross_validation, pd.DataFrame)
         assert isinstance(model.chart(), dict)
