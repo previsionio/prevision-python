@@ -513,8 +513,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset: Dataset,
         column_config: ColumnConfig,
         metric: metrics.Regression = metrics.Regression.RMSE,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start a tabular regression experiment version training
@@ -556,8 +556,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset: Dataset,
         column_config: ColumnConfig,
         metric: metrics.Classification = metrics.Classification.AUC,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start a tabular classification experiment version training
@@ -599,8 +599,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset: Dataset,
         column_config: ColumnConfig,
         metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start a tabular multiclassification experiment version training
@@ -643,8 +643,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.Regression = metrics.Regression.RMSE,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start an image regression experiment version training
@@ -690,8 +690,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.Classification = metrics.Classification.AUC,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None
     ) -> Supervised:
         """ Start an image classification experiment version training
@@ -737,8 +737,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start an image multiclassification experiment version training
@@ -785,7 +785,7 @@ class Project(ApiResource, UniqueResourceMixin):
         time_window: TimeWindow,
         metric: metrics.Regression = metrics.Regression.RMSE,
         holdout_dataset: Dataset = None,
-        training_config=TrainingConfig(),
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> TimeSeries:
         """ Start a timeseries regression experiment version training
