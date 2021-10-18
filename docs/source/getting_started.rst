@@ -252,7 +252,8 @@ If you want to use image data for your experiment, you need to provide the API w
 
     experiment_version = project.fit_image_classification(
         experiment_name='helloworld_images_classif',
-        dataset=(dataset, image_folder),
+        dataset=dataset,
+        dataset_images=image_folder,
         column_config=column_config,
         metric=pio.metrics.Classification.AUC,
         training_config=training_config,
