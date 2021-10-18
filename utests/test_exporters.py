@@ -45,8 +45,9 @@ def setup_module(module):
     validation_prediction = experiment_version.predict_from_dataset(dataset)
 
     # Create experiment deployment
-    uc_best_model = experiment_version.best_model
-    experiment_deployment = project.create_experiment_deployment('test_sdk_' + TESTING_ID, uc_best_model)
+    experiment_version_best_model = experiment_version.best_model
+    experiment_deployment = project.create_experiment_deployment('test_sdk_' + TESTING_ID,
+                                                                 experiment_version_best_model)
 
     # Create deployment_prediction
     experiment_deployment.wait_until(lambda experimentd: experimentd.run_state == 'done')

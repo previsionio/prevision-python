@@ -334,8 +334,8 @@ class ClassificationModel(ClassicModel):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the experiment of the model
-        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
+        experiment_version_id (str): Unique id of the experiment version of the model
+        experiment_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -404,8 +404,8 @@ class RegressionModel(ClassicModel):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the experiment of the model
-        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
+        experiment_version_id (str): Unique id of the experiment version of the model
+        experiment_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -417,11 +417,14 @@ class MultiClassificationModel(ClassicModel):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the experiment of the model
-        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
+        experiment_version_id (str): Unique id of the experiment version of the model
+        experiment_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
+
+    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
+        raise NotImplementedError
 
 
 # NOTE: we inherit the external models classes from classic model classes but with 2 method not implemented
@@ -432,8 +435,8 @@ class ExternalClassificationModel(ClassificationModel):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the experiment of the model
-        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
+        experiment_version_id (str): Unique id of the experiment version of the model
+        experiment_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -444,6 +447,9 @@ class ExternalClassificationModel(ClassificationModel):
 
     @property
     def cross_validation(self) -> pd.DataFrame:
+        raise NotImplementedError
+
+    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
         raise NotImplementedError
 
 
@@ -452,8 +458,8 @@ class ExternalRegressionModel(RegressionModel):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the experiment of the model
-        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
+        experiment_version_id (str): Unique id of the experiment version of the model
+        experiment_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -464,6 +470,9 @@ class ExternalRegressionModel(RegressionModel):
 
     @property
     def cross_validation(self) -> pd.DataFrame:
+        raise NotImplementedError
+
+    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
         raise NotImplementedError
 
 
@@ -473,8 +482,8 @@ class ExternalMultiClassificationModel(MultiClassificationModel):
 
     Args:
         _id (str): Unique id of the model
-        uc_id (str): Unique id of the experiment of the model
-        uc_version (str, int): Version of the experiment of the model (either an integer for a specific
+        experiment_version_id (str): Unique id of the experiment version of the model
+        experiment_version (str, int): Version of the experiment of the model (either an integer for a specific
             version, or "last")
         name (str, optional): Name of the model (default: ``None``)
     """
@@ -485,6 +494,9 @@ class ExternalMultiClassificationModel(MultiClassificationModel):
 
     @property
     def cross_validation(self) -> pd.DataFrame:
+        raise NotImplementedError
+
+    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
         raise NotImplementedError
 
 

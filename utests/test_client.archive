@@ -12,5 +12,5 @@ class TestClient(object):
         assert self.client.token is not None
 
     def test_get_experiments(self):
-        ucs = pio.Supervised.list()
-        assert type(ucs) == list
+        experiment_versions = pio.Supervised.list()
+        assert type(experiment_versions) == list

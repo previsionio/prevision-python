@@ -17,20 +17,28 @@ MODEL_CLASS_DICT = {
 
 class Supervised(ClassicExperimentVersion):
 
-    """ A supervised experiment version, for tabular data """
-
-    data_type = DataType.Tabular
+    """ A supervised experiment version """
 
     def __init__(self, **experiment_version_info):
         super().__init__(**experiment_version_info)
 
     def _update_from_dict(self, **experiment_version_info):
         super()._update_from_dict(**experiment_version_info)
-        if 'folder_dataset_id' in experiment_version_info:
-            self.folder_dataset: DatasetImages = DatasetImages.from_id(experiment_version_info['folder_dataset_id'])
-        else:
-            self.folder_dataset = None
+        if self.data_type == DataType.Images:
+            self.dataset_images_id: str = experiment_version_info['folder_dataset_id']
         self.model_class = MODEL_CLASS_DICT.get(self.training_type, RegressionModel)
+
+    @property
+    def dataset_images(self) -> DatasetImages:
+        """ Get the :class:`.DatasetImages` object corresponding to the images training dataset of this
+        experiment version. Available only if data_type of this experiment_version is images
+
+        Returns:
+            :class:`.DatasetImages`: Associated images training dataset
+        """
+        if self.data_type != DataType.Images:
+            raise RuntimeError(f'dataset_images not available when data type is not {DataType.Images.value}')
+        return DatasetImages.from_id(self.dataset_images_id)
 
     @classmethod
     def from_id(cls, _id: str) -> 'Supervised':
@@ -49,8 +57,8 @@ class Supervised(ClassicExperimentVersion):
 
     @staticmethod
     def _build_experiment_version_creation_data(description, dataset, column_config, metric,
-                                             holdout_dataset, training_config,
-                                             parent_version=None) -> Dict:
+                                                holdout_dataset, training_config,
+                                                parent_version=None) -> Dict:
         data = super(Supervised, Supervised)._build_experiment_version_creation_data(
             description,
             parent_version=parent_version,
@@ -58,7 +66,10 @@ class Supervised(ClassicExperimentVersion):
 
         # because if Image there is the dataset and the images zip
         if isinstance(dataset, tuple):
-            data['dataset_id'], data['folder_dataset_id'] = dataset[0].id, dataset[1].id
+            dataset, folder_dataset = dataset
+            data['dataset_id'] = dataset.id
+            if folder_dataset is not None:
+                data['folder_dataset_id'] = folder_dataset.id
         else:
             data['dataset_id'] = dataset.id
 
@@ -116,20 +127,23 @@ class Supervised(ClassicExperimentVersion):
 
     def new_version(
         self,
-        dataset: Union[Dataset, Tuple[Dataset, DatasetImages]] = None,
+        dataset: Dataset = None,
+        dataset_images: DatasetImages = None,
         column_config: ColumnConfig = None,
         metric: metrics.Enum = None,
         holdout_dataset: Dataset = None,
         training_config: TrainingConfig = None,
         description: str = None,
     ) -> 'Supervised':
-        """ Start a supervised experiment version training from this version to create a new version of the experiment
-        (on the platform). The training parameters are copied from the current version and then overridden
-        for the given parameters.
+        """
+        Start a new supervised experiment version training from this version (on the platform).
+        The training parameters are copied from the current version and then overridden for those provided.
 
         Args:
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`, optional): Reference to the dataset(s)
-                object(s) to use for as training dataset(s)
+            dataset (:class:`.Dataset`): Reference to the dataset
+                object to use for as training dataset
+            dataset_images (:class:`.DatasetImages`): Reference to the images dataset
+                object to use for as training dataset
             column_config (:class:`.ColumnConfig`, optional): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
@@ -143,14 +157,10 @@ class Supervised(ClassicExperimentVersion):
         Returns:
             :class:`.Supervised`: Newly created supervised experiment object (new version)
         """
-        # NOTE: we should be able to overridde only one of the dataset...
-        if dataset is not None:
-            dataset = dataset
-        else:
-            if self.folder_dataset is not None:
-                dataset = (self.dataset, self.folder_dataset)
-            else:
-                dataset = self.dataset
+        dataset = dataset if dataset is not None else self.dataset
+        if self.data_type == DataType.Images:
+            dataset_images = dataset_images if dataset_images is not None else self.dataset_images
+            dataset = (dataset, dataset_images)
         return Supervised._fit(
             self.experiment_id,
             dataset,
@@ -161,15 +171,3 @@ class Supervised(ClassicExperimentVersion):
             description=description,
             parent_version=self.version,
         )
-
-    def _save_json(self):
-        json_dict = {
-            '_id': self.id,
-            'experiment_version_params': self._status.get('experiment_version_params', {}),
-            'dataset_id': self._status['dataset_id'],
-            'training_type': self.training_type.value,
-            'data_type': self.data_type.value,
-        }
-        if self.holdout_dataset_id:
-            json_dict['holdout_id'] = self.holdout_dataset_id
-        return json_dict

@@ -68,11 +68,11 @@ class TimeSeries(ClassicExperimentVersion):
 
     def __init__(self, **experiment_version_info):
         super().__init__(**experiment_version_info)
-        self._update_from_dict(**experiment_version_info)
 
     def _update_from_dict(self, **experiment_version_info):
         super()._update_from_dict(**experiment_version_info)
-        self.time_window = TimeWindow.from_dict(experiment_version_info['experiment_version_params']['timeseries_values'])
+        timeseries_values = experiment_version_info['experiment_version_params']['timeseries_values']
+        self.time_window = TimeWindow.from_dict(timeseries_values)
 
     @classmethod
     def from_id(cls, _id: str) -> 'TimeSeries':
@@ -80,8 +80,8 @@ class TimeSeries(ClassicExperimentVersion):
 
     @staticmethod
     def _build_experiment_version_creation_data(description, dataset, column_config, time_window, metric,
-                                             holdout_dataset, training_config,
-                                             parent_version=None) -> Dict:
+                                                holdout_dataset, training_config,
+                                                parent_version=None) -> Dict:
         data = super(TimeSeries, TimeSeries)._build_experiment_version_creation_data(
             description,
             parent_version=parent_version,
@@ -97,16 +97,43 @@ class TimeSeries(ClassicExperimentVersion):
         return data
 
     @classmethod
-    def _fit(cls,
-             experiment_id: str,
-             dataset: Dataset,
-             column_config: ColumnConfig,
-             time_window: TimeWindow,
-             metric: Regression = None,
-             holdout_dataset: Dataset = None,
-             training_config: TrainingConfig = TrainingConfig(),
-             description: str = None,
-             parent_version: str = None) -> 'TimeSeries':
+    def _fit(
+        cls,
+        experiment_id: str,
+        dataset: Dataset,
+        column_config: ColumnConfig,
+        time_window: TimeWindow,
+        metric: Regression = None,
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
+        description: str = None,
+        parent_version: str = None,
+    ) -> 'TimeSeries':
+        """ Start a timeseries experiment version training with a specific configuration (on the platform).
+
+        Args:
+            experiment_id (str): The id of the experiment from which this version is created
+            dataset (:class:`.Dataset`): Reference to the dataset
+                object to use for as training dataset
+            column_config (:class:`.ColumnConfig`): Column configuration for the experiment
+                (see the documentation of the :class:`.ColumnConfig` resource for more details
+                on each possible column types)
+            time_window (:class:`.TimeWindow`): Time configuration
+                (see the documentation of the :class:`.TimeWindow` resource for more details)
+            metric (metrics.Regression): Specific metric to use for the experiment version
+                (default ``None``)
+            holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
+                use as a holdout dataset (default: ``None``)
+            training_config (:class:`.TrainingConfig`, optional): Specific training configuration
+                (see the documentation of the :class:`.TrainingConfig` resource for more details
+                on all the parameters)
+            description (str, optional): The description of this experiment version (default: ``None``)
+            parent_version (str, optional): The parent version of this experiment_version (default: ``None``)
+
+
+        Returns:
+            :class:`.TimeSeries`: Newly created supervised experiment version object
+        """
 
         return super()._fit(
             experiment_id,
@@ -130,36 +157,34 @@ class TimeSeries(ClassicExperimentVersion):
         training_config: TrainingConfig = None,
         description: str = None,
     ) -> 'TimeSeries':
-        """ Start a time series experiment training to create a new version of the experiment (on the
-        platform): the training configs are copied from the current version and then overridden
-        for the given parameters.
+        """
+        Start a new timeseries experiment version training from this version (on the platform).
+        The training parameters are copied from the current version and then overridden for those provided.
 
         Args:
-            description (str, optional): additional description of the version
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`, optional): Reference to the dataset
+            dataset (:class:`.Dataset`, optional): Reference to the dataset
                 object to use for as training dataset
             column_config (:class:`.ColumnConfig`, optional): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
-            time_window (:class: `.TimeWindow`, optional): a time window object for representing either feature
-                derivation window periods or forecast window periods
-            metric (metrics.Regression, optional): Specific metric to use for the experiment (default: ``None``)
+            metric (metrics.Regression, optional): Specific metric to use for the experiment version
             holdout_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
-                use as a holdout dataset (default: ``None``)
+                use as a holdout dataset
             training_config (:class:`.TrainingConfig`, optional): Specific training configuration
                 (see the documentation of the :class:`.TrainingConfig` resource for more details
                 on all the parameters)
+            description (str, optional): The description of this experiment version (default: ``None``)
         Returns:
-            :class:`.TimeSeries`: Newly created TimeSeries experiment version object (new version)
+            :class:`.TimeSeries`: Newly created timeSeries experiment version object (new version)
         """
         return TimeSeries._fit(
-                               self.experiment_id,
-                               dataset if dataset is not None else self.dataset,
-                               column_config if column_config is not None else self.column_config,
-                               time_window if time_window is not None else self.time_window,
-                               metric if metric is not None else self.metric,
-                               holdout_dataset=holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
-                               training_config=training_config if training_config is not None else self.training_config,
-                               description=description,
-                               parent_version=self.version,
+            self.experiment_id,
+            dataset if dataset is not None else self.dataset,
+            column_config if column_config is not None else self.column_config,
+            time_window if time_window is not None else self.time_window,
+            metric if metric is not None else self.metric,
+            holdout_dataset=holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
+            training_config=training_config if training_config is not None else self.training_config,
+            description=description,
+            parent_version=self.version,
         )

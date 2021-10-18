@@ -513,8 +513,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset: Dataset,
         column_config: ColumnConfig,
         metric: metrics.Regression = metrics.Regression.RMSE,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start a tabular regression experiment version training
@@ -556,8 +556,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset: Dataset,
         column_config: ColumnConfig,
         metric: metrics.Classification = metrics.Classification.AUC,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start a tabular classification experiment version training
@@ -599,8 +599,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset: Dataset,
         column_config: ColumnConfig,
         metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start a tabular multiclassification experiment version training
@@ -639,19 +639,22 @@ class Project(ApiResource, UniqueResourceMixin):
     def fit_image_regression(
         self,
         experiment_name: str,
-        dataset: Tuple[Dataset, DatasetImages],
+        dataset: Dataset,
+        dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.Regression = metrics.Regression.RMSE,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start an image regression experiment version training
 
         Args:
             experiment_name (str): Name of the experiment to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the datasets
-                objects to use for as training datasets
+            dataset (:class:`.Dataset`): Reference to the dataset
+                object to use for as training dataset
+            dataset_images (:class:`.DatasetImages`): Reference to the images dataset
+                object to use for as training dataset
             column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
@@ -669,6 +672,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
                                     TypeProblem.Regression)
+        dataset = (dataset, dataset_images)
         return Supervised._fit(
             experiment.id,
             dataset,
@@ -682,19 +686,22 @@ class Project(ApiResource, UniqueResourceMixin):
     def fit_image_classification(
         self,
         experiment_name: str,
-        dataset: Tuple[Dataset, DatasetImages],
+        dataset: Dataset,
+        dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.Classification = metrics.Classification.AUC,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None
     ) -> Supervised:
         """ Start an image classification experiment version training
 
         Args:
             experiment_name (str): Name of the experiment to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the datasets
-                objects to use for as training datasets
+            dataset (:class:`.Dataset`): Reference to the dataset
+                object to use for as training dataset
+            dataset_images (:class:`.DatasetImages`): Reference to the images dataset
+                object to use for as training dataset
             column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
@@ -712,6 +719,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
                                     TypeProblem.Classification)
+        dataset = (dataset, dataset_images)
         return Supervised._fit(
             experiment.id,
             dataset,
@@ -725,19 +733,22 @@ class Project(ApiResource, UniqueResourceMixin):
     def fit_image_multiclassification(
         self,
         experiment_name: str,
-        dataset: Tuple[Dataset, DatasetImages],
+        dataset: Dataset,
+        dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start an image multiclassification experiment version training
 
         Args:
             experiment_name (str): Name of the experiment to create
-            dataset (:class:`.Dataset`, :class:`.DatasetImages`): Reference to the datasets
-                objects to use for as training datasets
+            dataset (:class:`.Dataset`): Reference to the dataset
+                object to use for as training dataset
+            dataset_images (:class:`.DatasetImages`): Reference to the images dataset
+                object to use for as training dataset
             column_config (:class:`.ColumnConfig`): Column configuration for the experiment
                 (see the documentation of the :class:`.ColumnConfig` resource for more details
                 on each possible column types)
@@ -755,6 +766,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
                                     TypeProblem.MultiClassification)
+        dataset = (dataset, dataset_images)
         return Supervised._fit(
             experiment.id,
             dataset,
@@ -773,7 +785,7 @@ class Project(ApiResource, UniqueResourceMixin):
         time_window: TimeWindow,
         metric: metrics.Regression = metrics.Regression.RMSE,
         holdout_dataset: Dataset = None,
-        training_config=TrainingConfig(),
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> TimeSeries:
         """ Start a timeseries regression experiment version training
@@ -880,12 +892,13 @@ class Project(ApiResource, UniqueResourceMixin):
         Args:
             experiment_name (str): Name of the experiment to create
             holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
-            target_column: The name of the target column for this experiment version
-            external_models (list(tuple)): the external models to add in the experiment version to create
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
                 Each tuple contains 3 items describing an external model as follows:
-                - name of the model
-                - a path to the model in onnx format
-                - a path to a yaml file containing metadata about the model
+
+                    1) The name you want to give to the model
+                    2) The path to the model in onnx format
+                    3) The path to a yaml file containing metadata about the model
             metric (:class:`.metrics.Regression`, optional): Specific metric to use for the experiment
                 (default: ``metrics.Regression.RMSE``)
             dataset (:class:`.Dataset`, optional): Reference to the dataset object that
@@ -924,12 +937,13 @@ class Project(ApiResource, UniqueResourceMixin):
         Args:
             experiment_name (str): Name of the experiment to create
             holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
-            target_column: The name of the target column for this experiment version
-            external_models (list(tuple)): the external models to add in the experiment version to create
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
                 Each tuple contains 3 items describing an external model as follows:
-                - name of the model
-                - a path to the model in onnx format
-                - a path to a yaml file containing metadata about the model
+
+                    1) The name you want to give to the model
+                    2) The path to the model in onnx format
+                    3) The path to a yaml file containing metadata about the model
             metric (:class:`.metrics.Classification`, optional): Specific metric to use for the experiment
                 (default: ``metrics.Classification.AUC``)
             dataset (:class:`.Dataset`, optional): Reference to the dataset object that
@@ -968,12 +982,13 @@ class Project(ApiResource, UniqueResourceMixin):
         Args:
             experiment_name (str): Name of the experiment to create
             holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
-            target_column: The name of the target column for this experiment version
-            external_models (list(tuple)): the external models to add in the experiment version to create
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
                 Each tuple contains 3 items describing an external model as follows:
-                - name of the model
-                - a path to the model in onnx format
-                - a path to a yaml file containing metadata about the model
+
+                    1) The name you want to give to the model
+                    2) The path to the model in onnx format
+                    3) The path to a yaml file containing metadata about the model
             metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the experiment
                 (default: ``metrics.MultiClassification.log_loss``)
             dataset (:class:`.Dataset`, optional): Reference to the dataset object that

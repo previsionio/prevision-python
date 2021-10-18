@@ -44,7 +44,7 @@ class Preprocessing(object):
     def __init__(self,
                  word_stemming: YesOrNo = YesOrNo.Yes,
                  ignore_stop_word: YesOrNoOrAuto = YesOrNoOrAuto.Auto,
-                 ignore_punctuation: YesOrNo = YesOrNo.Yes):
+                 ignore_punctuation: YesOrNo = YesOrNo.No):
         self.word_stemming = word_stemming
         self.ignore_stop_word = ignore_stop_word
         self.ignore_punctuation = ignore_punctuation
@@ -104,11 +104,9 @@ class ListModelsParameters(ExperimentConfig):
                                                     TextSimilarityModels.ClusterPruning])
             models_parameters_2 = ModelsParameters(ModelEmbedding.Transformer,
                                                    Preprocessing(),
-                                                   # [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
                                                    [TextSimilarityModels.BruteForce])
             models_parameters_3 = ModelsParameters(ModelEmbedding.TransformerFineTuned,
                                                    Preprocessing(),
-                                                   #" [TextSimilarityModels.BruteForce, TextSimilarityModels.IVFOPQ])
                                                    [TextSimilarityModels.BruteForce])
             models_parameters = [models_parameters_1, models_parameters_2, models_parameters_3]
         self.models_parameters = []
@@ -185,19 +183,18 @@ class TextSimilarity(BaseExperimentVersion):
 
         experiment_version_params = experiment_version_info['experiment_version_params']
 
-        dataset_id: str = experiment_version_info['dataset_id']
-        self.dataset: Dataset = Dataset.from_id(dataset_id)
+        self.dataset_id: str = experiment_version_info['dataset_id']
         self.description_column_config = DescriptionsColumnConfig(
             content_column=experiment_version_params.get('content_column'),
             id_column=experiment_version_params.get('id_column'))
         self.metric: pio.metrics.TextSimilarity = pio.metrics.TextSimilarity(
             experiment_version_params.get('metric', self.default_metric))
         self.top_k: int = experiment_version_params.get('top_K', self.default_top_k)
-        self.lang: TextSimilarityLang = TextSimilarityLang(experiment_version_params.get('lang', TextSimilarityLang.Auto))
+        self.lang: TextSimilarityLang = TextSimilarityLang(experiment_version_params.get('lang',
+                                                                                         TextSimilarityLang.Auto))
 
-        if experiment_version_info.get('queries_dataset_id'):
-            queries_dataset_id = experiment_version_info['queries_dataset_id']
-            self.queries_dataset: Dataset = Dataset.from_id(queries_dataset_id)
+        if 'queries_dataset_id' in experiment_version_info:
+            self.queries_dataset_id: str = experiment_version_info['queries_dataset_id']
             content_column = experiment_version_params.get('queries_dataset_content_column')
             matching_id = experiment_version_params.get('queries_dataset_matching_id_description_column')
             queries_dataset_id_column = experiment_version_params.get('queries_dataset_id_column', None)
@@ -205,11 +202,29 @@ class TextSimilarity(BaseExperimentVersion):
                                                              queries_dataset_matching_id_description_column=matching_id,
                                                              queries_dataset_id_column=queries_dataset_id_column)
         else:
-            self.queries_dataset = None
+            self.queries_dataset_id = None
             self.queries_column_config = None
 
         models_parameters = experiment_version_params.get('models_params')
         self.models_parameters = ListModelsParameters(models_parameters=models_parameters)
+
+    @property
+    def dataset(self) -> Dataset:
+        """ Get the :class:`.Dataset` object corresponding to the training dataset of this experiment version.
+
+        Returns:
+            :class:`.Dataset`: Associated training dataset
+        """
+        return Dataset.from_id(self.dataset_id)
+
+    @property
+    def queries_dataset(self) -> Union[Dataset, None]:
+        """ Get the :class:`.Dataset` object corresponding to the queries dataset of this experiment version.
+
+        Returns:
+            :class:`.Dataset`: Associated queries dataset
+        """
+        return Dataset.from_id(self.queries_dataset_id) if self.queries_dataset_id is not None else None
 
     @classmethod
     def from_id(cls, _id: str) -> 'TextSimilarity':
@@ -228,9 +243,9 @@ class TextSimilarity(BaseExperimentVersion):
 
     @staticmethod
     def _build_experiment_version_creation_data(description, dataset, description_column_config, metric,
-                                             top_k, lang, queries_dataset, queries_column_config,
-                                             models_parameters,
-                                             parent_version=None) -> Dict:
+                                                top_k, lang, queries_dataset, queries_column_config,
+                                                models_parameters,
+                                                parent_version=None) -> Dict:
         data = super(TextSimilarity, TextSimilarity)._build_experiment_version_creation_data(
             description,
             parent_version=parent_version,
@@ -320,9 +335,9 @@ class TextSimilarity(BaseExperimentVersion):
         models_parameters: ListModelsParameters = None,
         description: str = None,
     ) -> 'TextSimilarity':
-        """ Start a text-similarity experiment version training from this version to create a new version of the experiment
-        (on the platform). The training parameters are copied from the current version and then overridden
-        for the given parameters.
+        """
+        Start a new text-similarity experiment version training from this version (on the platform).
+        The training parameters are copied from the current version and then overridden for those provided.
 
         Args:
             dataset (:class:`.Dataset`): Reference to the dataset object to use for as training dataset
@@ -352,7 +367,8 @@ class TextSimilarity(BaseExperimentVersion):
             top_k=top_k if top_k is not None else self.top_k,
             lang=lang if lang is not None else self.lang,
             queries_dataset=queries_dataset if queries_dataset is not None else self.queries_dataset,
-            queries_column_config=queries_column_config if queries_column_config is not None else self.queries_column_config,
+            queries_column_config=queries_column_config if queries_column_config is not None else
+            self.queries_column_config,
             models_parameters=models_parameters if models_parameters is not None else self.models_parameters,
             description=description,
             parent_version=self.version,

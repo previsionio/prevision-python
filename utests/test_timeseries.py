@@ -51,31 +51,35 @@ def get_data(path, groups):
     return data, group_list
 
 
-def train_model(uc_name, groups=1, time_window=pio.TimeWindow(-90, -30, 1, 15)):
+def train_model(experiment_name, groups=1, time_window=pio.TimeWindow(-90, -30, 1, 15)):
     path = os.path.join(DATA_PATH, 'ts.csv')
     data, group_list = get_data(path, groups)
-    fname = '{}_{}.csv'.format(uc_name, '-'.join(group_list))
+    fname = '{}_{}.csv'.format(experiment_name, '-'.join(group_list))
     data.to_csv(fname, index=False)
     project = pio.Project.from_id(PROJECT_ID)
-    dataset = project.create_dataset(name=uc_name,
+    dataset = project.create_dataset(name=experiment_name,
                                      dataframe=data)
 
-    uc_config = pio.TrainingConfig(advanced_models=[pio.AdvancedModel.LinReg],
-                                   normal_models=[pio.NormalModel.LinReg],
-                                   features=[pio.Feature.Counts],
-                                   profile=pio.Profile.Quick)
+    experiment_version_config = pio.TrainingConfig(
+        advanced_models=[pio.AdvancedModel.LinReg],
+        normal_models=[pio.NormalModel.LinReg],
+        features=[pio.Feature.Counts],
+        profile=pio.Profile.Quick,
+    )
 
     col_config = pio.ColumnConfig(target_column='target',
                                   time_column='time',
                                   # group_columns=group_list
                                   )
 
-    uc = project.fit_timeseries_regression(uc_name,
-                                           dataset,
-                                           time_window=time_window,
-                                           training_config=uc_config,
-                                           column_config=col_config)
-    return uc
+    experiment_version = project.fit_timeseries_regression(
+        experiment_name,
+        dataset,
+        time_window=time_window,
+        training_config=experiment_version_config,
+        column_config=col_config,
+    )
+    return experiment_version
 
 
 windows = [
@@ -95,14 +99,14 @@ wrong_windows = [
 )
 def test_ts_groups(groups):
     group_name = '{}_{}'.format(str(groups[0]), str(groups[1])) if isinstance(groups, tuple) else groups
-    uc_name_asked = 'ts_{}grp_{}'.format(group_name, TESTING_ID)
-    experiment_version = train_model(uc_name_asked, groups)
+    experiment_name_asked = 'ts_{}grp_{}'.format(group_name, TESTING_ID)
+    experiment_version = train_model(experiment_name_asked, groups)
     experiment_version.wait_until(lambda experiment: len(experiment) > 0)
     experiment_version.stop()
     experiment = pio.Experiment.from_id(experiment_version.experiment_id)
     project = pio.Project.from_id(PROJECT_ID)
     experiments = project.list_experiments()
-    assert experiment.id in [uc.id for uc in experiments]
+    assert experiment.id in [experiment.id for experiment in experiments]
 
     path = os.path.join(DATA_PATH, 'ts.csv')
     test_data, group_list = get_data(path, groups)
@@ -113,36 +117,39 @@ def test_ts_groups(groups):
 
 def time_window_test(dws, dwe, fws, fwe):
     ts_label = '_'.join(str(s).replace('-', 'm') for s in (dws, dwe, fws, fwe))
-    uc_name_asked = 'ts_time{}_{}'.format(ts_label, TESTING_ID)
-    uc = train_model(uc_name_asked,
-                     time_window=pio.TimeWindow(dws, dwe, fws, fwe))
-    uc.wait_until(lambda experimentv: len(experimentv.models) > 0)
-    uc.stop()
-    return
+    experiment_name_asked = 'ts_time{}_{}'.format(ts_label, TESTING_ID)
+    experiment_version = train_model(experiment_name_asked,
+                                     time_window=pio.TimeWindow(dws, dwe, fws, fwe))
+    experiment_version.wait_until(lambda experimentv: len(experimentv.models) > 0)
+    experiment_version.stop()
+    return experiment_version
 
 
 @pytest.mark.parametrize('dws, dwe, fws, fwe', windows,
                          ids=['-'.join(str(s) for s in w) for w in windows])
 def test_time_window(dws, dwe, fws, fwe):
-    uc_name_returned = time_window_test(dws, dwe, fws, fwe)
+    experiment_version = time_window_test(dws, dwe, fws, fwe)
+    experiment = pio.Experiment.from_id(experiment_version.experiment_id)
     project = pio.Project.from_id(PROJECT_ID)
-    experiments = [uc.name for uc in project.list_experiments()]
-    # assert uc_name_returned in experiments
+    experiments = project.list_experiments()
+    assert experiment.id in [experiment.id for experiment in experiments]
+    experiments_versions = experiment.versions
+    assert experiment_version.id in [experiment_version.id for experiment_version in experiments_versions]
 
 
 def test_version():
     dws, dwe, fws, fwe = (-10, -5, 3, 4)
     ts_label = '_'.join(str(s).replace('-', 'm') for s in (dws, dwe, fws, fwe))
-    uc_name_asked = 'ts_time{}_{}'.format(ts_label, TESTING_ID)
+    experiment_name_asked = 'ts_time{}_{}'.format(ts_label, TESTING_ID)
 
-    uc = train_model(uc_name_asked,
-                     time_window=pio.TimeWindow(dws, dwe, fws, fwe))
+    experiment_version = train_model(experiment_name_asked,
+                                     time_window=pio.TimeWindow(dws, dwe, fws, fwe))
 
-    uc.wait_until(lambda experimentv: len(experimentv.models) > 0)
-    uc.stop()
-    new_uc = uc.new_version()
-    new_uc.wait_until(lambda experimentv: len(experimentv.models) > 1)
-    uc.stop()
+    experiment_version.wait_until(lambda experimentv: len(experimentv.models) > 0)
+    experiment_version.stop()
+    new_experiment_version = experiment_version.new_version()
+    new_experiment_version.wait_until(lambda experimentv: len(experimentv.models) > 1)
+    experiment_version.stop()
 
 
 @pytest.mark.parametrize('dws, dwe, fws, fwe', wrong_windows,
@@ -160,8 +167,8 @@ ts_ids = ['no groups-legacy', '3 groups-legacy']
 def setup_ts_class(request):
     groups = request.param
     group_name = '{}_{}'.format(str(groups[0]), str(groups[1])) if isinstance(groups, tuple) else groups
-    uc_name = 'ts_{}grp_{}'.format(group_name, TESTING_ID)
-    experiment_version = train_model(uc_name, groups)
+    experiment_name = 'ts_{}grp_{}'.format(group_name, TESTING_ID)
+    experiment_version = train_model(experiment_name, groups)
 
     experiment_version.wait_until(lambda experimentv: len(experimentv.models) > 0)
     experiment_version.stop()

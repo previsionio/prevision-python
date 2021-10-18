@@ -238,7 +238,7 @@ You can now create a new experiment based on:
 .. code-block:: python
 
     experiment_version = project.fit_classification(
-        name='helloworld_classif',
+        experiment_name='helloworld_classif',
         dataset=dataset,
         column_config=column_config,
         metric=pio.metrics.Classification.AUC,
@@ -251,7 +251,7 @@ If you want to use image data for your experiment, you need to provide the API w
 .. code-block:: python
 
     experiment_version = project.fit_image_classification(
-        name='helloworld_images_classif',
+        experiment_name='helloworld_images_classif',
         dataset=(dataset, image_folder),
         column_config=column_config,
         metric=pio.metrics.Classification.AUC,
@@ -347,7 +347,7 @@ In particular the ``time_window`` parameter defines the period in the past that 
     )
 
     experiment_version = project.fit_timeseries_regression(
-        name='helloworld_time_series',
+        experiment_name='helloworld_time_series',
         dataset=dataset,
         time_window=time_window,
         column_config=column_config,
@@ -450,7 +450,7 @@ You can then create a new text similarity experiment based on:
 .. code-block:: python
 
     experiment_verion = project.fit_text_similarity(
-        name='helloworld_text_similarity',
+        experiment_name='helloworld_text_similarity',
         dataset=dataset,
         description_column_config=description_column_config,
         metric=pio.metrics.TextSimilarity.accuracy_at_k,
@@ -471,6 +471,57 @@ The only differences are the specific parameters ``top_k`` and ``queries_dataset
 
 To get a full documentation check the api reference of :class:`.TextSimilarityModel` prediction methods.
 
+
+External Regression/Classification/MultiClassification experiments
+==================================================================
+
+Preparing your external models
+------------------------------
+
+Before to create an external experiment, you have to create a list of tuple containing at least one item.
+
+Each tuple contains 3 items describing an external model as follows:
+    1) The name you want to give to the model
+    2) The path to the model in onnx format
+    3) The path to a yaml file containing metadata about the model
+
+.. code-block:: python
+
+    external_models = [
+        ('my_first_external_model', 'model_1.onnx', 'model_1.yaml'),
+        ('my_second_external_model', 'model_2.onnx', 'model_2.yaml'),
+    ]
+
+Experiment creation
+-------------------
+
+You can now create a new experiment based on:
+
+ - an experiment name
+ - an holdout dataset
+ - a target column name
+ - a list of tuple containing external models
+ - (optional) a metric type
+ - (optional) the experiment version description
+
+.. code-block:: python
+
+    experiment_version = project.create_external_regression(
+        'my_experiment_name',
+        holdout_dataset,
+        'target_column',
+        external_models,
+        metric=pio.metrics.Regression.RMSE,
+        'my_experiment_version_description',
+    )
+
+To get an exhaustive list of the available metrics go to the api reference :ref:`metrics_reference`.
+
+Making predictions
+------------------
+
+The prediction workflow is the same as for classic experiment (detailed in :ref:`making prediction`).
+
 Deployed experiments
 ====================
 
@@ -481,12 +532,12 @@ You first need to deploy a main model (and a challenger model) from an existing 
 .. code-block:: python
 
     # retrieve the best model of your experiment
-    uc_best_model = experiment_version.best_model
+    experiment_version_best_model = experiment_version.best_model
 
     # deploy the experiment model
     experiment_deployment = project.create_experiment_deployment(
         'my_deployed_experiment',
-        main_model=uc_best_model,
+        main_model=experiment_version_best_model,
         challenger_model=None,
     )
 
@@ -605,7 +656,7 @@ You can decide to completely delete the experiment:
 
 .. code-block:: python
 
-    uc = pio.Experiment.from_id(experiment_version.experiment_id)
-    uc.delete()
+    experiment = pio.Experiment.from_id(experiment_version.experiment_id)
+    experiment.delete()
 
 However be careful, in that case any detail about the experiment will be removed, and you won't be able to make predictions from it anymore.

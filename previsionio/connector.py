@@ -371,35 +371,6 @@ class GCPConnector(Connector):
         return cls.from_dict(connector_info)
 
 
-# class HDFSConnector(Connector):
-#
-#     """ A specific type of connector to interact with a HDFS client. """
-#
-#     conn_type = 'HDFS'
-#
-#     @classmethod
-#     def new(cls, name, host, port=50070, username='', password=''):
-#         return cls._new(name=name, host=host, conn_type='HDFS', port=port, username=username, password=password)
-
-
-# class HiveConnector(DataTableBaseConnector):
-
-#     """ A specific type of connector to interact with a Hive database client (containing databases and tables). """
-
-#     conn_type = 'HIVE'
-
-
-# class HBaseConnector(DataBaseConnector):
-#
-#     """ A specific type of connector to interact with a HBase database client (containing databases and tables). """
-#
-#     conn_type = 'HBASE'
-#
-#     @classmethod
-#     def new(cls, name, host, port=9090, username='', password=''):
-#         return cls._new(name=name, host=host, conn_type='HBASE', port=port, username=username, password=password)
-
-
 connectors_names = {
     'SQL': SQLConnector,
     'FTP': FTPConnector,
