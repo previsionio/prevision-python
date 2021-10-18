@@ -1032,6 +1032,17 @@ class Project(ApiResource, UniqueResourceMixin):
         challenger_model: Model = None,
         access_type: str = 'public',
     ) -> ExperimentDeployment:
+        """ Create a new experiment deployment in the current project.
+
+        Args:
+            name (str): experiment deployment name
+            main_model (:class:`.Model`): main model
+            challenger_model (:class:`.Model`, optional): challenger model (main and challenger
+                models should come from the same experiment)
+            access_type (str, optional): public/ fine_grained/ private
+        Returns:
+            :class:`.ExperimentDeployment`: Fetched experiment deployment object
+        """
         return ExperimentDeployment._new(
             self._id,
             name,
