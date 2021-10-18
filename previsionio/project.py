@@ -929,7 +929,7 @@ class Project(ApiResource, UniqueResourceMixin):
         holdout_dataset: Dataset,
         target_column: str,
         external_models: List[Tuple],
-        metric: metrics.Regression = metrics.Classification.AUC,
+        metric: metrics.Classification = metrics.Classification.AUC,
         dataset: Dataset = None,
         experiment_version_description: str = None,
     ) -> ExternalExperimentVersion:
@@ -974,7 +974,7 @@ class Project(ApiResource, UniqueResourceMixin):
         holdout_dataset: Dataset,
         target_column: str,
         external_models: List[Tuple],
-        metric: metrics.Regression = metrics.MultiClassification.log_loss,
+        metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
         dataset: Dataset = None,
         experiment_version_description: str = None,
     ) -> ExternalExperimentVersion:
