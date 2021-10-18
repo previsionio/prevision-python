@@ -238,7 +238,7 @@ You can now create a new experiment based on:
 .. code-block:: python
 
     experiment_version = project.fit_classification(
-        name='helloworld_classif',
+        experiment_name='helloworld_classif',
         dataset=dataset,
         column_config=column_config,
         metric=pio.metrics.Classification.AUC,
@@ -251,7 +251,7 @@ If you want to use image data for your experiment, you need to provide the API w
 .. code-block:: python
 
     experiment_version = project.fit_image_classification(
-        name='helloworld_images_classif',
+        experiment_name='helloworld_images_classif',
         dataset=(dataset, image_folder),
         column_config=column_config,
         metric=pio.metrics.Classification.AUC,
@@ -347,7 +347,7 @@ In particular the ``time_window`` parameter defines the period in the past that 
     )
 
     experiment_version = project.fit_timeseries_regression(
-        name='helloworld_time_series',
+        experiment_name='helloworld_time_series',
         dataset=dataset,
         time_window=time_window,
         column_config=column_config,
@@ -450,7 +450,7 @@ You can then create a new text similarity experiment based on:
 .. code-block:: python
 
     experiment_verion = project.fit_text_similarity(
-        name='helloworld_text_similarity',
+        experiment_name='helloworld_text_similarity',
         dataset=dataset,
         description_column_config=description_column_config,
         metric=pio.metrics.TextSimilarity.accuracy_at_k,
