@@ -479,12 +479,11 @@ External Regression/Classification/MultiClassification experiments
 Preparing your external models
 ------------------------------
 
-Before to create an external experiment, you have to create a list of tuple containing at least one item.
+Before creating an external experiment, you have to define a non-empty list of tuple where each tuple contains 3 items describing an external model as follows:
 
-Each tuple contains 3 items describing an external model as follows:
-    1) The name you want to give to the model
-    2) The path to the model in onnx format
-    3) The path to a yaml file containing metadata about the model
+    1) the name you want to give to the model
+    2) the path to the model in onnx format
+    3) the path to a yaml file containing metadata about the model
 
 .. code-block:: python
 
