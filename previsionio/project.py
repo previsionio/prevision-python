@@ -22,6 +22,7 @@ from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, Qu
                               TextSimilarity, TextSimilarityLang)
 from .experiment import Experiment
 from .experiment_deployment import ExperimentDeployment
+from .model import Model
 
 
 class ProjectColor(Enum):
@@ -1024,13 +1025,19 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return Experiment.list(self._id, all=all)
 
-    def create_experiment_deployment(self, name: str, main_model, challenger_model=None, access_type: str = 'public'):
+    def create_experiment_deployment(
+        self,
+        name: str,
+        main_model: Model,
+        challenger_model: Model = None,
+        access_type: str = 'public',
+    ) -> ExperimentDeployment:
         return ExperimentDeployment._new(
             self._id,
             name,
             main_model,
             challenger_model=challenger_model,
-            access_type=access_type
+            access_type=access_type,
         )
 
     def list_experiment_deployments(self, all: bool = True):
