@@ -18,7 +18,7 @@ def setup_module(module):
     # Create dataset
     global dataset
     dataset = project.create_dataset('test_exporter',
-                                     file_name='utests/data_exporter/titanic.csv')
+                                     file_name='data_exporter/titanic.csv')
 
     # Train one model
     training_config = pio.TrainingConfig(advanced_models=[],
@@ -68,7 +68,7 @@ def check_exporter_and_exports(exporter, skip_prediction=False):
     check_export(exporter, export)
 
     time.sleep(1)
-    export = exporter.export_file('utests/data_exporter/titanic.csv', wait_for_export=True)
+    export = exporter.export_file('data_exporter/titanic.csv', wait_for_export=True)
     check_export(exporter, export)
 
     if not skip_prediction:
