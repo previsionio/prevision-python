@@ -283,7 +283,7 @@ class BaseExperimentVersion(ApiResource):
         assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(self.resource_id,
                                                 self.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE'),
+                                                EventTuple('EXPERIMENT_VERSION_UPDATE'),
                                                 specific_url=events_url)
         logger.info('[Experiment] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                          for k, v in parse_json(response).items()))
