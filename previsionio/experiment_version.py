@@ -283,7 +283,7 @@ class BaseExperimentVersion(ApiResource):
         assert pio.client.event_manager is not None
         pio.client.event_manager.wait_for_event(self.resource_id,
                                                 self.resource,
-                                                EventTuple('USECASE_VERSION_UPDATE'),
+                                                EventTuple('EXPERIMENT_VERSION_UPDATE'),
                                                 specific_url=events_url)
         logger.info('[Experiment] stopping:' + '  '.join(str(k) + ': ' + str(v)
                                                          for k, v in parse_json(response).items()))
@@ -646,18 +646,16 @@ class ClassicExperimentVersion(BaseExperimentVersion):
 
         return best.cross_validation
 
-    def predict_single(self,
-                       data,
-                       confidence=False,
-                       explain=False):
-        """ Get a prediction on a single instance using the best model of the experiment.
+    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
+        """ Get a prediction on a single instance using the best model of the experiment. Use
+        :py:func:`predict_from_dataset_name` or :py:func:`predict` methods to predict multiple
+        instances at the same time (it's faster).
 
         Args:
-            use_best_single (bool, optional): Whether to use the best single model
-                instead of the best model overall (default: ``False``)
-            confidence (bool, optional): Whether to predict with confidence values
-                (default: ``False``)
-            explain (bool): Whether to explain prediction (default: ``False``)
+            data (dict): Features names and values (without target feature) - missing feature keys
+                will be replaced by nans
+            confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
+            explain (bool, optional): Whether to explain prediction (default: ``False``)
 
         Returns:
             dict: Dictionary containing the prediction.
@@ -669,9 +667,7 @@ class ClassicExperimentVersion(BaseExperimentVersion):
         """
 
         best = self.best_model
-        return best.predict_single(data,
-                                   confidence=confidence,
-                                   explain=explain)
+        return best.predict_single(data, confidence=confidence, explain=explain)
 
     def predict_from_dataset(self,
                              dataset,

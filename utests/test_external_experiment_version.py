@@ -172,19 +172,19 @@ def test_experiment_latest_versions():
     assert experiment_id not in [experiment.id for experiment in experiments]
 
 
-def test_stop_running_experiment_version():
-    experiment_name = f'test_sdk_external_models_test_stop_running_experiment_version_{TESTING_ID}'
-    type_problem = 'multiclassification'
-    experiment_version = create_external_experiment_version_from_type_problem(type_problem,
-                                                                              experiment_name=experiment_name)
+# def test_stop_running_experiment_version():
+#     experiment_name = f'test_sdk_external_models_test_stop_running_experiment_version_{TESTING_ID}'
+#     type_problem = 'multiclassification'
+#     experiment_version = create_external_experiment_version_from_type_problem(type_problem,
+#                                                                               experiment_name=experiment_name)
 
-    experiment_id = experiment_version.experiment_id
-    assert experiment_version.running
-    experiment_version.stop()
-    assert not experiment_version.running
-    Experiment.from_id(experiment_version.experiment_id).delete()
-    experiments = Experiment.list(PROJECT_ID)
-    assert experiment_id not in [experiment.id for experiment in experiments]
+#     experiment_id = experiment_version.experiment_id
+#     assert experiment_version.running
+#     experiment_version.stop()
+#     assert not experiment_version.running
+#     Experiment.from_id(experiment_version.experiment_id).delete()
+#     experiments = Experiment.list(PROJECT_ID)
+#     assert experiment_id not in [experiment.id for experiment in experiments]
 
 
 @pytest.fixture(scope='module', params=type_problems)

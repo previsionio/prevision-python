@@ -22,6 +22,7 @@ from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, Qu
                               TextSimilarity, TextSimilarityLang)
 from .experiment import Experiment
 from .experiment_deployment import ExperimentDeployment
+from .model import Model
 
 
 class ProjectColor(Enum):
@@ -513,8 +514,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset: Dataset,
         column_config: ColumnConfig,
         metric: metrics.Regression = metrics.Regression.RMSE,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start a tabular regression experiment version training
@@ -556,8 +557,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset: Dataset,
         column_config: ColumnConfig,
         metric: metrics.Classification = metrics.Classification.AUC,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start a tabular classification experiment version training
@@ -599,8 +600,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset: Dataset,
         column_config: ColumnConfig,
         metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start a tabular multiclassification experiment version training
@@ -643,8 +644,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.Regression = metrics.Regression.RMSE,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start an image regression experiment version training
@@ -690,8 +691,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.Classification = metrics.Classification.AUC,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None
     ) -> Supervised:
         """ Start an image classification experiment version training
@@ -737,8 +738,8 @@ class Project(ApiResource, UniqueResourceMixin):
         dataset_images: DatasetImages,
         column_config: ColumnConfig,
         metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
-        holdout_dataset=None,
-        training_config=TrainingConfig(),
+        holdout_dataset: Dataset = None,
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> Supervised:
         """ Start an image multiclassification experiment version training
@@ -785,7 +786,7 @@ class Project(ApiResource, UniqueResourceMixin):
         time_window: TimeWindow,
         metric: metrics.Regression = metrics.Regression.RMSE,
         holdout_dataset: Dataset = None,
-        training_config=TrainingConfig(),
+        training_config: TrainingConfig = TrainingConfig(),
         experiment_version_description: str = None,
     ) -> TimeSeries:
         """ Start a timeseries regression experiment version training
@@ -849,7 +850,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 (default: ``metrics.TextSimilarity.accuracy_at_k``)
             top_k (int, optional): top_k (default: ``10``)
             lang (:class:`.TextSimilarityLang`, optional): lang of the training dataset
-                (default: ``.TextSimilarityLang.Auto``)
+                (default: ``TextSimilarityLang.Auto``)
             queries_dataset (:class:`.Dataset`, optional): Reference to a dataset object to
                 use as a queries dataset (default: ``None``)
             queries_column_config (:class:`.QueriesColumnConfig`): Queries column configuration
@@ -928,7 +929,7 @@ class Project(ApiResource, UniqueResourceMixin):
         holdout_dataset: Dataset,
         target_column: str,
         external_models: List[Tuple],
-        metric: metrics.Regression = metrics.Classification.AUC,
+        metric: metrics.Classification = metrics.Classification.AUC,
         dataset: Dataset = None,
         experiment_version_description: str = None,
     ) -> ExternalExperimentVersion:
@@ -973,7 +974,7 @@ class Project(ApiResource, UniqueResourceMixin):
         holdout_dataset: Dataset,
         target_column: str,
         external_models: List[Tuple],
-        metric: metrics.Regression = metrics.MultiClassification.log_loss,
+        metric: metrics.MultiClassification = metrics.MultiClassification.log_loss,
         dataset: Dataset = None,
         experiment_version_description: str = None,
     ) -> ExternalExperimentVersion:
@@ -1024,13 +1025,30 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return Experiment.list(self._id, all=all)
 
-    def create_experiment_deployment(self, name: str, main_model, challenger_model=None, access_type: str = 'public'):
+    def create_experiment_deployment(
+        self,
+        name: str,
+        main_model: Model,
+        challenger_model: Model = None,
+        access_type: str = 'public',
+    ) -> ExperimentDeployment:
+        """ Create a new experiment deployment in the current project.
+
+        Args:
+            name (str): experiment deployment name
+            main_model (:class:`.Model`): main model
+            challenger_model (:class:`.Model`, optional): challenger model (main and challenger
+                models should come from the same experiment)
+            access_type (str, optional): public/ fine_grained/ private
+        Returns:
+            :class:`.ExperimentDeployment`: Fetched experiment deployment object
+        """
         return ExperimentDeployment._new(
             self._id,
             name,
             main_model,
             challenger_model=challenger_model,
-            access_type=access_type
+            access_type=access_type,
         )
 
     def list_experiment_deployments(self, all: bool = True):

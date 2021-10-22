@@ -238,7 +238,7 @@ You can now create a new experiment based on:
 .. code-block:: python
 
     experiment_version = project.fit_classification(
-        name='helloworld_classif',
+        experiment_name='helloworld_classif',
         dataset=dataset,
         column_config=column_config,
         metric=pio.metrics.Classification.AUC,
@@ -251,8 +251,9 @@ If you want to use image data for your experiment, you need to provide the API w
 .. code-block:: python
 
     experiment_version = project.fit_image_classification(
-        name='helloworld_images_classif',
-        dataset=(dataset, image_folder),
+        experiment_name='helloworld_images_classif',
+        dataset=dataset,
+        dataset_images=image_folder,
         column_config=column_config,
         metric=pio.metrics.Classification.AUC,
         training_config=training_config,
@@ -347,7 +348,7 @@ In particular the ``time_window`` parameter defines the period in the past that 
     )
 
     experiment_version = project.fit_timeseries_regression(
-        name='helloworld_time_series',
+        experiment_name='helloworld_time_series',
         dataset=dataset,
         time_window=time_window,
         column_config=column_config,
@@ -450,7 +451,7 @@ You can then create a new text similarity experiment based on:
 .. code-block:: python
 
     experiment_verion = project.fit_text_similarity(
-        name='helloworld_text_similarity',
+        experiment_name='helloworld_text_similarity',
         dataset=dataset,
         description_column_config=description_column_config,
         metric=pio.metrics.TextSimilarity.accuracy_at_k,
@@ -478,12 +479,11 @@ External Regression/Classification/MultiClassification experiments
 Preparing your external models
 ------------------------------
 
-Before to create an external experiment, you have to create a list of tuple containing at least one item.
+Before creating an external experiment, you have to define a non-empty list of tuple where each tuple contains 3 items describing an external model as follows:
 
-Each tuple contains 3 items describing an external model as follows:
-    1) The name you want to give to the model
-    2) The path to the model in onnx format
-    3) The path to a yaml file containing metadata about the model
+    1) the name you want to give to the model
+    2) the path to the model in onnx format
+    3) the path to a yaml file containing metadata about the model
 
 .. code-block:: python
 

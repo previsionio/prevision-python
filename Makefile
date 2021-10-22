@@ -3,7 +3,7 @@ lint:
 	pyflakes  *.py previsionio/*.py utests/*.py
 
 utests:
-	cd utests; py.test
+	cd utests; pytest
 
 utests-ci:
 	cd utests; py.test --junitxml=test_results.xml --cov=../previsionio --cov-config .coveragerc --cov-report html; coverage report -m

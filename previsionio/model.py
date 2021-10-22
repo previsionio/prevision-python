@@ -286,19 +286,14 @@ class ClassicModel(Model):
         return result
 
     def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
-        """ Make a prediction for a single instance. Use :py:func:`predict_from_dataset_name` or predict methods
-        to predict multiple instances at the same time (it's faster).
+        """ Make a prediction for a single instance. Use :py:func:`predict_from_dataset_name` or
+        :py:func:`predict` methods to predict multiple instances at the same time (it's faster).
 
         Args:
             data (dict): Features names and values (without target feature) - missing feature keys
                 will be replaced by nans
             confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
             explain (bool, optional): Whether to explain prediction (default: ``False``)
-
-
-        .. note::
-
-            You can set both ``confidence`` and ``explain`` to true.
 
         Returns:
             dict: Dictionary containing the prediction result
@@ -313,7 +308,6 @@ class ClassicModel(Model):
             },
             'explain': explain,
             'confidence': confidence,
-            'best': False,
             'model_id': self._id
         }
 

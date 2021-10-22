@@ -124,6 +124,7 @@ def test_embedding():
     states = [ExperimentState.Pending, ExperimentState.Running]
     while ds.get_embedding_status() in states and time.time() < t0 + pio.config.default_timeout:
         ds.update_status()
+        time.sleep(1)
 
     embedding = ds.get_embedding()
     assert isinstance(embedding, dict)
