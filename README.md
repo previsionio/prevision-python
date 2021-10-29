@@ -24,7 +24,7 @@ python setup.py install
 # Setup
 
 * [Sign up for a free trial](https://cloud.prevision.io) 
-* Go in the upper left corner menu to go to the API Key pages
+* Go in the upper right corner menu to go to the API Key pages
 * Generate a new master token
 * [Setup your client with it](https://prevision-python.readthedocs.io/en/latest/source/getting_started.html#set-up-your-client)
 * Enjoy creating your new models from [documentations](https://prevision-python.readthedocs.io/en/latest/source/getting_started.html#regression-classification-multi-classification-experiments) 
