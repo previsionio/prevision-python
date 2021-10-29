@@ -45,3 +45,11 @@ build:
   release:
     tag_name: $CI_COMMIT_TAG
     description: "new version"
+
+test-publish:
+  stage: publish
+  extends: .base
+  script:
+    - pip install previsionio
+  only:
+    - tags
