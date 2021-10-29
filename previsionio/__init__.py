@@ -91,7 +91,6 @@ from previsionio.text_similarity import (
     Preprocessing,
 )
 from previsionio.dataset import Dataset, DatasetImages
-from previsionio.analyzer import cv_classif_analysis
 from previsionio.deployed_model import DeployedModel
 from previsionio.experiment_deployment import ExperimentDeployment
 from previsionio.prediction import ValidationPrediction, DeploymentPrediction
@@ -127,7 +126,6 @@ __all__ = [
     'ClassificationModel',
     'MultiClassificationModel',
     'TextSimilarityModel',
-    'cv_classif_analysis',
     'DeployedModel',
     'TextSimilarity',
     'DescriptionsColumnConfig',
