@@ -27,4 +27,4 @@ python setup.py install
 * Go in the upper left corner menu to go to the API Key pages
 * Generate a new master token
 * [Setup your client with it](https://prevision-python.readthedocs.io/en/latest/source/getting_started.html#set-up-your-client)
-* Enjoy creating your new models from [documentations](https://prevision-python.readthedocs.io/en/latest/source/getting_started.html#id5) 
+* Enjoy creating your new models from [documentations](https://prevision-python.readthedocs.io/en/latest/source/getting_started.html#regression-classification-multi-classification-experiments) 
