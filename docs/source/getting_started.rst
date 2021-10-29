@@ -6,9 +6,9 @@ Getting started
 
 The Prevision.io Python SDK allows you to interact with Prevision.io `APIs <https://cloud.prevision.io/api/documentation/>`_ directly from a python environment.
 
-The following document is a step by step usage example of the Prevision.io Python SDK. If your looking for the full documentation of the software you will find it `here <https://previsionio.readthedocs.io/fr/latest/>`_.
+The following document is a step by step usage example of the Prevision.io Python SDK. If your looking for the full documentation of the software you will find it `here <https://doc.prevision.io/en/latest/studio/datas.html#data>`_.
 
-Don't already have a Prevision.io account established? Head over to `this link <https://previsionio.readthedocs.io/fr/latest/Introduction/getting-started.html>`_, follow the instructions and come back to this page!
+Don't already have a Prevision.io account established? Head over to `this link <https://doc.prevision.io/en/latest/index.html#getting-started>`_, follow the instructions and come back to this page!
 
 Pre-requisites
 ==============
@@ -544,7 +544,7 @@ You first need to deploy a main model (and a challenger model) from an existing 
 Now you can make bulk predictions from your deployed model(s):
 
 .. code-block:: python
-    
+
     # make predictions
     deployment_prediction = experiment_deployment.predict_from_dataset(test_dataset)
 
