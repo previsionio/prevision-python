@@ -15,8 +15,7 @@ test-lint:
   stage: test
   extends: .base
   script:
-    - pip install --no-cache-dir -r requirements.txt
-    - pip install --no-cache-dir -r utests/requirements.txt
+    - pip install pycodestyle pyflakes
     - pycodestyle --config pep8lint.cfg --statistics --format=pylint *.py previsionio/*.py utests/*.py
     - pyflakes  *.py previsionio/*.py utests/*.py
   allow_failure: true
@@ -26,8 +25,9 @@ test-image:
   extends: .base
   interruptible: true
   script:
-    - pip install --no-cache-dir -r requirements.txt
-    - pip install --no-cache-dir -r utests/requirements.txt
+    - pip install -U pip
+    - pip install -r requirements.txt
+    - pip install -r utests/requirements.txt
     - pytest -k 'not exporter' utests/
   timeout: 3h
   allow_failure: true

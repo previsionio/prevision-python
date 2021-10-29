@@ -3,20 +3,9 @@ from setuptools import setup, find_packages
 
 import versioneer
 
-python_major = sys.version_info[0]
 
-install_requires = [
-    "pandas>=0.25.3",
-    "requests>=2.23.0",
-    "numpy>=1.18.4",
-    "requests-oauthlib>=1.3.0",
-    "oauthlib>=3.1.0",
-    "matplotlib>=3.2.1",
-]
-
-if python_major == 2:
-    install_requires.append('enum')
-
+with open('requirements.txt', mode='r', encoding='utf-8') as f:
+    install_requires = f.read().splitlines()
 
 with open("README.md") as readme:
     setup(name='previsionio',
