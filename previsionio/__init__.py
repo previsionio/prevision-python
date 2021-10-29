@@ -61,8 +61,6 @@ from previsionio.experiment_config import (
     YesOrNoOrAuto,
 )
 
-import previsionio.metrics as metrics
-
 from previsionio.connector import Connector
 from previsionio.datasource import DataSource
 from previsionio.exporter import Exporter, ExporterWriteMode
@@ -113,7 +111,6 @@ __all__ = [
     'quick_config',
     'ultra_config',
     'ColumnConfig',
-    'metrics',
     'Connector',
     'DataSource',
     'Exporter',
