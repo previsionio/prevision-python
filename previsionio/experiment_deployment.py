@@ -10,6 +10,7 @@ from .experiment_version import BaseExperimentVersion
 from .utils import parse_json, PrevisionException, get_all_results
 from .prediction import DeploymentPrediction
 from .dataset import Dataset
+from .model import Model
 
 
 class ExperimentDeployment(ApiResource):
@@ -92,14 +93,22 @@ class ExperimentDeployment(ApiResource):
         return [ExperimentDeployment(**experiment_deployment) for experiment_deployment in resources]
 
     @classmethod
-    def _new(cls, project_id: str, name: str, main_model, challenger_model=None, access_type: str = 'public'):
+    def _new(
+        cls,
+        project_id: str,
+        name: str,
+        main_model: Model,
+        challenger_model: Model = None,
+        access_type: str = 'public',
+    ):
         """ Create a new experiment deployment object on the platform.
 
         Args:
             project_id (str): project id
             name (str): experiment deployment name
-            main_model: main model
-            challenger_model (optional): challenger model. main and challenger models should be in the same experiment
+            main_model (:class:`.Model`): main model
+            challenger_model (:class:`.Model`, optional): challenger model (main and challenger
+                models should come from the same experiment)
             access_type (str, optional): public/ fine_grained/ private
 
         Returns:

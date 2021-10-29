@@ -6,9 +6,9 @@ Getting started
 
 The Prevision.io Python SDK allows you to interact with Prevision.io `APIs <https://cloud.prevision.io/api/documentation/>`_ directly from a python environment.
 
-The following document is a step by step usage example of the Prevision.io Python SDK. If your looking for the full documentation of the software you will find it `here <https://previsionio.readthedocs.io/fr/latest/>`_.
+The following document is a step by step usage example of the Prevision.io Python SDK. If your looking for the full documentation of the software you will find it `here <https://doc.prevision.io/en/latest/studio/datas.html#data>`_.
 
-Don't already have a Prevision.io account established? Head over to `this link <https://previsionio.readthedocs.io/fr/latest/Introduction/getting-started.html>`_, follow the instructions and come back to this page!
+Don't already have a Prevision.io account established? Head over to `this link <https://doc.prevision.io/en/latest/index.html#getting-started>`_, follow the instructions and come back to this page!
 
 Pre-requisites
 ==============
@@ -252,7 +252,8 @@ If you want to use image data for your experiment, you need to provide the API w
 
     experiment_version = project.fit_image_classification(
         experiment_name='helloworld_images_classif',
-        dataset=(dataset, image_folder),
+        dataset=dataset,
+        dataset_images=image_folder,
         column_config=column_config,
         metric=pio.metrics.Classification.AUC,
         training_config=training_config,
@@ -478,12 +479,11 @@ External Regression/Classification/MultiClassification experiments
 Preparing your external models
 ------------------------------
 
-Before to create an external experiment, you have to create a list of tuple containing at least one item.
+Before creating an external experiment, you have to define a non-empty list of tuple where each tuple contains 3 items describing an external model as follows:
 
-Each tuple contains 3 items describing an external model as follows:
-    1) The name you want to give to the model
-    2) The path to the model in onnx format
-    3) The path to a yaml file containing metadata about the model
+    1) the name you want to give to the model
+    2) the path to the model in onnx format
+    3) the path to a yaml file containing metadata about the model
 
 .. code-block:: python
 
@@ -544,7 +544,7 @@ You first need to deploy a main model (and a challenger model) from an existing 
 Now you can make bulk predictions from your deployed model(s):
 
 .. code-block:: python
-    
+
     # make predictions
     deployment_prediction = experiment_deployment.predict_from_dataset(test_dataset)
 
