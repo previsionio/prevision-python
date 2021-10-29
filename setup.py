@@ -8,7 +8,6 @@ python_major = sys.version_info[0]
 install_requires = [
     "pandas>=0.25.3",
     "requests>=2.23.0",
-    "scikit-learn>=0.22.2",
     "numpy>=1.18.4",
     "requests-oauthlib>=1.3.0",
     "oauthlib>=3.1.0",
