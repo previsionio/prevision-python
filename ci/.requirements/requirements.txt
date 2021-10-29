@@ -1,7 +1,0 @@
-pandas
-requests
-scikit-learn
-numpy
-requests_oauthlib
-oauthlib
-pyflakes

@@ -61,8 +61,6 @@ from previsionio.experiment_config import (
     YesOrNoOrAuto,
 )
 
-import previsionio.metrics as metrics
-
 from previsionio.connector import Connector
 from previsionio.datasource import DataSource
 from previsionio.exporter import Exporter, ExporterWriteMode
@@ -93,7 +91,6 @@ from previsionio.text_similarity import (
     Preprocessing,
 )
 from previsionio.dataset import Dataset, DatasetImages
-from previsionio.analyzer import cv_classif_analysis
 from previsionio.deployed_model import DeployedModel
 from previsionio.experiment_deployment import ExperimentDeployment
 from previsionio.prediction import ValidationPrediction, DeploymentPrediction
@@ -113,7 +110,6 @@ __all__ = [
     'quick_config',
     'ultra_config',
     'ColumnConfig',
-    'metrics',
     'Connector',
     'DataSource',
     'Exporter',
@@ -130,7 +126,6 @@ __all__ = [
     'ClassificationModel',
     'MultiClassificationModel',
     'TextSimilarityModel',
-    'cv_classif_analysis',
     'DeployedModel',
     'TextSimilarity',
     'DescriptionsColumnConfig',
