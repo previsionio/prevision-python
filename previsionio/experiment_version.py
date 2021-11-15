@@ -414,9 +414,9 @@ class BaseExperimentVersion(ApiResource):
             float: Experiment score (or infinity if not available).
         """
         try:
-            return self._status['score']
+            return self._status['best_model']['metric']['value']
         except KeyError:
-            return float('inf')
+            PrevisionException('Score not available yet')
 
 
 class ClassicExperimentVersion(BaseExperimentVersion):
