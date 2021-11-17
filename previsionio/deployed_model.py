@@ -9,6 +9,7 @@ import requests
 from . import logger
 from . import config
 from .utils import handle_error_response, parse_json, PrevisionException
+from .prevision_client import client
 
 PREVISION_TOKEN_URL = 'https://accounts.prevision.io/auth/realms/prevision.io/protocol/openid-connect/token'
 
@@ -22,8 +23,6 @@ class DeployedModel(object):
         prevision_app_url (str): URL of the App. Can be retrieved on your app dashbord.
         client_id (str): Your app client id. Can be retrieved on your app dashbord.
         client_secret (str): Your app client secret. Can be retrieved on your app dashbord.
-        prevision_url (str): URL of the prevision.io server "https://<your instance>.prevision.io",
-            not required if working on-premise.
         prevision_token_url (str): URL to get a token. Required only if working on-premise (custom IP address)
             otherwise it is retrieved from "prevision_url".
     """
@@ -33,25 +32,25 @@ class DeployedModel(object):
         prevision_app_url: str,
         client_id: str,
         client_secret: str,
-        prevision_url: str = None,
         prevision_token_url: str = None,
     ):
         """Init DeployedModel (and check that the connection is valid)."""
         self.prevision_app_url = prevision_app_url
         self.client_id = client_id
         self.client_secret = client_secret
-        self.prevision_url = prevision_url
 
         if prevision_token_url:
             self.prevision_token_url = prevision_token_url
         else:
-            if self.prevision_url is None:
-                msg = 'Argument "prevision_url" is required if "prevision_token_url" is None'
-                raise PrevisionException(msg)
             try:
-                version_resp = requests.get(self.prevision_url + '/api/version')
+                version_resp = client.request(
+                    '/version',
+                    method=requests.get,
+                    message_prefix='Getting deployed model oidc_url',
+                )
                 version_resp = parse_json(version_resp)
                 self.prevision_token_url = version_resp['oidc_url']
+                self.prevision_token_url += '/auth/realms/prevision.io/protocol/openid-connect/token'
             except Exception as e:
                 logger.error(e)
                 raise PrevisionException(f'Cannot get prevision_token_url from url {self.prevision_url}: {e}')
@@ -86,6 +85,7 @@ class DeployedModel(object):
                 self._generate_token()
             except Exception as e:
                 logger.warning(f'failed to generate token with error {e.__repr__()}')
+            time.sleep(.5)
 
     def _check_token_url_app(self):
 

@@ -566,12 +566,11 @@ You can also make unitary predictions from the main model:
     # retrieve the last client id and client secret
     creds = experiment_deployment.get_api_keys()[-1]
 
-    # initialize the deployed model with its url, your client id and secret, and your instance url
+    # initialize the deployed model with its url, your client id and secret
     model = pio.DeployedModel(
         prevision_app_url=experiment_deployment.url,
         client_id=creds['client_id'],
         client_secret=creds['client_secret'],
-        prevision_url=url,  # the url used to initialize the client
     )
 
     # make a prediction
