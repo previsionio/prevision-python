@@ -80,3 +80,22 @@ def test_experiment_version():
     deployment_prediction = experiment_deployment.predict_from_dataset(prediction_dataset)
     prediction_df = deployment_prediction.get_result()
     assert isinstance(prediction_df, pd.DataFrame)
+
+    # Test deployed model
+    # import os
+    # experiment_deployment.create_api_key()
+    # creds = experiment_deployment.get_api_keys()[-1]
+    # model = pio.DeployedModel(
+    #     prevision_app_url=experiment_deployment.url,
+    #     client_id=creds['client_id'],
+    #     client_secret=creds['client_secret'],
+    #     prevision_url=os.getenv('PREVISION_URL', ''),
+    # )
+    # prediction, confidence, explain = model.predict(
+    #     predict_data={'feat_0': 0, 'feat_1': 0},
+    #     use_confidence=True,
+    #     explain=True,
+    # )
+    # assert prediction is not None
+    # assert confidence is not None
+    # assert explain is not None
