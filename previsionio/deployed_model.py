@@ -11,8 +11,6 @@ from . import config
 from .utils import handle_error_response, parse_json, PrevisionException
 from .prevision_client import client
 
-PREVISION_TOKEN_URL = 'https://accounts.prevision.io/auth/realms/prevision.io/protocol/openid-connect/token'
-
 
 class DeployedModel(object):
 
