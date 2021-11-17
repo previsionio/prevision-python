@@ -27,7 +27,13 @@ class DeployedModel(object):
             if you're in the cloud, or a custom IP address if installed on-premise.
     """
 
-    def __init__(self, prevision_app_url: str, client_id: str, client_secret: str, prevision_token_url: str = None):
+    def __init__(
+        self,
+        prevision_app_url: str,
+        client_id: str,
+        client_secret: str,
+        prevision_token_url: str = None,
+    ):
         """Init DeployedModel (and check that the connection is valid)."""
         self.prevision_app_url = prevision_app_url
         self.client_id = client_id
@@ -71,10 +77,6 @@ class DeployedModel(object):
             except Exception as e:
                 logger.warning(f'failed to generate token with error {e.__repr__()}')
 
-    def check_types(self, features):
-        for feature, value in features:
-            pass
-
     def _check_token_url_app(self):
 
         if not self.prevision_app_url:
@@ -86,8 +88,18 @@ class DeployedModel(object):
         if not self.client_secret:
             raise PrevisionException('No client secret configured. Call client_app.init_client() to initialize')
 
-    def request(self, endpoint, method, files=None, data=None, allow_redirects=True, content_type=None,
-                check_response=True, message_prefix=None, **requests_kwargs):
+    def request(
+        self,
+        endpoint: str,
+        method,
+        files: Dict = None,
+        data: Dict = None,
+        allow_redirects: bool = True,
+        content_type: str = None,
+        check_response: bool = True,
+        message_prefix: str = None,
+        **requests_kwargs,
+    ):
         """
         Make a request on the desired endpoint with the specified method & data.
 
@@ -148,7 +160,12 @@ class DeployedModel(object):
 
         return resp
 
-    def predict(self, predict_data: Dict, use_confidence: bool = False, explain: bool = False):
+    def predict(
+        self,
+        predict_data: Dict,
+        use_confidence: bool = False,
+        explain: bool = False,
+    ):
         """ Get a prediction on a single instance using the best model of the experiment.
 
         Args:
