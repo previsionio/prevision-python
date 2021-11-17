@@ -23,8 +23,8 @@ class DeployedModel(object):
         prevision_app_url (str): URL of the App. Can be retrieved on your app dashbord.
         client_id (str): Your app client id. Can be retrieved on your app dashbord.
         client_secret (str): Your app client secret. Can be retrieved on your app dashbord.
-        prevision_token_url (str): URL to get a token. Required only if working on-premise (custom IP address)
-            otherwise it is retrieved from "prevision_url".
+        prevision_token_url (str): URL to get the OAuth2 token of the deployed model. Required
+            only if working on-premise (custom IP address) otherwise it is retrieved automatically.
     """
 
     def __init__(
