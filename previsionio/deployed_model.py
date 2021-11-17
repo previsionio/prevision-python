@@ -22,9 +22,10 @@ class DeployedModel(object):
         prevision_app_url (str): URL of the App. Can be retrieved on your app dashbord.
         client_id (str): Your app client id. Can be retrieved on your app dashbord.
         client_secret (str): Your app client secret. Can be retrieved on your app dashbord.
-        prevision_token_url (str): URL of get token. Should be
-            https://accounts.prevision.io/auth/realms/prevision.io/protocol/openid-connect/token
-            if you're in the cloud, or a custom IP address if installed on-premise.
+        prevision_url (str): URL of the prevision.io server "https://<your instance>.prevision.io",
+            not required if working on-premise.
+        prevision_token_url (str): URL to get a token. Required only if working on-premise (custom IP address)
+            otherwise it is retrieved from "prevision_url".
     """
 
     def __init__(
@@ -32,22 +33,31 @@ class DeployedModel(object):
         prevision_app_url: str,
         client_id: str,
         client_secret: str,
+        prevision_url: str = None,
         prevision_token_url: str = None,
     ):
         """Init DeployedModel (and check that the connection is valid)."""
         self.prevision_app_url = prevision_app_url
         self.client_id = client_id
         self.client_secret = client_secret
+        self.prevision_url = prevision_url
+
         if prevision_token_url:
             self.prevision_token_url = prevision_token_url
         else:
-            self.prevision_token_url = PREVISION_TOKEN_URL
+            if self.prevision_url is None:
+                msg = 'Argument "prevision_url" is required if "prevision_token_url" is None'
+                raise PrevisionException(msg)
+            try:
+                version_resp = requests.get(self.prevision_url + '/api/version')
+                version_resp = parse_json(version_resp)
+                self.prevision_token_url = version_resp['oidc_url']
+            except Exception as e:
+                logger.error(e)
+                raise PrevisionException(f'Cannot get prevision_token_url from url {self.prevision_url}: {e}')
+
         self.problem_type = None
-
         self.token = None
-        self.url = None
-
-        self.access_token = None
 
         try:
             about_resp = self.request('/about', method=requests.get)
