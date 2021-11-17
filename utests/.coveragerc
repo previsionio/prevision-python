@@ -3,10 +3,8 @@
 branch = True
 source = ../previsionio
 omit =
-    ../previsionio/density_charts.py
     ../previsionio/deployed_model.py
     ../previsionio/experiment.py
-    ../previsionio/plotter.py
 
 [report]
 ignore_errors = True
