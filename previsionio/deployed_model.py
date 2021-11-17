@@ -53,7 +53,7 @@ class DeployedModel(object):
                 self.prevision_token_url += '/auth/realms/prevision.io/protocol/openid-connect/token'
             except Exception as e:
                 logger.error(e)
-                raise PrevisionException(f'Cannot get prevision_token_url from url {self.prevision_url}: {e}')
+                raise PrevisionException(f'Cannot get prevision_token_url: {e}')
 
         self.problem_type = None
         self.token = None
@@ -68,7 +68,7 @@ class DeployedModel(object):
             self.outputs = parse_json(outputs_resp)
         except Exception as e:
             logger.error(e)
-            raise PrevisionException('Cannot connect: {}'.format(e))
+            raise PrevisionException(f'Cannot connect: {e}')
 
     def _generate_token(self):
         client = BackendApplicationClient(client_id=self.client_id)
