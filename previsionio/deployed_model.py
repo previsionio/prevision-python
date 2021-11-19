@@ -83,7 +83,7 @@ class DeployedModel(object):
                 self._generate_token()
             except Exception as e:
                 logger.warning(f'failed to generate token with error {e.__repr__()}')
-            time.sleep(.5)
+                time.sleep(.5)
 
     def _check_token_url_app(self):
 
