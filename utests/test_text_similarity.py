@@ -134,12 +134,18 @@ class BaseTrainSearchDelete(unittest.TestCase):
         assert experiment_version.score is not None
         nb_model = len(experiment_version.models)
         nb_prediction = 0
+        predictions = []
         for model in experiment_version.models:
-            model.predict_from_dataset(test_datasets['queries'],
-                                       'query',
-                                       top_k=10,
-                                       queries_dataset_matching_id_description_column='true_item_id')
+            prediction = model.predict_from_dataset(test_datasets['queries'],
+                                                    'query',
+                                                    top_k=10,
+                                                    queries_dataset_matching_id_description_column='true_item_id')
+            predictions.append(prediction)
             nb_prediction += 1
+
+        for prediction in predictions:
+            prediction.get_result()
+
         assert nb_prediction == nb_model
         pio.Experiment.from_id(experiment_version.experiment_id).delete()
         project_experiments = pio.Experiment.list(PROJECT_ID)
