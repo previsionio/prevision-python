@@ -28,7 +28,7 @@ test-image:
     - pip install -U pip
     - pip install -r requirements.txt
     - pip install -r utests/requirements.txt
-    - pytest utests/
+    - pytest -sv utests/
   timeout: 3h
   allow_failure: true
 
