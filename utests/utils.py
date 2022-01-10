@@ -30,6 +30,6 @@ def get_connectors_config():
     else:
         connectors_config_path = os.getenv("CONNECTORS_CONFIG_FILE")
         if connectors_config_path is None:
-            raise ValueError("exporter tests unavailable, missing config file env var")
+            raise ValueError("connectors tests unavailable, missing config file env var")
         print("Using CI/CD config")
     return json.load(open(connectors_config_path))
