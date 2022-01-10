@@ -1,3 +1,5 @@
+import os
+import json
 import time
 import previsionio as pio
 from .utils import get_testing_id
@@ -7,6 +9,25 @@ TESTING_ID = get_testing_id()
 PROJECT_NAME = "sdk_test_exporter_" + str(TESTING_ID)
 
 pio.config.default_timeout = 600
+
+
+# Try local config
+if os.path.exists("connectors_config"):
+    connectors_config_path = "connectors_config"
+    print("Using local config")
+# Else use config defined in CI/CD
+else:
+    connectors_config_path = os.getenv("CONNECTORS_CONFIG_FILE")
+    if connectors_config_path is None:
+        raise ValueError("exporter tests unavailable, missing config file")
+    print("Using CI/CD config")
+
+connectors_config = json.load(open(connectors_config_path))
+ftp_config = connectors_config["ftp_config"]
+sftp_config = connectors_config["sftp_config"]
+mysql_config = connectors_config["mysql_config"]
+S3_config = connectors_config["S3_config"]
+gcp_config = connectors_config["gcp_config"]
 
 
 def setup_module(module):
@@ -98,7 +119,6 @@ def check_export(exporter, export):
 
 
 def test_exporter_FTP():
-    from .connectors_config import ftp_config
     connector = project.create_ftp_connector("test_ftp_connector", ftp_config['host'],
                                              ftp_config['port'], ftp_config['username'],
                                              ftp_config['password'])
@@ -110,7 +130,6 @@ def test_exporter_FTP():
 
 
 def test_exporter_SFTP():
-    from .connectors_config import sftp_config
     connector = project.create_sftp_connector("test_ftp_connector", sftp_config['host'],
                                               sftp_config['port'], sftp_config['username'],
                                               sftp_config['password'])
@@ -122,7 +141,6 @@ def test_exporter_SFTP():
 
 
 def test_exporter_MySQL():
-    from .connectors_config import mysql_config
     connector = project.create_sql_connector("test_sftp_connector", mysql_config['host'],
                                              mysql_config['port'], mysql_config['username'],
                                              mysql_config['password'])
@@ -135,7 +153,6 @@ def test_exporter_MySQL():
 
 
 def test_exporter_S3():
-    from .connectors_config import S3_config
     connector = project.create_s3_connector("test_s3_connector", username=S3_config['username'],
                                             password=S3_config['password'])
     exporter = project.create_exporter(connector, 'test_s3_exporter',
@@ -147,7 +164,6 @@ def test_exporter_S3():
 
 
 def test_exporter_GCP_bucket():
-    from .connectors_config import gcp_config
     connector = project.create_gcp_connector("test_gcp_connector",
                                              googleCredentials=gcp_config['googleCredentials'])
     exporter = project.create_exporter(connector, 'test_gcp_exporter',
