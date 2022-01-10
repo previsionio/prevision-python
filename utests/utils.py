@@ -1,5 +1,6 @@
+import os
+import json
 import uuid
-
 import previsionio as pio
 
 DROP_COLS = ['feat_0']
@@ -18,3 +19,17 @@ def train_model(project_id, experiment_name, dataset, training_type, training_ty
 
 def get_testing_id():
     return str(uuid.uuid4())
+
+
+def get_connectors_config():
+    # Try local config
+    if os.path.exists("connectors_config"):
+        connectors_config_path = "connectors_config"
+        print("Using local config")
+    # Else use config defined in CI/CD
+    else:
+        connectors_config_path = os.getenv("CONNECTORS_CONFIG_FILE")
+        if connectors_config_path is None:
+            raise ValueError("exporter tests unavailable, missing config file env var")
+        print("Using CI/CD config")
+    return json.load(open(connectors_config_path))

@@ -1,8 +1,6 @@
-import os
-import json
 import time
 import previsionio as pio
-from .utils import get_testing_id
+from .utils import get_testing_id, get_connectors_config
 
 
 TESTING_ID = get_testing_id()
@@ -10,19 +8,7 @@ PROJECT_NAME = "sdk_test_exporter_" + str(TESTING_ID)
 
 pio.config.default_timeout = 600
 
-
-# Try local config
-if os.path.exists("connectors_config"):
-    connectors_config_path = "connectors_config"
-    print("Using local config")
-# Else use config defined in CI/CD
-else:
-    connectors_config_path = os.getenv("CONNECTORS_CONFIG_FILE")
-    if connectors_config_path is None:
-        raise ValueError("exporter tests unavailable, missing config file")
-    print("Using CI/CD config")
-
-connectors_config = json.load(open(connectors_config_path))
+connectors_config = get_connectors_config()
 ftp_config = connectors_config["ftp_config"]
 sftp_config = connectors_config["sftp_config"]
 mysql_config = connectors_config["mysql_config"]
