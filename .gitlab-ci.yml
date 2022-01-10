@@ -29,7 +29,7 @@ test-image:
     - pip install -r requirements.txt
     - pip install -r utests/requirements.txt
     - cd utests/
-    - pytest -sv test_exporters.py
+    - pytest -sv test_datasources.py
   timeout: 3h
   allow_failure: true
 
