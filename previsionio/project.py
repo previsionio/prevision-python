@@ -384,14 +384,14 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         return S3Connector._new(self._id, name, username=username, password=password)
 
-    def create_gcp_connector(self, name: str, googleCredentials: str):
+    def create_gcp_connector(self, name: str, googleCredentials: Dict):
         """ A connector to interact with a distant source of data (and
         easily get data snapshots using an associated :class:`.DataSource`
         resource).
 
         Args:
             name (str): Name of the connector
-            googleCredentials(str): google credentials
+            googleCredentials(dict): google credentials
         Returns:
             :class:`.GCPConnector`: The registered connector object in the current project.
         """
