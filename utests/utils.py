@@ -25,11 +25,11 @@ def get_connectors_config():
     # Try local config
     if os.path.exists("connectors_config"):
         connectors_config_path = "connectors_config"
-        print("Using local config")
+        print("\nUsing local connectors_config")
     # Else use config defined in CI/CD
     else:
         connectors_config_path = os.getenv("CONNECTORS_CONFIG_FILE")
         if connectors_config_path is None:
             raise ValueError("connectors tests unavailable, missing config file env var")
-        print("Using CI/CD config")
+        print("\nUsing CI/CD connectors_config")
     return json.load(open(connectors_config_path))
