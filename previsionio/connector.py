@@ -352,13 +352,13 @@ class GCPConnector(Connector):
         return connector
 
     @classmethod
-    def _new(cls, project_id: str, name: str, googleCredentials: str):
+    def _new(cls, project_id: str, name: str, googleCredentials: Dict):
         """ Create a new connector object on the platform.
 
         Args:
             project_id (str): Unique reference of the project id on the platform
             name (str): Name of the connector
-            googleCredentials(str): google credentials
+            googleCredentials(dict): google credentials
 
         Returns:
             :class:`.GCPConnector`: Newly create connector object

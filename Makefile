@@ -1,6 +1,6 @@
 lint:
 	pycodestyle --config pep8lint.cfg --statistics --format=pylint *.py previsionio/*.py utests/*.py
-	pyflakes . previsionio/ utests/
+	pyflakes .
 
 utests:
 	cd utests; py.test

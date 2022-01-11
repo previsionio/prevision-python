@@ -28,7 +28,8 @@ test-image:
     - pip install -U pip
     - pip install -r requirements.txt
     - pip install -r utests/requirements.txt
-    - pytest -k 'not exporter' utests/
+    - cd utests/
+    - pytest -sv
   timeout: 3h
   allow_failure: true
 

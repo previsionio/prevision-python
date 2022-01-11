@@ -141,6 +141,9 @@ def test_experiment_version():
     experiment_versions = Experiment.from_id(experiment_id).versions
     assert experiment_version_new.id in [experiment_version.id for experiment_version in experiment_versions]
 
+    experiment_version.wait_until(lambda experiment: experiment.done or experiment._status['state'] == 'failed')
+    experiment_version_new.wait_until(lambda experiment: experiment.done or experiment._status['state'] == 'failed')
+
     Experiment.from_id(experiment_id).delete()
     experiments = Experiment.list(PROJECT_ID)
     assert experiment_id not in [experiment.id for experiment in experiments]
@@ -166,6 +169,8 @@ def test_experiment_latest_versions():
     latest_version = Experiment.from_id(experiment_version_new.experiment_id).latest_version
     assert experiment_version_new._id == latest_version._id
     latest_version.new_version(external_models)
+
+    experiment_version.wait_until(lambda experiment: experiment.done or experiment._status['state'] == 'failed')
 
     Experiment.from_id(experiment_version_new.experiment_id).delete()
     experiments = Experiment.list(PROJECT_ID)
