@@ -1,10 +1,11 @@
 from .api_resource import ApiResource
 
+
 class PipelineScheduledRun(ApiResource):
     resource = 'pipeline-scheduled-runs'
 
-    def __init__(self, _id: str, name, project_id, pipeline_template_id, nodes_properties, exec_type, enabled, description=None,
-                 draft=True, created_at=None, **kwargs):
+    def __init__(self, _id: str, name, project_id, pipeline_template_id, nodes_properties, exec_type,
+                 enabled, description=None, draft=True, created_at=None, **kwargs):
         """ A Pipeline Scheduled Run
         """
         super().__init__(_id=_id)
