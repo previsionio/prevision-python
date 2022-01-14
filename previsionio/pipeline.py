@@ -1,4 +1,7 @@
+import requests
 from .api_resource import ApiResource
+from . import client
+from .utils import parse_json
 
 
 class PipelineScheduledRun(ApiResource):
@@ -24,19 +27,39 @@ class PipelineScheduledRun(ApiResource):
     def from_id(cls, _id: str) -> 'PipelineScheduledRun':
         return cls(**super()._from_id(_id=_id))
 
-    def trigger():
+    @classmethod
+    def list(cls, project_id: str, all: bool = True):
+        """ List all the available pipeline scheduled run in the current active [client] workspace.
+
+        .. warning::
+
+            Contrary to the parent ``list()`` function, this method
+            returns actual :class:`.Dataset` objects rather than
+            plain dictionaries with the corresponding data.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+
+        Returns:
+            list(:class:`.PipelineScheduledRun`): Fetched dataset objects
+        """
+        resources = super()._list(all=all, project_id=project_id)
+        return [cls(**conn_data) for conn_data in resources]
+
+    def trigger(self):
         """Trigger an execution of a pipeline scheduled run.
 
         """
         url = '/{}/{}/trigger'.format(self.resource, self._id)
-        run_resp = client.request(url, method=requests.get, message_prefix='PipelineScheduledRun trigger')
-        run_json = parse_json(run_resp)
+        run_resp = client.request(url, method=requests.post, message_prefix='PipelineScheduledRun trigger')
 
-    def get_executions():
+    def get_executions(self, limit=15):
         """Get executions of a pipeline scheduled run.
 
         """
-        url = '/{}/{}'.format(self.resource, self._id)
+        url = '/{}/{}'.format(self.resource, self._id) + "?limit={}".format(limit)
         run_resp = client.request(url, method=requests.get, message_prefix='PipelineScheduledRun get element')
         run_json = parse_json(run_resp)
         return run_json['executions']
