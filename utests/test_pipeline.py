@@ -13,5 +13,5 @@ def test_pipeline_schedule_run_trigger():
     executions = scheduled_run.get_executions(limit=1000)
     assert executions_count + 1 == len(executions)
 
-    l = PipelineScheduledRun.list(project_id=PROJECT_ID)
-    assert len(l) == 1
+    run_count = PipelineScheduledRun.list(project_id=PROJECT_ID)
+    assert len(run_count) == 1

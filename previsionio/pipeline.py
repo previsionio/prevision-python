@@ -53,7 +53,7 @@ class PipelineScheduledRun(ApiResource):
 
         """
         url = '/{}/{}/trigger'.format(self.resource, self._id)
-        run_resp = client.request(url, method=requests.post, message_prefix='PipelineScheduledRun trigger')
+        _ = client.request(url, method=requests.post, message_prefix='PipelineScheduledRun trigger')
 
     def get_executions(self, limit=15):
         """Get executions of a pipeline scheduled run.
