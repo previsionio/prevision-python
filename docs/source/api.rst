@@ -24,3 +24,4 @@ This section gathers all the available classes, functions and tools offered by P
    api/prediction.rst
    api/exporter.rst
    api/export.rst
+   api/pipeline.rst

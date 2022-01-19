@@ -95,6 +95,8 @@ from previsionio.deployed_model import DeployedModel
 from previsionio.experiment_deployment import ExperimentDeployment
 from previsionio.prediction import ValidationPrediction, DeploymentPrediction
 
+from previsionio.pipeline import PipelineScheduledRun
+
 __all__ = [
     'client',
     'AdvancedModel',
@@ -139,7 +141,8 @@ __all__ = [
     'Experiment',
     'ExperimentDeployment',
     'ValidationPrediction',
-    'DeploymentPrediction'
+    'DeploymentPrediction',
+    'PipelineScheduledRun'
 ]
 
 from . import _version
