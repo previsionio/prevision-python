@@ -23,6 +23,7 @@ from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, Qu
 from .experiment import Experiment
 from .experiment_deployment import ExperimentDeployment
 from .model import Model
+from .pipeline import PipelineScheduledRun
 
 
 class ProjectColor(Enum):
@@ -507,6 +508,25 @@ class Project(ApiResource, UniqueResourceMixin):
             list(:class:`.Exporter`): Fetched dataset objects
         """
         return Exporter.list(self._id, all=all)
+
+    def list_pipeline_scheduled_runs(self, all: bool = False):
+        """ List all the available pipeline scheduled runs in the current active project.
+
+        .. warning::
+
+            Contrary to the parent ``list()`` function, this method
+            returns actual :class:`.Exporter` objects rather than
+            plain dictionaries with the corresponding data.
+
+        Args:
+            all (boolean, optional): Whether to force the SDK to load all items of
+                the given type (by calling the paginated API several times). Else,
+                the query will only return the first page of result.
+
+        Returns:
+            list(:class:`.PipelineScheduledRun`): Fetched dataset objects
+        """
+        return PipelineScheduledRun.list(self._id, all=all)
 
     def fit_regression(
         self,

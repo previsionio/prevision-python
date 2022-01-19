@@ -1,4 +1,5 @@
 import requests
+from typing import Dict, List
 from .api_resource import ApiResource
 from . import client
 from .utils import parse_json
@@ -7,10 +8,21 @@ from .utils import parse_json
 class PipelineScheduledRun(ApiResource):
     resource = 'pipeline-scheduled-runs'
 
-    def __init__(self, _id: str, name, project_id, pipeline_template_id, nodes_properties, exec_type,
-                 enabled, description=None, draft=True, created_at=None, **kwargs):
-        """ A Pipeline Scheduled Run
-        """
+    def __init__(
+        self,
+        _id: str,
+        name: str,
+        project_id: str,
+        pipeline_template_id: Dict,
+        nodes_properties: List,
+        exec_type: str,
+        enabled: bool,
+        description: str = None,
+        draft: bool = True,
+        created_at: str = None,
+        **kwargs
+    ):
+        """ A Pipeline Scheduled Run """
         super().__init__(_id=_id)
         self._id = _id
         self.name = name
@@ -25,11 +37,23 @@ class PipelineScheduledRun(ApiResource):
 
     @classmethod
     def from_id(cls, _id: str) -> 'PipelineScheduledRun':
+        """ Get a pipeline scheduled run from the platform by its unique id.
+
+        Args:
+            _id (str): Unique id of the pipeline scheduled run to retrieve
+
+        Returns:
+            :class:`.PipelineScheduledRun`: Fetched experiment
+
+        Raises:
+            PrevisionException: Any error while fetching data from the platform
+                or parsing result
+        """
         return cls(**super()._from_id(_id=_id))
 
     @classmethod
     def list(cls, project_id: str, all: bool = True):
-        """ List all the available pipeline scheduled run in the current active [client] workspace.
+        """ List all the available pipeline scheduled runs in the current active [client] workspace.
 
         .. warning::
 
@@ -38,6 +62,7 @@ class PipelineScheduledRun(ApiResource):
             plain dictionaries with the corresponding data.
 
         Args:
+            project_id (str): Unique reference of the project id on the platform
             all (boolean, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
@@ -49,17 +74,20 @@ class PipelineScheduledRun(ApiResource):
         return [cls(**conn_data) for conn_data in resources]
 
     def trigger(self):
-        """Trigger an execution of a pipeline scheduled run.
-
-        """
+        """ Trigger an execution of a pipeline scheduled run. """
         url = '/{}/{}/trigger'.format(self.resource, self._id)
         _ = client.request(url, method=requests.post, message_prefix='PipelineScheduledRun trigger')
 
-    def get_executions(self, limit=15):
+    def get_executions(self, limit: int = 15):
         """Get executions of a pipeline scheduled run.
 
+        Args:
+            limit (int): Number of executions to retrieve.
+
+        Returns:
+            list(dict)
         """
-        url = '/{}/{}'.format(self.resource, self._id) + "?limit={}".format(limit)
+        url = '/{}/{}?limit={}'.format(self.resource, self._id, limit)
         run_resp = client.request(url, method=requests.get, message_prefix='PipelineScheduledRun get element')
         run_json = parse_json(run_resp)
         return run_json['executions']
