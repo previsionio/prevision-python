@@ -2,6 +2,7 @@ import requests
 from typing import Dict, List
 from .api_resource import ApiResource
 from . import client
+from .logger import logger
 from .utils import parse_json
 
 
@@ -76,7 +77,8 @@ class PipelineScheduledRun(ApiResource):
     def trigger(self):
         """ Trigger an execution of a pipeline scheduled run. """
         url = '/{}/{}/trigger'.format(self.resource, self._id)
-        _ = client.request(url, method=requests.post, message_prefix='PipelineScheduledRun trigger')
+        client.request(url, method=requests.post, message_prefix='PipelineScheduledRun trigger')
+        logger.info('pipeline scheduled run with id {} triggered'.format(self._id))
 
     def get_executions(self, limit: int = 15):
         """Get executions of a pipeline scheduled run.
