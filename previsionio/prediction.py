@@ -75,7 +75,7 @@ class ValidationPrediction(ApiResource):
                                        message_prefix='Predictions download')
 
         return zip_to_pandas(pred_response)
-        return pred_response
+
 
     def _wait_for_prediction(self):
         """ Wait for a specific prediction to finish.
