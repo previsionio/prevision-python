@@ -188,9 +188,6 @@ class DeployedModel(object):
             In case of multiclassification problem type, prediction value format is a string.
 
         """
-        # FIXME add some checks for feature name with input api
-        features = [{'name': feature, 'value': value}
-                    for feature, value in predict_data.items()]
 
         predict_url = '/predict'
 
@@ -205,12 +202,12 @@ class DeployedModel(object):
 
         predict_url = predict_url.rstrip('&')
         resp = self.request(predict_url,
-                            data=json.dumps(features, cls=NpEncoder),
+                            data=json.dumps(predict_data, cls=NpEncoder),
                             method=requests.post,
                             message_prefix='Deployed model predict')
 
         pred_response = resp.json()
-        target_name = self.outputs[0]['keyName']
+        target_name = self.outputs[0]['name']
         preds = pred_response['response']['predictions']
         prediction = preds[target_name]
         if use_confidence:

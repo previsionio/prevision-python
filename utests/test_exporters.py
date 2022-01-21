@@ -121,7 +121,7 @@ def test_exporter_SFTP():
                                               sftp_config['password'])
     exporter = project.create_exporter(connector, 'test_sftp_exporter',
                                        description="test_sftp_exporter description",
-                                       path='/upload/test_sqk/titanic.csv',
+                                       path='/share/test_sdk/titanic.csv',
                                        write_mode=pio.ExporterWriteMode.replace)
     check_exporter_and_exports(exporter)
 

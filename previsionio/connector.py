@@ -58,7 +58,7 @@ class Connector(ApiResource, UniqueResourceMixin):
                 if conn_data['type'] == cls.conn_type or cls.conn_type == 'connector']
 
     @classmethod
-    def _create_connector(cls, project_id, data, content_type=None):
+    def _create_connector(cls, project_id: str, data: Dict, content_type: str = None):
         data['type'] = cls.conn_type
         resp = client.request('/projects/{}/{}'.format(project_id, cls.resource),
                               data=data,
