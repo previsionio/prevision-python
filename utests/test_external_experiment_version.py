@@ -222,16 +222,6 @@ class TestExperimentVersionGeneric:
 """
 
 
-class TestPredict:
-
-    def test_predict(self, setup_experiment_class):
-        type_problem, experiment_version = setup_experiment_class
-        dataset_path = TEST_DATASETS_PATH[type_problem]
-        data = pd.read_csv(dataset_path)
-        preds = experiment_version.predict(data)
-        assert len(preds) == len(data)
-
-
 class TestInfos:
 
     def test_info(self, setup_experiment_class):

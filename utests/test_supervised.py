@@ -163,27 +163,6 @@ class TestUCGeneric:
         assert set(experiment_version.normal_models_list) == set(experiment_version_config.normal_models)
 
 
-class TestPredict:
-    @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
-    def test_predict(self, setup_experiment_class, options):
-        training_type, experiment_version = setup_experiment_class
-        data = pd.read_csv(os.path.join(DATA_PATH, '{}.csv'.format(training_type)))
-        preds = experiment_version.predict(data, **options)
-        assert len(preds) == len(data)
-        if options['confidence']:
-            if training_type == 'regression':
-                conf_cols = ['_quantile={}'.format(q) for q in [1, 5, 10, 25, 50, 75, 95, 99]]
-                for q in conf_cols:
-                    assert any([q in col for col in preds])
-            elif training_type == 'classification':
-                assert 'confidence' in preds
-                assert 'credibility' in preds
-        if training_type in ('regression', 'classification'):
-            # test_predict_unit
-            pred = experiment_version.predict_single(data.iloc[0].to_dict(), **options)
-            assert pred is not None
-
-
 class TestInfos:
     @pytest.mark.parametrize(*options_parameters, ids=predict_test_ids)
     def test_info(self, setup_experiment_class: Tuple[str, ClassicExperimentVersion], options):

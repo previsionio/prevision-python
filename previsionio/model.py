@@ -285,42 +285,6 @@ class ClassicModel(Model):
         # drop chart-related information
         return result
 
-    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
-        """ Make a prediction for a single instance. Use :py:func:`predict_from_dataset_name` or
-        :py:func:`predict` methods to predict multiple instances at the same time (it's faster).
-
-        Args:
-            data (dict): Features names and values (without target feature) - missing feature keys
-                will be replaced by nans
-            confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
-            explain (bool, optional): Whether to explain prediction (default: ``False``)
-
-        Returns:
-            dict: Dictionary containing the prediction result
-
-            .. note::
-
-                The prediction format depends on the problem type (regression, classification, etc...)
-        """
-        payload = {
-            'features': {
-                str(k): v for k, v in data.items() if str(v) != 'nan'
-            },
-            'explain': explain,
-            'confidence': confidence,
-            'model_id': self._id
-        }
-
-        logger.debug('[Predict Unit] sending payload ' + str(payload))
-        url = '/experiment-versions/{}/unit-prediction'.format(self.experiment_version_id)
-        response = client.request(url,
-                                  requests.post,
-                                  data=payload,
-                                  content_type='application/json',
-                                  message_prefix="Unit predict")
-        response_json = parse_json(response)
-        return response_json
-
 
 class ClassificationModel(ClassicModel):
     """ A model object for a (binary) classification experiment, i.e. an experiment where the target
@@ -417,9 +381,6 @@ class MultiClassificationModel(ClassicModel):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
-        raise NotImplementedError
-
 
 # NOTE: we inherit the external models classes from classic model classes but with 2 method not implemented
 
@@ -443,9 +404,6 @@ class ExternalClassificationModel(ClassificationModel):
     def cross_validation(self) -> pd.DataFrame:
         raise NotImplementedError
 
-    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
-        raise NotImplementedError
-
 
 class ExternalRegressionModel(RegressionModel):
     """ A model object for an external regression experiment, i.e. an experiment where the target is numerical.
@@ -464,9 +422,6 @@ class ExternalRegressionModel(RegressionModel):
 
     @property
     def cross_validation(self) -> pd.DataFrame:
-        raise NotImplementedError
-
-    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
         raise NotImplementedError
 
 
@@ -488,9 +443,6 @@ class ExternalMultiClassificationModel(MultiClassificationModel):
 
     @property
     def cross_validation(self) -> pd.DataFrame:
-        raise NotImplementedError
-
-    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
         raise NotImplementedError
 
 

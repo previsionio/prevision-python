@@ -8,4 +8,4 @@ External experiments
     :show-inheritance:
     :inherited-members:
     :exclude-members: train_dataset, advanced_models_list, normal_models_list, simple_models_list,
-                      dropped_features, drop_list, feature_list, get_cv, predict_single
+                      dropped_features, drop_list, feature_list, get_cv
