@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Dict, Union
+from typing import Union
 
 from pandas.core.frame import DataFrame
 from previsionio.experiment_config import TypeProblem

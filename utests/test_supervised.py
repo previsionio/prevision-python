@@ -1,4 +1,3 @@
-import os
 from previsionio.experiment_version import ClassicExperimentVersion
 from typing import Tuple
 from previsionio.model import ClassificationModel

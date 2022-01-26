@@ -76,7 +76,6 @@ class ValidationPrediction(ApiResource):
 
         return zip_to_pandas(pred_response)
 
-
     def _wait_for_prediction(self):
         """ Wait for a specific prediction to finish.
 
