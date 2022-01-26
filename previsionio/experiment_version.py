@@ -645,3 +645,49 @@ class ClassicExperimentVersion(BaseExperimentVersion):
         best = self.best_model
 
         return best.cross_validation
+
+    def predict_from_dataset(self,
+                             dataset,
+                             confidence=False,
+                             dataset_folder=None) -> pd.DataFrame:
+        """ Get the predictions for a dataset stored in the current active [client]
+        workspace using the best model of the experiment.
+
+        Arguments:
+            dataset (:class:`.Dataset`): Reference to the dataset object to make
+                predictions for
+            confidence (bool, optional): Whether to predict with confidence values
+                (default: ``False``)
+            dataset_folder (:class:`.Dataset`): Matching folder dataset for the
+                predictions, if necessary
+
+        Returns:
+            :class:`previsionio.prediction.ValidationPrediction`: The registered prediction object in the current
+            workspace
+        """
+
+        best = self.best_model
+
+        return best.predict_from_dataset(dataset, confidence=confidence, dataset_folder=dataset_folder)
+
+    def predict(self, df, confidence=False, prediction_dataset_name=None) -> pd.DataFrame:
+        """ Get the predictions for a dataset stored in the current active [client]
+        workspace using the best model of the experiment with a Scikit-learn style blocking prediction mode.
+
+        .. warning::
+
+            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours).
+            Prefer using this for simple models and small dataframes, or use option ``use_best_single = True``.
+
+        Args:
+            df (``pd.DataFrame``): ``pandas`` DataFrame containing the test data
+            confidence (bool, optional): Whether to predict with confidence values
+                (default: ``False``)
+
+        Returns:
+            ``pd.DataFrame``: Prediction results dataframe
+        """
+
+        best = self.best_model
+
+        return best.predict(df=df, confidence=confidence, prediction_dataset_name=prediction_dataset_name)

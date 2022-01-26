@@ -248,3 +248,37 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
 
     def get_cv(self):
         raise NotImplementedError
+
+    def predict_from_dataset(self,
+                             dataset,
+                             dataset_folder=None) -> pd.DataFrame:
+        """ Get the predictions for a dataset stored in the current active [client]
+        workspace using the best model of the experiment.
+
+        Arguments:
+            dataset (:class:`.Dataset`): Reference to the dataset object to make
+                predictions for
+            dataset_folder (:class:`.Dataset`): Matching folder dataset for the
+                predictions, if necessary
+
+        Returns:
+            ``pd.DataFrame``: Predictions as a ``pandas`` dataframe
+        """
+        return super().predict_from_dataset(dataset, confidence=False, dataset_folder=dataset_folder)
+
+    def predict(self, df, prediction_dataset_name=None) -> pd.DataFrame:
+        """ Get the predictions for a dataset stored in the current active [client]
+        workspace using the best model of the experiment with a Scikit-learn style blocking prediction mode.
+
+        .. warning::
+
+            For large dataframes and complex (blend) models, this can be slow (up to 1-2 hours).
+            Prefer using this for simple models and small dataframes, or use option ``use_best_single = True``.
+
+        Args:
+            df (``pd.DataFrame``): ``pandas`` DataFrame containing the test data
+
+        Returns:
+            tuple(pd.DataFrame, str): Prediction data (as ``pandas`` dataframe) and prediction job ID.
+        """
+        return super().predict(df=df, confidence=False, prediction_dataset_name=prediction_dataset_name)

@@ -262,6 +262,40 @@ If you want to use image data for your experiment, you need to provide the API w
 
 To get an exhaustive list of the available metrics go to the api reference :ref:`metrics_reference`.
 
+.. _making prediction:
+
+Making predictions
+------------------
+
+To make predictions from a dataset and an experiment, you need to wait until at least one model is trained. This can be achieved in the following way:
+
+.. code-block:: python
+
+    # block until there is at least 1 model trained
+    experiment_version.wait_until(lambda experimentv: len(experimentv.models) > 0)
+
+    # check out the experiment status and other info
+    experiment_version.print_info()
+    print('Current (best model) score:', experiment_version.score)
+
+.. note::
+
+    The ``wait_until`` method takes a function that takes the experiment as an argument, and can therefore access any info relative to the experiment.
+
+Then you have to options:
+
+1.  you can predict from a dataset of your workspace, which returns a ``previsionio.ValidationPrediction`` object. It allows you to keep on working even if the prediction isn't complete
+2.  you can predict from a ``pd.DataFrame``, which returns a ``pd.DataFrame`` once the prediction is complete
+
+.. code-block:: python
+
+    # predict from a dataset of your workspace
+    validation_prediction = experiment_version.predict_from_dataset(test_dataset)
+    # get the result at a pandas.DataFrame
+    prediction_df = validation_prediction.get_result()
+
+    # predict from a pandas.DataFrame
+    prediction_df = experiment_version.predict(test_dataframe)
 
 Time Series experiments
 =======================
@@ -325,6 +359,10 @@ In particular the ``time_window`` parameter defines the period in the past that 
 
 To get a full documentation check the api reference :ref:`time_series_reference`.
 
+Making predictions
+------------------
+
+The prediction workflow is the same as for a classic experiment (detailed in :ref:`making prediction`).
 
 Text Similarity experiments
 ===========================
@@ -425,6 +463,16 @@ You can then create a new text similarity experiment based on:
 
 To get a full documentation check the api reference of :class:`.previsionio.metrics.TextSimilarity`.
 
+Making predictions
+------------------
+
+The prediction workflow is very similar to a classic experiment (detailed in :ref:`making prediction`).
+
+The only differences are the specific parameters ``top_k`` and ``queries_dataset_matching_id_description_column`` which are optional.
+
+To get a full documentation check the api reference of :class:`.TextSimilarityModel` prediction methods.
+
+
 External Regression/Classification/MultiClassification experiments
 ==================================================================
 
@@ -469,6 +517,10 @@ You can now create a new experiment based on:
 
 To get an exhaustive list of the available metrics go to the api reference :ref:`metrics_reference`.
 
+Making predictions
+------------------
+
+The prediction workflow is the same as for classic experiment (detailed in :ref:`making prediction`).
 
 Deployed experiments
 ====================
