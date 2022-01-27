@@ -646,29 +646,6 @@ class ClassicExperimentVersion(BaseExperimentVersion):
 
         return best.cross_validation
 
-    def predict_single(self, data: Dict, confidence: bool = False, explain: bool = False):
-        """ Get a prediction on a single instance using the best model of the experiment. Use
-        :py:func:`predict_from_dataset_name` or :py:func:`predict` methods to predict multiple
-        instances at the same time (it's faster).
-
-        Args:
-            data (dict): Features names and values (without target feature) - missing feature keys
-                will be replaced by nans
-            confidence (bool, optional): Whether to predict with confidence values (default: ``False``)
-            explain (bool, optional): Whether to explain prediction (default: ``False``)
-
-        Returns:
-            dict: Dictionary containing the prediction.
-
-            .. note::
-
-                The format of the predictions dictionary depends on the problem type
-                (regression, classification...)
-        """
-
-        best = self.best_model
-        return best.predict_single(data, confidence=confidence, explain=explain)
-
     def predict_from_dataset(self,
                              dataset,
                              confidence=False,

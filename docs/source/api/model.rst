@@ -25,25 +25,24 @@ Model
     :members:
     :show-inheritance:
     :inherited-members:
-    :exclude-members: predict_single
 
 .. autoclass:: previsionio.model.ExternalClassificationModel
     :members:
     :show-inheritance:
     :inherited-members:
-    :exclude-members: feature_importance, cross_validation, predict_single
+    :exclude-members: feature_importance, cross_validation
 
 .. autoclass:: previsionio.model.ExternalRegressionModel
     :members:
     :show-inheritance:
     :inherited-members:
-    :exclude-members: feature_importance, cross_validation, predict_single
+    :exclude-members: feature_importance, cross_validation
 
 .. autoclass:: previsionio.model.ExternalMultiClassificationModel
     :members:
     :show-inheritance:
     :inherited-members:
-    :exclude-members: feature_importance, cross_validation, predict_single
+    :exclude-members: feature_importance, cross_validation
 
 .. autoclass:: previsionio.model.TextSimilarityModel
     :members:

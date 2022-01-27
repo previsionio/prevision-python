@@ -178,10 +178,6 @@ class TestPredict:
             elif training_type == 'classification':
                 assert 'confidence' in preds
                 assert 'credibility' in preds
-        if training_type in ('regression', 'classification'):
-            # test_predict_unit
-            pred = experiment_version.predict_single(data.iloc[0].to_dict(), **options)
-            assert pred is not None
 
 
 class TestInfos:
