@@ -250,9 +250,6 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
     def get_cv(self):
         raise NotImplementedError
 
-    def predict_single(self, data) -> Dict:
-        raise NotImplementedError
-
     def predict_from_dataset(self,
                              dataset,
                              dataset_folder=None) -> pd.DataFrame:
