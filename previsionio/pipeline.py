@@ -62,13 +62,91 @@ class PipelineScheduledRun(ApiResource):
         super().delete()
 
     @classmethod
+    def new(cls, project_id, pipeline_template_id, name, description=None, nodes_params=[],
+            exec_type="manual", exec_cron=None, exec_period_start=None, exec_period_end=None):
+        """ Create a pipeline Scheduled Run.
+
+        Args:
+            project_id(str): project id
+            pipeline_template_id(str): pipeline template id
+            name (str): pipeline scheduled run name
+            description (str, optional): Pipeline scheduled run description
+            nodes_params (list(dict)): Pipeline Nodes parameters.
+                E.g [{'_id': 'xxx', 'properties':{'property_name': 'property_value'}}
+            exec_type (str, optional): Run mode, possible values: manual or recurring
+                (default: ``manual``)
+            exec_cron (str, optional): Cron for recurring pipeline scheduled run
+            exec_period_start (str, optional): Start period of recurring pipeline scheduled run
+            exec_period_end (str, optional): End period of recurring pipeline scheduled run
+
+        Returns:
+            :class:`.PipelineScheduledRun`: Newly created PipelineScheduledRun
+
+        Raises:
+            PrevisionException: Any error while fetching data from the platform
+                or parsing result
+        """
+        run_url = '/projects/{}/pipeline-scheduled-runs'.format(project_id)
+        data = {'pipeline_template_id': pipeline_template_id,
+                'name': name}
+        if description:
+            data['description'] = description
+
+        if exec_type == 'manual':
+            unvalid_args = []
+            if exec_cron:
+                unvalid_args.append('exec_cron')
+            if exec_period_start:
+                unvalid_args.append('exec_period_start')
+            if exec_period_end:
+                unvalid_args.append('exec_period_end')
+            if unvalid_args:
+                msg = 'Arguments {} are available only for exec type manual'.format(', '.join(unvalid_args))
+                raise PrevisionException(msg)
+        run_response = client.request(run_url,
+                                      method=requests.post,
+                                      data=data,
+                                      message_prefix='Create Scheduled Run')
+        run_response_json = parse_json(run_response)
+        pipeline_scheduled_run_id = run_response_json['_id']
+        for node in nodes_params:
+            node_id = node['_id']
+            node_data = [{'name': name, 'value': value} for name, value in node['properties'].items()]
+            node_put_url = '/pipeline-scheduled-runs/{}/node/{}'.format(pipeline_scheduled_run_id, node_id)
+            _ = client.request(node_put_url,
+                               method=requests.put,
+                               data=node_data,
+                               message_prefix='Configure Scheduled Run Node')
+
+        # strange behavior of backend mecanisme, without updating pipeline scheduled run, confirm failed
+        update_run_url = '/pipeline-scheduled-runs/{}'.format(pipeline_scheduled_run_id)
+
+        data = {'name': name, 'exec_type': exec_type}
+        if exec_cron:
+            data['exec_cron'] = exec_cron
+        if exec_period_start:
+            data['exec_period_start'] = exec_period_start
+        if exec_period_end:
+            data['exec_period_end'] = exec_period_end
+        _ = client.request(update_run_url,
+                           data=data,
+                           method=requests.put,
+                           message_prefix='Updating Scheduled Run')
+        confirm_url = '/pipeline-scheduled-runs/{}/confirm'.format(pipeline_scheduled_run_id)
+        confirm_response = client.request(confirm_url,
+                                          method=requests.post,
+                                          message_prefix='Confirm Scheduled Run')
+        run_json = parse_json(confirm_response)
+        return cls(**run_json)
+
+    @classmethod
     def list(cls, project_id: str, all: bool = True):
         """ List all the available pipeline scheduled runs in the current active [client] workspace.
 
         .. warning::
 
             Contrary to the parent ``list()`` function, this method
-            returns actual :class:`.Dataset` objects rather than
+            returns actual :class:`.PipelineScheduledRun` objects rather than
             plain dictionaries with the corresponding data.
 
         Args:
@@ -78,7 +156,7 @@ class PipelineScheduledRun(ApiResource):
                 the query will only return the first page of result.
 
         Returns:
-            list(:class:`.PipelineScheduledRun`): Fetched dataset objects
+            list(:class:`.PipelineScheduledRun`): Fetched PipelineScheduledRun objects
         """
         resources = super()._list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources]
@@ -141,7 +219,7 @@ class PipelineTemplate(ApiResource):
         .. warning::
 
             Contrary to the parent ``list()`` function, this method
-            returns actual :class:`.Dataset` objects rather than
+            returns actual :class:`.PipelineTemplate` objects rather than
             plain dictionaries with the corresponding data.
 
         Args:
@@ -151,7 +229,7 @@ class PipelineTemplate(ApiResource):
                 the query will only return the first page of result.
 
         Returns:
-            list(:class:`.PipelineTemplate`): Fetched dataset objects
+            list(:class:`.PipelineTemplate`): Fetched PipelineTemplate objects
         """
         resources = super()._list(all=all, project_id=project_id)
         return [cls(**conn_data) for conn_data in resources]
@@ -213,55 +291,6 @@ class PipelineTemplate(ApiResource):
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
         """
-        run_url = '/projects/{}/pipeline-scheduled-runs'.format(self.project_id)
-        data = {'pipeline_template_id': self._id,
-                'name': name}
-        if description:
-            data['description'] = description
-
-        if exec_type == 'manual':
-            unvalid_args = []
-            if exec_cron:
-                unvalid_args.append('exec_cron')
-            if exec_period_start:
-                unvalid_args.append('exec_period_start')
-            if exec_period_end:
-                unvalid_args.append('exec_period_end')
-            if unvalid_args:
-                msg = 'Arguments {} are available only for exec type manual'.format(', '.join(unvalid_args))
-                raise PrevisionException(msg)
-        run_response = client.request(run_url,
-                                      method=requests.post,
-                                      data=data,
-                                      message_prefix='Create Scheduled Run')
-        run_response_json = parse_json(run_response)
-        pipeline_scheduled_run_id = run_response_json['_id']
-        for node in nodes_params:
-            node_id = node['_id']
-            node_data = [{'name': name, 'value': value} for name, value in node['properties'].items()]
-            node_put_url = '/pipeline-scheduled-runs/{}/node/{}'.format(pipeline_scheduled_run_id, node_id)
-            _ = client.request(node_put_url,
-                               method=requests.put,
-                               data=node_data,
-                               message_prefix='Configure Scheduled Run Node')
-
-        # strange behavior of backend mecanisme, without updating pipeline scheduled run, confirm failed
-        update_run_url = '/pipeline-scheduled-runs/{}'.format(pipeline_scheduled_run_id)
-
-        data = {'name': name, 'exec_type': exec_type}
-        if exec_cron:
-            data['exec_cron'] = exec_cron
-        if exec_period_start:
-            data['exec_period_start'] = exec_period_start
-        if exec_period_end:
-            data['exec_period_end'] = exec_period_end
-        _ = client.request(update_run_url,
-                           data=data,
-                           method=requests.put,
-                           message_prefix='Updating Scheduled Run')
-        confirm_url = '/pipeline-scheduled-runs/{}/confirm'.format(pipeline_scheduled_run_id)
-        confirm_response = client.request(confirm_url,
-                                          method=requests.post,
-                                          message_prefix='Confirm Scheduled Run')
-        run_json = parse_json(confirm_response)
-        return PipelineScheduledRun(**run_json)
+        return PipelineScheduledRun.new(self.project_id, self._id, name, description=description, nodes_params=nodes_params,
+                                        exec_type=exec_type, exec_cron=exec_cron, exec_period_start=exec_period_start,
+                                        exec_period_end=exec_period_end)
