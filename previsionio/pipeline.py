@@ -118,7 +118,6 @@ class PipelineTemplate(ApiResource):
         self.draft = draft
         self.used_in_run = used_in_run
 
-
     @classmethod
     def from_id(cls, _id: str) -> 'PipelineTemplate':
         """ Get a pipeline template run from the platform by its unique id.
@@ -189,7 +188,7 @@ class PipelineTemplate(ApiResource):
                 if 'hidden' in property and property['hidden']:
                     continue
                 node_properties[property['name']] = property['type']
-            nodes_properties.append({'_id':node_id, 'name': node_name, 'properties': node_properties})
+            nodes_properties.append({'_id': node_id, 'name': node_name, 'properties': node_properties})
         return nodes_properties
 
     def create_scheduled_runs(self, name, description=None, nodes_params=[], exec_type="manual",
@@ -219,7 +218,7 @@ class PipelineTemplate(ApiResource):
                 'name': name,
                 'exec_type': exec_type}
         if description:
-             data['description'] = description
+            data['description'] = description
         run_response = client.request(run_url,
                                       method=requests.post,
                                       data=data,
@@ -228,19 +227,19 @@ class PipelineTemplate(ApiResource):
         pipeline_scheduled_run_id = run_response_json['_id']
         for node in nodes_params:
             node_id = node['_id']
-            node_data = [{'name':name, 'value': value} for name, value in node['properties'].items()]
+            node_data = [{'name': name, 'value': value} for name, value in node['properties'].items()]
             node_put_url = '/pipeline-scheduled-runs/{}/node/{}'.format(pipeline_scheduled_run_id, node_id)
-            node_update_response = client.request(node_put_url,
-                                                  method=requests.put,
-                                                  data=node_data,
-                                                  message_prefix='Configure Scheduled Run Node')
+            _ = client.request(node_put_url,
+                               method=requests.put,
+                               data=node_data,
+                               message_prefix='Configure Scheduled Run Node')
 
         # strange behavior of backend mecanisme, without updating pipeline scheduled run, confirm failed
-        update_run_url = '/pipeline-scheduled-runs/{}'.format(pipeline_scheduled_run_id, node_id)
-        run_response = client.request(update_run_url,
-                                      data = {'name': name,'exec_type': exec_type},
-                                      method=requests.put,
-                                      message_prefix='Updating Scheduled Run')
+        update_run_url = '/pipeline-scheduled-runs/{}'.format(pipeline_scheduled_run_id)
+        _ = client.request(update_run_url,
+                           data={'name': name, 'exec_type': exec_type},
+                           method=requests.put,
+                           message_prefix='Updating Scheduled Run')
         confirm_url = '/pipeline-scheduled-runs/{}/confirm'.format(pipeline_scheduled_run_id)
         confirm_response = client.request(confirm_url,
                                           method=requests.post,

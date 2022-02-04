@@ -266,7 +266,6 @@ class Client(object):
             n_tries += 1
 
             try:
-                print("url========", url)
                 resp = method(url,
                               headers=headers,
                               files=files,
