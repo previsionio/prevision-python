@@ -3,7 +3,7 @@ from typing import Dict, List
 from .api_resource import ApiResource
 from . import client
 from .logger import logger
-from .utils import parse_json
+from .utils import parse_json, PrevisionException
 
 
 class PipelineScheduledRun(ApiResource):
@@ -191,7 +191,7 @@ class PipelineTemplate(ApiResource):
             nodes_properties.append({'_id': node_id, 'name': node_name, 'properties': node_properties})
         return nodes_properties
 
-    def create_scheduled_runs(self, name, description=None, nodes_params=[], exec_type="manual",
+    def create_scheduled_run(self, name, description=None, nodes_params=[], exec_type="manual",
                               exec_cron=None, exec_period_start=None, exec_period_end=None) -> 'PipelineScheduledRun':
         """ Create a pipeline Scheduled Run.
 
@@ -215,10 +215,21 @@ class PipelineTemplate(ApiResource):
         """
         run_url = '/projects/{}/pipeline-scheduled-runs'.format(self.project_id)
         data = {'pipeline_template_id': self._id,
-                'name': name,
-                'exec_type': exec_type}
+                'name': name}
         if description:
             data['description'] = description
+
+        if exec_type == 'manual':
+            unvalid_args = []
+            if exec_cron:
+                unvalid_args.append('exec_cron')
+            if exec_period_start:
+                unvalid_args.append('exec_period_start')
+            if exec_period_end:
+                unvalid_args.append('exec_period_end')
+            if unvalid_args:
+                msg = 'Arguments {} are available only for exec type manual'.format(', '.join(unvalid_args))
+                raise PrevisionException(msg)
         run_response = client.request(run_url,
                                       method=requests.post,
                                       data=data,
@@ -236,8 +247,16 @@ class PipelineTemplate(ApiResource):
 
         # strange behavior of backend mecanisme, without updating pipeline scheduled run, confirm failed
         update_run_url = '/pipeline-scheduled-runs/{}'.format(pipeline_scheduled_run_id)
+
+        data = {'name': name, 'exec_type': exec_type}
+        if exec_cron:
+            data['exec_cron'] = exec_cron
+        if exec_period_start:
+            data['exec_period_start'] = exec_period_start
+        if exec_period_end:
+            data['exec_period_end'] = exec_period_end
         _ = client.request(update_run_url,
-                           data={'name': name, 'exec_type': exec_type},
+                           data=data,
                            method=requests.put,
                            message_prefix='Updating Scheduled Run')
         confirm_url = '/pipeline-scheduled-runs/{}/confirm'.format(pipeline_scheduled_run_id)
