@@ -270,7 +270,7 @@ class PipelineTemplate(ApiResource):
         return nodes_properties
 
     def create_scheduled_run(self, name, description=None, nodes_params=[], exec_type="manual",
-                              exec_cron=None, exec_period_start=None, exec_period_end=None) -> 'PipelineScheduledRun':
+                             exec_cron=None, exec_period_start=None, exec_period_end=None) -> 'PipelineScheduledRun':
         """ Create a pipeline Scheduled Run.
 
         Args:
@@ -291,6 +291,7 @@ class PipelineTemplate(ApiResource):
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
         """
-        return PipelineScheduledRun.new(self.project_id, self._id, name, description=description, nodes_params=nodes_params,
-                                        exec_type=exec_type, exec_cron=exec_cron, exec_period_start=exec_period_start,
+        return PipelineScheduledRun.new(self.project_id, self._id, name, description=description,
+                                        nodes_params=nodes_params, exec_type=exec_type,
+                                        exec_cron=exec_cron, exec_period_start=exec_period_start,
                                         exec_period_end=exec_period_end)
