@@ -653,6 +653,12 @@ To create a template scheduled run, you have to fill parameters values for each 
                                                             nodes_params=nodes_params,
                                                             exec_type="manual")
 
+You can also trigger a pipeline scheduled run execution:
+
+.. code-block:: python
+
+    scheduled_run.trigger()
+
 
 To get a full documentation check the api reference of :class:`.previsionio.pipeline.PipelineScheduledRun`.
 
