@@ -626,7 +626,9 @@ To get a full documentation check the api reference :ref:`export_reference`.
 
 Pipeline
 ========
-Prevision.io’s SDK allows to create a pipline scheduled run once Pipeline template is created.
+First you need to create a pipeline template on the user interface. (The creation of pipeline template is not available on the SDK)
+
+Once Pipeline template is created, you might want to create a pipeline scheduled run.
 To do that you can get pipeline template nodes properties
 
 .. code-block:: python
@@ -635,17 +637,18 @@ To do that you can get pipeline template nodes properties
     nodes_params = pipeline_template.get_nodes_properties()
     print(nodes_params)
     # [{'_id': '61fa5d12736d51001cebbcfc', 'name': 'import-pio-dataset', 'properties': {'input_dataset_id': 'String'}},
+    #  {'_id': '61fa5d12736d51001cebbc45', 'name': 'sample', 'properties': {'ratio': 'Float'}},
     #  {'_id': '61fa5d17736d51001cebbcfe', 'name': 'export-dataset', 'properties': {'exporter_id': 'String'}}]
 
 To get a full documentation check the api reference of :class:`.previsionio.pipeline.PipelineTemplate`.
 
-To create a template scheduled run, you have to fill values of parameters for each node.
+To create a template scheduled run, you have to fill parameters values for each node.
 
 .. code-block:: python
 
     nodes_params = [{'_id': '61fa5d12736d51001cebbcfc', 'name': 'import-pio-dataset', 'properties': {'input_dataset_id': '61f98bc9f0f54c001c9e124a'}},
+                    {'_id': '61fa5d12736d51001cebbc45', 'name': 'sample', 'properties': {'ratio': 0.7}},
                     {'_id': '61fa5d17736d51001cebbcfe', 'name': 'export-dataset', 'properties': {'exporter_id': '61fa5f66736d51001cebbd07'}}]
-    nodes_params = pipeline_template.get_nodes_properties()
     scheduled_run = pipeline_template.create_scheduled_runs("my_run",
                                                             nodes_params=nodes_params,
                                                             exec_type="manual")
