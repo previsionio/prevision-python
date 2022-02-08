@@ -624,6 +624,44 @@ Once your exporter is operational you can export your datasets or predictions:
 
 To get a full documentation check the api reference :ref:`export_reference`.
 
+Pipeline
+========
+First you need to create a pipeline template on the user interface. (The creation of pipeline template is not available on the SDK)
+
+Once Pipeline template is created, you might want to create a pipeline scheduled run.
+To do that you can get pipeline template nodes properties
+
+.. code-block:: python
+
+    pipeline_template = PipelineTemplate.from_id('61fa5d0f736d51001cebbcfb')
+    nodes_params = pipeline_template.get_nodes_properties()
+    print(nodes_params)
+    # [{'_id': '61fa5d12736d51001cebbcfc', 'name': 'import-pio-dataset', 'properties': {'input_dataset_id': 'String'}},
+    #  {'_id': '61fa5d12736d51001cebbc45', 'name': 'sample', 'properties': {'ratio': 'Float'}},
+    #  {'_id': '61fa5d17736d51001cebbcfe', 'name': 'export-dataset', 'properties': {'exporter_id': 'String'}}]
+
+To get a full documentation check the api reference of :class:`.previsionio.pipeline.PipelineTemplate`.
+
+To create a template scheduled run, you have to fill parameters values for each node.
+
+.. code-block:: python
+
+    nodes_params = [{'_id': '61fa5d12736d51001cebbcfc', 'name': 'import-pio-dataset', 'properties': {'input_dataset_id': '61f98bc9f0f54c001c9e124a'}},
+                    {'_id': '61fa5d12736d51001cebbc45', 'name': 'sample', 'properties': {'ratio': 0.7}},
+                    {'_id': '61fa5d17736d51001cebbcfe', 'name': 'export-dataset', 'properties': {'exporter_id': '61fa5f66736d51001cebbd07'}}]
+    scheduled_run = pipeline_template.create_scheduled_runs("my_run",
+                                                            nodes_params=nodes_params,
+                                                            exec_type="manual")
+
+You can also trigger a pipeline scheduled run execution:
+
+.. code-block:: python
+
+    scheduled_run.trigger()
+
+
+To get a full documentation check the api reference of :class:`.previsionio.pipeline.PipelineScheduledRun`.
+
 Additional util methods
 =======================
 
