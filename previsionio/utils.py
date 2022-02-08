@@ -14,7 +14,7 @@ import datetime
 from math import ceil
 
 
-def zip_to_pandas(pred_response: requests.Response, separator=None) -> pd.DataFrame:
+def zip_to_pandas(pred_response: requests.Response, file_type=None, separator=None) -> pd.DataFrame:
     temp_zip_path = '/tmp/ziptmp{}.zip'.format(str(uuid.uuid4()))
 
     with open(temp_zip_path, 'wb') as temp:
@@ -28,10 +28,18 @@ def zip_to_pandas(pred_response: requests.Response, separator=None) -> pd.DataFr
         names = pred_zip.namelist()
         pred_zip.extractall('/tmp')
         pred_csv_path = '/tmp/' + names[0]
-        data = pd.read_csv(pred_csv_path, sep=separator, engine='python')
+        if (file_type is None and file_is_parquet(pred_csv_path)) or file_type == 'parquet':
+            data = pd.read_parquet(pred_csv_path)
+        else:
+            data = pd.read_csv(pred_csv_path, sep=separator, engine='python')
         os.remove(pred_csv_path)
 
     return data
+
+
+def file_is_parquet(filepath: str) -> bool:
+    with open(filepath, "rb") as f:
+        return f.read(4) == b'PAR1'
 
 
 class PrevisionException(Exception):

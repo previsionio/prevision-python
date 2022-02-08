@@ -183,7 +183,8 @@ class DeployedModel(object):
             explain (bool): Whether to explain prediction (default: ``False``)
 
         Returns:
-            tuple(float, float, dict): Tuple containing the prediction value, confidence and explain.
+            tuple(float, float, dict): Tuple containing the prediction value,
+            confidence and explain.
             In case of regression problem type, confidence format is a list.
             In case of multiclassification problem type, prediction value format is a string.
 
