@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from itertools import combinations
 from io import BytesIO, StringIO
+from requests_toolbelt import MultipartEncoder
 from previsionio.experiment_config import ExperimentState
 import numpy as np
 import pandas as pd
@@ -49,7 +50,6 @@ class Dataset(ApiResource):
         self.embeddings_state = embeddings_state
         self.other_params = kwargs
         self.file_type = file_type
-        self._data = _data
 
     def to_pandas(self) -> pd.DataFrame:
         """Load in memory the data content of the current dataset into a pandas DataFrame.
@@ -60,18 +60,14 @@ class Dataset(ApiResource):
         Raises:
             PrevisionException: Any error while fetching or parsing the data
         """
-        if self._data is not None:
-            return self._data
-        else:
-            response = client.request(endpoint='/{}/{}/download'.format(self.resource, self.id),
-                                      method=requests.get,
-                                      message_prefix='Dataset download')
 
-            self._data = zip_to_pandas(response, file_type=self.file_type, separator=self.separator)
+        response = client.request(endpoint='/{}/{}/download'.format(self.resource, self.id),
+                                  method=requests.get,
+                                  message_prefix='Dataset download')
 
-            return self._data
+        data = zip_to_pandas(response, file_type=self.file_type, separator=self.separator)
 
-    data = property(to_pandas)
+        return data
 
     @classmethod
     def from_id(cls, _id: str) -> 'Dataset':
@@ -165,14 +161,14 @@ class Dataset(ApiResource):
                                 dtype="float32").reshape(*tensors_shape)
         return {'labels': labels, 'tensors': tensors}
 
-    def download(self, download_path: str = None):
+    def download(self, path: str = None, extension="zip"):
         """Download the dataset from the platform locally.
 
         Args:
-            download_path (str, optional): Target local directory path
+            path (str, optional): Target local path
                 (if none is provided, the current working directory is
                 used)
-
+            extension(str, optional): possible extensions: zip, parquet
         Returns:
             str: Path the data was downloaded to
 
@@ -183,17 +179,18 @@ class Dataset(ApiResource):
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
         resp = client.request(endpoint=endpoint,
                               method=requests.get,
+                              stream=True,
                               message_prefix='Dataset download')
 
-        if resp._content is None:
-            raise PrevisionException('could not download dataset')
-
-        if not download_path:
+        if not path:
             download_path = os.getcwd()
-        path = os.path.join(download_path, self.name + ".zip")
+            path = os.path.join(download_path, self.name + extension)
 
         with open(path, "wb") as file:
-            file.write(resp._content)
+            for chunk in resp.iter_content(chunk_size=100_000_000):
+                if chunk:
+                    file.write(chunk)
+            file.seek(0)
 
         return path
 
@@ -245,9 +242,6 @@ class Dataset(ApiResource):
                 raise RuntimeError(f"invalid origin: {origin}")
             data['origin'] = origin
 
-        files = {
-
-        }
         request_url = '/projects/{}/{}/file'.format(project_id, cls.resource)
         create_resp = None
         if datasource is not None:
@@ -270,48 +264,42 @@ class Dataset(ApiResource):
                 assert zip_file.filename is not None
 
                 with open(zip_file.filename, 'rb') as f:
-                    files['file'] = (os.path.basename(file_name), f, 'application/zip')
-                    for k, v in data.items():
-                        files[k] = (None, v)
-
+                    data['file'] = (os.path.basename(file_name), f, 'application/zip')
+                    encoder = MultipartEncoder(fields=data)
                     create_resp = client.request(request_url,
-                                                 data=data,
-                                                 files=files,
+                                                 content_type=encoder.content_type,
+                                                 data=encoder,
+                                                 is_json=False,
                                                  method=requests.post,
                                                  message_prefix='Dataset upload from dataframe')
 
         elif file_name is not None:
-
             if zipfile.is_zipfile(file_name):
                 with open(file_name, 'rb') as f:
-                    files['file'] = (os.path.basename(file_name), f, 'application/zip')
-
-                    for k, v in data.items():
-                        files[k] = (None, v)
-
+                    data['file'] = (os.path.basename(file_name), f, 'application/zip')
+                    encoder = MultipartEncoder(fields=data)
                     create_resp = client.request(request_url,
-                                                 data=data,
-                                                 files=files,
+                                                 content_type=encoder.content_type,
+                                                 data=encoder,
+                                                 is_json=False,
                                                  method=requests.post,
                                                  message_prefix='Dataset upload from zip file')
 
             # If not a zip, assert it is a CSV
             else:
-                with open(file_name, 'r') as f:
-                    files['file'] = (os.path.basename(file_name), f, 'text/csv')
-
-                    for k, v in data.items():
-                        files[k] = (None, v)
-
+                with open(file_name, 'rb') as f:
+                    data['file'] = (os.path.basename(file_name), f, 'text/csv')
+                    encoder = MultipartEncoder(fields=data)
                     create_resp = client.request(request_url,
-                                                 data=data,
-                                                 files=files,
+                                                 content_type=encoder.content_type,
+                                                 data=encoder,
+                                                 is_json=False,
                                                  method=requests.post,
                                                  message_prefix='Dataset upload from csv file')
 
         if create_resp is None:
             raise PrevisionException('[Dataset] Unexpected case in dataset creation')
-
+        return
         create_json = parse_json(create_resp)
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
         event_tuple = previsionio.utils.EventTuple(
