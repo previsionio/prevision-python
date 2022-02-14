@@ -76,6 +76,39 @@ class ValidationPrediction(ApiResource):
 
         return zip_to_pandas(pred_response)
 
+    def download(self, path: str = None, extension="zip"):
+        """Download validation prediction file.
+
+        Args:
+            path (str, optional): Target local path
+                (if none is provided, the current working directory is
+                used)
+            extension(str, optional): possible extensions: zip, parquet
+        Returns:
+            str: Path the data was downloaded to
+
+        Raises:
+            PrevisionException: If prediction does not exist or if there
+                was another error fetching or parsing data
+        """
+        endpoint = '/{}/{}/download'.format(self.resource, self.id)
+        resp = client.request(endpoint=endpoint,
+                              method=requests.get,
+                              stream=True,
+                              message_prefix='validation Prediction download')
+
+        if not path:
+            download_path = os.getcwd()
+            path = os.path.join(download_path, self.name + extension)
+
+        with open(path, "wb") as file:
+            for chunk in resp.iter_content(chunk_size=100_000_000):
+                if chunk:
+                    file.write(chunk)
+            file.seek(0)
+
+        return path
+
     def _wait_for_prediction(self):
         """ Wait for a specific prediction to finish.
 
@@ -148,6 +181,39 @@ class DeploymentPrediction(ApiResource):
                                        message_prefix='Predictions download')
 
         return zip_to_pandas(pred_response)
+
+    def download(self, path: str = None, extension="zip"):
+        """Download deployment prediction file.
+
+        Args:
+            path (str, optional): Target local path
+                (if none is provided, the current working directory is
+                used)
+            extension(str, optional): possible extensions: zip, parquet
+        Returns:
+            str: Path the data was downloaded to
+
+        Raises:
+            PrevisionException: If prediction does not exist or if there
+                was another error fetching or parsing data
+        """
+        endpoint = '/{}/{}/download'.format(self.resource, self.id)
+        resp = client.request(endpoint=endpoint,
+                              method=requests.get,
+                              stream=True,
+                              message_prefix='Deployment Prediction download')
+
+        if not path:
+            download_path = os.getcwd()
+            path = os.path.join(download_path, self.name + extension)
+
+        with open(path, "wb") as file:
+            for chunk in resp.iter_content(chunk_size=100_000_000):
+                if chunk:
+                    file.write(chunk)
+            file.seek(0)
+
+        return path
 
     def get_challenger_result(self):
         """Get the prediction result of the challenger model.
