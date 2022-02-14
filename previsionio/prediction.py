@@ -1,3 +1,4 @@
+import os
 import requests
 
 from .api_resource import ApiResource
@@ -13,15 +14,15 @@ class ValidationPrediction(ApiResource):
     resource = 'validation-predictions'
 
     def __init__(self, _id: str, experiment_id: str, experiment_version_id: str, project_id: str, state='running',
-                 model_id=None, model_name=None, dataset_id=None, download_available=False, score=None, duration=None,
+                 model_id=None, dataset_id=None, filename=None, download_available=False, score=None, duration=None,
                  predictions_count=None, **kwargs):
         self._id = _id
         self.experiment_id = experiment_id
         self.experiment_version_id = experiment_version_id
         self.project_id = project_id
         self.model_id = model_id
-        self.model_name = model_name
         self.dataset_id = dataset_id
+        self.filename = filename
         self.download_available = download_available
         self.score = score
         self.duration = duration
@@ -83,7 +84,7 @@ class ValidationPrediction(ApiResource):
             path (str, optional): Target local path
                 (if none is provided, the current working directory is
                 used)
-            extension(str, optional): possible extensions: zip, parquet
+            extension(str, optional): possible extensions: zip, parquet, csv
         Returns:
             str: Path the data was downloaded to
 
@@ -92,14 +93,16 @@ class ValidationPrediction(ApiResource):
                 was another error fetching or parsing data
         """
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
+        if extension:
+            endpoint += "?extension={}".format(extension)
         resp = client.request(endpoint=endpoint,
                               method=requests.get,
                               stream=True,
                               message_prefix='validation Prediction download')
-
         if not path:
             download_path = os.getcwd()
-            path = os.path.join(download_path, self.name + extension)
+            prediction_file_name = 'prediction_{}.{}'.format(self.filename.replace(' ', '_'), extension)
+            path = os.path.join(download_path, prediction_file_name)
 
         with open(path, "wb") as file:
             for chunk in resp.iter_content(chunk_size=100_000_000):
@@ -189,7 +192,7 @@ class DeploymentPrediction(ApiResource):
             path (str, optional): Target local path
                 (if none is provided, the current working directory is
                 used)
-            extension(str, optional): possible extensions: zip, parquet
+            extension(str, optional): possible extensions: zip, parquet, csv
         Returns:
             str: Path the data was downloaded to
 
@@ -198,6 +201,8 @@ class DeploymentPrediction(ApiResource):
                 was another error fetching or parsing data
         """
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
+        if extension:
+            endpoint += "?extension={}".format(extension)
         resp = client.request(endpoint=endpoint,
                               method=requests.get,
                               stream=True,
@@ -205,7 +210,8 @@ class DeploymentPrediction(ApiResource):
 
         if not path:
             download_path = os.getcwd()
-            path = os.path.join(download_path, self.name + extension)
+            prediction_file_name = 'prediction_{}.{}'.format(self.filename.replace(' ', '_'), extension)
+            path = os.path.join(download_path, prediction_file_name)
 
         with open(path, "wb") as file:
             for chunk in resp.iter_content(chunk_size=100_000_000):

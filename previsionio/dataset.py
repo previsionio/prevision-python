@@ -176,7 +176,10 @@ class Dataset(ApiResource):
             PrevisionException: If dataset does not exist or if there
                 was another error fetching or parsing data
         """
+
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
+        if extension:
+            endpoint += "?extension={}".format(extension)
         resp = client.request(endpoint=endpoint,
                               method=requests.get,
                               stream=True,
@@ -184,7 +187,7 @@ class Dataset(ApiResource):
 
         if not path:
             download_path = os.getcwd()
-            path = os.path.join(download_path, self.name + extension)
+            path = os.path.join(download_path, self.name + '.' + extension)
 
         with open(path, "wb") as file:
             for chunk in resp.iter_content(chunk_size=100_000_000):
