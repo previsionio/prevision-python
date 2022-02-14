@@ -143,8 +143,12 @@ class Experiment(ApiResource):
         return [cls.from_dict(experiment_info) for experiment_info in experiment_infos]
 
     @property
-    def experiment_version_class(self
-    ) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries], Type[ExternalExperimentVersion]]:
+    def experiment_version_class(self) -> Union[
+            Type[TextSimilarity],
+            Type[Supervised],
+            Type[TimeSeries],
+            Type[ExternalExperimentVersion]
+    ]:
         """ Get the type of ExperimentVersion class used by this Experiment
 
         Returns:

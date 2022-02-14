@@ -23,12 +23,14 @@ class TypeProblem(Enum):
     ObjectDetection = "object-detection"
     """Detection of pattern in images"""
 
+
 class Provider(Enum):
     """ Type of provider of model described in Prevision.io """
     Prevision = 'prevision-auto-ml'
     """Model created by Prevision.io"""
     External = 'external'
     """Model provided by user"""
+
 
 class DataType(Enum):
     """ Type of data available with Prevision.io. """
