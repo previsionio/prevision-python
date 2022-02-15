@@ -4,7 +4,7 @@ from typing import List, Dict, Tuple
 
 from pandas import DataFrame
 from previsionio import metrics
-from previsionio.experiment_config import ColumnConfig, DataType, TrainingConfig, TypeProblem
+from previsionio.experiment_config import ColumnConfig, DataType, Provider, TrainingConfig, TypeProblem
 import requests
 
 from . import client
@@ -931,7 +931,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
-        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.External, experiment_name, DataType.Tabular,
                                     TypeProblem.Regression)
         return ExternalExperimentVersion._fit(
             experiment.id,
@@ -976,7 +976,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
-        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.External, experiment_name, DataType.Tabular,
                                     TypeProblem.Classification)
         return ExternalExperimentVersion._fit(
             experiment.id,
@@ -1021,7 +1021,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
-        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.External, experiment_name, DataType.Tabular,
                                     TypeProblem.MultiClassification)
         return ExternalExperimentVersion._fit(
             experiment.id,

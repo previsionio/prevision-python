@@ -3,8 +3,8 @@ from previsionio.text_similarity import TextSimilarity
 from previsionio.supervised import Supervised
 from previsionio.timeseries import TimeSeries
 from previsionio.external_experiment_version import ExternalExperimentVersion
-from previsionio.experiment_config import DataType, TypeProblem
-from typing import Dict, List, Union
+from previsionio.experiment_config import DataType, Provider, TypeProblem
+from typing import Dict, List, Union, Type
 import requests
 
 from .prevision_client import client
@@ -16,7 +16,7 @@ def get_experiment_version_class(
     training_type: TypeProblem,
     data_type: DataType,
     provider: str,
-) -> Union[TextSimilarity, Supervised, TimeSeries, ExternalExperimentVersion]:
+) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries], Type[ExternalExperimentVersion]]:
     """ Get the type of ExperimentVersion class used by this Experiment
 
     Returns:
@@ -24,7 +24,7 @@ def get_experiment_version_class(
         :class:`.TimeSeries` | :class:`.ExternalExperimentVersion`):
         Type of ExperimentVersion
     """
-    if provider == 'external':
+    if provider == Provider.External:
         experiment_version_class = ExternalExperimentVersion
     else:
         if training_type == TypeProblem.TextSimilarity:
@@ -59,7 +59,7 @@ class Experiment(ApiResource):
                  provider: str,
                  name: str,
                  training_type: TypeProblem,
-                 data_type: DataType) -> 'Experiment':
+                 data_type: DataType):
         super().__init__(_id=_id)
         self.project_id = project_id
         self.provider = provider
@@ -71,7 +71,7 @@ class Experiment(ApiResource):
     @classmethod
     def new(cls,
             project_id: str,
-            provider: str,
+            provider: Provider,
             name: str,
             data_type: DataType,
             training_type: TypeProblem) -> 'Experiment':
@@ -143,7 +143,12 @@ class Experiment(ApiResource):
         return [cls.from_dict(experiment_info) for experiment_info in experiment_infos]
 
     @property
-    def experiment_version_class(self) -> Union[TextSimilarity, Supervised, TimeSeries, ExternalExperimentVersion]:
+    def experiment_version_class(self) -> Union[
+            Type[TextSimilarity],
+            Type[Supervised],
+            Type[TimeSeries],
+            Type[ExternalExperimentVersion]
+    ]:
         """ Get the type of ExperimentVersion class used by this Experiment
 
         Returns:
@@ -154,7 +159,7 @@ class Experiment(ApiResource):
         return get_experiment_version_class(self.training_type, self.data_type, self.provider)
 
     @property
-    def latest_version(self) -> Union[TextSimilarity, Supervised, TimeSeries]:
+    def latest_version(self) -> Union[TextSimilarity, Supervised, TimeSeries, ExternalExperimentVersion]:
         """Get the latest version of this experiment version.
 
         Returns:
@@ -177,7 +182,7 @@ class Experiment(ApiResource):
         return self.experiment_version_class(**res['items'][0])
 
     @property
-    def versions(self) -> List[Union[TextSimilarity, Supervised, TimeSeries]]:
+    def versions(self) -> List[Union[TextSimilarity, Supervised, TimeSeries, ExternalExperimentVersion]]:
         """Get the list of all versions for the current experiment version.
 
         Returns:

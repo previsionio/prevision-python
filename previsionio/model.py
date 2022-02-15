@@ -2,7 +2,7 @@
 from typing import Union
 
 from pandas.core.frame import DataFrame
-from previsionio.experiment_config import TypeProblem
+from previsionio.experiment_config import Provider, TypeProblem
 import json
 import uuid
 import requests
@@ -94,8 +94,8 @@ class Model(ApiResource):
         model = json.loads(response.content.decode('utf-8'))
         training_type = TypeProblem(model.get('training_type', model.get('type_problem')))
         # NOTE: we should always set the provider in model collection
-        provider = model.get('provider', 'prevision-auto-ml')
-        if provider == 'prevision-auto-ml':
+        provider = model.get('provider', Provider.Prevision)
+        if provider == Provider.Prevision:
             if training_type == TypeProblem.Regression:
                 return RegressionModel(**model)
             elif training_type == TypeProblem.Classification:
@@ -106,7 +106,7 @@ class Model(ApiResource):
                 return TextSimilarityModel(**model)
             else:
                 raise PrevisionException('Training type {} not supported'.format(training_type))
-        elif provider == 'external':
+        elif provider == Provider.External:
             if training_type == TypeProblem.Regression:
                 return ExternalRegressionModel(**model)
             elif training_type == TypeProblem.Classification:
