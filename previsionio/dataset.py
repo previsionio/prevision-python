@@ -302,7 +302,6 @@ class Dataset(ApiResource):
 
         if create_resp is None:
             raise PrevisionException('[Dataset] Unexpected case in dataset creation')
-        return
         create_json = parse_json(create_resp)
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
         event_tuple = previsionio.utils.EventTuple(
