@@ -187,11 +187,3 @@ def handle_error_response(
         if additional_log:
             logger.error(additional_log)
         raise PrevisionException(message)
-
-
-def read_in_chunks(file_object, CHUNK_SIZE=100_000_000):
-    while True:
-        data = file_object.read(CHUNK_SIZE)
-        if not data:
-            break
-        yield data
