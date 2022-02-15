@@ -92,6 +92,7 @@ class ValidationPrediction(ApiResource):
             PrevisionException: If prediction does not exist or if there
                 was another error fetching or parsing data
         """
+        self._wait_for_prediction()
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
         if extension:
             endpoint += "?extension={}".format(extension)
@@ -200,6 +201,7 @@ class DeploymentPrediction(ApiResource):
             PrevisionException: If prediction does not exist or if there
                 was another error fetching or parsing data
         """
+        self._wait_for_prediction()
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
         if extension:
             endpoint += "?extension={}".format(extension)
