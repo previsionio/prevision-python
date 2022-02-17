@@ -36,8 +36,7 @@ def teardown_module(module):
     remove_datasets(DATA_PATH)
     project = pio.Project.from_id(PROJECT_ID)
     for ds in project.list_datasets(all=True):
-        if TESTING_ID in ds.name:
-            ds.delete()
+        ds.delete()
     project.delete()
 
 
