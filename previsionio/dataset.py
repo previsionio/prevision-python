@@ -36,9 +36,18 @@ class Dataset(ApiResource):
 
     resource = 'datasets'
 
-    def __init__(self, _id: str, name: str, datasource: DataSource = None, _data: DataFrame = None,
-                 describe_state: Dict = None, drift_state=None, embeddings_state=None, separator=',',
-                 file_type=None, **kwargs):
+    def __init__(
+        self,
+        _id: str,
+        name: str,
+        datasource: DataSource = None,
+        describe_state: Dict = None,
+        drift_state: str = None,
+        embeddings_state: str = None,
+        separator: str = ',',
+        file_type: str = None,
+        **kwargs,
+    ):
 
         super().__init__(_id=_id)
         self.name = name
@@ -48,8 +57,8 @@ class Dataset(ApiResource):
         self.describe_state = describe_state
         self.drift_state = drift_state
         self.embeddings_state = embeddings_state
-        self.other_params = kwargs
         self.file_type = file_type
+        self.other_params = kwargs
 
     def to_pandas(self) -> pd.DataFrame:
         """Load in memory the data content of the current dataset into a pandas DataFrame.
@@ -166,8 +175,7 @@ class Dataset(ApiResource):
 
         Args:
             path (str, optional): Target local path
-                (if none is provided, the current working directory is
-                used)
+                (if none is provided, the current working directory is used)
             extension(str, optional): possible extensions: zip, parquet
         Returns:
             str: Path the data was downloaded to
@@ -186,8 +194,9 @@ class Dataset(ApiResource):
                               message_prefix='Dataset download')
 
         if not path:
-            download_path = os.getcwd()
-            path = os.path.join(download_path, self.name + '.' + extension)
+            path = os.getcwd()
+
+        path = os.path.join(path, self.name + '.' + extension)
 
         with open(path, "wb") as file:
             for chunk in resp.iter_content(chunk_size=100_000_000):
@@ -288,7 +297,6 @@ class Dataset(ApiResource):
                                                  method=requests.post,
                                                  message_prefix='Dataset upload from zip file')
 
-            # If not a zip, assert it is a CSV
             else:
                 with open(file_name, 'rb') as f:
                     data['file'] = (os.path.basename(file_name), f, 'text/csv')
@@ -302,6 +310,7 @@ class Dataset(ApiResource):
 
         if create_resp is None:
             raise PrevisionException('[Dataset] Unexpected case in dataset creation')
+
         create_json = parse_json(create_resp)
         url = '/{}/{}'.format(cls.resource, create_json['_id'])
         event_tuple = previsionio.utils.EventTuple(
