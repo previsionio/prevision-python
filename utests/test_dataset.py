@@ -43,29 +43,13 @@ def teardown_module(module):
 
 def test_upload_dataset_from_dataframe():
     project = pio.Project.from_id(PROJECT_ID)
-    paths_df = {k: paths[k] for k in paths if k != 'zip_regression'}
+    paths_df = {k: paths[k] for k in paths if k == 'classification'}
     for _, p in paths_df.items():
-        _ = project.create_dataset(p.split('/')[-1][:-4] + str(TESTING_ID),
-                                   dataframe=pd.read_csv(p))
-
-    datasets = [ds for ds in project.list_datasets(all=True) if TESTING_ID in ds.name]
-    ds_names = [k + str(TESTING_ID) for k in paths_df]
-
-    assert len(datasets) == len(paths_df)
-
-    for ds in datasets:
-        assert ds.name in ds_names
-
-    for ds in datasets:
-        ds.delete()
-
-
-def test_upload_dataset_from_dataframe_with_origin():
-    project = pio.Project.from_id(PROJECT_ID)
-    paths_df = {k: paths[k] for k in paths if k != 'zip_regression'}
-    for _, p in paths_df.items():
-        _ = project.create_dataset(p.split('/')[-1][:-4] + str(TESTING_ID),
-                                   dataframe=pd.read_csv(p), origin="pipeline_intermediate_file")
+        project.create_dataset(
+            p.split('/')[-1][:-4] + str(TESTING_ID),
+            dataframe=pd.read_csv(p),
+            origin="pipeline_intermediate_file",
+        )
 
     datasets = [ds for ds in project.list_datasets(all=True) if TESTING_ID in ds.name]
     ds_names = [k + str(TESTING_ID) for k in paths_df]
@@ -81,7 +65,8 @@ def test_upload_dataset_from_dataframe_with_origin():
 
 def test_upload_dataset_from_filename():
     project = pio.Project.from_id(PROJECT_ID)
-    paths_files = {k: paths[k] for k in ('regression', 'zip_regression')}
+    paths_files = {k: paths[k] for k in paths if 'regression' in k}
+    # paths_files = {k: paths[k] for k in ('regression', 'zip_regression')}
     for p in paths_files.values():
         project.create_dataset(p.split('/')[-1][:-4] + str(TESTING_ID),
                                file_name=p)
@@ -109,8 +94,10 @@ def test_download():
                                      dataframe=pd.read_csv(paths["regression"]), origin="pipeline_intermediate_file")
     ds = pio.Dataset.from_id(dataset._id)
     with TemporaryDirectory() as dir:
-        path = ds.download(dir)
-        assert os.path.isfile(path)
+        path_zip = ds.download(dir)  # , extension="zip")
+        assert os.path.isfile(path_zip)
+        path_parquet = ds.download(dir, extension="parquet")
+        assert os.path.isfile(path_parquet)
     dataset.delete()
 
 

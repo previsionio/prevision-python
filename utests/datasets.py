@@ -107,16 +107,13 @@ def make_supervised_datasets(path,
     ts.to_csv(ts_path, index=False)
 
     # zip
-    X_reg = np.random.rand(n_smp, n_feat_reg)
-    y_reg = np.random.rand(n_smp)
-    reg = pd.DataFrame(X_reg,
-                       columns=['feat_{}'.format(i) for i in range(n_feat_reg)])
-    reg['target'] = y_reg
-    reg_path2 = os.path.join(path, 'zip_regression.csv')
-    reg.to_csv(reg_path2, index=False)
-    zip_path = reg_path2.replace('.csv', '.zip')
+    zip_path = reg_path.replace('.csv', '.zip')
     with zipfile.ZipFile(zip_path, 'w') as zip_file:
-        zip_file.write(reg_path2)
+        zip_file.write(reg_path)
+
+    # parquet
+    parquet_path = os.path.join(path, 'regression.parquet')
+    reg.to_parquet(parquet_path, index=False)
 
     # big
     # n_smp_big = 10000
@@ -133,7 +130,8 @@ def make_supervised_datasets(path,
         'classification': classif_path,
         'multiclassification': mclassif_path,
         'zip_regression': zip_path,
-        # 'timeseries': ts_path,
+        'parquet_regression': parquet_path,
+        'timeseries': ts_path,
         # 'big': big_path
     }
 
@@ -143,6 +141,8 @@ def remove_datasets(path):
         for f in glob.glob(os.path.join(path, '*.csv')):
             os.remove(f)
         for f in glob.glob(os.path.join(path, '*.zip')):
+            os.remove(f)
+        for f in glob.glob(os.path.join(path, '*.parquet')):
             os.remove(f)
         os.rmdir(path)
 
