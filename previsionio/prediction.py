@@ -1,5 +1,6 @@
 import os
 import requests
+from typing import List
 
 from .api_resource import ApiResource
 from . import client
@@ -13,9 +14,22 @@ class ValidationPrediction(ApiResource):
 
     resource = 'validation-predictions'
 
-    def __init__(self, _id: str, experiment_id: str, experiment_version_id: str, project_id: str, state='running',
-                 model_id=None, dataset_id=None, filename=None, download_available=False, score=None, duration=None,
-                 predictions_count=None, **kwargs):
+    def __init__(
+        self,
+        _id: str,
+        experiment_id: str,
+        experiment_version_id: str,
+        project_id: str,
+        state: str = 'running',
+        model_id: str = None,
+        dataset_id: str = None,
+        filename: str = None,
+        missing_columns: List = None,
+        score: float = None,
+        duration: float = None,
+        predictions_count: int = None,
+        **kwargs,
+    ):
         self._id = _id
         self.experiment_id = experiment_id
         self.experiment_version_id = experiment_version_id
@@ -23,7 +37,6 @@ class ValidationPrediction(ApiResource):
         self.model_id = model_id
         self.dataset_id = dataset_id
         self.filename = filename
-        self.download_available = download_available
         self.score = score
         self.duration = duration
         self.predictions_count = predictions_count
@@ -77,7 +90,7 @@ class ValidationPrediction(ApiResource):
 
         return zip_to_pandas(pred_response)
 
-    def download(self, path: str = None, extension="zip"):
+    def download(self, path: str = None, extension: str = "zip"):
         """Download validation prediction file.
 
         Args:
@@ -133,8 +146,16 @@ class DeploymentPrediction(ApiResource):
 
     resource = 'deployment-predictions'
 
-    def __init__(self, _id: str, project_id: str, deployment_id: str, state='running', main_model_id=None,
-                 challenger_model_id=None, **kwargs):
+    def __init__(
+        self,
+        _id: str,
+        project_id: str,
+        deployment_id: str,
+        state: str = 'running',
+        main_model_id: str = None,
+        challenger_model_id: str = None,
+        **kwargs,
+    ):
         self._id = _id
         self.project_id = project_id
         self.deployment_id = deployment_id
@@ -186,7 +207,7 @@ class DeploymentPrediction(ApiResource):
 
         return zip_to_pandas(pred_response)
 
-    def download(self, path: str = None, extension="zip"):
+    def download(self, path: str = None, extension: str = "zip"):
         """Download deployment prediction file.
 
         Args:
