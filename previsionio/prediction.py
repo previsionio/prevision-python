@@ -220,6 +220,21 @@ class DeploymentPrediction(ApiResource):
 
         return zip_to_pandas(pred_response)
 
+    def _wait_for_prediction(self):
+        """ Wait for a specific prediction to finish.
+
+        Args:
+            predict_id (str): Unique id of the prediction to wait for
+        """
+        specific_url = '/{}/{}'.format(self.resource, self._id)
+        client.event_manager.wait_for_event(self._id,
+                                            specific_url,
+                                            EventTuple(
+                                                'DEPLOYMENT_PREDICTION_UPDATE',
+                                                ('main_model_prediction_state', 'done'),
+                                                [('main_model_prediction_state', 'failed')]),
+                                            specific_url=specific_url)
+
     def download(self, path: str = None, directoy_path: str = None, extension: str = "zip"):
         """Download deployment prediction file.
 
