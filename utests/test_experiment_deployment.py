@@ -1,5 +1,6 @@
 import pandas as pd
 import previsionio as pio
+from tempfile import TemporaryDirectory
 
 from . import DATA_PATH
 from .datasets import make_supervised_datasets, remove_datasets
@@ -78,6 +79,10 @@ def test_experiment_version():
     experiment_deployment.wait_until(lambda experiment_deployment: experiment_deployment.run_state == 'done')
 
     deployment_prediction = experiment_deployment.predict_from_dataset(prediction_dataset)
+    with TemporaryDirectory() as dir:
+        path_zip = deployment_prediction.download(directoy_path=dir)
+        assert os.path.isfile(path_zip)
+
     prediction_df = deployment_prediction.get_result()
     assert isinstance(prediction_df, pd.DataFrame)
 

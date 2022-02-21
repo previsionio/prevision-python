@@ -90,13 +90,13 @@ class ValidationPrediction(ApiResource):
 
         return zip_to_pandas(pred_response)
 
-    def download(self, path: str = None, extension: str = "zip"):
+    def download(self, path: str = None, directoy_path: str = None, extension: str = "zip"):
         """Download validation prediction file.
 
         Args:
-            path (str, optional): Target local path
-                (if none is provided, the current working directory is
-                used)
+            path (str, optional): Target full local path
+            directoy_path (str, optional): Target local directory path
+                (if none is provided, the current working directory is used)
             extension(str, optional): possible extensions: zip, parquet, csv
         Returns:
             str: Path the data was downloaded to
@@ -107,16 +107,27 @@ class ValidationPrediction(ApiResource):
         """
         self._wait_for_prediction()
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
-        if extension:
-            endpoint += "?extension={}".format(extension)
+        valid_extensions = ['zip', 'parquet', 'csv']
+        if extension not in valid_extensions:
+            PrevisionException('extension {} not in {}'.format(extension, valid_extensions))
+        endpoint += "?extension={}".format(extension)
         resp = client.request(endpoint=endpoint,
                               method=requests.get,
                               stream=True,
                               message_prefix='validation Prediction download')
-        if not path:
-            download_path = os.getcwd()
+
+        if path and directoy_path:
+            PrevisionException('Only path or directory_path can be specified, not both')
+
+        if path:
+            pass
+        elif directoy_path:
             prediction_file_name = 'prediction_{}.{}'.format(self.filename.replace(' ', '_'), extension)
-            path = os.path.join(download_path, prediction_file_name)
+            path = os.path.join(directoy_path, prediction_file_name)
+        else:
+            path = os.getcwd()
+            prediction_file_name = 'prediction_{}.{}'.format(self.filename.replace(' ', '_'), extension)
+            path = os.path.join(path, prediction_file_name)
 
         with open(path, "wb") as file:
             for chunk in resp.iter_content(chunk_size=100_000_000):
@@ -154,6 +165,7 @@ class DeploymentPrediction(ApiResource):
         state: str = 'running',
         main_model_id: str = None,
         challenger_model_id: str = None,
+        filename: str = None,
         **kwargs,
     ):
         self._id = _id
@@ -161,6 +173,7 @@ class DeploymentPrediction(ApiResource):
         self.deployment_id = deployment_id
         self.main_model_id = main_model_id
         self.challenger_model_id = challenger_model_id
+        self.filename = filename
         self._state = state
         for k, v in kwargs.items():
             self.__setattr__(k, v)
@@ -207,13 +220,13 @@ class DeploymentPrediction(ApiResource):
 
         return zip_to_pandas(pred_response)
 
-    def download(self, path: str = None, extension: str = "zip"):
+    def download(self, path: str = None, directoy_path: str = None, extension: str = "zip"):
         """Download deployment prediction file.
 
         Args:
-            path (str, optional): Target local path
-                (if none is provided, the current working directory is
-                used)
+            path (str, optional): Target full local path
+            directoy_path (str, optional): Target local directory path
+                (if none is provided, the current working directory is used)
             extension(str, optional): possible extensions: zip, parquet, csv
         Returns:
             str: Path the data was downloaded to
@@ -224,17 +237,25 @@ class DeploymentPrediction(ApiResource):
         """
         self._wait_for_prediction()
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
-        if extension:
-            endpoint += "?extension={}".format(extension)
+        valid_extensions = ['zip', 'parquet', 'csv']
+        if extension not in valid_extensions:
+            PrevisionException('extension {} not in {}'.format(extension, valid_extensions))
+        endpoint += "?extension={}".format(extension)
         resp = client.request(endpoint=endpoint,
                               method=requests.get,
                               stream=True,
                               message_prefix='Deployment Prediction download')
 
-        if not path:
-            download_path = os.getcwd()
-            prediction_file_name = 'prediction_{}.{}'.format(self.filename.replace(' ', '_'), extension)
-            path = os.path.join(download_path, prediction_file_name)
+        if path and directoy_path:
+            PrevisionException('Only path or directory_path can be specified, not both')
+
+        if path:
+            pass
+        elif directoy_path:
+            path = os.path.join(directoy_path, self.name + '.' + extension)
+        else:
+            path = os.getcwd()
+            path = os.path.join(path, self.name + '.' + extension)
 
         with open(path, "wb") as file:
             for chunk in resp.iter_content(chunk_size=100_000_000):

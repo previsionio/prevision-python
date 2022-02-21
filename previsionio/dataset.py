@@ -170,11 +170,12 @@ class Dataset(ApiResource):
                                 dtype="float32").reshape(*tensors_shape)
         return {'labels': labels, 'tensors': tensors}
 
-    def download(self, path: str = None, extension="zip"):
+    def download(self, path: str = None, directoy_path: str = None, extension="zip"):
         """Download the dataset from the platform locally.
 
         Args:
-            path (str, optional): Target local path
+            path (str, optional): Target full local path
+            directoy_path (str, optional): Target local directory path
                 (if none is provided, the current working directory is used)
             extension(str, optional): possible extensions: zip, parquet
         Returns:
@@ -186,17 +187,24 @@ class Dataset(ApiResource):
         """
 
         endpoint = '/{}/{}/download'.format(self.resource, self.id)
-        if extension:
-            endpoint += "?extension={}".format(extension)
+        valid_extensions = ['zip', 'parquet', 'csv']
+        if extension not in valid_extensions:
+            PrevisionException('extension {} not in {}'.format(extension, valid_extensions))
+        endpoint += "?extension={}".format(extension)
         resp = client.request(endpoint=endpoint,
                               method=requests.get,
                               stream=True,
                               message_prefix='Dataset download')
+        if path and directoy_path:
+            PrevisionException('Only path or directory_path can be specified, not both')
 
-        if not path:
+        if path:
+            pass
+        elif directoy_path:
+            path = os.path.join(directoy_path, self.name + '.' + extension)
+        else:
             path = os.getcwd()
-
-        path = os.path.join(path, self.name + '.' + extension)
+            path = os.path.join(path, self.name + '.' + extension)
 
         with open(path, "wb") as file:
             for chunk in resp.iter_content(chunk_size=100_000_000):

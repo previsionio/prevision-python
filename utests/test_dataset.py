@@ -94,9 +94,9 @@ def test_download():
                                      dataframe=pd.read_csv(paths["regression"]), origin="pipeline_intermediate_file")
     ds = pio.Dataset.from_id(dataset._id)
     with TemporaryDirectory() as dir:
-        path_zip = ds.download(dir)  # , extension="zip")
+        path_zip = ds.download(directoy_path=dir)
         assert os.path.isfile(path_zip)
-        path_parquet = ds.download(dir, extension="parquet")
+        path_parquet = ds.download(directoy_path=dir, extension="parquet")
         assert os.path.isfile(path_parquet)
     dataset.delete()
 
