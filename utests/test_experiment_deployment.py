@@ -1,6 +1,7 @@
+import os
+from tempfile import TemporaryDirectory
 import pandas as pd
 import previsionio as pio
-from tempfile import TemporaryDirectory
 
 from . import DATA_PATH
 from .datasets import make_supervised_datasets, remove_datasets
