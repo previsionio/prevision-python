@@ -1,4 +1,6 @@
+import os
 import requests
+from typing import List
 
 from .api_resource import ApiResource
 from . import client
@@ -12,17 +14,29 @@ class ValidationPrediction(ApiResource):
 
     resource = 'validation-predictions'
 
-    def __init__(self, _id: str, experiment_id: str, experiment_version_id: str, project_id: str, state='running',
-                 model_id=None, model_name=None, dataset_id=None, download_available=False, score=None, duration=None,
-                 predictions_count=None, **kwargs):
+    def __init__(
+        self,
+        _id: str,
+        experiment_id: str,
+        experiment_version_id: str,
+        project_id: str,
+        state: str = 'running',
+        model_id: str = None,
+        dataset_id: str = None,
+        filename: str = None,
+        missing_columns: List = None,
+        score: float = None,
+        duration: float = None,
+        predictions_count: int = None,
+        **kwargs,
+    ):
         self._id = _id
         self.experiment_id = experiment_id
         self.experiment_version_id = experiment_version_id
         self.project_id = project_id
         self.model_id = model_id
-        self.model_name = model_name
         self.dataset_id = dataset_id
-        self.download_available = download_available
+        self.filename = filename
         self.score = score
         self.duration = duration
         self.predictions_count = predictions_count
@@ -76,6 +90,53 @@ class ValidationPrediction(ApiResource):
 
         return zip_to_pandas(pred_response)
 
+    def download(self, path: str = None, directoy_path: str = None, extension: str = "zip"):
+        """Download validation prediction file.
+
+        Args:
+            path (str, optional): Target full local path
+            directoy_path (str, optional): Target local directory path
+                (if none is provided, the current working directory is used)
+            extension(str, optional): possible extensions: zip, parquet, csv
+        Returns:
+            str: Path the data was downloaded to
+
+        Raises:
+            PrevisionException: If prediction does not exist or if there
+                was another error fetching or parsing data
+        """
+        self._wait_for_prediction()
+        endpoint = '/{}/{}/download'.format(self.resource, self.id)
+        valid_extensions = ['zip', 'parquet', 'csv']
+        if extension not in valid_extensions:
+            PrevisionException('extension {} not in {}'.format(extension, valid_extensions))
+        endpoint += "?extension={}".format(extension)
+        resp = client.request(endpoint=endpoint,
+                              method=requests.get,
+                              stream=True,
+                              message_prefix='validation Prediction download')
+
+        if path and directoy_path:
+            PrevisionException('Only path or directory_path can be specified, not both')
+
+        if path:
+            pass
+        elif directoy_path:
+            prediction_file_name = 'prediction_{}.{}'.format(self.filename.replace(' ', '_'), extension)
+            path = os.path.join(directoy_path, prediction_file_name)
+        else:
+            path = os.getcwd()
+            prediction_file_name = 'prediction_{}.{}'.format(self.filename.replace(' ', '_'), extension)
+            path = os.path.join(path, prediction_file_name)
+
+        with open(path, "wb") as file:
+            for chunk in resp.iter_content(chunk_size=100_000_000):
+                if chunk:
+                    file.write(chunk)
+            file.seek(0)
+
+        return path
+
     def _wait_for_prediction(self):
         """ Wait for a specific prediction to finish.
 
@@ -96,13 +157,23 @@ class DeploymentPrediction(ApiResource):
 
     resource = 'deployment-predictions'
 
-    def __init__(self, _id: str, project_id: str, deployment_id: str, state='running', main_model_id=None,
-                 challenger_model_id=None, **kwargs):
+    def __init__(
+        self,
+        _id: str,
+        project_id: str,
+        deployment_id: str,
+        state: str = 'running',
+        main_model_id: str = None,
+        challenger_model_id: str = None,
+        filename: str = None,
+        **kwargs,
+    ):
         self._id = _id
         self.project_id = project_id
         self.deployment_id = deployment_id
         self.main_model_id = main_model_id
         self.challenger_model_id = challenger_model_id
+        self.filename = filename
         self._state = state
         for k, v in kwargs.items():
             self.__setattr__(k, v)
@@ -148,6 +219,66 @@ class DeploymentPrediction(ApiResource):
                                        message_prefix='Predictions download')
 
         return zip_to_pandas(pred_response)
+
+    def _wait_for_prediction(self):
+        """ Wait for a specific prediction to finish.
+
+        Args:
+            predict_id (str): Unique id of the prediction to wait for
+        """
+        specific_url = '/{}/{}'.format(self.resource, self._id)
+        client.event_manager.wait_for_event(self._id,
+                                            specific_url,
+                                            EventTuple(
+                                                'DEPLOYMENT_PREDICTION_UPDATE',
+                                                ('main_model_prediction_state', 'done'),
+                                                [('main_model_prediction_state', 'failed')]),
+                                            specific_url=specific_url)
+
+    def download(self, path: str = None, directoy_path: str = None, extension: str = "zip"):
+        """Download deployment prediction file.
+
+        Args:
+            path (str, optional): Target full local path
+            directoy_path (str, optional): Target local directory path
+                (if none is provided, the current working directory is used)
+            extension(str, optional): possible extensions: zip, parquet, csv
+        Returns:
+            str: Path the data was downloaded to
+
+        Raises:
+            PrevisionException: If prediction does not exist or if there
+                was another error fetching or parsing data
+        """
+        self._wait_for_prediction()
+        endpoint = '/{}/{}/download'.format(self.resource, self.id)
+        valid_extensions = ['zip', 'parquet', 'csv']
+        if extension not in valid_extensions:
+            PrevisionException('extension {} not in {}'.format(extension, valid_extensions))
+        endpoint += "?extension={}".format(extension)
+        resp = client.request(endpoint=endpoint,
+                              method=requests.get,
+                              stream=True,
+                              message_prefix='Deployment Prediction download')
+
+        if path and directoy_path:
+            PrevisionException('Only path or directory_path can be specified, not both')
+
+        if path:
+            pass
+        elif directoy_path:
+            path = os.path.join(directoy_path, self.name + '.' + extension)
+        else:
+            path = os.getcwd()
+            path = os.path.join(path, self.name + '.' + extension)
+
+        with open(path, "wb") as file:
+            for chunk in resp.iter_content(chunk_size=100_000_000):
+                if chunk:
+                    file.write(chunk)
+            file.seek(0)
+
+        return path
 
     def get_challenger_result(self):
         """Get the prediction result of the challenger model.

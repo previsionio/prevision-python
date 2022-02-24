@@ -214,8 +214,8 @@ class Client(object):
             raise PrevisionException('No url configured. Call client.init_client() to initialize')
 
     def request(self, endpoint: str, method, files: Dict = None, data: Dict = None,
-                format: Dict = None, allow_redirects: bool = True,
-                content_type: str = None, check_response: bool = True,
+                format: Dict = None, allow_redirects: bool = True, stream=False,
+                is_json=True, content_type: str = None, check_response: bool = True,
                 message_prefix: str = None, **requests_kwargs) -> Response:
         """
         Make a request on the desired endpoint with the specified method & data.
@@ -257,7 +257,10 @@ class Client(object):
             endpoint += '?' + '&'.join(["{}={}".format(key, format_bool(val)) for key, val in format.items()])
 
         url = self.url + endpoint
-
+        json = None
+        if is_json:
+            json = data
+            data = None
         status_code = 502
         retries = config.request_retries
         n_tries = 0
@@ -270,7 +273,9 @@ class Client(object):
                               headers=headers,
                               files=files,
                               allow_redirects=allow_redirects,
-                              json=data,
+                              data=data,
+                              json=json,
+                              stream=stream,
                               **requests_kwargs)
                 status_code = resp.status_code
 
