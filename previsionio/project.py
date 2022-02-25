@@ -1050,6 +1050,7 @@ class Project(ApiResource, UniqueResourceMixin):
         name: str,
         main_model: Model,
         challenger_model: Model = None,
+        type_violation_policy: str = 'best_effort',
         access_type: str = 'public',
     ) -> ExperimentDeployment:
         """ Create a new experiment deployment in the current project.
@@ -1059,6 +1060,7 @@ class Project(ApiResource, UniqueResourceMixin):
             main_model (:class:`.Model`): main model
             challenger_model (:class:`.Model`, optional): challenger model (main and challenger
                 models should come from the same experiment)
+            type_violation_policy (str, optional): best_effort/ strict
             access_type (str, optional): public/ fine_grained/ private
         Returns:
             :class:`.ExperimentDeployment`: Fetched experiment deployment object
@@ -1068,6 +1070,7 @@ class Project(ApiResource, UniqueResourceMixin):
             name,
             main_model,
             challenger_model=challenger_model,
+            type_violation_policy=type_violation_policy,
             access_type=access_type,
         )
 

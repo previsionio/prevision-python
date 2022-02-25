@@ -21,7 +21,8 @@ class ExperimentDeployment(ApiResource):
     resource = 'model-deployments'
 
     def __init__(self, _id: str, name: str, experiment_id, current_version,
-                 versions, deploy_state, access_type, project_id, training_type, models, url=None,
+                 versions, deploy_state, type_violation_policy, access_type,
+                 project_id, training_type, models, url=None,
                  **kwargs):
 
         self.name = name
@@ -31,6 +32,7 @@ class ExperimentDeployment(ApiResource):
         self.current_version = current_version
         self.versions = versions
         self._deploy_state = deploy_state
+        self.type_violation_policy = type_violation_policy
         self.access_type = access_type
         self.project_id = project_id
         self.training_type = training_type
@@ -99,6 +101,7 @@ class ExperimentDeployment(ApiResource):
         name: str,
         main_model: Model,
         challenger_model: Model = None,
+        type_violation_policy: str = 'best_effort',
         access_type: str = 'public',
     ):
         """ Create a new experiment deployment object on the platform.
@@ -109,6 +112,7 @@ class ExperimentDeployment(ApiResource):
             main_model (:class:`.Model`): main model
             challenger_model (:class:`.Model`, optional): challenger model (main and challenger
                 models should come from the same experiment)
+            type_violation_policy (str, optional): best_effort/ strict
             access_type (str, optional): public/ fine_grained/ private
 
         Returns:
@@ -122,6 +126,8 @@ class ExperimentDeployment(ApiResource):
 
         if access_type not in ['public', 'fine_grained', 'private']:
             raise PrevisionException('access type must be public, fine_grained or private')
+        if type_violation_policy not in ['best_effort', 'strict']:
+            raise PrevisionException('type_violation_policy must be best_effort or strict')
         main_model_experiment_version_id = main_model.experiment_version_id
         main_experiment = BaseExperimentVersion._from_id(main_model_experiment_version_id)
         main_experiment_id = main_experiment['experiment_id']
@@ -130,7 +136,8 @@ class ExperimentDeployment(ApiResource):
             'experiment_id': main_experiment_id,
             'main_model_experiment_version_id': main_model_experiment_version_id,
             'main_model_id': main_model._id,
-            'access_type': access_type
+            'access_type': access_type,
+            'type_violation_policy': type_violation_policy
         }
 
         if challenger_model:
