@@ -559,7 +559,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Tabular,
                                     TypeProblem.Regression)
         return Supervised._fit(
             experiment.id,
@@ -602,7 +602,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Tabular,
                                     TypeProblem.Classification)
         return Supervised._fit(
             experiment.id,
@@ -645,7 +645,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Tabular,
                                     TypeProblem.MultiClassification)
         return Supervised._fit(
             experiment.id,
@@ -691,7 +691,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Images,
                                     TypeProblem.Regression)
         dataset = (dataset, dataset_images)
         return Supervised._fit(
@@ -738,7 +738,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Images,
                                     TypeProblem.Classification)
         dataset = (dataset, dataset_images)
         return Supervised._fit(
@@ -785,7 +785,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Images,
                                     TypeProblem.MultiClassification)
         dataset = (dataset, dataset_images)
         return Supervised._fit(
@@ -832,7 +832,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.timeseries.TimeSeries`: Newly created TimeSeries experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.TimeSeries,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.TimeSeries,
                                     TypeProblem.Regression)
         return TimeSeries._fit(
             experiment.id,
@@ -884,7 +884,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.text_similarity.TextSimilarity`: Newly created TextSimilarity experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Tabular,
                                     TypeProblem.TextSimilarity)
         return TextSimilarity._fit(
             experiment.id,
