@@ -21,7 +21,7 @@ class ExperimentDeployment(ApiResource):
     resource = 'model-deployments'
 
     def __init__(self, _id: str, name: str, experiment_id, current_version,
-                 versions, deploy_state, type_violation_policy, access_type,
+                 versions, deploy_state, current_type_violation_policy, access_type,
                  project_id, training_type, models, url=None,
                  **kwargs):
 
@@ -32,7 +32,7 @@ class ExperimentDeployment(ApiResource):
         self.current_version = current_version
         self.versions = versions
         self._deploy_state = deploy_state
-        self.type_violation_policy = type_violation_policy
+        self.type_violation_policy = current_type_violation_policy
         self.access_type = access_type
         self.project_id = project_id
         self.training_type = training_type
@@ -299,7 +299,7 @@ class ExperimentDeployment(ApiResource):
                                        data=data,
                                        message_prefix='Bulk predict')
         predict_start_parsed = parse_json(predict_start)
-        return DeploymentPrediction(**predict_start_parsed)
+        return DeploymentPrediction.from_id(predict_start_parsed['_id'])
 
     def list_predictions(self) -> List[DeploymentPrediction]:
         """ List all the available predictions in the current active [client] workspace.

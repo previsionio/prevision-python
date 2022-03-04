@@ -267,10 +267,12 @@ class DeploymentPrediction(ApiResource):
         if path:
             pass
         elif directoy_path:
-            path = os.path.join(directoy_path, self.name + '.' + extension)
+            prediction_file_name = 'prediction_{}.{}'.format(self.filename.replace(' ', '_'), extension)
+            path = os.path.join(directoy_path, prediction_file_name)
         else:
             path = os.getcwd()
-            path = os.path.join(path, self.name + '.' + extension)
+            prediction_file_name = 'prediction_{}.{}'.format(self.filename.replace(' ', '_'), extension)
+            path = os.path.join(path, prediction_file_name)
 
         with open(path, "wb") as file:
             for chunk in resp.iter_content(chunk_size=100_000_000):
