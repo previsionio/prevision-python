@@ -33,8 +33,9 @@ test_datasets = {}
 def make_pio_datasets(paths):
     for problem_type, p in paths.items():
         project = pio.Project.from_id(PROJECT_ID)
-        dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
-                                         dataframe=pd.read_csv(p))
+        filename, file_extension = os.path.splitext(p)
+        dataset = project.create_dataset(p.split('/')[-1].replace(file_extension, str(TESTING_ID) + file_extension),
+                                         file_name=p)
         test_datasets[problem_type] = dataset
 
 

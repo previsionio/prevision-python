@@ -24,7 +24,7 @@ def get_experiment_version_class(
         :class:`.TimeSeries` | :class:`.ExternalExperimentVersion`):
         Type of ExperimentVersion
     """
-    if provider == Provider.External:
+    if provider == Provider.External.value:
         experiment_version_class = ExternalExperimentVersion
     else:
         if training_type == TypeProblem.TextSimilarity:
@@ -77,7 +77,7 @@ class Experiment(ApiResource):
             training_type: TypeProblem) -> 'Experiment':
         url = f'/projects/{project_id}/experiments'
         data = {
-            'provider': provider,
+            'provider': provider.value,
             'name': name,
             'data_type': data_type.value,
             'training_type': training_type.value,
