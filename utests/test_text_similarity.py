@@ -5,7 +5,7 @@ import unittest
 import previsionio as pio
 from previsionio.experiment import Experiment
 from previsionio.text_similarity import ModelEmbedding, TextSimilarityLang, TextSimilarityModels
-from previsionio.experiment_config import DataType, TypeProblem, YesOrNo, YesOrNoOrAuto
+from previsionio.experiment_config import DataType, TypeProblem, YesOrNo, YesOrNoOrAuto, Provider
 
 from .utils import get_testing_id
 
@@ -55,7 +55,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
 
     def test_train_stop_delete_text_similarity(self):
         experiment_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
-        experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
+        experiment = Experiment.new(PROJECT_ID, Provider.Prevision, experiment_name,
                                     DataType.Tabular, TypeProblem.TextSimilarity)
         experiment_id = experiment.id
         description_dataset = test_datasets['description']
@@ -78,7 +78,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
 
     def test_train_new_stop_delete_text_similarity(self):
         experiment_name = 'test_sdk_1_text_similarity_{}'.format(TESTING_ID)
-        experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
+        experiment = Experiment.new(PROJECT_ID, Provider.Prevision, experiment_name,
                                     DataType.Tabular, TypeProblem.TextSimilarity)
         experiment_id = experiment.id
         description_dataset = test_datasets['description']
@@ -109,7 +109,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
 
     def test_train_search_delete_text_similarity_with_queries_dataset(self):
         experiment_name = 'test_sdk_2_text_similarity_{}'.format(TESTING_ID)
-        experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
+        experiment = Experiment.new(PROJECT_ID, Provider.Prevision, experiment_name,
                                     DataType.Tabular, TypeProblem.TextSimilarity)
         experiment_id = experiment.id
         description_dataset = test_datasets['description']
@@ -154,7 +154,7 @@ class BaseTrainSearchDelete(unittest.TestCase):
 
     def test_train_delete_text_similarity_with_queries_dataset_all_models(self):
         experiment_name = 'test_sdk_3_text_similarity_{}'.format(TESTING_ID)
-        experiment = Experiment.new(PROJECT_ID, 'prevision-auto-ml', experiment_name,
+        experiment = Experiment.new(PROJECT_ID, Provider.Prevision, experiment_name,
                                     DataType.Tabular, TypeProblem.TextSimilarity)
         experiment_id = experiment.id
         experiment_config = [{'model_embedding': ModelEmbedding.TFIDF,
