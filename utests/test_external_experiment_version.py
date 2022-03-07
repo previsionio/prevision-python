@@ -60,8 +60,9 @@ TEST_PIO_DATASETS = {}
 def make_pio_datasets():
     for problem_type, p in TEST_DATASETS_PATH.items():
         project = Project.from_id(PROJECT_ID)
-        dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
-                                         dataframe=pd.read_csv(p))
+        filename, file_extension = os.path.splitext(p)
+        dataset = project.create_dataset(p.split('/')[-1].replace(file_extension, str(TESTING_ID) + file_extension),
+                                         file_name=p)
         TEST_PIO_DATASETS[problem_type] = dataset
 
 
