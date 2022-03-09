@@ -4,7 +4,7 @@ from typing import List, Dict, Tuple
 
 from pandas import DataFrame
 from previsionio import metrics
-from previsionio.experiment_config import ColumnConfig, DataType, TrainingConfig, TypeProblem
+from previsionio.experiment_config import ColumnConfig, DataType, Provider, TrainingConfig, TypeProblem
 import requests
 
 from . import client
@@ -559,7 +559,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Tabular,
                                     TypeProblem.Regression)
         return Supervised._fit(
             experiment.id,
@@ -602,7 +602,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Tabular,
                                     TypeProblem.Classification)
         return Supervised._fit(
             experiment.id,
@@ -645,7 +645,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Tabular,
                                     TypeProblem.MultiClassification)
         return Supervised._fit(
             experiment.id,
@@ -691,7 +691,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Images,
                                     TypeProblem.Regression)
         dataset = (dataset, dataset_images)
         return Supervised._fit(
@@ -738,7 +738,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Images,
                                     TypeProblem.Classification)
         dataset = (dataset, dataset_images)
         return Supervised._fit(
@@ -785,7 +785,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.supervised.Supervised`: Newly created Supervised experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Images,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Images,
                                     TypeProblem.MultiClassification)
         dataset = (dataset, dataset_images)
         return Supervised._fit(
@@ -832,7 +832,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.timeseries.TimeSeries`: Newly created TimeSeries experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.TimeSeries,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.TimeSeries,
                                     TypeProblem.Regression)
         return TimeSeries._fit(
             experiment.id,
@@ -884,7 +884,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.text_similarity.TextSimilarity`: Newly created TextSimilarity experiment version object
         """
-        experiment = Experiment.new(self._id, 'prevision-auto-ml', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Tabular,
                                     TypeProblem.TextSimilarity)
         return TextSimilarity._fit(
             experiment.id,
@@ -931,7 +931,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
-        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.External, experiment_name, DataType.Tabular,
                                     TypeProblem.Regression)
         return ExternalExperimentVersion._fit(
             experiment.id,
@@ -976,7 +976,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
-        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.External, experiment_name, DataType.Tabular,
                                     TypeProblem.Classification)
         return ExternalExperimentVersion._fit(
             experiment.id,
@@ -1021,7 +1021,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
-        experiment = Experiment.new(self._id, 'external', experiment_name, DataType.Tabular,
+        experiment = Experiment.new(self._id, Provider.External, experiment_name, DataType.Tabular,
                                     TypeProblem.MultiClassification)
         return ExternalExperimentVersion._fit(
             experiment.id,
@@ -1050,6 +1050,7 @@ class Project(ApiResource, UniqueResourceMixin):
         name: str,
         main_model: Model,
         challenger_model: Model = None,
+        type_violation_policy: str = 'best_effort',
         access_type: str = 'public',
     ) -> ExperimentDeployment:
         """ Create a new experiment deployment in the current project.
@@ -1059,6 +1060,7 @@ class Project(ApiResource, UniqueResourceMixin):
             main_model (:class:`.Model`): main model
             challenger_model (:class:`.Model`, optional): challenger model (main and challenger
                 models should come from the same experiment)
+            type_violation_policy (str, optional): best_effort/ strict
             access_type (str, optional): public/ fine_grained/ private
         Returns:
             :class:`.ExperimentDeployment`: Fetched experiment deployment object
@@ -1068,6 +1070,7 @@ class Project(ApiResource, UniqueResourceMixin):
             name,
             main_model,
             challenger_model=challenger_model,
+            type_violation_policy=type_violation_policy,
             access_type=access_type,
         )
 

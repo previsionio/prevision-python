@@ -1,5 +1,6 @@
 import os
 import requests
+from requests_toolbelt import MultipartEncoder
 from typing import Union
 
 from . import client
@@ -125,15 +126,15 @@ class Export(ApiResource, UniqueResourceMixin):
                 data['decimal'] = decimal
             if thousands is not None:
                 data['thousands'] = thousands
-            files = {}
-            with open(file_path, 'r') as f:
-                for k, v in data.items():
-                    files[k] = (None, v)
-                files['file'] = (os.path.basename(file_path), f, 'text/csv')
+
+            with open(file_path, 'rb') as f:
+                data['file'] = (os.path.basename(file_path), f, 'text/csv')
+                encoder = MultipartEncoder(fields=data)
                 request_url = '/exporters/{}/file'.format(exporter_id)
                 create_resp = client.request(request_url,
-                                             data=data,
-                                             files=files,
+                                             content_type=encoder.content_type,
+                                             data=encoder,
+                                             is_json=False,
                                              method=requests.post,
                                              message_prefix='Export file')
 

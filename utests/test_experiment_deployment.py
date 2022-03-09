@@ -1,3 +1,5 @@
+import os
+from tempfile import TemporaryDirectory
 import pandas as pd
 import previsionio as pio
 
@@ -31,8 +33,9 @@ test_datasets = {}
 def make_pio_datasets(paths):
     for problem_type, p in paths.items():
         project = pio.Project.from_id(PROJECT_ID)
-        dataset = project.create_dataset(p.split('/')[-1].replace('.csv', str(TESTING_ID) + '.csv'),
-                                         dataframe=pd.read_csv(p))
+        filename, file_extension = os.path.splitext(p)
+        dataset = project.create_dataset(p.split('/')[-1].replace(file_extension, str(TESTING_ID) + file_extension),
+                                         file_name=p)
         test_datasets[problem_type] = dataset
 
 
@@ -78,6 +81,10 @@ def test_experiment_version():
     experiment_deployment.wait_until(lambda experiment_deployment: experiment_deployment.run_state == 'done')
 
     deployment_prediction = experiment_deployment.predict_from_dataset(prediction_dataset)
+    with TemporaryDirectory() as dir:
+        path_zip = deployment_prediction.download(directoy_path=dir)
+        assert os.path.isfile(path_zip)
+
     prediction_df = deployment_prediction.get_result()
     assert isinstance(prediction_df, pd.DataFrame)
 

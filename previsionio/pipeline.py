@@ -14,7 +14,8 @@ class PipelineScheduledRun(ApiResource):
         _id: str,
         name: str,
         project_id: str,
-        pipeline_template_id: Dict,
+        pipeline_template: Dict,
+        pipeline_template_id: str,
         nodes_properties: List,
         exec_type: str,
         enabled: bool,
@@ -28,6 +29,7 @@ class PipelineScheduledRun(ApiResource):
         self._id = _id
         self.name = name
         self.project_id = project_id
+        self.pipeline_template = pipeline_template
         self.pipeline_template_id = pipeline_template_id
         self.nodes_properties = nodes_properties
         self.exec_type = exec_type
