@@ -168,7 +168,7 @@ class DeployedModel(object):
 
     def predict(
         self,
-        predict_data: Dict,
+        predict_data: Dict = None,
         use_confidence: bool = False,
         explain: bool = False,
         top_k: int = None,
@@ -189,7 +189,7 @@ class DeployedModel(object):
         """
 
         predict_url = '/predict'
-
+        files = None
         if use_confidence:
             if self.problem_type not in ['regression', 'classification', 'multiclassification']:
                 raise PrevisionException(f'Confidence not available for {self.problem_type}')
@@ -224,10 +224,15 @@ class DeployedModel(object):
         if self.problem_type == 'object_detector':
             if image_path is None:
                 raise PrevisionException('`image_path` is required for object-detector')
+            predict_url = '/model/predict'
+            predict_data = {}
+            files = [('image', (os.path.basename(image_path), open(image_path, 'rb'), None))]
 
         predict_url = predict_url.rstrip('&')
+        data = json.dumps(predict_data, cls=NpEncoder)
         resp = self.request(predict_url,
-                            data=json.dumps(predict_data, cls=NpEncoder),
+                            files=files,
+                            data=data,
                             method=requests.post,
                             message_prefix='Deployed model predict')
 
