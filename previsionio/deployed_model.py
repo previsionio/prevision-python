@@ -173,16 +173,18 @@ class DeployedModel(object):
         explain: bool = False,
         top_k: int = None,
         image_path: str = None,
+        threshold: float = None,
     ) -> Dict:
         """ Get a prediction on a single instance using the best model of the experiment.
 
         Args:
-            predict_data (dictionary): input data for prediction
+            predict_data (dictionary, optional): input data for prediction
             confidence (bool, optional): Whether to predict with confidence values
                 (default: ``False``)
             explain (bool, optional): Whether to explain prediction (default: ``False``)
             top_k (int, optional): Number of closest items to return for text-similarity
             image_path (str, optional): Image path for object detection
+            threshold (float, optional): prediction threshold for object detection
 
         Returns:
             dict: prediction result
@@ -208,6 +210,10 @@ class DeployedModel(object):
             if self.problem_type != 'object_detector':
                 raise PrevisionException(f'`image_path` not available for {self.problem_type}')
 
+        if threshold is not None:
+            if self.problem_type != 'object_detector':
+                raise PrevisionException(f'`threshold` not available for {self.problem_type}')
+
         if explain or use_confidence:
             predict_url += '?'
             if explain:
@@ -225,6 +231,8 @@ class DeployedModel(object):
             if image_path is None:
                 raise PrevisionException('`image_path` is required for object-detector')
             predict_url = '/model/predict'
+            if threshold:
+                predict_url += '?threshold={}'.format(threshold)
             predict_data = {}
             files = [('image', (os.path.basename(image_path), open(image_path, 'rb'), None))]
 
