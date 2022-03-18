@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 from requests.models import Response
 from requests_oauthlib import OAuth2Session
@@ -178,7 +179,7 @@ class DeployedModel(object):
         """ Get a prediction on a single instance using the best model of the experiment.
 
         Args:
-            predict_data (dictionary, optional): input data for prediction
+            predict_data (dict, optional): input data for prediction
             confidence (bool, optional): Whether to predict with confidence values
                 (default: ``False``)
             explain (bool, optional): Whether to explain prediction (default: ``False``)
