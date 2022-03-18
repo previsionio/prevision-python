@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 from requests.models import Response
 from requests_oauthlib import OAuth2Session
@@ -60,6 +61,7 @@ class DeployedModel(object):
             about_resp = self.request('/about', method=requests.get)
             app_info = parse_json(about_resp)
             self.problem_type = app_info['problem_type']
+            self.provider = app_info['provider']
             inputs_resp = self.request('/inputs', method=requests.get)
             self.inputs = parse_json(inputs_resp)
             outputs_resp = self.request('/outputs', method=requests.get)
@@ -86,13 +88,10 @@ class DeployedModel(object):
                 time.sleep(.5)
 
     def _check_token_url_app(self):
-
         if not self.prevision_app_url:
             raise PrevisionException('No url configured. Call client_app.init_client() to initialize')
-
         if not self.client_id:
             raise PrevisionException('No client id configured. Call client_app.init_client() to initialize')
-
         if not self.client_secret:
             raise PrevisionException('No client secret configured. Call client_app.init_client() to initialize')
 
@@ -170,60 +169,80 @@ class DeployedModel(object):
 
     def predict(
         self,
-        predict_data: Dict,
+        predict_data: Dict = None,
         use_confidence: bool = False,
         explain: bool = False,
-    ):
+        top_k: int = None,
+        image_path: str = None,
+        threshold: float = None,
+    ) -> Dict:
         """ Get a prediction on a single instance using the best model of the experiment.
 
         Args:
-            predict_data (dictionary): input data for prediction
+            predict_data (dict, optional): input data for prediction
             confidence (bool, optional): Whether to predict with confidence values
                 (default: ``False``)
-            explain (bool): Whether to explain prediction (default: ``False``)
+            explain (bool, optional): Whether to explain prediction (default: ``False``)
+            top_k (int, optional): Number of closest items to return for text-similarity
+            image_path (str, optional): Image path for object detection
+            threshold (float, optional): prediction threshold for object detection
 
         Returns:
-            tuple(float, float, dict): Tuple containing the prediction value,
-            confidence and explain.
-            In case of regression problem type, confidence format is a list.
-            In case of multiclassification problem type, prediction value format is a string.
-
+            dict: prediction result
         """
 
         predict_url = '/predict'
+        files = None
+        if use_confidence:
+            if self.problem_type not in ['regression', 'classification', 'multiclassification']:
+                raise PrevisionException(f'Confidence not available for {self.problem_type}')
+            if self.provider == 'external':
+                raise PrevisionException('Confidence not available for external models')
+
+        if explain:
+            if self.problem_type not in ['regression', 'classification', 'multiclassification']:
+                raise PrevisionException(f'Explain not available for {self.problem_type}')
+
+        if top_k is not None:
+            if self.problem_type != 'text_similarity':
+                raise PrevisionException(f'`top_k` not available for {self.problem_type}')
+
+        if image_path is not None:
+            if self.problem_type != 'object_detector':
+                raise PrevisionException(f'`image_path` not available for {self.problem_type}')
+
+        if threshold is not None:
+            if self.problem_type != 'object_detector':
+                raise PrevisionException(f'`threshold` not available for {self.problem_type}')
 
         if explain or use_confidence:
             predict_url += '?'
+            if explain:
+                predict_url += 'explain=true&'
+            if use_confidence:
+                predict_url += 'confidence=true'
 
-        if explain:
-            predict_url += 'explain=true&'
+        if self.problem_type == 'text_similarity':
+            top_k = 10 if top_k is None else top_k
+            if not isinstance(top_k, int) or top_k <= 0:
+                raise PrevisionException(f'`top_k` should be a strictly positive integer not {top_k}')
+            predict_data['top_k'] = top_k
 
-        if use_confidence:
-            predict_url += 'confidence=true'
+        if self.problem_type == 'object_detector':
+            if image_path is None:
+                raise PrevisionException('`image_path` is required for object-detector')
+            predict_url = '/model/predict'
+            if threshold:
+                predict_url += '?threshold={}'.format(threshold)
+            predict_data = {}
+            files = [('image', (os.path.basename(image_path), open(image_path, 'rb'), None))]
 
         predict_url = predict_url.rstrip('&')
+        data = json.dumps(predict_data, cls=NpEncoder)
         resp = self.request(predict_url,
-                            data=json.dumps(predict_data, cls=NpEncoder),
+                            files=files,
+                            data=data,
                             method=requests.post,
                             message_prefix='Deployed model predict')
 
-        pred_response = resp.json()
-        target_name = self.outputs[0]['name']
-        preds = pred_response['response']['predictions']
-        prediction = preds[target_name]
-        if use_confidence:
-            if self.problem_type == 'regression':
-                confidance_resp = [{key: value} for key, value in preds.items() if 'TARGET_quantile=' in key]
-            elif 'confidence' in preds:
-                confidance_resp = preds['confidence']
-            else:
-                confidance_resp = None
-        else:
-            confidance_resp = None
-
-        if explain and 'explanation' in preds:
-            explain_resp = preds['explanation']
-        else:
-            explain_resp = None
-
-        return prediction, confidance_resp, explain_resp
+        return resp.json()
