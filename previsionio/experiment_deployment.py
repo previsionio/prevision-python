@@ -329,6 +329,16 @@ class ExperimentDeployment(BaseExperimentDeployment):
 class ExternallyHostedModelDeployement(BaseExperimentDeployment):
 
     def log_bulk_prediction(self, input_file_path, output_file_path):
+        """ Log bulk prediction from locally files.
+
+        Args:
+            input_file_path (str): Path to an input file prediction
+            output_file_path (str): Path to an ouput file prediction
+
+        Raises:
+            PrevisionException: If error while logging bulk prediction
+            requests.exceptions.ConnectionError: Error processing the request
+        """
         request_url = '/deployments/{}/bulk-monitoring'.format(self._id)
         data = {}
         with open(input_file_path, 'rb') as f_input, open(output_file_path, 'rb') as f_output:
@@ -346,6 +356,17 @@ class ExternallyHostedModelDeployement(BaseExperimentDeployment):
             return create_resp_parsed
 
     def log_unit_prediction(self, input, output, model_role='main'):
+        """ Log unit prediction.
+
+        Args:
+            input (dict): input prediction data
+            output (dict): output prediction data
+            model_role (str: optional): main/ challenger
+
+        Raises:
+            PrevisionException: If error while logging unit prediction
+            requests.exceptions.ConnectionError: Error processing the request
+        """
         request_url = '/deployments/{}/log-unit-prediction'.format(self._id)
         data = {'input': input,
                 'output': output,
