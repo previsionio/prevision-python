@@ -118,6 +118,7 @@ class Model(ApiResource):
                 raise PrevisionException('Training type {} not supported'.format(training_type))
         elif provider == Provider.External and hosting == 'external':
             return ExternallyHostedModel(**model)
+        else:
             raise PrevisionException('Provider {} not supported'.format(provider))
 
     @property

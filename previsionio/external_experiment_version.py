@@ -46,7 +46,6 @@ class ExternalExperimentVersion(ClassicExperimentVersion):
         # this is dict, maybe we should parse it in a tuple like in creation
         self.external_models = experiment_version_info.get('external_models')
 
-        self.metric = experiment_version_info.get('metric')
         self.dataset_id: Union[str, None] = experiment_version_info.get('dataset_id')
 
         self.metric: str = experiment_version_params['metric']

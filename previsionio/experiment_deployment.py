@@ -85,7 +85,7 @@ class BaseExperimentDeployment(ApiResource):
             list(:class:`.BaseExperimentDeployment`): Fetched dataset objects
         """
         resources = super()._list(all=all, project_id=project_id)
-        return [ExperimentDeployment(**experiment_deployment) for experiment_deployment in resources]
+        return [cls(**experiment_deployment) for experiment_deployment in resources]
 
     @classmethod
     def _new(
@@ -339,7 +339,7 @@ class ExternallyHostedModelDeployement(BaseExperimentDeployment):
             PrevisionException: If error while logging bulk prediction
             requests.exceptions.ConnectionError: Error processing the request
         """
-        request_url = '/deployments/{}/bulk-monitoring'.format(self._id)
+        request_url = '/deployments/{}/log-bulk-predictions'.format(self._id)
         data = {}
         with open(input_file_path, 'rb') as f_input, open(output_file_path, 'rb') as f_output:
             data['input_file'] = (os.path.basename(input_file_path), f_input, '')
@@ -377,3 +377,13 @@ class ExternallyHostedModelDeployement(BaseExperimentDeployment):
                                      message_prefix='log unit prediction')
         create_resp_parsed = parse_json(create_resp)
         return create_resp_parsed
+
+    def list_log_bulk_predictions(self):
+        """ List all the available log bulk predictions.
+
+        Returns:
+            list(dict): Fetched log bulk predictions
+        """
+        end_point = '/deployments/{}/log-bulk-predictions'.format(self._id)
+        log_bulk_predictions = get_all_results(client, end_point, method=requests.get)
+        return log_bulk_predictions

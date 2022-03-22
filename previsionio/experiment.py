@@ -3,6 +3,7 @@ from previsionio.text_similarity import TextSimilarity
 from previsionio.supervised import Supervised
 from previsionio.timeseries import TimeSeries
 from previsionio.external_experiment_version import ExternalExperimentVersion
+from previsionio.experiment_version import ExternallyHostedExperimentVersion
 from previsionio.experiment_config import DataType, Provider, TypeProblem
 from typing import Dict, List, Union, Type
 import requests
@@ -16,7 +17,9 @@ def get_experiment_version_class(
     training_type: TypeProblem,
     data_type: DataType,
     provider: str,
-) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries], Type[ExternalExperimentVersion]]:
+    hosting: str,
+) -> Union[Type[TextSimilarity], Type[Supervised], Type[TimeSeries],
+           Type[ExternalExperimentVersion], Type[ExternallyHostedExperimentVersion]]:
     """ Get the type of ExperimentVersion class used by this Experiment
 
     Returns:
@@ -25,7 +28,10 @@ def get_experiment_version_class(
         Type of ExperimentVersion
     """
     if provider == Provider.External.value:
-        experiment_version_class = ExternalExperimentVersion
+        if hosting == 'external':
+            experiment_version_class = ExternallyHostedExperimentVersion
+        else:
+            experiment_version_class = ExternalExperimentVersion
     else:
         if training_type == TypeProblem.TextSimilarity:
             experiment_version_class = TextSimilarity
@@ -59,13 +65,15 @@ class Experiment(ApiResource):
                  provider: str,
                  name: str,
                  training_type: TypeProblem,
-                 data_type: DataType):
+                 data_type: DataType,
+                 hosting: str = 'prevision'):
         super().__init__(_id=_id)
         self.project_id = project_id
         self.provider = provider
         self.name = name
         self.training_type: TypeProblem = TypeProblem(training_type)
         self.data_type: DataType = DataType(data_type)
+        self.hosting = hosting
 
     # TODO: build a class enum for possible providers
     @classmethod
@@ -74,13 +82,15 @@ class Experiment(ApiResource):
             provider: Provider,
             name: str,
             data_type: DataType,
-            training_type: TypeProblem) -> 'Experiment':
+            training_type: TypeProblem,
+            hosting: str = 'prevision') -> 'Experiment':
         url = f'/projects/{project_id}/experiments'
         data = {
             'provider': provider.value,
             'name': name,
             'data_type': data_type.value,
             'training_type': training_type.value,
+            'hosting': hosting,
         }
         response = client.request(url,
                                   method=requests.post,
@@ -99,6 +109,7 @@ class Experiment(ApiResource):
             experiment_info['name'],
             experiment_info['training_type'],
             experiment_info['data_type'],
+            experiment_info['hosting'],
         )
         return experiment
 
@@ -144,26 +155,34 @@ class Experiment(ApiResource):
 
     @property
     def experiment_version_class(self) -> Union[
-            Type[TextSimilarity],
-            Type[Supervised],
-            Type[TimeSeries],
-            Type[ExternalExperimentVersion]
+        Type[TextSimilarity],
+        Type[Supervised],
+        Type[TimeSeries],
+        Type[ExternalExperimentVersion],
+        Type[ExternallyHostedExperimentVersion]
     ]:
         """ Get the type of ExperimentVersion class used by this Experiment
 
         Returns:
             (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` |
-            :class:`.TimeSeries` | :class:`.ExternalExperimentVersion`):
+            :class:`.TimeSeries` | :class:`.ExternalExperimentVersion` | :class:`.ExternallyHostedExperimentVersion`):
             Type of ExperimentVersion
         """
-        return get_experiment_version_class(self.training_type, self.data_type, self.provider)
+        return get_experiment_version_class(self.training_type, self.data_type, self.provider, self.hosting)
 
     @property
-    def latest_version(self) -> Union[TextSimilarity, Supervised, TimeSeries, ExternalExperimentVersion]:
+    def latest_version(self) -> Union[
+        TextSimilarity,
+        Supervised,
+        TimeSeries,
+        ExternalExperimentVersion,
+        ExternallyHostedExperimentVersion
+    ]:
         """Get the latest version of this experiment version.
 
         Returns:
-            (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`):
+            (:class:`previsionio.text_similarity.TextSimilarity` | :class:`.Supervised` | :class:`.TimeSeries`
+            | :class:`.ExternalExperimentVersion` | :class:`.ExternallyHostedExperimentVersion`):
             latest ExperimentVersion in this Experiment
         """
         end_point = '/{}/{}/versions'.format(self.resource, self._id)

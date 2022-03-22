@@ -723,8 +723,9 @@ class ExternallyHostedExperimentVersion(BaseExperimentVersion):
 
         self.holdout_dataset_id: str = experiment_version_info['holdout_dataset_id']
         self.target_column = experiment_version_params['target_column']
-        self.metric = experiment_version_info.get('metric')
+        self.metric = experiment_version_params.get('metric')
 
+        self.pred_dataset_id: Union[str, None] = experiment_version_info.get('pred_dataset_id')
         # this is dict, maybe we should parse it in a tuple like in creation
         self.external_models = experiment_version_info.get('external_models')
 
@@ -734,6 +735,7 @@ class ExternallyHostedExperimentVersion(BaseExperimentVersion):
         target_column: str,
         description: str = None,
         metric: Union[Regression, Classification, MultiClassification] = None,
+        pred_dataset: Dataset = None,
         parent_version: str = None,
         **kwargs
     ) -> Dict:
@@ -746,7 +748,10 @@ class ExternallyHostedExperimentVersion(BaseExperimentVersion):
         )
         data['holdout_dataset_id'] = holdout_dataset.id
         data['target_column'] = target_column
-        data['metric'] = metric if isinstance(metric, str) else metric.value
+        if metric:
+            data['metric'] = metric if isinstance(metric, str) else metric.value
+        if pred_dataset:
+            data['pred_dataset_id'] = pred_dataset._id
         return data
 
     def _update_draft(self, external_model, **kwargs):
@@ -782,6 +787,7 @@ class ExternallyHostedExperimentVersion(BaseExperimentVersion):
         target_column: str,
         external_models: List[Tuple],
         metric: Union[Regression, Classification, MultiClassification] = None,
+        pred_dataset: Dataset = None,
         description: str = None,
         parent_version: str = None,
     ) -> 'ExternallyHostedExperimentVersion':
@@ -811,6 +817,7 @@ class ExternallyHostedExperimentVersion(BaseExperimentVersion):
             target_column=target_column,
             external_models=external_models,
             metric=metric,
+            pred_dataset=pred_dataset,
         )
 
     @property
