@@ -238,7 +238,7 @@ class DeployedModel(object):
             files = [('image', (os.path.basename(image_path), open(image_path, 'rb'), None))]
 
         predict_url = predict_url.rstrip('&')
-        if predict_data
+        if predict_data:
             predict_data = json.dumps(predict_data, cls=NpEncoder)
         resp = self.request(predict_url,
                             files=files,
