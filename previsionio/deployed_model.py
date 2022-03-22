@@ -208,11 +208,11 @@ class DeployedModel(object):
                 raise PrevisionException(f'`top_k` not available for {self.problem_type}')
 
         if image_path is not None:
-            if self.problem_type != 'object_detector':
+            if self.problem_type != 'object_detection':
                 raise PrevisionException(f'`image_path` not available for {self.problem_type}')
 
         if threshold is not None:
-            if self.problem_type != 'object_detector':
+            if self.problem_type != 'object_detection':
                 raise PrevisionException(f'`threshold` not available for {self.problem_type}')
 
         if explain or use_confidence:
@@ -228,7 +228,7 @@ class DeployedModel(object):
                 raise PrevisionException(f'`top_k` should be a strictly positive integer not {top_k}')
             predict_data['top_k'] = top_k
 
-        if self.problem_type == 'object_detector':
+        if self.problem_type == 'object_detection':
             if image_path is None:
                 raise PrevisionException('`image_path` is required for object-detector')
             predict_url = '/model/predict'
@@ -238,10 +238,11 @@ class DeployedModel(object):
             files = [('image', (os.path.basename(image_path), open(image_path, 'rb'), None))]
 
         predict_url = predict_url.rstrip('&')
-        data = json.dumps(predict_data, cls=NpEncoder)
+        if predict_data
+            predict_data = json.dumps(predict_data, cls=NpEncoder)
         resp = self.request(predict_url,
                             files=files,
-                            data=data,
+                            data=predict_data,
                             method=requests.post,
                             message_prefix='Deployed model predict')
 
