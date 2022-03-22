@@ -95,6 +95,7 @@ class Model(ApiResource):
         training_type = TypeProblem(model.get('training_type', model.get('type_problem')))
         # NOTE: we should always set the provider in model collection
         provider = Provider(model.get('provider', 'prevision-auto-ml'))
+        hosting = model.get('hosting', 'prevision')
         if provider == Provider.Prevision:
             if training_type == TypeProblem.Regression:
                 return RegressionModel(**model)
@@ -106,7 +107,7 @@ class Model(ApiResource):
                 return TextSimilarityModel(**model)
             else:
                 raise PrevisionException('Training type {} not supported'.format(training_type))
-        elif provider == Provider.External:
+        elif provider == Provider.External and hosting == 'prevision':
             if training_type == TypeProblem.Regression:
                 return ExternalRegressionModel(**model)
             elif training_type == TypeProblem.Classification:
@@ -115,7 +116,8 @@ class Model(ApiResource):
                 return ExternalMultiClassificationModel(**model)
             else:
                 raise PrevisionException('Training type {} not supported'.format(training_type))
-        else:
+        elif provider == Provider.External and hosting == 'external':
+            return ExternallyHostedModel(**model)
             raise PrevisionException('Provider {} not supported'.format(provider))
 
     @property
@@ -178,7 +180,7 @@ class Model(ApiResource):
             raise PrevisionException(err)
         return ValidationPrediction(**predict_start_parsed)
 
-    def predict_from_dataset(self, dataset: Dataset,
+    def predict_from_dataset(self, dataset,
                              confidence: bool = False,
                              dataset_folder: Dataset = None) -> ValidationPrediction:
         """ Make a prediction for a dataset stored in the current active [client]
@@ -537,3 +539,23 @@ class TextSimilarityModel(Model):
                                         matching_id_description_column=queries_dataset_matching_id_description_column)
 
         return prediction.get_result()
+
+
+class ExternallyHostedModel(Model):
+
+    @property
+    def feature_importance(self) -> pd.DataFrame:
+        raise NotImplementedError
+
+    @property
+    def cross_validation(self) -> pd.DataFrame:
+        raise NotImplementedError
+
+    def _predict_bulk(self, dataset_id: str):
+        raise NotImplementedError
+
+    def predict_from_dataset(self, dataset: Dataset):
+        raise NotImplementedError
+
+    def predict(self, df: DataFrame):
+        raise NotImplementedError
