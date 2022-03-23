@@ -1,7 +1,7 @@
 .. _external_experiment_version_reference:
 
 External experiments
-======================
+====================
 
 .. automodule:: previsionio.external_experiment_version
     :members:
