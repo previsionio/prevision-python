@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import Dict, List
 import time
 import requests
 from requests_toolbelt import MultipartEncoder
@@ -22,10 +22,20 @@ class BaseExperimentDeployment(ApiResource):
 
     resource = 'model-deployments'
 
-    def __init__(self, _id: str, name: str, experiment_id, current_version,
-                 versions, deploy_state, project_id, training_type, models,
-                 current_type_violation_policy, **kwargs):
-
+    def __init__(
+        self,
+        _id: str,
+        name: str,
+        experiment_id: str,
+        current_version: int,
+        versions: List[Dict],
+        deploy_state: str,
+        project_id: str,
+        training_type: str,
+        models: List[Dict],
+        current_type_violation_policy: str,
+        **kwargs,
+    ):
         self.name = name
         self._id = _id
         # self.experiment_version_id = experiment_version_id
@@ -42,7 +52,7 @@ class BaseExperimentDeployment(ApiResource):
             self.__setattr__(k, v)
 
     @classmethod
-    def from_id(cls, _id: str):
+    def from_id(cls, _id: str) -> 'BaseExperimentDeployment':
         """Get a deployed experiment from the platform by its unique id.
 
         Args:
@@ -61,7 +71,7 @@ class BaseExperimentDeployment(ApiResource):
         return cls(**result)
 
     @property
-    def deploy_state(self):
+    def deploy_state(self) -> str:
         experiment_deployment = self.from_id(self._id)
         return experiment_deployment._deploy_state
 
@@ -96,7 +106,7 @@ class BaseExperimentDeployment(ApiResource):
         challenger_model: Model = None,
         type_violation_policy: str = 'best_effort',
         access_type: str = None,
-    ):
+    ) -> 'BaseExperimentDeployment':
         """ Create a new experiment deployment object on the platform.
 
         Args:
@@ -151,7 +161,12 @@ class BaseExperimentDeployment(ApiResource):
         experiment_deployment = cls.from_id(json_resp['_id'])
         return experiment_deployment
 
-    def new_version(self, name: str, main_model, challenger_model=None):
+    def new_version(
+        self,
+        name: str,
+        main_model: Model,
+        challenger_model: Model = None,
+    ) -> 'BaseExperimentDeployment':
         """ Create a new experiment deployment version.
 
         Args:
@@ -237,10 +252,22 @@ class BaseExperimentDeployment(ApiResource):
 
 class ExperimentDeployment(BaseExperimentDeployment):
 
-    def __init__(self, _id: str, name: str, experiment_id, current_version,
-                 versions, deploy_state, current_type_violation_policy, access_type,
-                 project_id, training_type, models, url=None,
-                 **kwargs):
+    def __init__(
+        self,
+        _id: str,
+        name: str,
+        experiment_id: str,
+        current_version: int,
+        versions: List[Dict],
+        deploy_state: str,
+        current_type_violation_policy: str,
+        access_type: str,
+        project_id: str,
+        training_type: str,
+        models: List[Dict],
+        url: str = None,
+        **kwargs,
+    ):
         super().__init__(_id, name, experiment_id, current_version, versions,
                          deploy_state, project_id, training_type, models,
                          current_type_violation_policy, **kwargs)
@@ -251,11 +278,11 @@ class ExperimentDeployment(BaseExperimentDeployment):
         self._run_state = kwargs.pop("main_model_run_state", kwargs.pop("run_state", "error"))
 
     @property
-    def run_state(self):
+    def run_state(self) -> str:
         experiment_deployment = self.from_id(self._id)
         return experiment_deployment._run_state
 
-    def create_api_key(self):
+    def create_api_key(self) -> Dict:
         """Create an api key of the experiment deployment from the actual [client] workspace.
 
         Raises:
@@ -269,7 +296,7 @@ class ExperimentDeployment(BaseExperimentDeployment):
         resp = parse_json(resp)
         return resp
 
-    def get_api_keys(self):
+    def get_api_keys(self) -> List[Dict]:
         """Fetch the api keys client id and cient secret of the
         experiment deployment from the actual [client] workspace.
 
@@ -328,7 +355,11 @@ class ExperimentDeployment(BaseExperimentDeployment):
 
 class ExternallyHostedModelDeployement(BaseExperimentDeployment):
 
-    def log_bulk_prediction(self, input_file_path, output_file_path):
+    def log_bulk_prediction(
+        self,
+        input_file_path: str,
+        output_file_path: str,
+    ) -> Dict:
         """ Log bulk prediction from locally files.
 
         Args:
@@ -355,13 +386,21 @@ class ExternallyHostedModelDeployement(BaseExperimentDeployment):
             create_resp_parsed = parse_json(create_resp)
             return create_resp_parsed
 
-    def log_unit_prediction(self, _input, output, model_role='main'):
+    def log_unit_prediction(
+        self,
+        _input: Dict,
+        output: Dict,
+        model_role: str = 'main',
+        deployment_version: int = None,
+    ) -> Dict:
         """ Log unit prediction.
 
         Args:
             input (dict): input prediction data
             output (dict): output prediction data
             model_role (str: optional): main / challenger
+            deployment_version (int: optional): deployment version to use.
+                Last version is used by default
 
         Raises:
             PrevisionException: If error while logging unit prediction
@@ -370,7 +409,8 @@ class ExternallyHostedModelDeployement(BaseExperimentDeployment):
         request_url = '/deployments/log-unit-prediction/{}'.format(self._id)
         data = {'input': _input,
                 'output': output,
-                'model_role': model_role}
+                'model_role': model_role,
+                'deployment_version': deployment_version}
         create_resp = client.request(request_url,
                                      data=data,
                                      method=requests.post,
@@ -378,7 +418,7 @@ class ExternallyHostedModelDeployement(BaseExperimentDeployment):
         create_resp_parsed = parse_json(create_resp)
         return create_resp_parsed
 
-    def list_log_bulk_predictions(self):
+    def list_log_bulk_predictions(self) -> List[Dict]:
         """ List all the available log bulk predictions.
 
         Returns:
