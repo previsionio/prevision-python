@@ -28,7 +28,7 @@ from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
                               TextSimilarity, TextSimilarityLang)
 from .experiment import Experiment
-from .experiment_deployment import ExperimentDeployment
+from .experiment_deployment import ExperimentDeployment, ExternallyHostedModelDeployement
 from .model import Model
 from .pipeline import PipelineScheduledRun
 
@@ -1129,6 +1129,32 @@ class Project(ApiResource, UniqueResourceMixin):
             challenger_model=challenger_model,
             type_violation_policy=type_violation_policy,
             access_type=access_type,
+        )
+
+    def create_externally_hosted_model_deployement(
+        self,
+        name: str,
+        main_model: Model,
+        challenger_model: Model = None,
+        type_violation_policy: str = 'best_effort',
+    ) -> ExternallyHostedModelDeployement:
+        """ Create a new experiment deployment in the current project.
+
+        Args:
+            name (str): experiment deployment name
+            main_model (:class:`.Model`): main model
+            challenger_model (:class:`.Model`, optional): challenger model (main and challenger
+                models should come from the same experiment)
+            type_violation_policy (str, optional): best_effort/ strict
+        Returns:
+            :class:`.ExperimentDeployment`: Fetched experiment deployment object
+        """
+        return ExternallyHostedModelDeployement._new(
+            self._id,
+            name,
+            main_model,
+            challenger_model=challenger_model,
+            type_violation_policy=type_violation_policy,
         )
 
     def list_experiment_deployments(self, all: bool = True):
