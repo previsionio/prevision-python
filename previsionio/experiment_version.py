@@ -350,7 +350,7 @@ class BaseExperimentVersion(ApiResource):
         Retrieves the list of holdout predictions for the current experiment from client workspace
         (with the full predictions object if necessary)
         Args:
-            full (boolean): If true, return full holdout prediction objects (else only metadata)
+            full (bool): If true, return full holdout prediction objects (else only metadata)
         """
         end_point = '/experiment-versions/{}/holdout-predictions'.format(self._id)
         response = client.request(endpoint=end_point,
@@ -375,7 +375,7 @@ class BaseExperimentVersion(ApiResource):
         Retrieves the list of predictions for the current experiment from client workspace
         (with the full predictions object if necessary)
         Args:
-            full (boolean): If true, return full prediction objects (else only metadata)
+            full (bool): If true, return full prediction objects (else only metadata)
         """
         response = client.request(endpoint='/experiments/{}/predictions'.format(self._id),
                                   method=requests.get,
