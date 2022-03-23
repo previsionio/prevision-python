@@ -355,13 +355,12 @@ class DatasetImages(ApiResource):
 
     resource = 'image-folders'
 
-    def __init__(self, _id: str, name: str, project_id: str, copy_state, **kwargs):
+    def __init__(self, _id: str, name: str, project_id: str, copy_state: str, **kwargs):
         super().__init__(_id=_id)
         self.name = name
         self._id = _id
         self.project_id = project_id
         self.copy_state = copy_state
-
         self.other_params = kwargs
 
     @classmethod

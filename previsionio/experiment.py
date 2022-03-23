@@ -55,33 +55,28 @@ def get_experiment_version_class(
 
 
 class Experiment(ApiResource):
-    """ An Experiment
-
-    Args:
-        _id (str): Unique id of the experiment
-        name (str): Name of the experiment
-
-    """
+    """ An Experiment """
 
     resource = 'experiments'
 
-    def __init__(self,
-                 _id: str,
-                 project_id: str,
-                 provider: str,
-                 name: str,
-                 training_type: TypeProblem,
-                 data_type: DataType,
-                 hosting: str = 'prevision'):
+    def __init__(
+        self,
+        _id: str,
+        project_id: str,
+        provider: str,
+        name: str,
+        training_type: str,
+        data_type: str,
+        hosting: str = 'prevision',
+    ):
         super().__init__(_id=_id)
         self.project_id = project_id
         self.name = name
-        self.provider = Provider(provider)
+        self.provider: Provider = Provider(provider)
         self.training_type: TypeProblem = TypeProblem(training_type)
         self.data_type: DataType = DataType(data_type)
-        self.hosting = Hosting(hosting)
+        self.hosting: Hosting = Hosting(hosting)
 
-    # TODO: build a class enum for possible providers
     @classmethod
     def new(cls,
             project_id: str,

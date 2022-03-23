@@ -181,9 +181,12 @@ class Model(ApiResource):
             raise PrevisionException(err)
         return ValidationPrediction(**predict_start_parsed)
 
-    def predict_from_dataset(self, dataset,
-                             confidence: bool = False,
-                             dataset_folder: Dataset = None) -> ValidationPrediction:
+    def predict_from_dataset(
+        self,
+        dataset: Dataset,
+        confidence: bool = False,
+        dataset_folder: Dataset = None,
+    ) -> ValidationPrediction:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
@@ -203,7 +206,12 @@ class Model(ApiResource):
 
         return prediction
 
-    def predict(self, df: DataFrame, confidence: bool = False, prediction_dataset_name: str = None) -> pd.DataFrame:
+    def predict(
+        self,
+        df: DataFrame,
+        confidence: bool = False,
+        prediction_dataset_name: str = None,
+    ) -> pd.DataFrame:
         """ Make a prediction in a Scikit-learn blocking style.
 
         .. warning::
@@ -301,7 +309,12 @@ class ClassificationModel(ClassicModel):
         name (str, optional): Name of the model (default: ``None``)
     """
 
-    def __init__(self, _id, experiment_version_id, **other_params):
+    def __init__(
+        self,
+        _id: str,
+        experiment_version_id: str,
+        **other_params,
+    ):
         """ Instantiate a new :class:`.ClassificationModel` object to manipulate a classification model
         resource on the platform. """
         super().__init__(_id, experiment_version_id, **other_params)
@@ -451,11 +464,13 @@ class ExternalMultiClassificationModel(MultiClassificationModel):
 
 class TextSimilarityModel(Model):
 
-    def _predict_bulk(self,
-                      queries_dataset_id: str,
-                      queries_dataset_content_column: str,
-                      top_k: int,
-                      matching_id_description_column: str = None):
+    def _predict_bulk(
+        self,
+        queries_dataset_id: str,
+        queries_dataset_content_column: str,
+        top_k: int,
+        matching_id_description_column: str = None,
+    ) -> ValidationPrediction:
         """ (Util method) Private method used to handle bulk predict.
 
         .. note::
@@ -465,8 +480,8 @@ class TextSimilarityModel(Model):
         Args:
             queries_dataset_id (str): Unique id of the quries dataset to predict with
             queries_dataset_content_column (str): Content queries column name
-            queries_dataset_matching_id_description_column (str): Matching id description column name
             top_k (integer): Number of the nearest description to predict
+            matching_id_description_column (str): Matching id description column name
         Returns:
             :class:`.ValidationPrediction`: The registered prediction object in the current workspace
 
@@ -495,8 +510,13 @@ class TextSimilarityModel(Model):
 
         return ValidationPrediction(**predict_start_parsed)
 
-    def predict_from_dataset(self, queries_dataset: Dataset, queries_dataset_content_column: str, top_k: int = 10,
-                             queries_dataset_matching_id_description_column: str = None) -> ValidationPrediction:
+    def predict_from_dataset(
+        self,
+        queries_dataset: Dataset,
+        queries_dataset_content_column: str,
+        top_k: int = 10,
+        queries_dataset_matching_id_description_column: str = None,
+    ) -> ValidationPrediction:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
@@ -509,15 +529,22 @@ class TextSimilarityModel(Model):
         Returns:
             :class:`.ValidationPrediction`: The registered prediction object in the current workspace
         """
-        prediction = self._predict_bulk(queries_dataset.id,
-                                        queries_dataset_content_column,
-                                        top_k=top_k,
-                                        matching_id_description_column=queries_dataset_matching_id_description_column)
+        prediction = self._predict_bulk(
+            queries_dataset.id,
+            queries_dataset_content_column,
+            top_k=top_k,
+            matching_id_description_column=queries_dataset_matching_id_description_column,
+        )
         return prediction
 
-    def predict(self, df: DataFrame, queries_dataset_content_column: str, top_k: int = 10,
-                queries_dataset_matching_id_description_column: str = None,
-                prediction_dataset_name: str = None) -> Union[pd.DataFrame, None]:
+    def predict(
+        self,
+        df: DataFrame,
+        queries_dataset_content_column: str,
+        top_k: int = 10,
+        queries_dataset_matching_id_description_column: str = None,
+        prediction_dataset_name: str = None,
+    ) -> pd.DataFrame:
         """ Make a prediction for a dataset stored in the current active [client]
         workspace (using the current SDK dataset object).
 
@@ -534,10 +561,12 @@ class TextSimilarityModel(Model):
             prediction_dataset_name = 'test_{}_{}'.format(self.name, str(uuid.uuid4())[-6:])
 
         dataset = Dataset._new(self.project_id, prediction_dataset_name, dataframe=df)
-        prediction = self._predict_bulk(dataset.id,
-                                        queries_dataset_content_column,
-                                        top_k=top_k,
-                                        matching_id_description_column=queries_dataset_matching_id_description_column)
+        prediction = self._predict_bulk(
+            dataset.id,
+            queries_dataset_content_column,
+            top_k=top_k,
+            matching_id_description_column=queries_dataset_matching_id_description_column,
+        )
 
         return prediction.get_result()
 
