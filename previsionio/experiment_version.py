@@ -803,6 +803,8 @@ class ExternallyHostedExperimentVersion(BaseExperimentVersion):
                     1) The name you want to give to the model
                     2) The path to a yaml file containing metadata about the model
             metric (metrics.Enum): Specific metric to use for the experiment version
+            pred_dataset (:class:`.Dataset`): Reference to the dataset object containing prediction on holdout.
+                If provided it will be used to compute metrics.
             description (str, optional): The description of this experiment version (default: ``None``)
             parent_version (str, optional): The parent version of this experiment_version (default: ``None``)
 
