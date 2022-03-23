@@ -355,20 +355,20 @@ class ExternallyHostedModelDeployement(BaseExperimentDeployment):
             create_resp_parsed = parse_json(create_resp)
             return create_resp_parsed
 
-    def log_unit_prediction(self, input, output, model_role='main'):
+    def log_unit_prediction(self, _input, output, model_role='main'):
         """ Log unit prediction.
 
         Args:
             input (dict): input prediction data
             output (dict): output prediction data
-            model_role (str: optional): main/ challenger
+            model_role (str: optional): main / challenger
 
         Raises:
             PrevisionException: If error while logging unit prediction
             requests.exceptions.ConnectionError: Error processing the request
         """
-        request_url = '/deployments/{}/log-unit-prediction'.format(self._id)
-        data = {'input': input,
+        request_url = '/deployments/log-unit-prediction/{}'.format(self._id)
+        data = {'input': _input,
                 'output': output,
                 'model_role': model_role}
         create_resp = client.request(request_url,
