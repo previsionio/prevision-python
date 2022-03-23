@@ -22,14 +22,14 @@ from .dataset import Dataset, DatasetImages
 from .connector import (Connector, SQLConnector, FTPConnector, SFTPConnector,
                         S3Connector, GCPConnector, GCloud)
 from .supervised import Supervised
-from experiment_version import ExternallyHostedExperimentVersion
+from .experiment_version import ExternallyHostedExperimentVersion
 from .external_experiment_version import ExternalExperimentVersion
 from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
                               TextSimilarity, TextSimilarityLang)
 from .experiment import Experiment
-from .experiment_deployment import ExperimentDeployment, ExternallyHostedModelDeployement
-from .model import Model
+from .experiment_deployment import ExperimentDeployment, ExternallyHostedModelDeployment
+from .model import Model, ExternallyHostedModel
 from .pipeline import PipelineScheduledRun
 
 
@@ -1046,8 +1046,8 @@ class Project(ApiResource, UniqueResourceMixin):
         holdout_dataset: Dataset,
         target_column: str,
         external_models: List[Tuple],
+        type_problem: TypeProblem,
         metric: Union[metrics.Regression, metrics.Classification, metrics.MultiClassification] = None,
-        type_problem: TypeProblem = TypeProblem.MultiClassification,
         pred_dataset: Dataset = None,
         experiment_version_description: str = None,
     ) -> ExternallyHostedExperimentVersion:
@@ -1058,10 +1058,11 @@ class Project(ApiResource, UniqueResourceMixin):
             holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
             target_column (str): The name of the target column for this experiment version
             external_models (list(tuple)): The external models to add in the experiment version to create.
-                Each tuple contains 3 items describing an external model as follows:
+                Each tuple contains 2 items describing an external model as follows:
 
                     1) The name you want to give to the model
                     2) The path to a yaml file containing metadata about the model
+            type_problem (:class:`.TypeProblem`): Problem type of the model
             metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the experiment
             pred_dataset (:class:`.Dataset`): Reference to the dataset object containing prediction on holdout.
                 If provided it will be used to compute metrics.
@@ -1085,7 +1086,7 @@ class Project(ApiResource, UniqueResourceMixin):
             holdout_dataset,
             target_column,
             external_models,
-            metric,
+            metric=metric,
             pred_dataset=pred_dataset,
             description=experiment_version_description,
         )
@@ -1131,13 +1132,13 @@ class Project(ApiResource, UniqueResourceMixin):
             access_type=access_type,
         )
 
-    def create_externally_hosted_model_deployement(
+    def create_externally_hosted_model_deployment(
         self,
         name: str,
-        main_model: Model,
-        challenger_model: Model = None,
+        main_model: ExternallyHostedModel,
+        challenger_model: ExternallyHostedModel = None,
         type_violation_policy: str = 'best_effort',
-    ) -> ExternallyHostedModelDeployement:
+    ) -> ExternallyHostedModelDeployment:
         """ Create a new experiment deployment in the current project.
 
         Args:
@@ -1149,7 +1150,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Returns:
             :class:`.ExperimentDeployment`: Fetched experiment deployment object
         """
-        return ExternallyHostedModelDeployement._new(
+        return ExternallyHostedModelDeployment._new(
             self._id,
             name,
             main_model,

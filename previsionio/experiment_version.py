@@ -125,7 +125,6 @@ class BaseExperimentVersion(ApiResource):
         parent_version: str = None,
         **kwargs,
     ) -> 'BaseExperimentVersion':
-
         experiment_version_creation_data = cls._build_experiment_version_creation_data(
             description=description,
             parent_version=parent_version,
@@ -134,10 +133,8 @@ class BaseExperimentVersion(ApiResource):
         experiment_version_draft = cls._new(experiment_id, experiment_version_creation_data)
         experiment_version_draft._update_draft(**kwargs)
         experiment_version = experiment_version_draft._confirm()
-
         # NOTE: maybe update like that to be sure to have all the correct info of the resource
         # experiment_version._update_from_dict(**cls._from_id(experiment_version._id))
-
         return experiment_version
 
     def new_version(self, **kwargs):
@@ -151,13 +148,11 @@ class BaseExperimentVersion(ApiResource):
                                                                   self._id))
 
     @classmethod
-    def _from_id(cls, _id: str) -> Dict:
-        """Get an experiment from the platform by its unique id.
+    def from_id(cls, _id: str) -> 'BaseExperimentVersion':
+        """Get an experiment version from the platform by its unique id.
 
         Args:
             _id (str): Unique id of the experiment to retrieve
-            version (int, optional): Specific version of the experiment to retrieve
-                (default: 1)
 
         Returns:
             :class:`.BaseExperimentVersion`: Fetched experiment
@@ -166,7 +161,7 @@ class BaseExperimentVersion(ApiResource):
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
         """
-        return super()._from_id(specific_url='/{}/{}'.format(cls.resource, _id))
+        return cls(**super()._from_id(specific_url='/{}/{}'.format(cls.resource, _id)))
 
     # @property
     # def experiment(self) -> 'Experiment':
@@ -714,7 +709,9 @@ class ClassicExperimentVersion(BaseExperimentVersion):
 
 class ExternallyHostedExperimentVersion(BaseExperimentVersion):
 
-    model_class: ExternallyHostedModel
+    """Class for externally hosted experiments objects."""
+
+    model_class = ExternallyHostedModel
 
     def _update_from_dict(self, **experiment_version_info):
         super()._update_from_dict(**experiment_version_info)
@@ -754,12 +751,12 @@ class ExternallyHostedExperimentVersion(BaseExperimentVersion):
             data['pred_dataset_id'] = pred_dataset._id
         return data
 
-    def _update_draft(self, external_model, **kwargs):
+    def _update_draft(self, external_models, **kwargs):
         external_model_upload_endpoint = f'/experiment-versions/{self._id}/external-models'
         external_model_message_prefix = 'External model uploading'
 
         name_key, yaml_key = 'name', 'yaml_file'
-        name, yaml_file = external_model
+        name, yaml_file = external_models[0]
 
         yaml_content_type = 'text/x-yaml'
         yaml_filename = os.path.basename(yaml_file)

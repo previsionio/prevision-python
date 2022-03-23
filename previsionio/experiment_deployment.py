@@ -87,7 +87,7 @@ class BaseExperimentDeployment(ApiResource):
 
         Args:
             project_id (str): project id
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
 
@@ -171,8 +171,9 @@ class BaseExperimentDeployment(ApiResource):
 
         Args:
             name (str): experiment deployment name
-            main_model: main model
-            challenger_model (optional): challenger model. main and challenger models should be in the same experiment
+            main_model(:class:`.Model`): main model
+            challenger_model (:class:`.Model`, optional): challenger model.
+                Main and challenger models should be in the same experiment
 
         Returns:
             :class:`.BaseExperimentDeployment`: The registered experiment deployment object in the current project
@@ -353,7 +354,7 @@ class ExperimentDeployment(BaseExperimentDeployment):
         return [DeploymentPrediction(**prediction) for prediction in predictions]
 
 
-class ExternallyHostedModelDeployement(BaseExperimentDeployment):
+class ExternallyHostedModelDeployment(BaseExperimentDeployment):
 
     def log_bulk_prediction(
         self,
@@ -398,8 +399,8 @@ class ExternallyHostedModelDeployement(BaseExperimentDeployment):
         Args:
             input (dict): input prediction data
             output (dict): output prediction data
-            model_role (str: optional): main / challenger
-            deployment_version (int: optional): deployment version to use.
+            model_role (str, optional): main / challenger
+            deployment_version (int, optional): deployment version to use.
                 Last version is used by default
 
         Raises:
