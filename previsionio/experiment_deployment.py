@@ -361,11 +361,11 @@ class ExternallyHostedModelDeployment(BaseExperimentDeployment):
         input_file_path: str,
         output_file_path: str,
     ) -> Dict:
-        """ Log bulk prediction from locally files.
+        """ Log bulk prediction from local parquet files.
 
         Args:
-            input_file_path (str): Path to an input file prediction
-            output_file_path (str): Path to an ouput file prediction
+            input_file_path (str): Path to an input parquet file
+            output_file_path (str): Path to an ouput parquet file
 
         Raises:
             PrevisionException: If error while logging bulk prediction
