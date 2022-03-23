@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 from enum import Enum
-from typing import List, Dict, Tuple
-
-from pandas import DataFrame
-from previsionio import metrics
-from previsionio.experiment_config import ColumnConfig, DataType, Provider, TrainingConfig, TypeProblem
 import requests
+from typing import List, Dict, Tuple, Union
+from pandas import DataFrame
 
+from . import metrics
+from .experiment_config import (
+    ColumnConfig,
+    DataType,
+    Provider,
+    Hosting,
+    TrainingConfig,
+    TypeProblem,
+)
 from . import client
 from .utils import parse_json, PrevisionException
 from .api_resource import ApiResource, UniqueResourceMixin
@@ -16,6 +22,7 @@ from .dataset import Dataset, DatasetImages
 from .connector import (Connector, SQLConnector, FTPConnector, SFTPConnector,
                         S3Connector, GCPConnector, GCloud)
 from .supervised import Supervised
+from experiment_version import ExternallyHostedExperimentVersion
 from .external_experiment_version import ExternalExperimentVersion
 from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
@@ -1030,6 +1037,56 @@ class Project(ApiResource, UniqueResourceMixin):
             external_models,
             metric,
             dataset=dataset,
+            description=experiment_version_description,
+        )
+
+    def create_externally_hosted_model(
+        self,
+        experiment_name: str,
+        holdout_dataset: Dataset,
+        target_column: str,
+        external_models: List[Tuple],
+        metric: Union[metrics.Regression, metrics.Classification, metrics.MultiClassification] = None,
+        type_problem: TypeProblem = TypeProblem.MultiClassification,
+        pred_dataset: Dataset = None,
+        experiment_version_description: str = None,
+    ) -> ExternallyHostedExperimentVersion:
+        """ Create a tabular multiclassification experiment version from external models
+
+        Args:
+            experiment_name (str): Name of the experiment to create
+            holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
+                Each tuple contains 3 items describing an external model as follows:
+
+                    1) The name you want to give to the model
+                    2) The path to a yaml file containing metadata about the model
+            metric (:class:`.metrics.MultiClassification`, optional): Specific metric to use for the experiment
+            pred_dataset (:class:`.Dataset`): Reference to the dataset object containing prediction on holdout.
+                If provided it will be used to compute metrics.
+            experiment_version_description (str): Description of the experiment version to create
+
+        Returns:
+            :class:`.ExternallyHostedExperimentVersion`: Newly created ExternalExperimentVersion object
+        """
+        if len(external_models) == 0:
+            raise PrevisionException('You must provide at least one external model')
+        experiment = Experiment.new(
+            self._id,
+            Provider.External,
+            experiment_name,
+            DataType.Tabular,
+            type_problem,
+            hosting=Hosting.External,
+        )
+        return ExternallyHostedExperimentVersion._fit(
+            experiment.id,
+            holdout_dataset,
+            target_column,
+            external_models,
+            metric,
+            pred_dataset=pred_dataset,
             description=experiment_version_description,
         )
 
