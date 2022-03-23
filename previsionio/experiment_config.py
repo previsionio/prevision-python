@@ -32,6 +32,14 @@ class Provider(Enum):
     """Model provided by user"""
 
 
+class Hosting(Enum):
+    """ Type of hosting of model described in Prevision.io """
+    Prevision = 'prevision'
+    """Model hosted by Prevision.io"""
+    External = 'external'
+    """Model hosted by the user"""
+
+
 class DataType(Enum):
     """ Type of data available with Prevision.io. """
     Tabular = 'tabular'
