@@ -407,7 +407,7 @@ class ExternallyHostedModelDeployment(BaseExperimentDeployment):
             PrevisionException: If error while logging unit prediction
             requests.exceptions.ConnectionError: Error processing the request
         """
-        request_url = '/deployments/log-unit-prediction/{}'.format(self._id)
+        request_url = '/deployments/{}/log-unit-prediction'.format(self._id)
         data = {'input': _input,
                 'output': output,
                 'model_role': model_role,
