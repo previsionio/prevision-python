@@ -374,8 +374,8 @@ class ExternallyHostedModelDeployment(BaseExperimentDeployment):
         request_url = '/deployments/{}/log-bulk-predictions'.format(self._id)
         data = {}
         with open(input_file_path, 'rb') as f_input, open(output_file_path, 'rb') as f_output:
-            data['input_file'] = (os.path.basename(input_file_path), f_input, '')
-            data['output_file'] = (os.path.basename(output_file_path), f_output, '')
+            data['pred_input'] = (os.path.basename(input_file_path), f_input, '')
+            data['pred_output'] = (os.path.basename(output_file_path), f_output, '')
             encoder = MultipartEncoder(fields=data)
             create_resp = client.request(request_url,
                                          content_type=encoder.content_type,
