@@ -819,6 +819,46 @@ class ExternallyHostedExperimentVersion(BaseExperimentVersion):
             pred_dataset=pred_dataset,
         )
 
+    def new_version(
+        self,
+        external_models: List[Tuple],
+        holdout_dataset: Dataset = None,
+        target_column: str = None,
+        metric: Union[Regression, Classification, MultiClassification] = None,
+        pred_dataset: Dataset = None,
+        description: str = None,
+    ) -> 'ExternallyHostedExperimentVersion':
+        """
+        Create a new external experiment version from this version (on the platform).
+        The external_models parameter is mandatory.
+        The other parameters are copied from the current version and then overridden for those provided.
+
+        Args:
+            external_models (list(tuple)): The external models to add in the experiment version to create.
+                Each tuple contains 2 items describing an external model as follows:
+
+                    1) The name you want to give to the model
+                    3) The path to a yaml file containing metadata about the model
+            holdout_dataset (:class:`.Dataset`, optional): Reference to the holdout dataset object
+                to use for as holdout dataset
+            target_column (str, optional): The name of the target column for this experiment version
+            metric (metrics.Enum, optional): Specific metric to use for the experiment version
+            pred_dataset (:class:`.Dataset`, optional): Reference to the pred dataset object (default: ``None``)
+            description (str, optional): The description of this experiment version (default: ``None``)
+        Returns:
+            :class:`.ExternallyHostedExperimentVersion`: Newly created external experiment object (new version)
+        """
+        return ExternallyHostedExperimentVersion._fit(
+            self.experiment_id,
+            holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
+            target_column if target_column is not None else self.target_column,
+            external_models,
+            metric if metric is not None else self.metric,
+            pred_dataset=pred_dataset if pred_dataset is not None else None,
+            description=description,
+            parent_version=self.version,
+        )
+
     @property
     def holdout_dataset(self) -> Dataset:
         """ Get the :class:`.Dataset` object corresponding to the holdout dataset of this experiment version.

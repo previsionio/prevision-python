@@ -67,6 +67,11 @@ def test_all():
     )
     assert isinstance(check_model, ExternallyHostedModelDeployment)
 
+    experiment_id = experiment_version.experiment_id
+    experiments = Experiment.list(PROJECT_ID)
+    assert experiment_id in [experiment.id for experiment in experiments]
+
+    experiment_version_new = experiment_version.new_version([('my_externally_hosted_model', 'regression_model.yaml')])
     # test send unit
     _input = {
         'feat_0': 0,
@@ -88,3 +93,7 @@ def test_all():
     # test list bulk
     res_list = externally_hosted_model_deployment.list_log_bulk_predictions()
     assert len(res_list) >= 1
+
+    # Experiment.from_id(experiment_id).delete()
+    # experiments = Experiment.list(PROJECT_ID)
+    # assert experiment_id not in [experiment.id for experiment in experiments]

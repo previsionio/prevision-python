@@ -9,7 +9,7 @@ from .logger import logger
 from .api_resource import ApiResource
 from . import client
 from .experiment_version import BaseExperimentVersion
-from .utils import parse_json, PrevisionException, get_all_results
+from .utils import parse_json, PrevisionException, get_all_results, EventTuple
 from .prediction import DeploymentPrediction
 from .dataset import Dataset
 from .model import Model
@@ -360,19 +360,21 @@ class ExternallyHostedModelDeployment(BaseExperimentDeployment):
         self,
         input_file_path: str,
         output_file_path: str,
+        model_role: str = 'main',
     ) -> Dict:
         """ Log bulk prediction from local parquet files.
 
         Args:
             input_file_path (str): Path to an input parquet file
             output_file_path (str): Path to an ouput parquet file
+            model_role (str, optional): main / challenger
 
         Raises:
             PrevisionException: If error while logging bulk prediction
             requests.exceptions.ConnectionError: Error processing the request
         """
         request_url = '/deployments/{}/log-bulk-predictions'.format(self._id)
-        data = {}
+        data = {'type_model': model_role}
         with open(input_file_path, 'rb') as f_input, open(output_file_path, 'rb') as f_output:
             data['pred_input'] = (os.path.basename(input_file_path), f_input, '')
             data['pred_output'] = (os.path.basename(output_file_path), f_output, '')
@@ -383,9 +385,30 @@ class ExternallyHostedModelDeployment(BaseExperimentDeployment):
                                          is_json=False,
                                          method=requests.post,
                                          message_prefix='log bulk prediction')
-            # maybe wait until the end
             create_resp_parsed = parse_json(create_resp)
+            log_bulk_prediction_id = create_resp_parsed['_id']
+            specific_url = "/log-bulk-predictions/{}".format(log_bulk_prediction_id)
+            client.event_manager.wait_for_event(log_bulk_prediction_id,
+                                                specific_url,
+                                                EventTuple(
+                                                    'DEPLOYMENT_PREDICTION_UPDATE',
+                                                    ('state', 'done'),
+                                                    [('state', 'failed')]),
+                                                specific_url=specific_url)
+            url = '/{}/{}'.format('log-bulk-predictions', log_bulk_prediction_id)
+            resp = client.request(endpoint=url,
+                                  method=requests.get,
+                                  message_prefix='Get log bulk prediction')
+            create_resp_parsed = parse_json(resp)
             return create_resp_parsed
+
+    def get_log_bulk_prediction_by_id(id):
+        url = '/{}/{}'.format('log-bulk-predictions', id)
+        resp = client.request(endpoint=url,
+                              method=requests.get,
+                              message_prefix='Get log bulk prediction')
+        create_resp_parsed = parse_json(resp)
+        return create_resp_parsed
 
     def log_unit_prediction(
         self,
