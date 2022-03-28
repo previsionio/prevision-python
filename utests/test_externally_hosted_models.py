@@ -43,6 +43,22 @@ configs = [
             'pred_Iris-virginica': .7,
         },
     },
+    {
+        "holdout": "data_externally_hosted_models/classification_holdout_dataset.parquet",
+        "pred": "data_externally_hosted_models/classification_pred_dataset.parquet",
+        "yaml": "data_externally_hosted_models/classification_model.yaml",
+        "type_problem": pio.TypeProblem.Classification,
+        "input": {
+            'feat_0': 0,
+            'feat_1': 1,
+            'feat_2': 2,
+            'feat_3': 3,
+        },
+        "output": {
+            'pred_0': .6,
+            'pred_1': .4,
+        },
+    },
 ]
 
 
@@ -59,8 +75,6 @@ def teardown_module(module):
 
 @pytest.mark.parametrize('config', configs)
 def test_all(config):
-    print(config)
-
     project = pio.Project.from_id(PROJECT_ID)
 
     holdout_dataset = project.create_dataset(
