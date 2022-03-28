@@ -145,7 +145,11 @@ using the ``list_connectors()`` and ``list_datasource()`` method from project cl
 Uploading Data
 --------------
 
-You can upload data from three different sources: a path to a local (``csv``, ``zip``) file, a :class:`.pandas.DataFrame` or a created data source
+You can upload data from three different sources:
+
+1. a path to a local ``csv``/``zip``/``parquet`` file
+2. a :class:`.pandas.DataFrame`
+3. a created data source
 
 .. code-block:: python
 
@@ -573,11 +577,23 @@ You can also make unitary predictions from the main model:
         client_secret=creds['client_secret'],
     )
 
-    # make a prediction
-    prediction, confidence, explain = model.predict(
+    # make a prediction from a classification/regression/multi-classification model
+    prediction_result = model.predict(
         predict_data={'feature1': 0, 'feature2': 42},
         use_confidence=True,
         explain=True,
+    )
+
+    # make a prediction from a text-similarity model
+    prediction_result = model.predict(
+        predict_data={'query': 'Lorem ipsum'},
+        top_k=5,
+    )
+
+    # make a prediction from an object-detection model
+    prediction_result = model.predict(
+        image_path='/local/image/path',
+        threshold=.3,  # objects detected with a probability below this threshold won't be returned
     )
 
 To get a full documentation check the api reference :ref:`deployed_model_reference`.
