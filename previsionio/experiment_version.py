@@ -838,7 +838,7 @@ class ExternallyHostedExperimentVersion(BaseExperimentVersion):
                 Each tuple contains 2 items describing an external model as follows:
 
                     1) The name you want to give to the model
-                    3) The path to a yaml file containing metadata about the model
+                    2) The path to a yaml file containing metadata about the model
             holdout_dataset (:class:`.Dataset`, optional): Reference to the holdout dataset object
                 to use for as holdout dataset
             target_column (str, optional): The name of the target column for this experiment version
