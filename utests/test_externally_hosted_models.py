@@ -1,3 +1,4 @@
+import pytest
 import previsionio as pio
 from previsionio.experiment_version import ExternallyHostedExperimentVersion
 from previsionio.experiment_deployment import ExternallyHostedModelDeployment
@@ -7,21 +8,46 @@ from .utils import get_testing_id
 TESTING_ID = get_testing_id()
 PROJECT_NAME = "sdk_test_externally_hosted_models" + str(TESTING_ID)
 PROJECT_ID = ""
-PATHS = {
-    "input": "data_externally_hosted_models/regression_holdout_dataset.parquet",
-    "output": "data_externally_hosted_models/regression_pred_dataset.parquet",
-    "yaml": "data_externally_hosted_models/regression_model.yaml",
-}
+configs = [
+    {
+        "holdout": "data_externally_hosted_models/regression_holdout_dataset.parquet",
+        "pred": "data_externally_hosted_models/regression_pred_dataset.parquet",
+        "yaml": "data_externally_hosted_models/regression_model.yaml",
+        "type_problem": pio.TypeProblem.Regression,
+        "input": {
+            'feat_0': 0,
+            'feat_1': 1,
+            'feat_2': 2,
+            'feat_3': 3,
+        },
+        "output": {
+            'pred_Target': 42,
+        },
+    },
+    {
+        "holdout": "data_externally_hosted_models/multiclassification_holdout_dataset.parquet",
+        "pred": "data_externally_hosted_models/multiclassification_pred_dataset.parquet",
+        "yaml": "data_externally_hosted_models/multiclassification_model.yaml",
+        "type_problem": pio.TypeProblem.MultiClassification,
+        "input": {
+            'sepal_length': 0,
+            'sepal_width': 1,
+            'petal_length': 2,
+            'petal_width': 3,
+        },
+        "output": {
+            'pred_Iris-setosa': .1,
+            'pred_Iris-versicolor': .2,
+            'pred_Iris-virginica': .7,
+        },
+    },
+]
 
 
 def setup_module(module):
     project = pio.Project.new(name=PROJECT_NAME, description="description test sdk")
     global PROJECT_ID
     PROJECT_ID = project._id
-    global holdout_dataset
-    holdout_dataset = project.create_dataset('input', file_name=PATHS['input'])
-    global pred_dataset
-    pred_dataset = project.create_dataset('output', file_name=PATHS['output'])
 
 
 def teardown_module(module):
@@ -29,16 +55,28 @@ def teardown_module(module):
     project.delete()
 
 
-def test_all():
+@pytest.mark.parametrize('config', configs)
+def test_all(config):
+    print(config)
+
     project = pio.Project.from_id(PROJECT_ID)
+
+    holdout_dataset = project.create_dataset(
+        config['holdout'].split('/')[-1],
+        file_name=config['holdout'],
+    )
+    pred_dataset = project.create_dataset(
+        config['pred'].split('/')[-1],
+        file_name=config['pred'],
+    )
 
     # test create externally hosted model
     externally_hosted_model = project.create_externally_hosted_model(
-        'test_externally_hosted',
+        f"test_externally_hosted_{config['type_problem'].value}",
         holdout_dataset,
         'TARGET',
-        [('my_externally_hosted_model', 'data_externally_hosted_models/regression_model.yaml')],
-        pio.TypeProblem.Regression,
+        [('my_externally_hosted_model', config['yaml'])],
+        config['type_problem'],
         pred_dataset=pred_dataset,
     )
     externally_hosted_model.wait_until(
@@ -58,14 +96,14 @@ def test_all():
 
     # test new version
     new_externally_hosted_model = externally_hosted_model.new_version(
-        [('my_externally_hosted_model', 'data_externally_hosted_models/regression_model.yaml')]
+        [('my_externally_hosted_model', config['yaml'])]
     )
     assert isinstance(new_externally_hosted_model, ExternallyHostedExperimentVersion)
 
     # test deploy model
     model = externally_hosted_model.models[0]
     externally_hosted_model_deployment = project.create_externally_hosted_model_deployment(
-        'test_externally_hosted',
+        f"test_externally_hosted_{config['type_problem'].value}",
         main_model=model,
     )
     externally_hosted_model_deployment.wait_until(
@@ -79,20 +117,16 @@ def test_all():
     assert isinstance(check_model, ExternallyHostedModelDeployment)
 
     # test send unit
-    _input = {
-        'feat_0': 0,
-        'feat_1': 1,
-        'feat_2': 2,
-        'feat_3': 3,
-    }
-    output = {'pred_Target': 42}
-    res_unit = externally_hosted_model_deployment.log_unit_prediction(_input, output)
+    res_unit = externally_hosted_model_deployment.log_unit_prediction(
+        config['input'],
+        config['output'],
+    )
     assert res_unit['message'] == 'OK'
 
     # test send bulk
     res_bulk = externally_hosted_model_deployment.log_bulk_prediction(
-        'data_externally_hosted_models/regression_holdout_dataset.parquet',
-        'data_externally_hosted_models/regression_pred_dataset.parquet',
+        config['holdout'],
+        config['pred'],
     )
     assert isinstance(res_bulk, dict)
 
