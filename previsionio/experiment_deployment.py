@@ -217,9 +217,9 @@ class BaseExperimentDeployment(ApiResource):
             requests.exceptions.ConnectionError: Error processing the request
         """
         url = '/{}/{}'.format('deployments', self._id)
-        resp = client.request(endpoint=url,
-                              method=requests.delete,
-                              message_prefix='Delete deployment')
+        client.request(endpoint=url,
+                       method=requests.delete,
+                       message_prefix='Delete deployment')
 
     def wait_until(self, condition, timeout: float = config.default_timeout):
         """ Wait until condition is fulfilled, then break.
