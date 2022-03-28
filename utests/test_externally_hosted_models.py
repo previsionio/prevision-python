@@ -32,12 +32,12 @@ def teardown_module(module):
 def test_all():
     project = pio.Project.from_id(PROJECT_ID)
 
-    # test create
+    # test create externally hosted model
     externally_hosted_model = project.create_externally_hosted_model(
         'test_externally_hosted',
         holdout_dataset,
         'TARGET',
-        [('my_externally_hosted_model', 'regression_model.yaml')],
+        [('my_externally_hosted_model', 'data_externally_hosted_models/regression_model.yaml')],
         pio.TypeProblem.Regression,
         pred_dataset=pred_dataset,
     )
@@ -45,11 +45,22 @@ def test_all():
         lambda x: (len(x.models) > 0) or (x._status['state'] == 'failed')
     )
 
-    # test from from_id
+    # test from_id
     check_model = ExternallyHostedExperimentVersion.from_id(
         externally_hosted_model._id
     )
     assert isinstance(check_model, ExternallyHostedExperimentVersion)
+
+    # test experiments listing
+    experiment_id = externally_hosted_model.experiment_id
+    experiments = pio.Experiment.list(PROJECT_ID)
+    assert experiment_id in [experiment.id for experiment in experiments]
+
+    # test new version
+    new_externally_hosted_model = externally_hosted_model.new_version(
+        [('my_externally_hosted_model', 'data_externally_hosted_models/regression_model.yaml')]
+    )
+    assert isinstance(new_externally_hosted_model, ExternallyHostedExperimentVersion)
 
     # test deploy model
     model = externally_hosted_model.models[0]
@@ -61,17 +72,12 @@ def test_all():
         lambda x: x.deploy_state in ['done', 'failed']
     )
 
-    # test from from_id
+    # test from_id
     check_model = ExternallyHostedModelDeployment.from_id(
         externally_hosted_model_deployment._id
     )
     assert isinstance(check_model, ExternallyHostedModelDeployment)
 
-    experiment_id = experiment_version.experiment_id
-    experiments = Experiment.list(PROJECT_ID)
-    assert experiment_id in [experiment.id for experiment in experiments]
-
-    experiment_version_new = experiment_version.new_version([('my_externally_hosted_model', 'regression_model.yaml')])
     # test send unit
     _input = {
         'feat_0': 0,
@@ -85,8 +91,8 @@ def test_all():
 
     # test send bulk
     res_bulk = externally_hosted_model_deployment.log_bulk_prediction(
-        'regression_holdout_dataset_input.parquet',
-        'regression_holdout_dataset_output.parquet',
+        'data_externally_hosted_models/regression_holdout_dataset_input.parquet',
+        'data_externally_hosted_models/regression_holdout_dataset_output.parquet',
     )
     assert isinstance(res_bulk, dict)
 
