@@ -8,8 +8,8 @@ TESTING_ID = get_testing_id()
 PROJECT_NAME = "sdk_test_externally_hosted_models" + str(TESTING_ID)
 PROJECT_ID = ""
 PATHS = {
-    "input": "data_externally_hosted_models/regression_holdout_dataset_input.parquet",
-    "output": "data_externally_hosted_models/regression_holdout_dataset_output.parquet",
+    "input": "data_externally_hosted_models/regression_holdout_dataset.parquet",
+    "output": "data_externally_hosted_models/regression_pred_dataset.parquet",
     "yaml": "data_externally_hosted_models/regression_model.yaml",
 }
 
@@ -91,8 +91,8 @@ def test_all():
 
     # test send bulk
     res_bulk = externally_hosted_model_deployment.log_bulk_prediction(
-        'data_externally_hosted_models/regression_holdout_dataset_input.parquet',
-        'data_externally_hosted_models/regression_holdout_dataset_output.parquet',
+        'data_externally_hosted_models/regression_holdout_dataset.parquet',
+        'data_externally_hosted_models/regression_pred_dataset.parquet',
     )
     assert isinstance(res_bulk, dict)
 
