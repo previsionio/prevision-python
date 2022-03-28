@@ -7,3 +7,7 @@ output:
   pred_Iris-setosa: float
   pred_Iris-versicolor: float
   pred_Iris-virginica: float
+class_names:
+- Iris-setosa
+- Iris-versicolor
+- Iris-virginica
