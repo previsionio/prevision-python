@@ -216,7 +216,10 @@ class BaseExperimentDeployment(ApiResource):
             PrevisionException: If the experiment deployment does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        super().delete()
+        url = '/{}/{}'.format('deployments', self._id)
+        resp = client.request(endpoint=url,
+                              method=requests.delete,
+                              message_prefix='Delete deployment')
 
     def wait_until(self, condition, timeout: float = config.default_timeout):
         """ Wait until condition is fulfilled, then break.

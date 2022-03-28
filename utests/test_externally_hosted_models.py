@@ -1,5 +1,7 @@
 import pytest
 import previsionio as pio
+from previsionio.experiment_deployment import BaseExperimentDeployment
+from previsionio.experiment import Experiment
 from previsionio.experiment_version import ExternallyHostedExperimentVersion
 from previsionio.experiment_deployment import ExternallyHostedModelDeployment
 from .utils import get_testing_id
@@ -133,7 +135,11 @@ def test_all(config):
     # test list bulk
     res_list = externally_hosted_model_deployment.list_log_bulk_predictions()
     assert len(res_list) >= 1
+    deployment_id = externally_hosted_model_deployment._id
+    BaseExperimentDeployment.from_id(deployment_id).delete()
+    deployed_experiments = BaseExperimentDeployment.list(PROJECT_ID)
+    assert deployment_id not in [d_experiment.id for d_experiment in deployed_experiments]
 
-    # Experiment.from_id(experiment_id).delete()
-    # experiments = Experiment.list(PROJECT_ID)
-    # assert experiment_id not in [experiment.id for experiment in experiments]
+    Experiment.from_id(experiment_id).delete()
+    experiments = Experiment.list(PROJECT_ID)
+    assert experiment_id not in [experiment.id for experiment in experiments]
