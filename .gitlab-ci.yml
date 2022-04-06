@@ -9,7 +9,7 @@ variables:
 
 .base:
   image: python:3.6.8-stretch
-  tags: ["kube", "bel1-c2"]
+  tags: ["kube", "ire1-c1"]
 
 test-lint:
   stage: test
