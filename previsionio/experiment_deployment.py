@@ -245,7 +245,7 @@ class BaseExperimentDeployment(ApiResource):
             try:
                 if condition(self):
                     break
-                elif self.deploy_state == 'failed' or self.run_state == 'failed':
+                elif self.deploy_state == 'failed':
                     raise PrevisionException('Resource failed while waiting')
             except PrevisionException as e:
                 logger.warning(e.__repr__())
@@ -285,6 +285,38 @@ class ExperimentDeployment(BaseExperimentDeployment):
     def run_state(self) -> str:
         experiment_deployment = self.from_id(self._id)
         return experiment_deployment._run_state
+
+    def wait_until(self, condition, timeout: float = config.default_timeout):
+        """ Wait until condition is fulfilled, then break.
+
+        Args:
+            condition (func: (:class:`.BaseExperimentVersion`) -> bool.): Function to use to check the
+                break condition
+            raise_on_error (bool, optional): If true then the function will stop on error,
+                otherwise it will continue waiting (default: ``True``)
+            timeout (float, optional): Maximal amount of time to wait before forcing exit
+
+        Example::
+
+            experiment.wait_until(lambda experimentv: len(experimentv.models) > 3)
+
+        Raises:
+            PrevisionException: If the resource could not be fetched or there was a timeout.
+        """
+        t0 = time.time()
+        while True:
+            if timeout is not None and time.time() - t0 > timeout:
+                raise PrevisionException('timeout while waiting on {}'.format(condition))
+            try:
+                if condition(self):
+                    break
+                elif self.deploy_state == 'failed' or self.run_state == 'failed':
+                    raise PrevisionException('Resource failed while waiting')
+            except PrevisionException as e:
+                logger.warning(e.__repr__())
+                raise
+
+            time.sleep(config.scheduler_refresh_rate)
 
     def create_api_key(self) -> Dict:
         """Create an api key of the experiment deployment from the actual [client] workspace.
