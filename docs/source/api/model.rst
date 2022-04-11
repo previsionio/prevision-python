@@ -48,3 +48,9 @@ Model
     :members:
     :show-inheritance:
     :inherited-members:
+
+.. autoclass:: previsionio.model.ExternallyHostedModel
+    :members:
+    :show-inheritance:
+    :inherited-members:
+    :exclude-members: feature_importance, cross_validation, _predict_bulk, predict_from_dataset, predict

@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 from enum import Enum
-from typing import List, Dict, Tuple
-
-from pandas import DataFrame
-from previsionio import metrics
-from previsionio.experiment_config import ColumnConfig, DataType, Provider, TrainingConfig, TypeProblem
 import requests
+from typing import List, Dict, Tuple, Union
+from pandas import DataFrame
 
+from . import metrics
+from .experiment_config import (
+    ColumnConfig,
+    DataType,
+    Provider,
+    Hosting,
+    TrainingConfig,
+    TypeProblem,
+)
 from . import client
 from .utils import parse_json, PrevisionException
 from .api_resource import ApiResource, UniqueResourceMixin
@@ -16,33 +22,67 @@ from .dataset import Dataset, DatasetImages
 from .connector import (Connector, SQLConnector, FTPConnector, SFTPConnector,
                         S3Connector, GCPConnector, GCloud)
 from .supervised import Supervised
+from .experiment_version import ExternallyHostedExperimentVersion
 from .external_experiment_version import ExternalExperimentVersion
 from .timeseries import TimeSeries, TimeWindow
 from .text_similarity import (DescriptionsColumnConfig, ListModelsParameters, QueriesColumnConfig,
                               TextSimilarity, TextSimilarityLang)
 from .experiment import Experiment
-from .experiment_deployment import ExperimentDeployment
-from .model import Model
+from .experiment_deployment import ExperimentDeployment, ExternallyHostedModelDeployment
+from .model import Model, ExternallyHostedModel
 from .pipeline import PipelineScheduledRun
 
 
 class ProjectColor(Enum):
+    """Available project colors."""
+
     greenLighter = '#16D92C'
+    """Light green"""
+
     green = '#29CC3C'
+    """Green"""
+
     greenDarker = '#47B354'
+    """Dark green"""
+
     greenDarkest = '#5C9963'
+    """Darkest green"""
+
     purpleLighter = '#8E00E6'
+    """Light purple"""
+
     purple = '#8D29CC'
+    """Purple"""
+
     purpleDarker = '#8947B3'
+    """Dark purple"""
+
     purpleDarkest = '#825C99'
+    """Darkest purple"""
+
     blueLighter = '#0099E6'
+    """Light blue"""
+
     blue = '#2996CC'
+    """Blue"""
+
     blueDarker = '#478FB3'
+    """Dark blue"""
+
     blueDarkest = '#5C8599'
+    """Darkest blue"""
+
     yellowLighter = '#E6E600'
+    """Light yellow"""
+
     yellow = '#CCCC29'
+    """Yellow"""
+
     yellowDarker = '#B3B347'
+    """Dark yellow"""
+
     yellowDarkest = '#99995C'
+    """Darkest yellow"""
 
 
 class Project(ApiResource, UniqueResourceMixin):
@@ -59,9 +99,21 @@ class Project(ApiResource, UniqueResourceMixin):
 
     resource = 'projects'
 
-    def __init__(self, _id: str, name: str, description: str = None, color: ProjectColor = None, created_by: str = None,
-                 admins=[], contributors=[], viewers=[], pipelines_count: int = 0, experiments_count: int = 0,
-                 dataset_count: int = 0, **kwargs):
+    def __init__(
+        self,
+        _id: str,
+        name: str,
+        description: str = None,
+        color: ProjectColor = None,
+        created_by: str = None,
+        admins: List = None,
+        contributors: List = None,
+        viewers: List = None,
+        pipelines_count: int = 0,
+        experiments_count: int = 0,
+        dataset_count: int = 0,
+        **kwargs
+    ):
         """ Instantiate a new :class:`.Project` object to manipulate a project resource
         on the platform. """
         super().__init__(_id=_id)
@@ -82,7 +134,7 @@ class Project(ApiResource, UniqueResourceMixin):
         """ List all the available project in the current active [client] workspace.
 
         Args:
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
         Returns:
@@ -93,7 +145,7 @@ class Project(ApiResource, UniqueResourceMixin):
         return [cls(**source_data) for source_data in resources]
 
     @classmethod
-    def from_id(cls, _id: str):
+    def from_id(cls, _id: str) -> 'Project':
         """Get a project from the instance by its unique id.
 
         Args:
@@ -116,17 +168,14 @@ class Project(ApiResource, UniqueResourceMixin):
         return cls(**resp_json)
 
     @property
-    def id(self):
+    def id(self) -> str:
         return self._id
 
-    def users(self):
+    def users(self) -> Dict:
         """Get a project from the instance by its unique id.
 
-        Args:
-            _id (str): Unique id of the resource to retrieve
-
         Returns:
-            :class:`.Project`: The fetched datasource
+            dict: The fetched datasource
 
         Raises:
             PrevisionException: Any error while fetching data from the platform
@@ -143,9 +192,6 @@ class Project(ApiResource, UniqueResourceMixin):
 
     def info(self) -> Dict:
         """Get a datasource from the instance by its unique id.
-
-        Args:
-            _id (str): Unique id of the resource to retrieve
 
         Returns:
             Dict: Information about the Project with these entries:
@@ -187,7 +233,7 @@ class Project(ApiResource, UniqueResourceMixin):
         Args:
             name (str): Name of the project
             description(str, optional): Description of the project
-            color (str, optional): Color of the project
+            color (:class:`.ProjectColor`, optional): Color of the project
 
         Returns:
             :class:`.Project`: The registered project object in the current workspace
@@ -249,7 +295,7 @@ class Project(ApiResource, UniqueResourceMixin):
                 from an existent database, you need a datasource connector
                 (:class:`.Connector` object) designed to point to the related data source)
             file_name (str, optional): Path to a file to upload as dataset
-            dataframe (pd.DataFrame, optional): A ``pandas`` dataframe containing the
+            dataframe (:class:`.DataFrame`, optional): A ``pandas`` dataframe containing the
                 data to upload
 
         Raises:
@@ -272,7 +318,7 @@ class Project(ApiResource, UniqueResourceMixin):
             plain dictionaries with the corresponding data.
 
         Args:
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
 
@@ -312,7 +358,7 @@ class Project(ApiResource, UniqueResourceMixin):
             plain dictionaries with the corresponding data.
 
         Args:
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
 
@@ -408,7 +454,7 @@ class Project(ApiResource, UniqueResourceMixin):
             plain dictionaries with the corresponding data.
 
         Args:
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
 
@@ -453,7 +499,7 @@ class Project(ApiResource, UniqueResourceMixin):
             plain dictionaries with the corresponding data.
 
         Args:
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
 
@@ -500,7 +546,7 @@ class Project(ApiResource, UniqueResourceMixin):
             plain dictionaries with the corresponding data.
 
         Args:
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
 
@@ -519,7 +565,7 @@ class Project(ApiResource, UniqueResourceMixin):
             plain dictionaries with the corresponding data.
 
         Args:
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
 
@@ -557,7 +603,7 @@ class Project(ApiResource, UniqueResourceMixin):
             experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.supervised.Supervised`: Newly created Supervised experiment version object
+            :class:`.Supervised`: Newly created Supervised experiment version object
         """
         experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Tabular,
                                     TypeProblem.Regression)
@@ -600,7 +646,7 @@ class Project(ApiResource, UniqueResourceMixin):
             experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.supervised.Supervised`: Newly created Supervised experiment version object
+            :class:`.Supervised`: Newly created Supervised experiment version object
         """
         experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Tabular,
                                     TypeProblem.Classification)
@@ -643,7 +689,7 @@ class Project(ApiResource, UniqueResourceMixin):
             experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.supervised.Supervised`: Newly created Supervised experiment version object
+            :class:`.Supervised`: Newly created Supervised experiment version object
         """
         experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Tabular,
                                     TypeProblem.MultiClassification)
@@ -689,7 +735,7 @@ class Project(ApiResource, UniqueResourceMixin):
             experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.supervised.Supervised`: Newly created Supervised experiment version object
+            :class:`.Supervised`: Newly created Supervised experiment version object
         """
         experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Images,
                                     TypeProblem.Regression)
@@ -736,7 +782,7 @@ class Project(ApiResource, UniqueResourceMixin):
             experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.supervised.Supervised`: Newly created Supervised experiment version object
+            :class:`.Supervised`: Newly created Supervised experiment version object
         """
         experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Images,
                                     TypeProblem.Classification)
@@ -783,7 +829,7 @@ class Project(ApiResource, UniqueResourceMixin):
             experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.supervised.Supervised`: Newly created Supervised experiment version object
+            :class:`.Supervised`: Newly created Supervised experiment version object
         """
         experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.Images,
                                     TypeProblem.MultiClassification)
@@ -830,7 +876,7 @@ class Project(ApiResource, UniqueResourceMixin):
             experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.timeseries.TimeSeries`: Newly created TimeSeries experiment version object
+            :class:`.TimeSeries`: Newly created TimeSeries experiment version object
         """
         experiment = Experiment.new(self._id, Provider.Prevision, experiment_name, DataType.TimeSeries,
                                     TypeProblem.Regression)
@@ -927,7 +973,7 @@ class Project(ApiResource, UniqueResourceMixin):
             experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.external_models.ExternalExperimentVersion`: Newly created ExternalExperimentVersion object
+            :class:`.ExternalExperimentVersion`: Newly created ExternalExperimentVersion object
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
@@ -972,7 +1018,7 @@ class Project(ApiResource, UniqueResourceMixin):
             experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.external_models.ExternalExperimentVersion`: Newly created ExternalExperimentVersion object
+            :class:`.ExternalExperimentVersion`: Newly created ExternalExperimentVersion object
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
@@ -1017,7 +1063,7 @@ class Project(ApiResource, UniqueResourceMixin):
             experiment_version_description (str): Description of the experiment version to create
 
         Returns:
-            :class:`.external_models.ExternalExperimentVersion`: Newly created ExternalExperimentVersion object
+            :class:`.ExternalExperimentVersion`: Newly created ExternalExperimentVersion object
         """
         if len(external_models) == 0:
             raise PrevisionException('You must provide at least one external model')
@@ -1033,11 +1079,62 @@ class Project(ApiResource, UniqueResourceMixin):
             description=experiment_version_description,
         )
 
+    def create_externally_hosted_model(
+        self,
+        experiment_name: str,
+        holdout_dataset: Dataset,
+        target_column: str,
+        external_models: List[Tuple],
+        type_problem: TypeProblem,
+        metric: Union[metrics.Regression, metrics.Classification, metrics.MultiClassification] = None,
+        pred_dataset: Dataset = None,
+        experiment_version_description: str = None,
+    ) -> ExternallyHostedExperimentVersion:
+        """ Create a tabular multiclassification experiment version from external models
+
+        Args:
+            experiment_name (str): Name of the experiment to create
+            holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
+                Each tuple contains 2 items describing an external model as follows:
+
+                    1) The name you want to give to the model
+                    2) The path to a yaml file containing metadata about the model
+            type_problem (:class:`.TypeProblem`): Problem type of the model
+            metric (:class:`.metrics`, optional): Specific metric to use for the experiment
+            pred_dataset (:class:`.Dataset`): Reference to the dataset object containing prediction on holdout.
+                If provided it will be used to compute metrics.
+            experiment_version_description (str): Description of the experiment version to create
+
+        Returns:
+            :class:`.ExternallyHostedExperimentVersion`: Newly created ExternallyHostedExperimentVersion object
+        """
+        if len(external_models) == 0:
+            raise PrevisionException('You must provide at least one external model')
+        experiment = Experiment.new(
+            self._id,
+            Provider.External,
+            experiment_name,
+            DataType.Tabular,
+            type_problem,
+            hosting=Hosting.External,
+        )
+        return ExternallyHostedExperimentVersion._fit(
+            experiment.id,
+            holdout_dataset,
+            target_column,
+            external_models,
+            metric=metric,
+            pred_dataset=pred_dataset,
+            description=experiment_version_description,
+        )
+
     def list_experiments(self, all: bool = True):
         """ List all the available experiment in the current project.
 
         Args:
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
         Returns:
@@ -1074,11 +1171,37 @@ class Project(ApiResource, UniqueResourceMixin):
             access_type=access_type,
         )
 
+    def create_externally_hosted_model_deployment(
+        self,
+        name: str,
+        main_model: ExternallyHostedModel,
+        challenger_model: ExternallyHostedModel = None,
+        type_violation_policy: str = 'best_effort',
+    ) -> ExternallyHostedModelDeployment:
+        """ Create a new experiment deployment in the current project.
+
+        Args:
+            name (str): experiment deployment name
+            main_model (:class:`.Model`): main model
+            challenger_model (:class:`.Model`, optional): challenger model (main and challenger
+                models should come from the same experiment)
+            type_violation_policy (str, optional): best_effort/ strict
+        Returns:
+            :class:`.ExperimentDeployment`: Fetched experiment deployment object
+        """
+        return ExternallyHostedModelDeployment._new(
+            self._id,
+            name,
+            main_model,
+            challenger_model=challenger_model,
+            type_violation_policy=type_violation_policy,
+        )
+
     def list_experiment_deployments(self, all: bool = True):
         """ List all the available experiment in the current project.
 
         Args:
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
         Returns:
