@@ -20,4 +20,5 @@ and of the experiment configuration options:
    experiments/time_series.rst
    experiments/text_similarity.rst
    experiments/external_experiment_version.rst
+   experiments/externally_hosted_experiment_version.rst
    experiments/config.rst

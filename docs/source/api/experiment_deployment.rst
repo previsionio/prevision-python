@@ -3,5 +3,12 @@
 Experiment Deployment
 =====================
 
-.. automodule:: previsionio.experiment_deployment
+.. autoclass:: previsionio.experiment_deployment.ExperimentDeployment
     :members:
+    :show-inheritance:
+    :inherited-members:
+
+.. autoclass:: previsionio.experiment_deployment.ExternallyHostedModelDeployment
+    :members:
+    :show-inheritance:
+    :inherited-members:

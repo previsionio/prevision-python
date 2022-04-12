@@ -153,7 +153,7 @@ class PipelineScheduledRun(ApiResource):
 
         Args:
             project_id (str): Unique reference of the project id on the platform
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
 
@@ -226,7 +226,7 @@ class PipelineTemplate(ApiResource):
 
         Args:
             project_id (str): Unique reference of the project id on the platform
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
 

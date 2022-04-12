@@ -678,6 +678,50 @@ You can also trigger a pipeline scheduled run execution:
 
 To get a full documentation check the api reference of :class:`.previsionio.pipeline.PipelineScheduledRun`.
 
+Monitoring for externally hosted model
+======================================
+Prevision.io’s SDK allows to log model data in order to monitor model performance with prevision.io plateform.
+
+You first need to create an experiment with model metadata.
+
+.. code-block:: python
+
+  externally_hosted_model = project.create_externally_hosted_model(
+        'my_experiment',
+        holdout_dataset,
+        'TARGET',
+        [('my_externally_hosted_model', model.yaml)],
+        'regression',
+        pred_dataset=pred_holdout_dataset,
+    )
+
+Now you can create a deployment from your model:
+
+.. code-block:: python
+
+  model = externally_hosted_model.models[0]
+  externally_hosted_model_deployment = project.create_externally_hosted_model_deployment(
+        'my_deployed_experiment',
+        main_model=model,
+    )
+
+Now you can log bulk and unit predictions for your deployed model(s):
+
+.. code-block:: python
+
+  # log bulk
+  externally_hosted_model_deployment.log_bulk_prediction(
+      holdout_dataset.parquet,
+      pred_dataset.parquet,
+  )
+  # log unit
+  inputs = {'feat_0': 0, 'feat_1': 1, 'feat_2': 2, 'feat_3': 3}
+  outputs = {'pred_Target': 42}
+  externally_hosted_model_deployment.log_unit_prediction(
+      inputs,
+      outputs,
+  )
+
 Additional util methods
 =======================
 

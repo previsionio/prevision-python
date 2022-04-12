@@ -1,0 +1,13 @@
+input:
+- sepal_length
+- sepal_width
+- petal_length
+- petal_width
+output:
+  pred_Iris-setosa: float
+  pred_Iris-versicolor: float
+  pred_Iris-virginica: float
+class_names:
+- Iris-setosa
+- Iris-versicolor
+- Iris-virginica

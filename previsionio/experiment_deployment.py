@@ -1,30 +1,41 @@
-from typing import List
+import os
+from typing import Dict, List
 import time
 import requests
+from requests_toolbelt import MultipartEncoder
 
 from . import config
 from .logger import logger
 from .api_resource import ApiResource
 from . import client
 from .experiment_version import BaseExperimentVersion
-from .utils import parse_json, PrevisionException, get_all_results
+from .utils import parse_json, PrevisionException, get_all_results, EventTuple
 from .prediction import DeploymentPrediction
 from .dataset import Dataset
 from .model import Model
 
 
-class ExperimentDeployment(ApiResource):
+class BaseExperimentDeployment(ApiResource):
     """ ExperimentDeployment objects represent experiment deployment
     resource that will be explored by Prevision.io platform.
     """
 
     resource = 'model-deployments'
 
-    def __init__(self, _id: str, name: str, experiment_id, current_version,
-                 versions, deploy_state, current_type_violation_policy, access_type,
-                 project_id, training_type, models, url=None,
-                 **kwargs):
-
+    def __init__(
+        self,
+        _id: str,
+        name: str,
+        experiment_id: str,
+        current_version: int,
+        versions: List[Dict],
+        deploy_state: str,
+        project_id: str,
+        training_type: str,
+        models: List[Dict],
+        current_type_violation_policy: str,
+        **kwargs,
+    ):
         self.name = name
         self._id = _id
         # self.experiment_version_id = experiment_version_id
@@ -32,26 +43,23 @@ class ExperimentDeployment(ApiResource):
         self.current_version = current_version
         self.versions = versions
         self._deploy_state = deploy_state
-        self.type_violation_policy = current_type_violation_policy
-        self.access_type = access_type
         self.project_id = project_id
         self.training_type = training_type
         self.models = models
-        self.url = url
+        self.type_violation_policy = current_type_violation_policy
 
-        self._run_state = kwargs.pop("main_model_run_state", kwargs.pop("run_state", "error"))
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
     @classmethod
-    def from_id(cls, _id: str):
+    def from_id(cls, _id: str) -> 'BaseExperimentDeployment':
         """Get a deployed experiment from the platform by its unique id.
 
         Args:
             _id (str): Unique id of the experiment version to retrieve
 
         Returns:
-            :class:`.ExperimentDeployment`: Fetched deployed experiment
+            :class:`.BaseExperimentDeployment`: Fetched deployed experiment
 
         Raises:
             PrevisionException: Any error while fetching data from the platform
@@ -63,14 +71,9 @@ class ExperimentDeployment(ApiResource):
         return cls(**result)
 
     @property
-    def deploy_state(self):
+    def deploy_state(self) -> str:
         experiment_deployment = self.from_id(self._id)
         return experiment_deployment._deploy_state
-
-    @property
-    def run_state(self):
-        experiment_deployment = self.from_id(self._id)
-        return experiment_deployment._run_state
 
     @classmethod
     def list(cls, project_id: str, all: bool = True) -> List['ExperimentDeployment']:
@@ -84,15 +87,15 @@ class ExperimentDeployment(ApiResource):
 
         Args:
             project_id (str): project id
-            all (boolean, optional): Whether to force the SDK to load all items of
+            all (bool, optional): Whether to force the SDK to load all items of
                 the given type (by calling the paginated API several times). Else,
                 the query will only return the first page of result.
 
         Returns:
-            list(:class:`.ExperimentDeployment`): Fetched dataset objects
+            list(:class:`.BaseExperimentDeployment`): Fetched dataset objects
         """
         resources = super()._list(all=all, project_id=project_id)
-        return [ExperimentDeployment(**experiment_deployment) for experiment_deployment in resources]
+        return [cls(**experiment_deployment) for experiment_deployment in resources]
 
     @classmethod
     def _new(
@@ -102,8 +105,8 @@ class ExperimentDeployment(ApiResource):
         main_model: Model,
         challenger_model: Model = None,
         type_violation_policy: str = 'best_effort',
-        access_type: str = 'public',
-    ):
+        access_type: str = None,
+    ) -> 'BaseExperimentDeployment':
         """ Create a new experiment deployment object on the platform.
 
         Args:
@@ -116,7 +119,7 @@ class ExperimentDeployment(ApiResource):
             access_type (str, optional): public/ fine_grained/ private
 
         Returns:
-            :class:`.ExperimentDeployment`: The registered experiment deployment object in the current project
+            :class:`.BaseExperimentDeployment`: The registered experiment deployment object in the current project
 
         Raises:
             PrevisionException: Any error while creating experiment deployment to the platform
@@ -124,7 +127,7 @@ class ExperimentDeployment(ApiResource):
             Exception: For any other unknown error
         """
 
-        if access_type not in ['public', 'fine_grained', 'private']:
+        if access_type and access_type not in ['public', 'fine_grained', 'private']:
             raise PrevisionException('access type must be public, fine_grained or private')
         if type_violation_policy not in ['best_effort', 'strict']:
             raise PrevisionException('type_violation_policy must be best_effort or strict')
@@ -136,10 +139,10 @@ class ExperimentDeployment(ApiResource):
             'experiment_id': main_experiment_id,
             'main_model_experiment_version_id': main_model_experiment_version_id,
             'main_model_id': main_model._id,
-            'access_type': access_type,
             'type_violation_policy': type_violation_policy
         }
-
+        if access_type:
+            data['access_type'] = access_type
         if challenger_model:
             challenger_model_experiment_version_id = challenger_model.experiment_version_id
             challenger_experiment = BaseExperimentVersion._from_id(main_model_experiment_version_id)
@@ -158,16 +161,22 @@ class ExperimentDeployment(ApiResource):
         experiment_deployment = cls.from_id(json_resp['_id'])
         return experiment_deployment
 
-    def new_version(self, name: str, main_model, challenger_model=None):
+    def new_version(
+        self,
+        name: str,
+        main_model: Model,
+        challenger_model: Model = None,
+    ) -> 'BaseExperimentDeployment':
         """ Create a new experiment deployment version.
 
         Args:
             name (str): experiment deployment name
-            main_model: main model
-            challenger_model (optional): challenger model. main and challenger models should be in the same experiment
+            main_model(:class:`.Model`): main model
+            challenger_model (:class:`.Model`, optional): challenger model.
+                Main and challenger models should be in the same experiment
 
         Returns:
-            :class:`.ExperimentDeployment`: The registered experiment deployment object in the current project
+            :class:`.BaseExperimentDeployment`: The registered experiment deployment object in the current project
 
         Raises:
             PrevisionException: Any error while creating experiment deployment to the platform
@@ -207,7 +216,75 @@ class ExperimentDeployment(ApiResource):
             PrevisionException: If the experiment deployment does not exist
             requests.exceptions.ConnectionError: Error processing the request
         """
-        super().delete()
+        url = '/{}/{}'.format('deployments', self._id)
+        client.request(endpoint=url,
+                       method=requests.delete,
+                       message_prefix='Delete deployment')
+
+    def wait_until(self, condition, timeout: float = config.default_timeout):
+        """ Wait until condition is fulfilled, then break.
+
+        Args:
+            condition (func: (:class:`.BaseExperimentVersion`) -> bool.): Function to use to check the
+                break condition
+            raise_on_error (bool, optional): If true then the function will stop on error,
+                otherwise it will continue waiting (default: ``True``)
+            timeout (float, optional): Maximal amount of time to wait before forcing exit
+
+        Example::
+
+            experiment.wait_until(lambda experimentv: len(experimentv.models) > 3)
+
+        Raises:
+            PrevisionException: If the resource could not be fetched or there was a timeout.
+        """
+        t0 = time.time()
+        while True:
+            if timeout is not None and time.time() - t0 > timeout:
+                raise PrevisionException('timeout while waiting on {}'.format(condition))
+            try:
+                if condition(self):
+                    break
+                elif self.deploy_state == 'failed':
+                    raise PrevisionException('Resource failed while waiting')
+            except PrevisionException as e:
+                logger.warning(e.__repr__())
+                raise
+
+            time.sleep(config.scheduler_refresh_rate)
+
+
+class ExperimentDeployment(BaseExperimentDeployment):
+
+    def __init__(
+        self,
+        _id: str,
+        name: str,
+        experiment_id: str,
+        current_version: int,
+        versions: List[Dict],
+        deploy_state: str,
+        current_type_violation_policy: str,
+        access_type: str,
+        project_id: str,
+        training_type: str,
+        models: List[Dict],
+        url: str = None,
+        **kwargs,
+    ):
+        super().__init__(_id, name, experiment_id, current_version, versions,
+                         deploy_state, project_id, training_type, models,
+                         current_type_violation_policy, **kwargs)
+
+        self.access_type = access_type
+        self.training_type = training_type
+        self.models = models
+        self._run_state = kwargs.pop("main_model_run_state", kwargs.pop("run_state", "error"))
+
+    @property
+    def run_state(self) -> str:
+        experiment_deployment = self.from_id(self._id)
+        return experiment_deployment._run_state
 
     def wait_until(self, condition, timeout: float = config.default_timeout):
         """ Wait until condition is fulfilled, then break.
@@ -241,7 +318,7 @@ class ExperimentDeployment(ApiResource):
 
             time.sleep(config.scheduler_refresh_rate)
 
-    def create_api_key(self):
+    def create_api_key(self) -> Dict:
         """Create an api key of the experiment deployment from the actual [client] workspace.
 
         Raises:
@@ -255,7 +332,7 @@ class ExperimentDeployment(ApiResource):
         resp = parse_json(resp)
         return resp
 
-    def get_api_keys(self):
+    def get_api_keys(self) -> List[Dict]:
         """Fetch the api keys client id and cient secret of the
         experiment deployment from the actual [client] workspace.
 
@@ -310,3 +387,102 @@ class ExperimentDeployment(ApiResource):
         end_point = '/deployments/{}/deployment-predictions'.format(self._id)
         predictions = get_all_results(client, end_point, method=requests.get)
         return [DeploymentPrediction(**prediction) for prediction in predictions]
+
+
+class ExternallyHostedModelDeployment(BaseExperimentDeployment):
+
+    def log_bulk_prediction(
+        self,
+        input_file_path: str,
+        output_file_path: str,
+        model_role: str = 'main',
+    ) -> Dict:
+        """ Log bulk prediction from local parquet files.
+
+        Args:
+            input_file_path (str): Path to an input parquet file
+            output_file_path (str): Path to an ouput parquet file
+            model_role (str, optional): main / challenger
+
+        Raises:
+            PrevisionException: If error while logging bulk prediction
+            requests.exceptions.ConnectionError: Error processing the request
+        """
+        request_url = '/deployments/{}/log-bulk-predictions'.format(self._id)
+        data = {'type_model': model_role}
+        with open(input_file_path, 'rb') as f_input, open(output_file_path, 'rb') as f_output:
+            data['pred_input'] = (os.path.basename(input_file_path), f_input, '')
+            data['pred_output'] = (os.path.basename(output_file_path), f_output, '')
+            encoder = MultipartEncoder(fields=data)
+            create_resp = client.request(request_url,
+                                         content_type=encoder.content_type,
+                                         data=encoder,
+                                         is_json=False,
+                                         method=requests.post,
+                                         message_prefix='log bulk prediction')
+            create_resp_parsed = parse_json(create_resp)
+            log_bulk_prediction_id = create_resp_parsed['_id']
+            specific_url = "/log-bulk-predictions/{}".format(log_bulk_prediction_id)
+            client.event_manager.wait_for_event(log_bulk_prediction_id,
+                                                specific_url,
+                                                EventTuple(
+                                                    'DEPLOYMENT_PREDICTION_UPDATE',
+                                                    ('state', 'done'),
+                                                    [('state', 'failed')]),
+                                                specific_url=specific_url)
+            url = '/{}/{}'.format('log-bulk-predictions', log_bulk_prediction_id)
+            resp = client.request(endpoint=url,
+                                  method=requests.get,
+                                  message_prefix='Get log bulk prediction')
+            create_resp_parsed = parse_json(resp)
+            return create_resp_parsed
+
+    def get_log_bulk_prediction_by_id(id):
+        url = '/{}/{}'.format('log-bulk-predictions', id)
+        resp = client.request(endpoint=url,
+                              method=requests.get,
+                              message_prefix='Get log bulk prediction')
+        create_resp_parsed = parse_json(resp)
+        return create_resp_parsed
+
+    def log_unit_prediction(
+        self,
+        _input: Dict,
+        output: Dict,
+        model_role: str = 'main',
+        deployment_version: int = None,
+    ) -> Dict:
+        """ Log unit prediction.
+
+        Args:
+            input (dict): input prediction data
+            output (dict): output prediction data
+            model_role (str, optional): main / challenger
+            deployment_version (int, optional): deployment version to use.
+                Last version is used by default
+
+        Raises:
+            PrevisionException: If error while logging unit prediction
+            requests.exceptions.ConnectionError: Error processing the request
+        """
+        request_url = '/deployments/{}/log-unit-prediction'.format(self._id)
+        data = {'input': _input,
+                'output': output,
+                'model_role': model_role,
+                'deployment_version': deployment_version}
+        create_resp = client.request(request_url,
+                                     data=data,
+                                     method=requests.post,
+                                     message_prefix='log unit prediction')
+        create_resp_parsed = parse_json(create_resp)
+        return create_resp_parsed
+
+    def list_log_bulk_predictions(self) -> List[Dict]:
+        """ List all the available log bulk predictions.
+
+        Returns:
+            list(dict): Fetched log bulk predictions
+        """
+        end_point = '/deployments/{}/log-bulk-predictions'.format(self._id)
+        log_bulk_predictions = get_all_results(client, end_point, method=requests.get)
+        return log_bulk_predictions

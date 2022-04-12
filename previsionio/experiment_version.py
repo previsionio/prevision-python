@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
+import os
 import json
-from previsionio.model import Model
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 import pandas as pd
 import requests
 import time
@@ -11,13 +11,29 @@ from functools import lru_cache
 from dateutil import parser
 
 from . import config
-from .experiment_config import (AdvancedModel, DataType, Feature, NormalModel, Profile, SimpleModel,
-                                TrainingConfig, ColumnConfig, TypeProblem, ExperimentState)
+from .experiment_config import (
+    DataType,
+    Feature,
+    Profile,
+    TrainingConfig,
+    ColumnConfig,
+    TypeProblem,
+    ExperimentState,
+    SimpleModel,
+    NormalModel,
+    AdvancedModel,
+)
 from .logger import logger
 from .prevision_client import client
 from .utils import parse_json, EventTuple, PrevisionException, zip_to_pandas, get_all_results
 from .api_resource import ApiResource
 from .dataset import Dataset
+from .model import Model, ExternallyHostedModel
+from .metrics import (
+    Regression,
+    Classification,
+    MultiClassification,
+)
 
 
 class BaseExperimentVersion(ApiResource):
@@ -65,10 +81,13 @@ class BaseExperimentVersion(ApiResource):
         for k, v in self._experiment_version_info.items():
             print(str(k) + ': ' + str(v))
 
-    # NOTE: this method is just here to parse raw_data (objects) and build the corresponding data (strings)
-    #       that can be sent directly to the endpoint
+    # NOTE: this method is just here to parse raw_data (objects) and build the corresponding
+    #       data (strings) that can be sent directly to the endpoint
     @staticmethod
-    def _build_experiment_version_creation_data(description, parent_version=None) -> Dict:
+    def _build_experiment_version_creation_data(
+        description: str = None,
+        parent_version: str = None,
+    ) -> Dict:
         data = {
             'description': description,
             'parent_version': parent_version,
@@ -106,19 +125,16 @@ class BaseExperimentVersion(ApiResource):
         parent_version: str = None,
         **kwargs,
     ) -> 'BaseExperimentVersion':
-
         experiment_version_creation_data = cls._build_experiment_version_creation_data(
-            description,
+            description=description,
             parent_version=parent_version,
             **kwargs,
         )
         experiment_version_draft = cls._new(experiment_id, experiment_version_creation_data)
         experiment_version_draft._update_draft(**kwargs)
         experiment_version = experiment_version_draft._confirm()
-
         # NOTE: maybe update like that to be sure to have all the correct info of the resource
         # experiment_version._update_from_dict(**cls._from_id(experiment_version._id))
-
         return experiment_version
 
     def new_version(self, **kwargs):
@@ -132,13 +148,11 @@ class BaseExperimentVersion(ApiResource):
                                                                   self._id))
 
     @classmethod
-    def _from_id(cls, _id: str) -> Dict:
-        """Get an experiment from the platform by its unique id.
+    def from_id(cls, _id: str) -> 'BaseExperimentVersion':
+        """Get an experiment version from the platform by its unique id.
 
         Args:
             _id (str): Unique id of the experiment to retrieve
-            version (int, optional): Specific version of the experiment to retrieve
-                (default: 1)
 
         Returns:
             :class:`.BaseExperimentVersion`: Fetched experiment
@@ -147,7 +161,7 @@ class BaseExperimentVersion(ApiResource):
             PrevisionException: Any error while fetching data from the platform
                 or parsing result
         """
-        return super()._from_id(specific_url='/{}/{}'.format(cls.resource, _id))
+        return cls(**super()._from_id(specific_url='/{}/{}'.format(cls.resource, _id)))
 
     # @property
     # def experiment(self) -> 'Experiment':
@@ -336,7 +350,7 @@ class BaseExperimentVersion(ApiResource):
         Retrieves the list of holdout predictions for the current experiment from client workspace
         (with the full predictions object if necessary)
         Args:
-            full (boolean): If true, return full holdout prediction objects (else only metadata)
+            full (bool): If true, return full holdout prediction objects (else only metadata)
         """
         end_point = '/experiment-versions/{}/holdout-predictions'.format(self._id)
         response = client.request(endpoint=end_point,
@@ -361,7 +375,7 @@ class BaseExperimentVersion(ApiResource):
         Retrieves the list of predictions for the current experiment from client workspace
         (with the full predictions object if necessary)
         Args:
-            full (boolean): If true, return full prediction objects (else only metadata)
+            full (bool): If true, return full prediction objects (else only metadata)
         """
         response = client.request(endpoint='/experiments/{}/predictions'.format(self._id),
                                   method=requests.get,
@@ -691,3 +705,165 @@ class ClassicExperimentVersion(BaseExperimentVersion):
         best = self.best_model
 
         return best.predict(df=df, confidence=confidence, prediction_dataset_name=prediction_dataset_name)
+
+
+class ExternallyHostedExperimentVersion(BaseExperimentVersion):
+
+    """Class for externally hosted experiments objects."""
+
+    model_class = ExternallyHostedModel
+
+    def _update_from_dict(self, **experiment_version_info):
+        super()._update_from_dict(**experiment_version_info)
+
+        experiment_version_params = experiment_version_info['experiment_version_params']
+
+        self.holdout_dataset_id: str = experiment_version_info['holdout_dataset_id']
+        self.target_column = experiment_version_params['target_column']
+        self.metric = experiment_version_params.get('metric')
+
+        self.pred_dataset_id: Union[str, None] = experiment_version_info.get('pred_dataset_id')
+        # this is dict, maybe we should parse it in a tuple like in creation
+        self.external_models = experiment_version_info.get('external_models')
+
+    @staticmethod
+    def _build_experiment_version_creation_data(
+        holdout_dataset: Dataset,
+        target_column: str,
+        description: str = None,
+        metric: Union[Regression, Classification, MultiClassification] = None,
+        pred_dataset: Dataset = None,
+        parent_version: str = None,
+        **kwargs
+    ) -> Dict:
+        data = super(
+            ExternallyHostedExperimentVersion,
+            ExternallyHostedExperimentVersion,
+        )._build_experiment_version_creation_data(
+            description=description,
+            parent_version=parent_version,
+        )
+        data['holdout_dataset_id'] = holdout_dataset.id
+        data['target_column'] = target_column
+        if metric:
+            data['metric'] = metric if isinstance(metric, str) else metric.value
+        if pred_dataset:
+            data['pred_dataset_id'] = pred_dataset._id
+        return data
+
+    def _update_draft(self, external_models, **kwargs):
+        external_model_upload_endpoint = f'/experiment-versions/{self._id}/external-models'
+        external_model_message_prefix = 'External model uploading'
+
+        name_key, yaml_key = 'name', 'yaml_file'
+        name, yaml_file = external_models[0]
+
+        yaml_content_type = 'text/x-yaml'
+        yaml_filename = os.path.basename(yaml_file)
+
+        with open(yaml_file, 'rb') as yaml_fd:
+            external_model_upload_files = [
+                (name_key, (None, name)),
+                (yaml_key, (yaml_filename, yaml_fd, yaml_content_type)),
+            ]
+            external_model_upload_response = client.request(
+                external_model_upload_endpoint,
+                method=requests.post,
+                files=external_model_upload_files,
+                message_prefix=external_model_message_prefix,
+            )
+
+        experiment_version_info = parse_json(external_model_upload_response)
+        self._update_from_dict(**experiment_version_info)
+
+    @classmethod
+    def _fit(
+        cls,
+        experiment_id: str,
+        holdout_dataset: Dataset,
+        target_column: str,
+        external_models: List[Tuple],
+        metric: Union[Regression, Classification, MultiClassification] = None,
+        pred_dataset: Dataset = None,
+        description: str = None,
+        parent_version: str = None,
+    ) -> 'ExternallyHostedExperimentVersion':
+        """ Create an external experiment version with a specific configuration (on the platform).
+
+        Args:
+            experiment_id (str): The id of the experiment from which this version is created
+            holdout_dataset (:class:`.Dataset`): Reference to the holdout dataset object to use for as holdout dataset
+            target_column (str): The name of the target column for this experiment version
+            external_models (list(tuple)): The external models to add in the experiment version to create.
+                Each tuple contains 2 items describing an external model as follows:
+
+                    1) The name you want to give to the model
+                    2) The path to a yaml file containing metadata about the model
+            metric (metrics.Enum): Specific metric to use for the experiment version
+            pred_dataset (:class:`.Dataset`): Reference to the dataset object containing prediction on holdout.
+                If provided it will be used to compute metrics.
+            description (str, optional): The description of this experiment version (default: ``None``)
+            parent_version (str, optional): The parent version of this experiment_version (default: ``None``)
+
+        Returns:
+            :class:`.ExternallyHostedExperimentVersion`: Newly created external experiment version object
+        """
+        return super()._fit(
+            experiment_id,
+            description=description,
+            parent_version=parent_version,
+            holdout_dataset=holdout_dataset,
+            target_column=target_column,
+            external_models=external_models,
+            metric=metric,
+            pred_dataset=pred_dataset,
+        )
+
+    def new_version(
+        self,
+        external_models: List[Tuple],
+        holdout_dataset: Dataset = None,
+        target_column: str = None,
+        metric: Union[Regression, Classification, MultiClassification] = None,
+        pred_dataset: Dataset = None,
+        description: str = None,
+    ) -> 'ExternallyHostedExperimentVersion':
+        """
+        Create a new external experiment version from this version (on the platform).
+        The external_models parameter is mandatory.
+        The other parameters are copied from the current version and then overridden for those provided.
+
+        Args:
+            external_models (list(tuple)): The external models to add in the experiment version to create.
+                Each tuple contains 2 items describing an external model as follows:
+
+                    1) The name you want to give to the model
+                    2) The path to a yaml file containing metadata about the model
+            holdout_dataset (:class:`.Dataset`, optional): Reference to the holdout dataset object
+                to use for as holdout dataset
+            target_column (str, optional): The name of the target column for this experiment version
+            metric (metrics.Enum, optional): Specific metric to use for the experiment version
+            pred_dataset (:class:`.Dataset`, optional): Reference to the pred dataset object (default: ``None``)
+            description (str, optional): The description of this experiment version (default: ``None``)
+        Returns:
+            :class:`.ExternallyHostedExperimentVersion`: Newly created external experiment object (new version)
+        """
+        return ExternallyHostedExperimentVersion._fit(
+            self.experiment_id,
+            holdout_dataset if holdout_dataset is not None else self.holdout_dataset,
+            target_column if target_column is not None else self.target_column,
+            external_models,
+            metric if metric is not None else self.metric,
+            pred_dataset=pred_dataset if pred_dataset is not None else None,
+            description=description,
+            parent_version=self.version,
+        )
+
+    @property
+    def holdout_dataset(self) -> Dataset:
+        """ Get the :class:`.Dataset` object corresponding to the holdout dataset of this experiment version.
+
+        Returns:
+            :class:`.Dataset`: Associated holdout dataset
+        """
+        return Dataset.from_id(self.holdout_dataset_id)

@@ -20,18 +20,18 @@ test-lint:
     - pyflakes  *.py previsionio/*.py utests/*.py
   allow_failure: true
 
-test-image:
-  stage: test
-  extends: .base
-  interruptible: true
-  script:
-    - pip install -U pip
-    - pip install -r requirements.txt
-    - pip install -r utests/requirements.txt
-    - cd utests/
-    - pytest -sv
-  timeout: 3h
-  allow_failure: true
+# test-image:
+#   stage: test
+#   extends: .base
+#   interruptible: true
+#   script:
+#     - pip install -U pip
+#     - pip install -r requirements.txt
+#     - pip install -r utests/requirements.txt
+#     - cd utests/
+#     - pytest -sv
+#   timeout: 3h
+#   allow_failure: true
 
 build:
   stage: publish
